@@ -45,14 +45,13 @@ $('btn-refresh').addEventListener('click', async () => {
 });
 
 $('btn-start').addEventListener('click', async () => {
-    const mode = document.querySelector('input[name="captcha"]:checked').value;
-    const result = await window.api.startAutomation(mode);
+    const result = await window.api.startAutomation();
     if (result.success) {
         isRunning = true;
         $('btn-start').style.display = 'none';
         $('btn-stop').style.display = 'block';
         setStatus('running', 'Processando fila...');
-        log('▶ Automação iniciada (captcha: ' + mode + ')');
+        log('▶ Automação iniciada');
     } else {
         log('❌ Erro: ' + result.error);
     }

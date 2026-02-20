@@ -69,10 +69,11 @@ ipcMain.handle('fetch-queue', async () => {
     }
 });
 
-ipcMain.handle('start-automation', async (_, captchaMode) => {
+ipcMain.handle('start-automation', async () => {
     try {
         const { QueueRunner } = require('./automation/queue');
-        automationRunner = new QueueRunner(global.supabaseClient, captchaMode);
+        // captchaMode = null → reads from automation_config in DB
+        automationRunner = new QueueRunner(global.supabaseClient, null);
         automationRunner.start((status) => {
             mainWindow?.webContents.send('automation-status', status);
         });

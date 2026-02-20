@@ -76,8 +76,10 @@ class QueueRunner {
                 });
 
                 // 4. Run the filler (Playwright — opens Chromium visually)
+                // captchaMode comes from automation_config (set by admin in dashboard)
                 let currentPage = '';
-                const result = await fillApplication(applicant, app, config, this.captchaMode, (page) => {
+                const captchaMode = config.captcha_mode || this.captchaMode || 'capmonster';
+                const result = await fillApplication(applicant, app, config, captchaMode, (page) => {
                     currentPage = page;
                     this.emit({ type: 'filling', applicantName: applicant.full_name, page });
                 });
