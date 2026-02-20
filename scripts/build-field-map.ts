@@ -10,13 +10,55 @@ function ph(s: string | undefined | null): string {
 }
 
 export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
-  const t = a.travel;
-  const pp = a.passport;
-  const addr = a.homeAddress;
-  const uc = a.usContact;
-  const emp = a.employer;
-  const prev = a.previousEmployment?.[0];
-  const edu = a.education?.[0];
+  // Safe defaults for all optional properties
+  a = {
+    ...a,
+    otherNames: a.otherNames || [],
+    socialMedia: a.socialMedia || [],
+    additionalSocialMediaAccounts: a.additionalSocialMediaAccounts || [],
+    languages: a.languages || ['PORTUGUESE'],
+    countriesVisitedList: a.countriesVisitedList || [],
+    organizations: a.organizations || [],
+    military: a.military || [],
+    previousEmployment: a.previousEmployment || [],
+    education: a.education || [],
+    travel: a.travel || {} as any,
+    passport: a.passport || {} as any,
+    homeAddress: a.homeAddress || {} as any,
+    usContact: a.usContact || {} as any,
+    employer: a.employer || {} as any,
+    father: a.father || {} as any,
+    mother: a.mother || {} as any,
+    spouse: a.spouse || {} as any,
+  };
+  const emptyDate = { day: '', month: '', year: '' };
+  const t = a.travel || {} as any;
+  t.arrivalDate = t.arrivalDate || emptyDate;
+  t.departureDate = t.departureDate || emptyDate;
+  t.lengthOfStay = t.lengthOfStay || {};
+  t.usAddress = t.usAddress || {};
+  t.payer = t.payer || {};
+  t.payer.address = t.payer.address || {};
+  const pp = a.passport || {} as any;
+  pp.issuanceDate = pp.issuanceDate || emptyDate;
+  pp.expirationDate = pp.expirationDate || emptyDate;
+  const addr = a.homeAddress || {} as any;
+  const uc = a.usContact || {} as any;
+  const emp = a.employer || {} as any;
+  emp.startDate = emp.startDate || emptyDate;
+  const prev = a.previousEmployment?.[0] || {} as any;
+  prev.startDate = prev.startDate || emptyDate;
+  prev.endDate = prev.endDate || emptyDate;
+  const edu = a.education?.[0] || {} as any;
+  edu.startDate = edu.startDate || emptyDate;
+  edu.endDate = edu.endDate || emptyDate;
+  const father = a.father || {} as any;
+  father.dob = father.dob || emptyDate;
+  const mother = a.mother || {} as any;
+  mother.dob = mother.dob || emptyDate;
+  const spouse = a.spouse || {} as any;
+  spouse.dob = spouse.dob || emptyDate;
+  spouse.address = spouse.address || {};
   const map: Entry[] = [];
 
   // ===================================================================

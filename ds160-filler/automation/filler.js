@@ -6,21 +6,11 @@ const fs = require('fs');
 const { solveCaptcha } = require('./captcha');
 
 // ====================================================================
-// FIELD MAP — re-export from scripts/build-field-map
+// FIELD MAP — import TypeScript module via tsx runtime
 // ====================================================================
-let buildDynamicFieldMap, isPostbackSelect, isPostbackClick;
-try {
-    const fm = require('../../scripts/build-field-map');
-    buildDynamicFieldMap = fm.buildDynamicFieldMap;
-    isPostbackSelect = fm.isPostbackSelect;
-    isPostbackClick = fm.isPostbackClick;
-} catch {
-    // Fallback: try relative to automation dir
-    const fm = require('../scripts/build-field-map');
-    buildDynamicFieldMap = fm.buildDynamicFieldMap;
-    isPostbackSelect = fm.isPostbackSelect;
-    isPostbackClick = fm.isPostbackClick;
-}
+// tsx enables require() of .ts files at runtime
+require('tsx/cjs/api').register();
+const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = require('../../scripts/build-field-map');
 
 const TMP = path.join(__dirname, '..', 'tmp');
 

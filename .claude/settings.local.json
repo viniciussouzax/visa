@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm init:*)",
+      "Bash(npm i:*)",
+      "Bash(npx playwright install:*)",
+      "Bash(npx playwright test:*)",
+      "WebFetch(domain:ceac.state.gov)",
+      "WebFetch(domain:travel.state.gov)",
+      "Bash(timeout /t 20 /nobreak)",
+      "Bash(timeout:*)",
+      "Bash(npx tsx:*)",
+      "Bash(taskkill:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(ping:*)",
+      "Bash(DS160_PROFILE=married-female npx tsx:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(dir:*)",
+      "Bash(DS160_PROFILE=single-male npx tsx:*)",
+      "Bash(curl:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx -p typescript tsc:*)",
+      "Bash(DS160_PROFILE=complex-all-yes npx tsx -e:*)",
+      "Bash(set:*)",
+      "Bash(npx cross-env DS160_PROFILE=complex-all-yes npx tsx scripts/fill-form.ts)",
+      "Bash(DS160_PROFILE=civil-union-ssn npx tsx:*)",
+      "Bash(node -e:*)",
+      "Bash(DS160_PROFILE=separated-other npx playwright test:*)",
+      "Bash(test:*)",
+      "Bash(cmd /c \"set DS160_PROFILE=separated-other && npx playwright test tests/ds160-fill.spec.ts --project=ds160\")",
+      "Bash($env:DS160_PROFILE=\"separated-other\")",
+      "Bash(DS160_PROFILE=complex-all-yes npx playwright test:*)",
+      "Bash(tasklist:*)",
+      "Bash(del \"c:\\\\Users\\\\azuos\\\\Desktop\\\\DS160 IA\\\\docs\\\\ds160-branches.md\")",
+      "Bash(powershell:*)",
+      "Bash(ls:*)",
+      "Bash(txt)",
+      "Bash(csv \")",
+      "Bash(python3:*)"
+    ]
+  }
+}
