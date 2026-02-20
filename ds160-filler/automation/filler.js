@@ -441,10 +441,11 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ====================================================================
 // NORMALIZE — convert Supabase applicant.data to field-map profile format
+// Handles both camelCase (JS form) and snake_case (DB) keys
 // ====================================================================
 function normalizeProfile(data) {
-    // If already flat, return as-is
-    if (data.surname) return data;
+    // If already flat with surname at top level, return as-is
+    if (data.surname && data.givenName) return data;
 
     // Otherwise map from nested structure (clone form) to flat profile
     const p1 = data.personal1 || data.personal || {};
@@ -455,40 +456,73 @@ function normalizeProfile(data) {
     const prev = data.previousUSTravel || {};
     const fam1 = data.family1 || {};
     const fam2 = data.family2 || {};
+    const ppt = data.passport || {};
     const we1 = data.workEducation1 || {};
     const we2 = data.workEducation2 || {};
     const we3 = data.workEducation3 || {};
 
+    // Helper: prefer camelCase, fallback to snake_case
+    const g = (obj, camel, snake) => obj[camel] || obj[snake] || '';
+
     return {
-        surname: p1.surname, givenName: p1.givenName, fullNameNative: p1.fullNameNative,
-        otherNamesUsed: p1.otherNamesUsed === 'Y', otherNames: p1.otherNames,
-        sex: p1.sex, maritalStatus: p1.maritalStatus,
-        dob: p1.dob, cityOfBirth: p1.cityOfBirth, stateOfBirth: p1.stateOfBirth, countryOfBirth: p1.countryOfBirth,
-        nationality: p2.nationality, nationalId: p2.nationalId,
-        purposeOfTrip: trav.purposeOfTrip || 'B1/B2',
-        hasSpecificPlans: trav.hasSpecificPlans === 'Y',
+        surname: g(p1, 'surname', 'surname'),
+        givenName: g(p1, 'givenName', 'given_name'),
+        fullNameNative: g(p1, 'fullNameNative', 'full_name_native'),
+        otherNamesUsed: p1.otherNamesUsed === 'Y' || p1.other_names_used === 'Y',
+        otherNames: p1.otherNames || p1.other_names || [],
+        sex: g(p1, 'sex', 'sex') || 'M',
+        maritalStatus: g(p1, 'maritalStatus', 'marital_status') || 'S',
+        dob: p1.dob || { day: '', month: '', year: '' },
+        cityOfBirth: g(p1, 'cityOfBirth', 'city_of_birth'),
+        stateOfBirth: g(p1, 'stateOfBirth', 'state_of_birth'),
+        countryOfBirth: g(p1, 'countryOfBirth', 'country_of_birth') || 'BRAZIL',
+        nationality: g(p2, 'nationality', 'nationality') || 'BRAZIL',
+        nationalId: g(p2, 'nationalId', 'national_id'),
+        purposeOfTrip: g(trav, 'purposeOfTrip', 'purpose_of_trip') || 'B1/B2',
+        hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.has_specific_plans === 'Y',
         travel: {
-            arrivalDate: trav.arrivalDate, departureDate: trav.departureDate,
-            lengthOfStay: { value: trav.lengthOfStay, unit: trav.lengthOfStayUnit },
-            usAddress: trav.usAddress
+            arrivalDate: trav.arrivalDate || trav.arrival_date,
+            departureDate: trav.departureDate || trav.departure_date,
+            lengthOfStay: {
+                value: trav.lengthOfStay || trav.length_of_stay || '30',
+                unit: trav.lengthOfStayUnit || trav.length_of_stay_unit || 'D'
+            },
+            usAddress: trav.usAddress || trav.us_address || {}
         },
-        payingForTrip: trav.whoIsPaying || 'S',
-        homeAddress: addr.homeAddress, phone: addr.phone, email: addr.email,
-        passport: data.passport || {},
-        usContact: data.usContact ? { ...data.usContact, ...(data.usContact.address || {}) } : {},
-        father: fam1.father, mother: fam1.mother, spouse: fam2.spouse,
-        relativesInUS: fam1.relativesInUS === 'Y',
-        occupationCode: we1.occupation, employer: we1.employer,
-        hasPreviousEmployment: we2.hasPreviousEmployment === 'Y', previousEmployment: we2.previousEmployment,
-        hasEducation: we2.hasEducation === 'Y', education: we2.education,
+        payingForTrip: trav.whoIsPaying || trav.who_is_paying || 'S',
+        homeAddress: addr.homeAddress || addr.home_address || {},
+        phone: g(addr, 'phone', 'phone'),
+        email: g(addr, 'email', 'email'),
+        passport: {
+            type: g(ppt, 'type', 'type') || 'R',
+            number: g(ppt, 'number', 'number'),
+            issuingCountry: g(ppt, 'issuingCountry', 'issuing_country') || 'BRAZIL',
+            issuedCity: g(ppt, 'issuedCity', 'issued_city'),
+            issuedState: g(ppt, 'issuedState', 'issued_state'),
+            issuedCountry: g(ppt, 'issuedCountry', 'issued_country') || 'BRAZIL',
+            issuanceDate: ppt.issuanceDate || ppt.issuance_date,
+            expirationDate: ppt.expirationDate || ppt.expiration_date,
+        },
+        usContact: data.usContact || data.us_contact || {},
+        father: fam1.father || {},
+        mother: fam1.mother || {},
+        spouse: fam2 || {},
+        relativesInUS: fam1.immediateRelativesInUS === 'Y' || fam1.relatives_in_us === 'Y',
+        occupationCode: g(we1, 'occupation', 'occupation') || 'H',
+        employer: we1.employer || {},
+        hasPreviousEmployment: we2.hasPreviousEmployment === 'Y' || we2.has_previous_employment === 'Y',
+        previousEmployment: we2.previousEmployment || we2.previous_employment || [],
+        hasEducation: we2.hasEducation === 'Y' || we2.has_education === 'Y',
+        education: we2.education || [],
         languages: we3.languages || ['PORTUGUESE'],
-        clanTribe: we3.clanTribe === 'Y', countriesVisited: we3.countriesVisited === 'Y',
-        organizationMember: we3.organizationMember === 'Y',
-        specializedSkills: we3.specializedSkills === 'Y',
-        militaryService: we3.militaryService === 'Y',
-        insurgentOrg: we3.insurgentOrg === 'Y',
+        clanTribe: we3.clanTribe === 'Y' || we3.clan_tribe === 'Y',
+        countriesVisited: we3.countriesVisited === 'Y' || we3.countries_visited === 'Y',
+        organizationMember: we3.organizationMember === 'Y' || we3.organization_member === 'Y',
+        specializedSkills: we3.specializedSkills === 'Y' || we3.specialized_skills === 'Y',
+        militaryService: we3.militaryService === 'Y' || we3.military_service === 'Y',
+        insurgentOrg: we3.insurgentOrg === 'Y' || we3.insurgent_org === 'Y',
         location: data.location || 'SPL',
-        securityAnswer: data.securityAnswer || 'BRAZIL'
+        securityAnswer: data.securityAnswer || data.security_answer || 'BRAZIL'
     };
 }
 
