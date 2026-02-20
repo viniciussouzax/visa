@@ -707,8 +707,8 @@
                 const { data: company } = await sb.from('companies').select('short_id').eq('id', companyId).single();
                 const shortId = company?.short_id || companyId;
 
-                const baseUrl = window.location.origin + window.location.pathname;
-                const formUrl = baseUrl.replace(/index\.html$/, '') + 'ds160.html?id=' + shortId;
+                const baseUrl = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
+                const formUrl = baseUrl + '/ds160/?id=' + shortId;
                 $('form-link').textContent = formUrl;
                 $('form-link').onclick = () => { navigator.clipboard.writeText(formUrl); toast('Link copiado!', 'success'); };
                 $('org-id-display').textContent = shortId;
