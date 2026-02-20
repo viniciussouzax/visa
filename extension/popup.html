@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            width: 320px;
+            padding: 15px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0 auto;
+            /* Center horizontally */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin-top: 0;
+            color: #2d3436;
+            text-align: center;
+        }
+
+        .box {
+            border: 1px solid #dfe6e9;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+
+        /* Auth Styles */
+        #auth-section,
+        #app-section {
+            display: none;
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 3px;
+            color: #636e72;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #f1c40f;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #f39c12;
+        }
+
+        .btn-secondary {
+            background: #dfe6e9;
+            color: #2d3436;
+            margin-top: 15px;
+            font-size: 11px;
+            padding: 5px;
+        }
+
+        #user-info {
+            font-size: 12px;
+            color: #2d3436;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>DS-160 AI 🚀</h2>
+
+    <!-- Section: Login -->
+    <div id="auth-section">
+        <div class="box">
+            <div class="input-group">
+                <label>E-mail</label>
+                <input type="email" id="email" placeholder="seu@email.com">
+            </div>
+            <div class="input-group">
+                <label>Senha</label>
+                <input type="password" id="password" placeholder="******">
+            </div>
+            <button id="loginBtn">Entrar</button>
+        </div>
+        <p style="font-size: 11px; text-align: center; color: #888; margin-top: 15px;">
+            Acesse sua conta para gerenciar clientes e automações.
+        </p>
+    </div>
+
+    <!-- Section: App (Logado) -->
+    <div id="app-section">
+        <div id="user-info">Aguardando login...</div>
+        <div class="box">
+            <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">Automação</div>
+            <p style="font-size: 12px; color: #636e72;">Use o painel para gerenciar clientes.</p>
+            <button id="openDashBtn" style="background:#003366; color:white; margin-top:5px;">📂 Abrir Painel</button>
+        </div>
+        <button id="logoutBtn" class="btn-secondary">Sair da Conta</button>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+</body>
+
+</html>

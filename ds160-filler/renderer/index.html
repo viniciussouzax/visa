@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>DS-160 Filler</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #16213e, #0f3460);
+            padding: 16px 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #e94560;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Login Section */
+        #login-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        #main-section {
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        label {
+            font-size: 13px;
+            color: #aaa;
+            margin-bottom: 2px;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #16213e;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: #e94560;
+        }
+
+        button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #e94560, #c62a47);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+        }
+
+        .btn-secondary {
+            background: #16213e;
+            color: #e94560;
+            border: 1px solid #e94560;
+        }
+
+        .btn-danger {
+            background: #c0392b;
+            color: white;
+        }
+
+        /* Status */
+        .status-card {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 14px;
+            border: 1px solid #333;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .status-label {
+            color: #888;
+        }
+
+        .status-value {
+            font-weight: 600;
+        }
+
+        .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .dot-green {
+            background: #2ecc71;
+        }
+
+        .dot-yellow {
+            background: #f39c12;
+        }
+
+        .dot-red {
+            background: #e74c3c;
+        }
+
+        .dot-gray {
+            background: #666;
+        }
+
+        /* Captcha toggle */
+        .captcha-toggle {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #16213e;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        .captcha-toggle label {
+            color: #eee;
+            margin: 0;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .captcha-toggle input[type="radio"] {
+            accent-color: #e94560;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .log {
+            font-size: 11px;
+            color: #666;
+            margin-top: auto;
+            max-height: 80px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">⚡ DS-160 FILLER</div>
+    <div class="content">
+
+        <!-- LOGIN -->
+        <div id="login-section">
+            <div>
+                <label>Email</label>
+                <input type="email" id="email" placeholder="seu@email.com">
+            </div>
+            <div>
+                <label>Senha</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+            <button class="btn-primary" id="btn-login">Entrar</button>
+            <p class="error" id="login-error"></p>
+        </div>
+
+        <!-- MAIN -->
+        <div id="main-section">
+            <div class="status-card">
+                <div class="status-row">
+                    <span class="status-label">Status</span>
+                    <span class="status-value" id="status-text"><span class="dot dot-gray"></span>Parado</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Fila</span>
+                    <span class="status-value" id="queue-count">0 pendentes</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Atual</span>
+                    <span class="status-value" id="current-task">—</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Página</span>
+                    <span class="status-value" id="current-page">—</span>
+                </div>
+            </div>
+
+            <div class="captcha-toggle">
+                <span style="color:#888; font-size:13px;">Captcha:</span>
+                <input type="radio" name="captcha" id="cap-capmonster" value="capmonster" checked>
+                <label for="cap-capmonster">CapMonster</label>
+                <input type="radio" name="captcha" id="cap-ai" value="ai_vision">
+                <label for="cap-ai">IA Vision</label>
+            </div>
+
+            <button class="btn-primary" id="btn-start">▶ Iniciar Fila</button>
+            <button class="btn-danger" id="btn-stop" style="display:none">⏹ Parar</button>
+            <button class="btn-secondary" id="btn-refresh">↻ Atualizar Fila</button>
+
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,45 @@
+{
+    "manifest_version": 3,
+    "name": "DS-160 AI Booster (PoC)",
+    "version": "0.1",
+    "description": "Protótipo de automação para o formulário DS-160",
+    "permissions": [
+        "activeTab",
+        "tabs",
+        "scripting",
+        "storage"
+    ],
+    "host_permissions": [
+        "https://ceac.state.gov/*",
+        "https://zcpvknzktfmotvrybxdf.supabase.co/*",
+        "https://api.capmonster.cloud/*"
+    ],
+    "action": {},
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://ceac.state.gov/GenNIV/*",
+                "https://ceac.state.gov/genniv/*",
+                "https://ceac.state.gov/*"
+            ],
+            "js": [
+                "content.js"
+            ]
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "config.js",
+                "auth.js",
+                "captcha.js"
+            ],
+            "matches": [
+                "https://ceac.state.gov/*"
+            ]
+        }
+    ]
+}
