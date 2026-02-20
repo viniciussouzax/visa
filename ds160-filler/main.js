@@ -35,7 +35,7 @@ ipcMain.handle('login', async (_, email, password) => {
         const supabase = createClient(
             'https://zcpvknzktfmotvrybxdf.supabase.co',
             // Publishable key — safe for client
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg1MjUyMTYsImV4cCI6MjA1NDEwMTIxNn0.sFOJexOpHKEl-olQMh3JGlk5OlJtHKKpI7_Ij2VkSWw'
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg'
         );
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) return { success: false, error: error.message };
