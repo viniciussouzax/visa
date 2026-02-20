@@ -702,11 +702,16 @@
             const { data: member } = await sb.from('members').select('company_id').eq('user_id', currentUser.id).single();
             if (member) {
                 companyId = member.company_id;
+
+                // Get short_id for clean URL
+                const { data: company } = await sb.from('companies').select('short_id').eq('id', companyId).single();
+                const shortId = company?.short_id || companyId;
+
                 const baseUrl = window.location.origin + window.location.pathname;
-                const formUrl = baseUrl.replace(/index\.html$/, '') + 'ds160.html?id=' + companyId;
+                const formUrl = baseUrl.replace(/index\.html$/, '') + 'ds160.html?id=' + shortId;
                 $('form-link').textContent = formUrl;
                 $('form-link').onclick = () => { navigator.clipboard.writeText(formUrl); toast('Link copiado!', 'success'); };
-                $('org-id-display').textContent = companyId;
+                $('org-id-display').textContent = shortId;
 
                 // Sidebar copy button
                 $('btn-copy-form').onclick = () => {
