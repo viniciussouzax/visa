@@ -216,6 +216,29 @@
             color: var(--text);
         }
 
+        .btn-copy-link {
+            background: rgba(233, 69, 96, 0.1) !important;
+            border: 1px solid rgba(233, 69, 96, 0.3) !important;
+            color: var(--accent) !important;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-copy-link:hover {
+            background: rgba(233, 69, 96, 0.2) !important;
+            border-color: var(--accent) !important;
+        }
+
+        .btn-copy-link.copied {
+            background: rgba(34, 197, 94, 0.15) !important;
+            border-color: var(--success) !important;
+            color: var(--success) !important;
+        }
+
         /* Main content */
         .main {
             flex: 1;
@@ -517,6 +540,8 @@
                 </div>
                 <div class="sidebar-footer">
                     <div id="user-email">—</div>
+                    <button class="btn-copy-link" id="btn-copy-form" title="Copiar link do formulário">📋 Copiar link do
+                        formulário</button>
                     <button id="btn-logout">Sair</button>
                 </div>
             </div>
@@ -682,6 +707,19 @@
                 $('form-link').textContent = formUrl;
                 $('form-link').onclick = () => { navigator.clipboard.writeText(formUrl); toast('Link copiado!', 'success'); };
                 $('org-id-display').textContent = companyId;
+
+                // Sidebar copy button
+                $('btn-copy-form').onclick = () => {
+                    navigator.clipboard.writeText(formUrl);
+                    const btn = $('btn-copy-form');
+                    btn.classList.add('copied');
+                    btn.textContent = '✅ Link copiado!';
+                    setTimeout(() => {
+                        btn.classList.remove('copied');
+                        btn.textContent = '📋 Copiar link do formulário';
+                    }, 2000);
+                    toast('Link copiado!', 'success');
+                };
             }
 
             loadDashboard();
