@@ -1,0 +1,3064 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS-160 Clone - Formulário</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            padding-bottom: 40px
+        }
+
+        header {
+            background: #003366;
+            color: #fff;
+            padding: 14px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100
+        }
+
+        header h1 {
+            font-size: 18px
+        }
+
+        header p {
+            font-size: 12px;
+            opacity: .85;
+            margin-top: 2px
+        }
+
+        nav {
+            background: #004080;
+            display: flex;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 50px;
+            z-index: 99;
+            padding: 0
+        }
+
+        nav button {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, .7);
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 11px;
+            border-bottom: 3px solid transparent;
+            transition: .2s
+        }
+
+        nav button:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, .1)
+        }
+
+        nav button.active {
+            color: #fff;
+            border-bottom-color: #4caf50;
+            font-weight: bold
+        }
+
+        nav button.hidden-tab {
+            opacity: .4;
+            text-decoration: line-through
+        }
+
+        .page {
+            display: none;
+            max-width: 900px;
+            margin: 15px auto;
+            padding: 0 15px
+        }
+
+        .page.active {
+            display: block
+        }
+
+        .page h2 {
+            color: #003366;
+            font-size: 18px;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #003366
+        }
+
+        .section {
+            background: #fff;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .1)
+        }
+
+        .section h3 {
+            font-size: 14px;
+            color: #004080;
+            margin-bottom: 10px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e0e0e0
+        }
+
+        .fg {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .fg label {
+            min-width: 200px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444
+        }
+
+        .fg input[type=text],
+        .fg input[type=tel],
+        .fg textarea,
+        .fg select {
+            flex: 1;
+            min-width: 180px;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px
+        }
+
+        .fg textarea {
+            min-height: 60px;
+            resize: vertical
+        }
+
+        .fg select {
+            background: #fff
+        }
+
+        .fg input:disabled,
+        .fg select:disabled,
+        .fg textarea:disabled {
+            background: #f5f5f5;
+            color: #999
+        }
+
+        .rg {
+            display: flex;
+            gap: 12px
+        }
+
+        .rg label {
+            min-width: auto;
+            font-weight: normal;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px
+        }
+
+        .na-lbl {
+            font-size: 11px;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            white-space: nowrap
+        }
+
+        .na-lbl input {
+            cursor: pointer
+        }
+
+        .br {
+            display: none;
+            margin: 4px 0 8px 20px;
+            padding: 8px 12px;
+            border-left: 3px solid #ff9800;
+            background: #fff8e1;
+            border-radius: 0 4px 4px 0
+        }
+
+        .br.open {
+            display: block
+        }
+
+        .as {
+            border: 1px dashed #90caf9;
+            border-radius: 4px;
+            padding: 8px;
+            margin: 4px 0;
+            background: #f8fbff
+        }
+
+        .entry {
+            padding: 6px 0;
+            border-bottom: 1px solid #e3f2fd;
+            position: relative
+        }
+
+        .entry:last-of-type {
+            border-bottom: none
+        }
+
+        .btn-add {
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #90caf9;
+            border-radius: 4px;
+            padding: 4px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 4px
+        }
+
+        .btn-add:hover {
+            background: #bbdefb
+        }
+
+        .btn-rm {
+            position: absolute;
+            right: 4px;
+            top: 4px;
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1
+        }
+
+        .btn-rm:hover {
+            background: #ffcdd2
+        }
+
+        .page-btns {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 2px solid #e0e0e0
+        }
+
+        .btn {
+            padding: 8px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: bold
+        }
+
+        .btn-next {
+            background: #003366;
+            color: #fff
+        }
+
+        .btn-next:hover {
+            background: #004080
+        }
+
+        .btn-back {
+            background: #e0e0e0;
+            color: #333
+        }
+
+        .btn-back:hover {
+            background: #bdbdbd
+        }
+
+        .btn-json {
+            background: #2e7d32;
+            color: #fff;
+            font-size: 16px;
+            padding: 12px 32px
+        }
+
+        .btn-json:hover {
+            background: #1b5e20
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, .6);
+            z-index: 200;
+            justify-content: center;
+            align-items: center
+        }
+
+        .modal-overlay.open {
+            display: flex
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 800px;
+            width: 95%;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column
+        }
+
+        .modal h2 {
+            margin-bottom: 10px;
+            color: #003366
+        }
+
+        .modal textarea {
+            flex: 1;
+            min-height: 300px;
+            font-family: Consolas, monospace;
+            font-size: 12px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none
+        }
+
+        .modal .modal-btns {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px
+        }
+
+        .modal .modal-btns button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px
+        }
+
+        .date-row {
+            display: flex;
+            gap: 4px;
+            flex: 1;
+            min-width: 180px
+        }
+
+        .date-row select,
+        .date-row input {
+            flex: 1;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px
+        }
+
+        .date-row input[type=text] {
+            max-width: 70px
+        }
+
+        .ssn-row {
+            display: flex;
+            gap: 4px;
+            flex: 1;
+            min-width: 180px
+        }
+
+        .ssn-row input {
+            width: 50px;
+            text-align: center;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px
+        }
+
+        @media(max-width:768px) {
+            .fg {
+                flex-direction: column;
+                align-items: flex-start
+            }
+
+            .fg label {
+                min-width: auto
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <header>
+        <h1>DS-160 Clone - Formulário Funcional</h1>
+        <p>Preencha todos os campos e clique "Gerar JSON" na última página</p>
+    </header>
+    <nav id="nav"></nav>
+
+    <!-- ===== PAGE 0: Start (Mode + Location) ===== -->
+    <div class="page active" id="pg-Start">
+        <h2>Bem-vindo ao DS-160</h2>
+        <div class="section">
+            <h3>Como deseja preencher?</h3>
+            <p style="color:#555;margin-bottom:16px">Escolha se você é o solicitante principal ou se está adicionando um
+                acompanhante ao grupo de outro solicitante.</p>
+            <div class="fg">
+                <label style="min-width:auto">Tipo de preenchimento *</label>
+                <span class="rg">
+                    <label><input type="radio" name="rblFormMode" value="solo" checked onchange="toggleGroupEmail()"> 🧑
+                        Solicitante Principal</label>
+                    <label><input type="radio" name="rblFormMode" value="group" onchange="toggleGroupEmail()"> 👨‍👩‍👧
+                        Adicionar ao grupo</label>
+                </span>
+            </div>
+            <div id="group-email-box"
+                style="display:none; margin:12px 0; padding:12px; background:#fff8e1; border-left:3px solid #ff9800; border-radius:0 4px 4px 0">
+                <div class="fg"><label>Email do Solicitante Principal *</label><input type="email" id="txtGroupEmail"
+                        placeholder="email@do-solicitante-principal.com"></div>
+                <div id="group-status" style="font-size:12px;margin-top:4px;color:#666"></div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Local da Entrevista</h3>
+            <p style="color:#555;margin-bottom:16px">Selecione a embaixada ou consulado dos EUA onde pretende comparecer
+                para a entrevista.</p>
+            <div class="fg"><label>Location (Embassy/Consulate) *</label><select id="ddlLocation"
+                    class="sel-location"></select></div>
+        </div>
+        <div class="page-btns"><span></span><button class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+
+    <!-- ===== PAGE 1: Personal1 ===== -->
+    <div class="page" id="pg-Personal1">
+        <h2>1. Informações Pessoais</h2>
+        <div class="section">
+            <h3>Nome</h3>
+            <div class="fg"><label>Sobrenome (Surname) *</label><input type="text" id="tbxAPP_SURNAME" maxlength="33"
+                    required placeholder="Ex: SILVA"></div>
+            <div class="fg"><label>Nome (Given Name) *</label><input type="text" id="tbxAPP_GIVEN_NAME" maxlength="33"
+                    required placeholder="Ex: JOAO"></div>
+            <div class="fg"><label>Nome Completo (Nativo)</label><input type="text" id="tbxAPP_FULL_NAME_NATIVE"
+                    maxlength="100" placeholder="Nome completo em caracteres nativos"><label class="na-lbl"><input
+                        type="checkbox" class="na-cb" id="cbexAPP_FULL_NAME_NATIVE_NA"
+                        data-target="tbxAPP_FULL_NAME_NATIVE">
+                    N/A</label></div>
+        </div>
+        <div class="section">
+            <h3>Outros Nomes</h3>
+            <div class="fg"><label>Já usou outros nomes? *</label><span class="rg"><label><input type="radio"
+                            name="rblOtherNames" value="Y" data-branch="rblOtherNames"> Sim</label><label><input
+                            type="radio" name="rblOtherNames" value="N" data-branch="rblOtherNames"> Não</label></span>
+            </div>
+            <div class="br" id="br-rblOtherNames">
+                <div class="as" data-list="DListAlias">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Outro Sobrenome</label><input type="text"
+                                id="DListAlias_ctl00_tbxSURNAME" placeholder="Outro sobrenome"></div>
+                        <div class="fg"><label>Outro Nome</label><input type="text" id="DListAlias_ctl00_tbxGIVEN_NAME"
+                                placeholder="Outro nome">
+                        </div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('DListAlias')">+ Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Telecode</h3>
+            <div class="fg"><label>Telecode? *</label><span class="rg"><label><input type="radio"
+                            name="rblTelecodeQuestion" value="Y" data-branch="rblTelecodeQuestion">
+                        Sim</label><label><input type="radio" name="rblTelecodeQuestion" value="N"
+                            data-branch="rblTelecodeQuestion"> Não</label></span></div>
+            <div class="br" id="br-rblTelecodeQuestion">
+                <div class="fg"><label>Telecode Sobrenome</label><input type="text" id="tbxAPP_TelecodeSURNAME"
+                        placeholder="Código numérico do sobrenome" maxlength="20"></div>
+                <div class="fg"><label>Telecode Nome</label><input type="text" id="tbxAPP_TelecodeGIVEN_NAME"
+                        placeholder="Código numérico do nome" maxlength="20"></div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Dados Pessoais</h3>
+            <div class="fg"><label>Sexo (Sex) *</label><select id="ddlAPP_GENDER">
+                    <option value="">- Selecione -</option>
+                    <option value="M">MASCULINO (MALE)</option>
+                    <option value="F">FEMININO (FEMALE)</option>
+                </select></div>
+            <div class="fg"><label>Estado Civil (Marital Status) *</label><select id="ddlAPP_MARITAL_STATUS">
+                    <option value="">- Selecione -</option>
+                    <option value="M">CASADO(A) (MARRIED)</option>
+                    <option value="C">UNIÃO ESTÁVEL (COMMON LAW MARRIAGE)</option>
+                    <option value="P">UNIÃO CIVIL / PARCERIA DOMÉSTICA (CIVIL UNION)</option>
+                    <option value="S">SOLTEIRO(A) (SINGLE)</option>
+                    <option value="W">VIÚVO(A) (WIDOWED)</option>
+                    <option value="D">DIVORCIADO(A) (DIVORCED)</option>
+                    <option value="L">SEPARADO(A) LEGALMENTE (LEGALLY SEPARATED)</option>
+                    <option value="O">OUTRO (OTHER)</option>
+                </select></div>
+            <div class="br" id="br-otherMarital">
+                <div class="fg"><label>Explique o Estado Civil (Explain) *</label><textarea id="tbxOtherMaritalStatus"
+                        rows="3" placeholder="Descreva seu estado civil"></textarea></div>
+            </div>
+            <div class="fg"><label>Data de Nascimento *</label>
+                <div class="date-row"><select id="ddlDOBDay" class="sel-day"></select><select id="ddlDOBMonth"
+                        class="sel-month"></select><input type="text" id="tbxDOBYear" maxlength="4" placeholder="AAAA">
+                </div>
+            </div>
+            <div class="fg"><label>Cidade de Nascimento *</label><input type="text" id="tbxAPP_POB_CITY"
+                    placeholder="Ex: SAO PAULO"></div>
+            <div class="fg"><label>Estado de Nascimento</label><input type="text" id="tbxAPP_POB_ST_PROVINCE"
+                    placeholder="Ex: SAO PAULO"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbexAPP_POB_ST_PROVINCE_NA" data-target="tbxAPP_POB_ST_PROVINCE">
+                    N/A</label></div>
+            <div class="fg"><label>País de Nascimento *</label><select id="ddlAPP_POB_CNTRY"
+                    class="sel-country"></select></div>
+        </div>
+        <div class="page-btns"><span></span><button class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 2: Personal2 ===== -->
+    <div class="page" id="pg-Personal2">
+        <h2>2. Informações Pessoais 2</h2>
+        <div class="section">
+            <h3>Nacionalidade</h3>
+            <div class="fg"><label>Nacionalidade *</label><select id="ddlAPP_NATL" class="sel-country"></select></div>
+        </div>
+        <div class="section">
+            <h3>Outra Nacionalidade</h3>
+            <div class="fg"><label>Possui outra nacionalidade? *</label><span class="rg"><label><input type="radio"
+                            name="rblAPP_OTH_NATL_IND" value="Y" data-branch="rblAPP_OTH_NATL_IND">
+                        Sim</label><label><input type="radio" name="rblAPP_OTH_NATL_IND" value="N"
+                            data-branch="rblAPP_OTH_NATL_IND"> Não</label></span></div>
+            <div class="br" id="br-rblAPP_OTH_NATL_IND">
+                <div class="as" data-list="dtlOTHER_NATL">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Outra Nacionalidade</label><select id="dtlOTHER_NATL_ctl00_ddlOTHER_NATL"
+                                class="sel-country"></select></div>
+                        <div class="fg"><label>Passaporte dessa nacionalidade?</label><span class="rg"><label><input
+                                        type="radio" name="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND" value="Y">
+                                    Sim</label><label><input type="radio" name="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND"
+                                        value="N"> Não</label></span></div>
+                        <div class="fg"><label>Número do Passaporte</label><input type="text"
+                                id="dtlOTHER_NATL_ctl00_tbxOTHER_PPT_NUM" placeholder="Nº do passaporte"></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlOTHER_NATL')">+ Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Residente Permanente</h3>
+            <div class="fg"><label>Residente permanente em outro país? *</label><span class="rg"><label><input
+                            type="radio" name="rblPermResOtherCntryInd" value="Y" data-branch="rblPermResOtherCntryInd">
+                        Sim</label><label><input type="radio" name="rblPermResOtherCntryInd" value="N"
+                            data-branch="rblPermResOtherCntryInd"> Não</label></span></div>
+            <div class="br" id="br-rblPermResOtherCntryInd">
+                <div class="as" data-list="dtlOthPermResCntry">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>País</label><select id="dtlOthPermResCntry_ctl00_ddlOthPermResCntry"
+                                class="sel-country"></select></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlOthPermResCntry')">+
+                        Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Documentos de Identificação</h3>
+            <div class="fg"><label>Documento Nacional (CPF) *</label><input type="text" id="tbxAPP_NATIONAL_ID"
+                    maxlength="20" placeholder="Ex: 123.456.789-00 (CPF)"><label class="na-lbl"><input type="checkbox"
+                        class="na-cb" id="cbexAPP_NATIONAL_ID_NA" data-target="tbxAPP_NATIONAL_ID"> N/A</label>
+            </div>
+            <div class="fg"><label>US Social Security Number</label>
+                <div class="ssn-row"><input type="text" id="tbxAPP_SSN1" maxlength="3"
+                        placeholder="XXX"><span>-</span><input type="text" id="tbxAPP_SSN2" maxlength="2"
+                        placeholder="XX"><span>-</span><input type="text" id="tbxAPP_SSN3" maxlength="4"
+                        placeholder="XXXX"></div><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        data-target="tbxAPP_SSN1,tbxAPP_SSN2,tbxAPP_SSN3" id="cbexAPP_SSN_NA"> N/A</label>
+            </div>
+            <div class="fg"><label>US Tax ID (ITIN)</label><input type="text" id="tbxAPP_TAX_ID" maxlength="20"
+                    placeholder="Ex: XXX-XX-XXXX"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        data-target="tbxAPP_TAX_ID" id="cbexAPP_TAX_ID_NA"> N/A</label></div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 3: Travel ===== -->
+    <div class="page" id="pg-Travel">
+        <h2>3. Informações de Viagem</h2>
+        <div class="section">
+            <h3>Propósito da Viagem</h3>
+            <div class="fg"><label>Categoria do Visto *</label><select id="dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip"
+                    class="sel-purpose"></select></div>
+            <div class="br" id="br-visaSubtype">
+                <div class="fg"><label>Tipo Específico de Visto *</label><select
+                        id="dlPrincipalAppTravel_ctl00_ddlOtherPurpose" class="sel-visa-subtype"></select></div>
+            </div>
+            <div class="br" id="br-visaClass">
+                <div class="fg"><label>Classe de Visto *</label><select id="dlPrincipalAppTravel_ctl00_ddlVisaClass"
+                        class="sel-visa-class"></select></div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Planos de Viagem</h3>
+            <div class="fg"><label>Planos específicos? *</label><span class="rg"><label><input type="radio"
+                            name="rblSpecificTravel" value="Y" data-branch="rblSpecificTravel"> Sim</label><label><input
+                            type="radio" name="rblSpecificTravel" value="N" data-branch="rblSpecificTravel">
+                        Não</label></span></div>
+            <div class="br" id="br-rblSpecificTravel">
+                <div class="fg"><label>Data de Chegada *</label>
+                    <div class="date-row"><select id="ddlARRIVAL_US_DTEDay" class="sel-day"></select><select
+                            id="ddlARRIVAL_US_DTEMonth" class="sel-month"></select><input type="text"
+                            id="tbxARRIVAL_US_DTEYear" maxlength="4" placeholder="AAAA"></div>
+                </div>
+                <div class="fg"><label>Voo de Chegada</label><input type="text" id="tbxArriveFlight"
+                        placeholder="Ex: AA1234"></div>
+                <div class="fg"><label>Cidade de Chegada</label><input type="text" id="tbxArriveCity"
+                        placeholder="Ex: NEW YORK"></div>
+                <div class="fg"><label>Data de Partida *</label>
+                    <div class="date-row"><select id="ddlDEPARTURE_US_DTEDay" class="sel-day"></select><select
+                            id="ddlDEPARTURE_US_DTEMonth" class="sel-month"></select><input type="text"
+                            id="tbxDEPARTURE_US_DTEYear" maxlength="4" placeholder="AAAA"></div>
+                </div>
+                <div class="fg"><label>Voo de Partida</label><input type="text" id="tbxDepartFlight"
+                        placeholder="Ex: AA5678"></div>
+                <div class="fg"><label>Cidade de Partida</label><input type="text" id="tbxDepartCity"
+                        placeholder="Ex: SAO PAULO"></div>
+                <div class="fg"><label>Local Específico</label><input type="text"
+                        id="dtlTravelLoc_ctl00_tbxSPECTRAVEL_LOCATION" placeholder="Local a ser visitado"></div>
+            </div>
+            <div class="br" id="br-rblSpecificTravel-N">
+                <div class="fg"><label>Data Prevista de Chegada</label>
+                    <div class="date-row"><select id="ddlARRIVAL_US_NSDTEDay" class="sel-day"></select><select
+                            id="ddlARRIVAL_US_NSDTEMonth" class="sel-month"></select><input type="text"
+                            id="tbxARRIVAL_US_NSDTEYear" maxlength="4" placeholder="AAAA"></div>
+                </div>
+                <div class="fg"><label>Tempo de Permanência</label><input type="text" id="tbxAPP_LOS"
+                        placeholder="Tempo de permanência" style="max-width:80px"><select id="ddlAPP_LOS_CD">
+                        <option value="">-</option>
+                        <option value="Y">Year(s)</option>
+                        <option value="M">Month(s)</option>
+                        <option value="W">Week(s)</option>
+                        <option value="D">Day(s)</option>
+                        <option value="H">&lt;24 Hours</option>
+                    </select></div>
+            </div>
+            <div class="fg"><label>Endereço nos EUA - Rua 1 *</label><input type="text" id="tbxStreetAddress1"
+                    maxlength="40" placeholder="Ex: 123 MAIN STREET"></div>
+            <div class="fg"><label>Endereço nos EUA - Rua 2</label><input type="text" id="tbxStreetAddress2"
+                    placeholder="Complemento (apartamento, suíte)" maxlength="40"></div>
+            <div class="fg"><label>Cidade *</label><input type="text" id="tbxCity" maxlength="20"
+                    placeholder="Ex: NEW YORK"></div>
+            <div class="fg"><label>Estado *</label><select id="ddlTravelState" class="sel-state"></select></div>
+            <div class="fg"><label>CEP *</label><input type="text" id="tbZIPCode" maxlength="10"
+                    placeholder="Ex: 10001"></div>
+        </div>
+        <div class="section">
+            <h3>Pagamento da Viagem</h3>
+            <div class="fg"><label>Quem paga? *</label><select id="ddlWhoIsPaying">
+                    <option value="">- Selecione -</option>
+                    <option value="S">EU MESMO</option>
+                    <option value="O">OUTRA PESSOA</option>
+                    <option value="C">OUTRA EMPRESA/ORGANIZAÇÃO</option>
+                    <option value="P">EMPREGADOR ATUAL</option>
+                    <option value="H">PETICIONÁRIO NOS EUA</option>
+                </select></div>
+            <div class="br" id="br-payerPerson">
+                <div class="fg"><label>Sobrenome do Pagador</label><input type="text" id="tbxPayerSurname"
+                        maxlength="33" placeholder="Sobrenome do pagador"></div>
+                <div class="fg"><label>Nome do Pagador</label><input type="text" id="tbxPayerGivenName" maxlength="33"
+                        placeholder="Nome do pagador"></div>
+                <div class="fg"><label>Telefone</label><input type="text" id="tbxPayerPhone" maxlength="20"
+                        placeholder="Ex: 011-5511999998888"></div>
+                <div class="fg"><label>Email</label><input type="text" id="tbxPAYER_EMAIL_ADDR"
+                        placeholder="email@exemplo.com"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                            id="cbxDNAPAYER_EMAIL_ADDR_NA" data-target="tbxPAYER_EMAIL_ADDR">
+                        N/A</label></div>
+                <div class="fg"><label>Relação</label><select id="ddlPayerRelationship">
+                        <option value="">-</option>
+                        <option value="C">FILHO(A)</option>
+                        <option value="P">PAI/MÃE</option>
+                        <option value="S">CÔNJUGE</option>
+                        <option value="R">OUTRO PARENTE</option>
+                        <option value="F">AMIGO(A)</option>
+                        <option value="O">OUTRO</option>
+                    </select></div>
+                <div class="fg"><label>Mesmo endereço?</label><span class="rg"><label><input type="radio"
+                                name="rblPayerAddrSameAsInd" value="Y"> Sim</label><label><input type="radio"
+                                name="rblPayerAddrSameAsInd" value="N" data-branch="payerAddr"> Não</label></span></div>
+                <div class="br" id="br-payerAddr">
+                    <div class="fg"><label>Rua 1</label><input type="text" id="tbxPayerStreetAddress1"
+                            placeholder="Endereço linha 1"></div>
+                    <div class="fg"><label>Rua 2</label><input type="text" id="tbxPayerStreetAddress2"
+                            placeholder="Complemento"></div>
+                    <div class="fg"><label>Cidade</label><input type="text" id="tbxPayerCity" placeholder="Cidade">
+                    </div>
+                    <div class="fg"><label>Estado</label><input type="text" id="tbxPayerStateProvince"
+                            placeholder="Estado/Província"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                                id="cbxDNAPayerStateProvince" data-target="tbxPayerStateProvince"> N/A</label></div>
+                    <div class="fg"><label>CEP</label><input type="text" id="tbxPayerPostalZIPCode"
+                            placeholder="CEP"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                                id="cbxDNAPayerPostalZIPCode" data-target="tbxPayerPostalZIPCode"> N/A</label></div>
+                    <div class="fg"><label>País</label><select id="ddlPayerCountry" class="sel-country"></select></div>
+                </div>
+            </div>
+            <div class="br" id="br-payerCompany">
+                <div class="fg"><label>Nome da Empresa</label><input type="text" id="tbxPayingCompany"
+                        placeholder="Nome da empresa"></div>
+                <div class="fg"><label>Telefone</label><input type="text" id="tbxPayerPhoneC"
+                        placeholder="Telefone da empresa"></div>
+                <div class="fg"><label>Relação com a Empresa</label><input type="text" id="tbxCompanyRelation"
+                        placeholder="Relação com a empresa"></div>
+                <div class="fg"><label>Rua 1</label><input type="text" id="tbxPayerStreetAddress1C"
+                        placeholder="Endereço da empresa"></div>
+                <div class="fg"><label>Rua 2</label><input type="text" id="tbxPayerStreetAddress2C"
+                        placeholder="Complemento"></div>
+                <div class="fg"><label>Cidade</label><input type="text" id="tbxPayerCityC" placeholder="Cidade"></div>
+                <div class="fg"><label>Estado</label><input type="text" id="tbxPayerStateProvinceC"
+                        placeholder="Estado/Província"></div>
+                <div class="fg"><label>CEP</label><input type="text" id="tbxPayerPostalZIPCodeC" placeholder="CEP">
+                </div>
+                <div class="fg"><label>País</label><select id="ddlPayerCountryC" class="sel-country"></select></div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 4: TravelCompanions ===== -->
+    <div class="page" id="pg-TravelCompanions">
+        <h2>4. Acompanhantes de Viagem</h2>
+        <div class="section">
+            <h3>Acompanhantes</h3>
+            <div class="fg"><label>Viajando com outras pessoas? *</label><span class="rg"><label><input type="radio"
+                            name="rblOtherPersonsTravelingWithYou" value="Y"
+                            data-branch="rblOtherPersonsTravelingWithYou"> Sim</label><label><input type="radio"
+                            name="rblOtherPersonsTravelingWithYou" value="N"
+                            data-branch="rblOtherPersonsTravelingWithYou"> Não</label></span></div>
+            <div class="br" id="br-rblOtherPersonsTravelingWithYou">
+                <div class="fg"><label>Parte de um grupo? *</label><span class="rg"><label><input type="radio"
+                                name="rblGroupTravel" value="Y" data-branch="rblGroupTravel"> Sim</label><label><input
+                                type="radio" name="rblGroupTravel" value="N" data-branch="rblGroupTravel">
+                            Não</label></span></div>
+                <div class="br" id="br-rblGroupTravel">
+                    <div class="fg"><label>Nome do Grupo</label><input type="text" id="tbxGroupName"
+                            placeholder="Nome do grupo"></div>
+                </div>
+                <div class="as" data-list="dlTravelCompanions">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Sobrenome</label><input type="text"
+                                id="dlTravelCompanions_ctl00_tbxTC_SURNAME" placeholder="Sobrenome do acompanhante">
+                        </div>
+                        <div class="fg"><label>Nome</label><input type="text"
+                                id="dlTravelCompanions_ctl00_tbxTC_GIVEN_NAME" placeholder="Nome do acompanhante"></div>
+                        <div class="fg"><label>Relação</label><select id="dlTravelCompanions_ctl00_ddlTCRelationship">
+                                <option value="">-</option>
+                                <option value="S">CÔNJUGE</option>
+                                <option value="C">FILHO(A)</option>
+                                <option value="B">COLEGA DE TRABALHO</option>
+                                <option value="O">OUTRO PARENTE</option>
+                                <option value="F">AMIGO(A)</option>
+                                <option value="X">OUTRO</option>
+                            </select></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dlTravelCompanions')">+
+                        Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 5: PreviousUSTravel ===== -->
+    <div class="page" id="pg-PreviousUSTravel">
+        <h2>5. Viagens Anteriores aos EUA</h2>
+        <div class="section">
+            <h3>Viagens Anteriores</h3>
+            <div class="fg"><label>Já esteve nos EUA? *</label><span class="rg"><label><input type="radio"
+                            name="rblPREV_US_TRAVEL_IND" value="Y" data-branch="rblPREV_US_TRAVEL_IND">
+                        Sim</label><label><input type="radio" name="rblPREV_US_TRAVEL_IND" value="N"
+                            data-branch="rblPREV_US_TRAVEL_IND"> Não</label></span></div>
+            <div class="br" id="br-rblPREV_US_TRAVEL_IND">
+                <div class="as" data-list="dtlPREV_US_VISIT">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Data de Chegada</label>
+                            <div class="date-row"><select id="dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_DTEDay"
+                                    class="sel-day"></select><select
+                                    id="dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_DTEMonth"
+                                    class="sel-month"></select><input type="text"
+                                    id="dtlPREV_US_VISIT_ctl00_tbxPREV_US_VISIT_DTEYear" maxlength="4"
+                                    placeholder="AAAA"></div>
+                        </div>
+                        <div class="fg"><label>Tempo de Permanência</label><input type="text"
+                                id="dtlPREV_US_VISIT_ctl00_tbxPREV_US_VISIT_LOS"
+                                placeholder="Tempo de permanência anterior" style="max-width:80px"><select
+                                id="dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_LOS_CD">
+                                <option value="">-</option>
+                                <option value="Y">Year(s)</option>
+                                <option value="M">Month(s)</option>
+                                <option value="W">Week(s)</option>
+                                <option value="D">Day(s)</option>
+                                <option value="H">&lt;24 Hours</option>
+                            </select></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlPREV_US_VISIT')">+
+                        Adicionar</button>
+                </div>
+                <div class="fg"><label>Carteira de motorista dos EUA?</label><span class="rg"><label><input type="radio"
+                                name="rblPREV_US_DRIVER_LIC_IND" value="Y" data-branch="rblPREV_US_DRIVER_LIC_IND">
+                            Sim</label><label><input type="radio" name="rblPREV_US_DRIVER_LIC_IND" value="N"
+                                data-branch="rblPREV_US_DRIVER_LIC_IND"> Não</label></span></div>
+                <div class="br" id="br-rblPREV_US_DRIVER_LIC_IND">
+                    <div class="as" data-list="dtlUS_DRIVER_LICENSE">
+                        <div class="entry" data-idx="0">
+                            <div class="fg"><label>Número da Carteira</label><input type="text"
+                                    id="dtlUS_DRIVER_LICENSE_ctl00_tbxUS_DRIVER_LICENSE" placeholder="Nº da licença">
+                            </div>
+                            <div class="fg"><label>Estado</label><select
+                                    id="dtlUS_DRIVER_LICENSE_ctl00_ddlUS_DRIVER_LICENSE_STATE"
+                                    class="sel-state"></select></div>
+                        </div><button type="button" class="btn-add" onclick="addEntry('dtlUS_DRIVER_LICENSE')">+
+                            Adicionar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Visto Anterior</h3>
+            <div class="fg"><label>Já teve visto americano? *</label><span class="rg"><label><input type="radio"
+                            name="rblPREV_VISA_IND" value="Y" data-branch="rblPREV_VISA_IND"> Sim</label><label><input
+                            type="radio" name="rblPREV_VISA_IND" value="N" data-branch="rblPREV_VISA_IND">
+                        Não</label></span></div>
+            <div class="br" id="br-rblPREV_VISA_IND">
+                <div class="fg"><label>Data de Emissão</label>
+                    <div class="date-row"><select id="ddlPREV_VISA_ISSUED_DTEDay" class="sel-day"></select><select
+                            id="ddlPREV_VISA_ISSUED_DTEMonth" class="sel-month"></select><input type="text"
+                            id="tbxPREV_VISA_ISSUED_DTEYear" maxlength="4" placeholder="AAAA"></div>
+                </div>
+                <div class="fg"><label>Número do Visto (Foil)</label><input type="text" id="tbxPREV_VISA_FOIL_NUMBER"
+                        placeholder="Nº do visto anterior"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                            id="cbxPREV_VISA_FOIL_NUMBER_NA" data-target="tbxPREV_VISA_FOIL_NUMBER"> N/A</label><label
+                        class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxPREV_VISA_FOIL_NUMBER">
+                        N/A</label></div>
+                <div class="fg"><label>Mesmo tipo de visto?</label><span class="rg"><label><input type="radio"
+                                name="rblPREV_VISA_SAME_TYPE_IND" value="Y"> Sim</label><label><input type="radio"
+                                name="rblPREV_VISA_SAME_TYPE_IND" value="N"> Não</label></span></div>
+                <div class="fg"><label>Mesmo país de emissão?</label><span class="rg"><label><input type="radio"
+                                name="rblPREV_VISA_SAME_CNTRY_IND" value="Y"> Sim</label><label><input type="radio"
+                                name="rblPREV_VISA_SAME_CNTRY_IND" value="N"> Não</label></span></div>
+                <div class="fg"><label>10 impressões digitais?</label><span class="rg"><label><input type="radio"
+                                name="rblPREV_VISA_TEN_PRINT_IND" value="Y"> Sim</label><label><input type="radio"
+                                name="rblPREV_VISA_TEN_PRINT_IND" value="N"> Não</label></span></div>
+                <div class="fg"><label>Visto perdido/roubado?</label><span class="rg"><label><input type="radio"
+                                name="rblPREV_VISA_LOST_IND" value="Y"> Sim</label><label><input type="radio"
+                                name="rblPREV_VISA_LOST_IND" value="N"> Não</label></span></div>
+                <div class="fg"><label>Visto cancelado?</label><span class="rg"><label><input type="radio"
+                                name="rblPREV_VISA_CANCELLED_IND" value="Y"> Sim</label><label><input type="radio"
+                                name="rblPREV_VISA_CANCELLED_IND" value="N"> Não</label></span></div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Histórico</h3>
+            <div class="fg"><label>Visto recusado? *</label><span class="rg"><label><input type="radio"
+                            name="rblPREV_VISA_REFUSED_IND" value="Y" data-branch="rblPREV_VISA_REFUSED_IND">
+                        Sim</label><label><input type="radio" name="rblPREV_VISA_REFUSED_IND" value="N"
+                            data-branch="rblPREV_VISA_REFUSED_IND"> Não</label></span></div>
+            <div class="br" id="br-rblPREV_VISA_REFUSED_IND">
+                <div class="fg"><label>Explicação</label><textarea id="tbxPREV_VISA_REFUSED_EXPL"
+                        placeholder="Explique a recusa"></textarea></div>
+            </div>
+            <div class="fg"><label>Petição de imigrante? *</label><span class="rg"><label><input type="radio"
+                            name="rblIV_PETITION_IND" value="Y" data-branch="rblIV_PETITION_IND">
+                        Sim</label><label><input type="radio" name="rblIV_PETITION_IND" value="N"
+                            data-branch="rblIV_PETITION_IND"> Não</label></span></div>
+            <div class="br" id="br-rblIV_PETITION_IND">
+                <div class="fg"><label>Explicação</label><textarea id="tbxIV_PETITION_EXPL"
+                        placeholder="Explique a petição"></textarea></div>
+            </div>
+            <div class="fg"><label>Residente permanente? *</label><span class="rg"><label><input type="radio"
+                            name="rblPERM_RESIDENT_IND" value="Y" data-branch="rblPERM_RESIDENT_IND">
+                        Sim</label><label><input type="radio" name="rblPERM_RESIDENT_IND" value="N"
+                            data-branch="rblPERM_RESIDENT_IND"> Não</label></span></div>
+            <div class="br" id="br-rblPERM_RESIDENT_IND">
+                <div class="fg"><label>Explicação</label><textarea id="tbxPERM_RESIDENT_EXPL"
+                        placeholder="Explique"></textarea></div>
+            </div>
+            <div class="fg"><label>Negado entrada VWP? *</label><span class="rg"><label><input type="radio"
+                            name="rblVWP_DENIAL_IND" value="Y" data-branch="rblVWP_DENIAL_IND"> Sim</label><label><input
+                            type="radio" name="rblVWP_DENIAL_IND" value="N" data-branch="rblVWP_DENIAL_IND">
+                        Não</label></span></div>
+            <div class="br" id="br-rblVWP_DENIAL_IND">
+                <div class="fg"><label>Explicação</label><textarea id="tbxVWP_DENIAL_EXPL"
+                        placeholder="Explique a negação"></textarea></div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 6: AddressPhone ===== -->
+    <div class="page" id="pg-AddressPhone">
+        <h2>6. Endereço e Telefone</h2>
+        <div class="section">
+            <h3>Endereço Residencial</h3>
+            <div class="fg"><label>Rua 1 *</label><input type="text" id="tbxAPP_ADDR_LN1" maxlength="40" required
+                    placeholder="Rua, número">
+            </div>
+            <div class="fg"><label>Rua 2</label><input type="text" id="tbxAPP_ADDR_LN2" placeholder="Complemento"></div>
+            <div class="fg"><label>Cidade *</label><input type="text" id="tbxAPP_ADDR_CITY" maxlength="20" required
+                    placeholder="Ex: SAO PAULO">
+            </div>
+            <div class="fg"><label>Estado</label><input type="text" id="tbxAPP_ADDR_STATE" maxlength="20"
+                    placeholder="Ex: SP"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbexAPP_ADDR_STATE_NA" data-target="tbxAPP_ADDR_STATE">
+                    N/A</label></div>
+            <div class="fg"><label>CEP</label><input type="text" id="tbxAPP_ADDR_POSTAL_CD" maxlength="10"
+                    placeholder="Ex: 01310-100"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbexAPP_ADDR_POSTAL_CD_NA" data-target="tbxAPP_ADDR_POSTAL_CD"> N/A</label></div>
+            <div class="fg"><label>País *</label><select id="ddlCountry" class="sel-country"></select></div>
+        </div>
+        <div class="section">
+            <h3>Endereço de Correspondência</h3>
+            <div class="fg"><label>Igual ao residencial? *</label><span class="rg"><label><input type="radio"
+                            name="rblMailingAddrSame" value="Y"> Sim</label><label><input type="radio"
+                            name="rblMailingAddrSame" value="N" data-branch="mailingAddr"> Não</label></span></div>
+            <div class="br" id="br-mailingAddr">
+                <div class="fg"><label>Rua 1</label><input type="text" id="tbxMAILING_ADDR_LN1"
+                        placeholder="Endereço para correspondência"></div>
+                <div class="fg"><label>Rua 2</label><input type="text" id="tbxMAILING_ADDR_LN2"
+                        placeholder="Complemento"></div>
+                <div class="fg"><label>Cidade</label><input type="text" id="tbxMAILING_ADDR_CITY" placeholder="Cidade">
+                </div>
+                <div class="fg"><label>Estado</label><input type="text" id="tbxMAILING_ADDR_STATE"
+                        placeholder="Estado"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                            data-target="tbxMAILING_ADDR_STATE">
+                        N/A</label></div>
+                <div class="fg"><label>CEP</label><input type="text" id="tbxMAILING_ADDR_POSTAL_CD"
+                        placeholder="CEP"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                            data-target="tbxMAILING_ADDR_POSTAL_CD">
+                        N/A</label></div>
+                <div class="fg"><label>País</label><select id="ddlMailCountry" class="sel-country"></select></div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Telefones</h3>
+            <div class="fg"><label>Telefone Principal *</label><input type="text" id="tbxAPP_HOME_TEL" maxlength="20"
+                    required placeholder="Ex: 011-5511999998888"></div>
+            <div class="fg"><label>Celular</label><input type="text" id="tbxAPP_MOBILE_TEL"
+                    placeholder="Ex: 011-5511999998888"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbexAPP_MOBILE_TEL_NA" data-target="tbxAPP_MOBILE_TEL">
+                    N/A</label></div>
+            <div class="fg"><label>Telefone Comercial</label><input type="text" id="tbxAPP_BUS_TEL"
+                    placeholder="Telefone comercial"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbexAPP_BUS_TEL_NA" data-target="tbxAPP_BUS_TEL"> N/A</label></div>
+            <div class="fg"><label>Telefones adicionais?</label><span class="rg"><label><input type="radio"
+                            name="rblAddPhone" value="Y" data-branch="rblAddPhone"> Sim</label><label><input
+                            type="radio" name="rblAddPhone" value="N" data-branch="rblAddPhone"> Não</label></span>
+            </div>
+            <div class="br" id="br-rblAddPhone">
+                <div class="as" data-list="dtlAddPhone">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Telefone Adicional</label><input type="text"
+                                id="dtlAddPhone_ctl00_tbxAddPhoneInfo" placeholder="Telefone adicional"></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlAddPhone')">+ Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Email</h3>
+            <div class="fg"><label>Email *</label><input type="text" id="tbxAPP_EMAIL_ADDR" maxlength="50" required
+                    type="email" placeholder="email@exemplo.com"></div>
+            <div class="fg"><label>Emails adicionais?</label><span class="rg"><label><input type="radio"
+                            name="rblAddEmail" value="Y" data-branch="rblAddEmail"> Sim</label><label><input
+                            type="radio" name="rblAddEmail" value="N" data-branch="rblAddEmail"> Não</label></span>
+            </div>
+            <div class="br" id="br-rblAddEmail">
+                <div class="as" data-list="dtlAddEmail">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Email Adicional</label><input type="text"
+                                id="dtlAddEmail_ctl00_tbxAddEmailInfo" placeholder="Email adicional"></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlAddEmail')">+ Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Redes Sociais</h3>
+            <div class="fg"><label>Plataforma</label><select id="ddlSocialMedia" class="sel-social"></select></div>
+            <div class="fg"><label>Identificador/Handle</label><input type="text" id="tbxSocialMediaIdent"
+                    placeholder="Usuário ou ID da rede social"></div>
+            <div class="fg"><label>Mais contas?</label><span class="rg"><label><input type="radio" name="rblAddSocial"
+                            value="Y" data-branch="rblAddSocial"> Sim</label><label><input type="radio"
+                            name="rblAddSocial" value="N" data-branch="rblAddSocial"> Não</label></span></div>
+            <div class="br" id="br-rblAddSocial">
+                <div class="as" data-list="dtlAddSocial">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Plataforma</label><select id="dtlAddSocial_ctl00_ddlSocialMedia"
+                                class="sel-social"></select></div>
+                        <div class="fg"><label>Handle</label><input type="text"
+                                id="dtlAddSocial_ctl00_tbxSocialMediaIdent" placeholder="Usuário adicional"></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlAddSocial')">+ Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 7: Passport ===== -->
+    <div class="page" id="pg-Passport">
+        <h2>7. Passaporte</h2>
+        <div class="section">
+            <h3>Informações do Passaporte</h3>
+            <div class="fg"><label>Tipo *</label><select id="ddlPPT_TYPE">
+                    <option value="">-</option>
+                    <option value="R">REGULAR</option>
+                    <option value="O">OFICIAL</option>
+                    <option value="D">DIPLOMÁTICO</option>
+                    <option value="L">LAISSEZ-PASSER</option>
+                    <option value="T">OUTRO</option>
+                </select></div>
+            <div class="br" id="br-pptOther">
+                <div class="fg"><label>Explicação</label><textarea id="tbxPptOtherExpl"
+                        placeholder="Explique o tipo de documento"></textarea></div>
+            </div>
+            <div class="fg"><label>Número do Passaporte *</label><input type="text" id="tbxPPT_NUM" maxlength="12"
+                    required placeholder="Ex: FX123456"></div>
+            <div class="fg"><label>Número do Livro</label><input type="text" id="tbxPPT_BOOK_NUM" maxlength="10"
+                    placeholder="Número do livro"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbexPPT_BOOK_NUM_NA" data-target="tbxPPT_BOOK_NUM"> N/A</label></div>
+            <div class="fg"><label>País Emissor *</label><select id="ddlPPT_ISSUED_CNTRY" class="sel-country"></select>
+            </div>
+            <div class="fg"><label>Cidade de Emissão *</label><input type="text" id="tbxPPT_ISSUED_IN_CITY"
+                    maxlength="20" required placeholder="Ex: BRASILIA"></div>
+            <div class="fg"><label>Estado de Emissão</label><input type="text" id="tbxPPT_ISSUED_IN_STATE"
+                    maxlength="20" placeholder="Ex: DF"></div>
+            <div class="fg"><label>País de Emissão *</label><select id="ddlPPT_ISSUED_IN_CNTRY"
+                    class="sel-country"></select></div>
+            <div class="fg"><label>Data de Emissão *</label>
+                <div class="date-row"><select id="ddlPPT_ISSUED_DTEDay" class="sel-day"></select><select
+                        id="ddlPPT_ISSUED_DTEMonth" class="sel-month"></select><input type="text" id="tbxPPT_ISSUEDYear"
+                        maxlength="4" placeholder="AAAA"></div>
+            </div>
+            <div class="fg"><label>Data de Validade *</label>
+                <div class="date-row"><select id="ddlPPT_EXPIRE_DTEDay" class="sel-day"></select><select
+                        id="ddlPPT_EXPIRE_DTEMonth" class="sel-month"></select><input type="text" id="tbxPPT_EXPIREYear"
+                        maxlength="4" placeholder="AAAA"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                            id="cbxPPT_EXPIRE_NA" data-target="tbxPPT_EXPIREYear"> Sem Expiração</label></div><label
+                    class="na-lbl"><input type="checkbox" class="na-cb"
+                        data-target="ddlPPT_EXPIRE_DTEDay,ddlPPT_EXPIRE_DTEMonth,tbxPPT_EXPIREYear"> Sem
+                    Validade</label>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Passaporte Perdido</h3>
+            <div class="fg"><label>Passaporte perdido/roubado? *</label><span class="rg"><label><input type="radio"
+                            name="rblLOST_PPT_IND" value="Y" data-branch="rblLOST_PPT_IND"> Sim</label><label><input
+                            type="radio" name="rblLOST_PPT_IND" value="N" data-branch="rblLOST_PPT_IND">
+                        Não</label></span></div>
+            <div class="br" id="br-rblLOST_PPT_IND">
+                <div class="as" data-list="dtlLostPPT">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Número</label><input type="text" id="dtlLostPPT_ctl00_tbxLOST_PPT_NUM"
+                                placeholder="Nº do passaporte perdido/roubado"><label class="na-lbl"><input
+                                    type="checkbox" class="na-cb" id="dtlLostPPT_ctl00_cbxLOST_PPT_NUM_UNKN_IND"
+                                    data-target="dtlLostPPT_ctl00_tbxLOST_PPT_NUM"> Não Sabe</label><label
+                                class="na-lbl"><input type="checkbox" class="na-cb"
+                                    data-target="dtlLostPPT_ctl00_tbxLOST_PPT_NUM"> Desconhecido</label>
+                        </div>
+                        <div class="fg"><label>País</label><select id="dtlLostPPT_ctl00_ddlLOST_PPT_NATL"
+                                class="sel-country"></select></div>
+                        <div class="fg"><label>Explicação</label><textarea id="dtlLostPPT_ctl00_tbxLOST_PPT_EXPL"
+                                placeholder="Descreva as circunstâncias"></textarea></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlLostPPT')">+ Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 8: USContact ===== -->
+    <div class="page" id="pg-USContact">
+        <h2>8. Contato nos EUA</h2>
+        <div class="section">
+            <h3>Pessoa de Contato</h3>
+            <div class="fg"><label>Sobrenome *</label><input type="text" id="tbxUS_POC_SURNAME" maxlength="33"
+                    placeholder="Sobrenome do contato"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbxUS_POC_NAME_NA" data-target="tbxUS_POC_SURNAME"> Não Sabe</label><label
+                    class="na-lbl"><input type="checkbox" class="na-cb"
+                        data-target="tbxUS_POC_SURNAME,tbxUS_POC_GIVEN_NAME"> Não Sabe</label></div>
+            <div class="fg"><label>Nome *</label><input type="text" id="tbxUS_POC_GIVEN_NAME" maxlength="33"
+                    placeholder="Nome do contato"></div>
+            <div class="fg"><label>Organização</label><input type="text" id="tbxUS_POC_ORGANIZATION" maxlength="40"
+                    placeholder="Nome da organização"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbxUS_POC_ORG_NA_IND" data-target="tbxUS_POC_ORGANIZATION"> Não Sabe</label><label
+                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxUS_POC_ORGANIZATION">
+                    N/A</label></div>
+            <div class="fg"><label>Relação *</label><select id="ddlUS_POC_REL_TO_APP">
+                    <option value="">-</option>
+                    <option value="R">PARENTE</option>
+                    <option value="S">CÔNJUGE</option>
+                    <option value="C">AMIGO(A)</option>
+                    <option value="B">COLEGA DE TRABALHO</option>
+                    <option value="P">EMPREGADOR</option>
+                    <option value="H">FUNCIONÁRIO DA ESCOLA</option>
+                    <option value="O">OUTRO</option>
+                </select></div>
+            <div class="fg"><label>Endereço - Rua 1 *</label><input type="text" id="tbxUS_POC_ADDR_LN1" maxlength="40"
+                    placeholder="Endereço"></div>
+            <div class="fg"><label>Endereço - Rua 2</label><input type="text" id="tbxUS_POC_ADDR_LN2"
+                    placeholder="Complemento"></div>
+            <div class="fg"><label>Cidade *</label><input type="text" id="tbxUS_POC_ADDR_CITY" maxlength="20"
+                    placeholder="Cidade">
+            </div>
+            <div class="fg"><label>Estado *</label><select id="ddlUS_POC_ADDR_STATE" class="sel-state"></select></div>
+            <div class="fg"><label>CEP *</label><input type="text" id="tbxUS_POC_ADDR_POSTAL_CD" maxlength="10"
+                    placeholder="CEP (ZIP)"></div>
+            <div class="fg"><label>Telefone *</label><input type="text" id="tbxUS_POC_HOME_TEL" maxlength="20"
+                    placeholder="Telefone">
+            </div>
+            <div class="fg"><label>Email</label><input type="text" id="tbxUS_POC_EMAIL_ADDR"
+                    placeholder="email@exemplo.com"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbexUS_POC_EMAIL_ADDR_NA" data-target="tbxUS_POC_EMAIL_ADDR"> N/A</label>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 9: Family1 ===== -->
+    <div class="page" id="pg-Family1">
+        <h2>9. Família - Pais</h2>
+        <div class="section">
+            <h3>Pai</h3>
+            <div class="fg"><label>Sobrenome do Pai *</label><input type="text" id="tbxFATHER_SURNAME" maxlength="33"
+                    required placeholder="Sobrenome do pai"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbxFATHER_SURNAME_UNK_IND" data-target="tbxFATHER_SURNAME"> Não Sabe</label><label
+                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxFATHER_SURNAME"> Desc.</label>
+            </div>
+            <div class="fg"><label>Nome do Pai *</label><input type="text" id="tbxFATHER_GIVEN_NAME" maxlength="33"
+                    required placeholder="Nome do pai"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbxFATHER_GIVEN_NAME_UNK_IND" data-target="tbxFATHER_GIVEN_NAME"> Não Sabe</label><label
+                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxFATHER_GIVEN_NAME">
+                    Desc.</label></div>
+            <div class="fg"><label>Data de Nascimento</label>
+                <div class="date-row"><select id="ddlFathersDOBDay" class="sel-day"></select><select
+                        id="ddlFathersDOBMonth" class="sel-month"></select><input type="text" id="tbxFathersDOBYear"
+                        maxlength="4" placeholder="AAAA"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                            id="cbxFATHER_DOB_UNK_IND" data-target="tbxFathersDOBYear"> Não Sabe</label></div><label
+                    class="na-lbl"><input type="checkbox" class="na-cb"
+                        data-target="ddlFathersDOBDay,ddlFathersDOBMonth,tbxFathersDOBYear"> Desc.</label>
+            </div>
+            <div class="fg"><label>Pai mora nos EUA? *</label><span class="rg"><label><input type="radio"
+                            name="rblFATHER_LIVE_IN_US_IND" value="Y" data-branch="rblFATHER_LIVE_IN_US_IND">
+                        Sim</label><label><input type="radio" name="rblFATHER_LIVE_IN_US_IND" value="N"
+                            data-branch="rblFATHER_LIVE_IN_US_IND"> Não</label></span></div>
+            <div class="br" id="br-rblFATHER_LIVE_IN_US_IND">
+                <div class="fg"><label>Status nos EUA</label><select id="ddlFATHER_US_STATUS">
+                        <option value="">-</option>
+                        <option value="S">CIDADÃO AMERICANO</option>
+                        <option value="C">U.S. LEGAL PERMANENT RESIDENT</option>
+                        <option value="P">NÃO-IMIGRANTE</option>
+                        <option value="O">OTHER/I DON'T KNOW</option>
+                    </select></div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Mãe</h3>
+            <div class="fg"><label>Sobrenome da Mãe *</label><input type="text" id="tbxMOTHER_SURNAME" maxlength="33"
+                    required placeholder="Sobrenome da mãe"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbxMOTHER_SURNAME_UNK_IND" data-target="tbxMOTHER_SURNAME"> Não Sabe</label><label
+                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxMOTHER_SURNAME"> Desc.</label>
+            </div>
+            <div class="fg"><label>Nome da Mãe *</label><input type="text" id="tbxMOTHER_GIVEN_NAME" maxlength="33"
+                    required placeholder="Nome da mãe"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbxMOTHER_GIVEN_NAME_UNK_IND" data-target="tbxMOTHER_GIVEN_NAME"> Não Sabe</label><label
+                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxMOTHER_GIVEN_NAME">
+                    Desc.</label></div>
+            <div class="fg"><label>Data de Nascimento</label>
+                <div class="date-row"><select id="ddlMothersDOBDay" class="sel-day"></select><select
+                        id="ddlMothersDOBMonth" class="sel-month"></select><input type="text" id="tbxMothersDOBYear"
+                        maxlength="4" placeholder="AAAA"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                            id="cbxMOTHER_DOB_UNK_IND" data-target="tbxMothersDOBYear"> Não Sabe</label></div><label
+                    class="na-lbl"><input type="checkbox" class="na-cb"
+                        data-target="ddlMothersDOBDay,ddlMothersDOBMonth,tbxMothersDOBYear"> Desc.</label>
+            </div>
+            <div class="fg"><label>Mãe mora nos EUA? *</label><span class="rg"><label><input type="radio"
+                            name="rblMOTHER_LIVE_IN_US_IND" value="Y" data-branch="rblMOTHER_LIVE_IN_US_IND">
+                        Sim</label><label><input type="radio" name="rblMOTHER_LIVE_IN_US_IND" value="N"
+                            data-branch="rblMOTHER_LIVE_IN_US_IND"> Não</label></span></div>
+            <div class="br" id="br-rblMOTHER_LIVE_IN_US_IND">
+                <div class="fg"><label>Status nos EUA</label><select id="ddlMOTHER_US_STATUS">
+                        <option value="">-</option>
+                        <option value="S">CIDADÃO AMERICANO</option>
+                        <option value="C">U.S. LEGAL PERMANENT RESIDENT</option>
+                        <option value="P">NÃO-IMIGRANTE</option>
+                        <option value="O">OTHER/I DON'T KNOW</option>
+                    </select></div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Parentes nos EUA</h3>
+            <div class="fg"><label>Parentes imediatos nos EUA? *</label><span class="rg"><label><input type="radio"
+                            name="rblUS_IMMED_RELATIVE_IND" value="Y" data-branch="rblUS_IMMED_RELATIVE_IND">
+                        Sim</label><label><input type="radio" name="rblUS_IMMED_RELATIVE_IND" value="N"
+                            data-branch="rblUS_IMMED_RELATIVE_IND"> Não</label></span></div>
+            <div class="br" id="br-rblUS_IMMED_RELATIVE_IND">
+                <div class="as" data-list="dlUSRelatives">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Sobrenome</label><input type="text"
+                                id="dlUSRelatives_ctl00_tbxUS_REL_SURNAME" placeholder="Sobrenome do parente nos EUA">
+                        </div>
+                        <div class="fg"><label>Nome</label><input type="text"
+                                id="dlUSRelatives_ctl00_tbxUS_REL_GIVEN_NAME" placeholder="Nome do parente nos EUA">
+                        </div>
+                        <div class="fg"><label>Parentesco</label><select id="dlUSRelatives_ctl00_ddlUS_REL_TYPE">
+                                <option value="">-</option>
+                                <option value="S">CÔNJUGE</option>
+                                <option value="F">FIANCÉ/FIANCÉE</option>
+                                <option value="C">FILHO(A)</option>
+                                <option value="B">IRMÃO/IRMÃ</option>
+                            </select></div>
+                        <div class="fg"><label>Status</label><select id="dlUSRelatives_ctl00_ddlUS_REL_STATUS">
+                                <option value="">-</option>
+                                <option value="S">CIDADÃO AMERICANO</option>
+                                <option value="C">U.S. LEGAL PERMANENT RESIDENT</option>
+                                <option value="P">NÃO-IMIGRANTE</option>
+                                <option value="O">OTHER/I DON'T KNOW</option>
+                            </select></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dlUSRelatives')">+ Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 10: Family2 ===== -->
+    <div class="page" id="pg-Family2">
+        <h2>10. Cônjuge</h2>
+        <div class="section">
+            <h3>Informações do Cônjuge</h3>
+            <div class="fg"><label>Sobrenome *</label><input type="text" id="tbxSpouseSurname" maxlength="33"
+                    placeholder="Sobrenome do cônjuge"></div>
+            <div class="fg"><label>Nome *</label><input type="text" id="tbxSpouseGivenName" maxlength="33"
+                    placeholder="Nome do cônjuge"></div>
+            <div class="fg"><label>Data de Nascimento *</label>
+                <div class="date-row"><select id="ddlSpouseDOBDay" class="sel-day"></select><select
+                        id="ddlSpouseDOBMonth" class="sel-month"></select><input type="text" id="tbxSpouseDOBYear"
+                        maxlength="4" placeholder="AAAA"></div>
+            </div>
+            <div class="fg"><label>Nacionalidade *</label><select id="ddlSpouseNatDropDownList"
+                    class="sel-country"></select></div>
+            <div class="fg"><label>Cidade de Nascimento</label><input type="text" id="tbxSpousePOBCity"
+                    placeholder="Cidade natal do cônjuge"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbexSPOUSE_POB_CITY_NA" data-target="tbxSpousePOBCity"> N/A</label><label
+                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxSpousePOBCity"> Desc.</label>
+            </div>
+            <div class="fg"><label>País de Nascimento *</label><select id="ddlSpousePOBCountry"
+                    class="sel-country"></select></div>
+            <div class="fg"><label>Endereço do Cônjuge *</label><select id="ddlSpouseAddressType">
+                    <option value="">-</option>
+                    <option value="H">Same as Home Address</option>
+                    <option value="M">Same as Mailing Address</option>
+                    <option value="U">Same as U.S. Contact Address</option>
+                    <option value="D">Do Not Know</option>
+                    <option value="O">Other (Specify Address)</option>
+                </select></div>
+            <div class="br" id="br-spouseAddr">
+                <div class="fg"><label>Rua 1</label><input type="text" id="tbxSPOUSE_ADDR_LN1"
+                        placeholder="Endereço do cônjuge"></div>
+                <div class="fg"><label>Rua 2</label><input type="text" id="tbxSPOUSE_ADDR_LN2"
+                        placeholder="Complemento"></div>
+                <div class="fg"><label>Cidade</label><input type="text" id="tbxSPOUSE_ADDR_CITY" placeholder="Cidade">
+                </div>
+                <div class="fg"><label>Estado</label><input type="text" id="tbxSPOUSE_ADDR_STATE"
+                        placeholder="Estado/Província"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                            id="cbexSPOUSE_ADDR_STATE_NA" data-target="tbxSPOUSE_ADDR_STATE"> N/A</label><label
+                        class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxSPOUSE_ADDR_STATE">
+                        N/A</label></div>
+                <div class="fg"><label>CEP</label><input type="text" id="tbxSPOUSE_ADDR_POSTAL_CD"
+                        placeholder="CEP"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                            id="cbexSPOUSE_ADDR_POSTAL_CD_NA" data-target="tbxSPOUSE_ADDR_POSTAL_CD"> N/A</label><label
+                        class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxSPOUSE_ADDR_POSTAL_CD">
+                        N/A</label></div>
+                <div class="fg"><label>País</label><select id="ddlSPOUSE_ADDR_CNTRY" class="sel-country"></select></div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 11: PrevSpouse ===== -->
+    <div class="page" id="pg-PrevSpouse">
+        <h2>11. Ex-Cônjuge</h2>
+        <div class="section">
+            <h3>Casamento(s) Anterior(es)</h3>
+            <div class="fg"><label>Nº de casamentos anteriores *</label><input type="text"
+                    id="tbxNumberOfPreviousSpouses" placeholder="Ex: 1" style="max-width:80px"></div>
+            <div class="fg"><label>Sobrenome do ex-cônjuge *</label><input type="text" id="tbxPREV_SPOUSE_SURNAME"
+                    placeholder="Sobrenome do ex-cônjuge">
+            </div>
+            <div class="fg"><label>Nome do ex-cônjuge *</label><input type="text" id="tbxPREV_SPOUSE_GIVEN_NAME"
+                    placeholder="Nome do ex-cônjuge"></div>
+            <div class="fg"><label>Data de Nascimento *</label>
+                <div class="date-row"><select id="ddlPREV_SPOUSE_DOBDay" class="sel-day"></select><select
+                        id="ddlPREV_SPOUSE_DOBMonth" class="sel-month"></select><input type="text"
+                        id="tbxPREV_SPOUSE_DOBYear" maxlength="4" placeholder="AAAA"></div>
+            </div>
+            <div class="fg"><label>Nacionalidade *</label><select id="ddlPREV_SPOUSE_NATL" class="sel-country"></select>
+            </div>
+            <div class="fg"><label>Cidade de Nascimento</label><input type="text" id="tbxPREV_SPOUSE_CITY"
+                    placeholder="Cidade natal do ex-cônjuge"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        data-target="tbxPREV_SPOUSE_CITY"> Desc.</label>
+            </div>
+            <div class="fg"><label>País de Nascimento *</label><select id="ddlPREV_SPOUSE_CNTRY"
+                    class="sel-country"></select></div>
+            <div class="fg"><label>Data do Casamento *</label>
+                <div class="date-row"><select id="ddlDOM_DTEDay" class="sel-day"></select><select id="ddlDOM_DTEMonth"
+                        class="sel-month"></select><input type="text" id="tbxDOM_DTEYear" maxlength="4"
+                        placeholder="AAAA"></div>
+            </div>
+            <div class="fg"><label>Data do Fim do Casamento *</label>
+                <div class="date-row"><select id="ddlDOME_DTEDay" class="sel-day"></select><select id="ddlDOME_DTEMonth"
+                        class="sel-month"></select><input type="text" id="tbxDOME_DTEYear" maxlength="4"
+                        placeholder="AAAA"></div>
+            </div>
+            <div class="fg"><label>Como terminou? *</label><select id="ddlHOW_MARRIAGE_ENDED">
+                    <option value="">-</option>
+                    <option value="D">DIVORCIADO(A)</option>
+                    <option value="W">VIÚVO(A)</option>
+                    <option value="A">ANULADO</option>
+                    <option value="O">OUTRO</option>
+                </select></div>
+            <div class="fg"><label>País onde terminou *</label><select id="ddlCNTRY_MARRIAGE_TERMINATED"
+                    class="sel-country"></select></div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 12: WorkEducation1 ===== -->
+    <div class="page" id="pg-WorkEducation1">
+        <h2>12. Trabalho Atual</h2>
+        <div class="section">
+            <h3>Ocupação</h3>
+            <div class="fg"><label>Ocupação Principal *</label><select id="ddlPresentOccupation"
+                    class="sel-occupation"></select></div>
+        </div>
+        <div class="section" id="sec-employer">
+            <h3>Empregador / Escola</h3>
+            <div class="fg"><label>Nome *</label><input type="text" id="tbxEmpSchName" maxlength="40"
+                    placeholder="Nome do empregador/escola"></div>
+            <div class="fg"><label>Endereço - Rua 1 *</label><input type="text" id="tbxEmpSchAddr1" maxlength="40"
+                    placeholder="Endereço linha 1"></div>
+            <div class="fg"><label>Endereço - Rua 2</label><input type="text" id="tbxEmpSchAddr2"
+                    placeholder="Complemento"></div>
+            <div class="fg"><label>Cidade *</label><input type="text" id="tbxEmpSchCity" maxlength="20"
+                    placeholder="Cidade"></div>
+            <div class="fg"><label>Estado</label><input type="text" id="tbxWORK_EDUC_ADDR_STATE"
+                    placeholder="Estado/Província"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbxWORK_EDUC_ADDR_STATE_NA" data-target="tbxWORK_EDUC_ADDR_STATE"> N/A</label></div>
+            <div class="fg"><label>CEP</label><input type="text" id="tbxWORK_EDUC_ADDR_POSTAL_CD"
+                    placeholder="CEP"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbxWORK_EDUC_ADDR_POSTAL_CD_NA" data-target="tbxWORK_EDUC_ADDR_POSTAL_CD"> N/A</label></div>
+            <div class="fg"><label>País *</label><select id="ddlEmpSchCountry" class="sel-country"></select></div>
+            <div class="fg"><label>Telefone *</label><input type="text" id="tbxWORK_EDUC_TEL"
+                    placeholder="Telefone do empregador/escola"></div>
+            <div class="fg"><label>Data de Início *</label>
+                <div class="date-row"><select id="ddlEmpDateFromDay" class="sel-day"></select><select
+                        id="ddlEmpDateFromMonth" class="sel-month"></select><input type="text" id="tbxEmpDateFromYear"
+                        maxlength="4" placeholder="AAAA"></div>
+            </div>
+            <div class="fg"><label>Salário Mensal</label><input type="text" id="tbxCURR_MONTHLY_SALARY" maxlength="15"
+                    placeholder="Ex: 5000"><label class="na-lbl"><input type="checkbox" class="na-cb"
+                        id="cbxCURR_MONTHLY_SALARY_NA" data-target="tbxCURR_MONTHLY_SALARY">
+                    N/A</label></div>
+            <div class="fg"><label>Descrição das Funções *</label><textarea id="tbxDescribeDuties"
+                    placeholder="Descreva suas funções"></textarea></div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 13: WorkEducation2 ===== -->
+    <div class="page" id="pg-WorkEducation2">
+        <h2>13. Trabalho e Educação Anteriores</h2>
+        <div class="section">
+            <h3>Empregos Anteriores</h3>
+            <div class="fg"><label>Já trabalhou antes? *</label><span class="rg"><label><input type="radio"
+                            name="rblPreviouslyEmployed" value="Y" data-branch="rblPreviouslyEmployed">
+                        Sim</label><label><input type="radio" name="rblPreviouslyEmployed" value="N"
+                            data-branch="rblPreviouslyEmployed"> Não</label></span></div>
+            <div class="br" id="br-rblPreviouslyEmployed">
+                <div class="as" data-list="dtlPrevEmpl">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Empregador</label><input type="text"
+                                id="dtlPrevEmpl_ctl00_tbEmployerName" placeholder="Nome do empregador"></div>
+                        <div class="fg"><label>Rua 1</label><input type="text"
+                                id="dtlPrevEmpl_ctl00_tbEmployerStreetAddress1" placeholder="Endereço"></div>
+                        <div class="fg"><label>Rua 2</label><input type="text"
+                                id="dtlPrevEmpl_ctl00_tbEmployerStreetAddress2" placeholder="Complemento"></div>
+                        <div class="fg"><label>Cidade</label><input type="text" id="dtlPrevEmpl_ctl00_tbEmployerCity"
+                                placeholder="Cidade">
+                        </div>
+                        <div class="fg"><label>Estado</label><input type="text"
+                                id="dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_STATE" placeholder="Estado/Província"><label
+                                class="na-lbl"><input type="checkbox" class="na-cb"
+                                    id="dtlPrevEmpl_ctl00_cbxPREV_EMPL_ADDR_STATE_NA"
+                                    data-target="dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_STATE"> N/A</label></div>
+                        <div class="fg"><label>CEP</label><input type="text"
+                                id="dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_POSTAL_CD" placeholder="CEP"><label
+                                class="na-lbl"><input type="checkbox" class="na-cb"
+                                    id="dtlPrevEmpl_ctl00_cbxPREV_EMPL_ADDR_POSTAL_CD_NA"
+                                    data-target="dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_POSTAL_CD"> N/A</label></div>
+                        <div class="fg"><label>País</label><select id="dtlPrevEmpl_ctl00_DropDownList2"
+                                class="sel-country"></select></div>
+                        <div class="fg"><label>Telefone</label><input type="text" id="dtlPrevEmpl_ctl00_tbEmployerPhone"
+                                placeholder="Telefone"></div>
+                        <div class="fg"><label>Cargo</label><input type="text" id="dtlPrevEmpl_ctl00_tbJobTitle"
+                                placeholder="Cargo/Título"></div>
+                        <div class="fg"><label>Supervisor Sobrenome</label><input type="text"
+                                id="dtlPrevEmpl_ctl00_tbSupervisorSurname" placeholder="Sobrenome do supervisor"><label
+                                class="na-lbl"><input type="checkbox" class="na-cb"
+                                    id="dtlPrevEmpl_ctl00_cbxSupervisorSurname_NA"
+                                    data-target="dtlPrevEmpl_ctl00_tbSupervisorSurname"> N/A</label></div>
+                        <div class="fg"><label>Supervisor Nome</label><input type="text"
+                                id="dtlPrevEmpl_ctl00_tbSupervisorGivenName" placeholder="Nome do supervisor"><label
+                                class="na-lbl"><input type="checkbox" class="na-cb"
+                                    id="dtlPrevEmpl_ctl00_cbxSupervisorGivenName_NA"
+                                    data-target="dtlPrevEmpl_ctl00_tbSupervisorGivenName"> N/A</label></div>
+                        <div class="fg"><label>De</label>
+                            <div class="date-row"><select id="dtlPrevEmpl_ctl00_ddlEmpDateFromDay"
+                                    class="sel-day"></select><select id="dtlPrevEmpl_ctl00_ddlEmpDateFromMonth"
+                                    class="sel-month"></select><input type="text"
+                                    id="dtlPrevEmpl_ctl00_tbxEmpDateFromYear" maxlength="4" placeholder="AAAA">
+                            </div>
+                        </div>
+                        <div class="fg"><label>Até</label>
+                            <div class="date-row"><select id="dtlPrevEmpl_ctl00_ddlEmpDateToDay"
+                                    class="sel-day"></select><select id="dtlPrevEmpl_ctl00_ddlEmpDateToMonth"
+                                    class="sel-month"></select><input type="text"
+                                    id="dtlPrevEmpl_ctl00_tbxEmpDateToYear" maxlength="4" placeholder="AAAA">
+                            </div>
+                        </div>
+                        <div class="fg"><label>Funções</label><textarea id="dtlPrevEmpl_ctl00_tbDescribeDuties"
+                                placeholder="Descreva suas funções"></textarea></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlPrevEmpl')">+ Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Educação</h3>
+            <div class="fg"><label>Frequentou outra escola? *</label><span class="rg"><label><input type="radio"
+                            name="rblOtherEduc" value="Y" data-branch="rblOtherEduc"> Sim</label><label><input
+                            type="radio" name="rblOtherEduc" value="N" data-branch="rblOtherEduc"> Não</label></span>
+            </div>
+            <div class="br" id="br-rblOtherEduc">
+                <div class="as" data-list="dtlPrevEduc">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Escola/Universidade</label><input type="text"
+                                id="dtlPrevEduc_ctl00_tbxSchoolName" placeholder="Nome da escola/universidade"></div>
+                        <div class="fg"><label>Rua 1</label><input type="text" id="dtlPrevEduc_ctl00_tbxSchoolAddr1"
+                                placeholder="Endereço">
+                        </div>
+                        <div class="fg"><label>Rua 2</label><input type="text" id="dtlPrevEduc_ctl00_tbxSchoolAddr2"
+                                placeholder="Complemento">
+                        </div>
+                        <div class="fg"><label>Cidade</label><input type="text" id="dtlPrevEduc_ctl00_tbxSchoolCity"
+                                placeholder="Cidade">
+                        </div>
+                        <div class="fg"><label>Estado</label><input type="text"
+                                id="dtlPrevEduc_ctl00_tbxEDUC_INST_ADDR_STATE" placeholder="Estado/Província"><label
+                                class="na-lbl"><input type="checkbox" class="na-cb"
+                                    id="dtlPrevEduc_ctl00_cbxEDUC_INST_ADDR_STATE_NA"
+                                    data-target="dtlPrevEduc_ctl00_tbxEDUC_INST_ADDR_STATE"> N/A</label></div>
+                        <div class="fg"><label>CEP</label><input type="text"
+                                id="dtlPrevEduc_ctl00_tbxEDUC_INST_POSTAL_CD" placeholder="CEP"><label
+                                class="na-lbl"><input type="checkbox" class="na-cb"
+                                    id="dtlPrevEduc_ctl00_cbxEDUC_INST_POSTAL_CD_NA"
+                                    data-target="dtlPrevEduc_ctl00_tbxEDUC_INST_POSTAL_CD"> N/A</label></div>
+                        <div class="fg"><label>País</label><select id="dtlPrevEduc_ctl00_ddlSchoolCountry"
+                                class="sel-country"></select></div>
+                        <div class="fg"><label>Curso</label><input type="text"
+                                id="dtlPrevEduc_ctl00_tbxSchoolCourseOfStudy" placeholder="Curso/Área de estudo"></div>
+                        <div class="fg"><label>De</label>
+                            <div class="date-row"><select id="dtlPrevEduc_ctl00_ddlSchoolFromDay"
+                                    class="sel-day"></select><select id="dtlPrevEduc_ctl00_ddlSchoolFromMonth"
+                                    class="sel-month"></select><input type="text"
+                                    id="dtlPrevEduc_ctl00_tbxSchoolFromYear" maxlength="4" placeholder="AAAA">
+                            </div>
+                        </div>
+                        <div class="fg"><label>Até</label>
+                            <div class="date-row"><select id="dtlPrevEduc_ctl00_ddlSchoolToDay"
+                                    class="sel-day"></select><select id="dtlPrevEduc_ctl00_ddlSchoolToMonth"
+                                    class="sel-month"></select><input type="text" id="dtlPrevEduc_ctl00_tbxSchoolToYear"
+                                    maxlength="4" placeholder="AAAA">
+                            </div>
+                        </div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlPrevEduc')">+ Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 14: WorkEducation3 ===== -->
+    <div class="page" id="pg-WorkEducation3">
+        <h2>14. Informações Adicionais</h2>
+        <div class="section">
+            <h3>Idiomas</h3>
+            <div class="as" data-list="dtlLANGUAGES">
+                <div class="entry" data-idx="0">
+                    <div class="fg"><label>Idioma *</label><input type="text" id="dtlLANGUAGES_ctl00_tbxLANGUAGE_NAME"
+                            placeholder="Ex: Português">
+                    </div>
+                </div><button type="button" class="btn-add" onclick="addEntry('dtlLANGUAGES')">+ Adicionar
+                    Idioma</button>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Clã/Tribo</h3>
+            <div class="fg"><label>Pertence a clã/tribo? *</label><span class="rg"><label><input type="radio"
+                            name="rblCLAN_TRIBE_IND" value="Y" data-branch="rblCLAN_TRIBE_IND"> Sim</label><label><input
+                            type="radio" name="rblCLAN_TRIBE_IND" value="N" data-branch="rblCLAN_TRIBE_IND">
+                        Não</label></span></div>
+            <div class="br" id="br-rblCLAN_TRIBE_IND">
+                <div class="fg"><label>Nome</label><input type="text" id="tbxCLAN_TRIBE_NAME"
+                        placeholder="Nome do clã ou tribo"></div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Países Visitados</h3>
+            <div class="fg"><label>Visitou outros países? *</label><span class="rg"><label><input type="radio"
+                            name="rblCOUNTRIES_VISITED_IND" value="Y" data-branch="rblCOUNTRIES_VISITED_IND">
+                        Sim</label><label><input type="radio" name="rblCOUNTRIES_VISITED_IND" value="N"
+                            data-branch="rblCOUNTRIES_VISITED_IND"> Não</label></span></div>
+            <div class="br" id="br-rblCOUNTRIES_VISITED_IND">
+                <div class="as" data-list="dtlCountriesVisited">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>País</label><select id="dtlCountriesVisited_ctl00_ddlCOUNTRIES_VISITED"
+                                class="sel-country"></select></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlCountriesVisited')">+
+                        Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Organizações</h3>
+            <div class="fg"><label>Membro de organizações? *</label><span class="rg"><label><input type="radio"
+                            name="rblORGANIZATION_IND" value="Y" data-branch="rblORGANIZATION_IND">
+                        Sim</label><label><input type="radio" name="rblORGANIZATION_IND" value="N"
+                            data-branch="rblORGANIZATION_IND"> Não</label></span></div>
+            <div class="br" id="br-rblORGANIZATION_IND">
+                <div class="as" data-list="dtlORGANIZATIONS">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Nome da Organização</label><input type="text"
+                                id="dtlORGANIZATIONS_ctl00_tbxORGANIZATION_NAME" placeholder="Nome da organização">
+                        </div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlORGANIZATIONS')">+
+                        Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Habilidades Especializadas</h3>
+            <div class="fg"><label>Possui habilidades especializadas? *</label><span class="rg"><label><input
+                            type="radio" name="rblSPECIALIZED_SKILLS_IND" value="Y"
+                            data-branch="rblSPECIALIZED_SKILLS_IND"> Sim</label><label><input type="radio"
+                            name="rblSPECIALIZED_SKILLS_IND" value="N" data-branch="rblSPECIALIZED_SKILLS_IND">
+                        Não</label></span></div>
+            <div class="br" id="br-rblSPECIALIZED_SKILLS_IND">
+                <div class="fg"><label>Descrição</label><textarea id="tbxSPECIALIZED_SKILLS_EXPL"
+                        placeholder="Descreva suas habilidades especializadas"></textarea></div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Serviço Militar</h3>
+            <div class="fg"><label>Serviu nas forças armadas? *</label><span class="rg"><label><input type="radio"
+                            name="rblMILITARY_SERVICE_IND" value="Y" data-branch="rblMILITARY_SERVICE_IND">
+                        Sim</label><label><input type="radio" name="rblMILITARY_SERVICE_IND" value="N"
+                            data-branch="rblMILITARY_SERVICE_IND"> Não</label></span></div>
+            <div class="br" id="br-rblMILITARY_SERVICE_IND">
+                <div class="as" data-list="dtlMILITARY_SERVICE">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>País</label><select id="dtlMILITARY_SERVICE_ctl00_ddlMILITARY_SVC_CNTRY"
+                                class="sel-country"></select></div>
+                        <div class="fg"><label>Ramo</label><input type="text"
+                                id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_BRANCH" placeholder="Ramo militar"></div>
+                        <div class="fg"><label>Patente</label><input type="text"
+                                id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_RANK" placeholder="Patente/Posto"></div>
+                        <div class="fg"><label>Especialidade</label><input type="text"
+                                id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_SPECIALTY" placeholder="Especialidade">
+                        </div>
+                        <div class="fg"><label>De</label>
+                            <div class="date-row"><select id="dtlMILITARY_SERVICE_ctl00_ddlMILITARY_SVC_FROMDay"
+                                    class="sel-day"></select><select
+                                    id="dtlMILITARY_SERVICE_ctl00_ddlMILITARY_SVC_FROMMonth"
+                                    class="sel-month"></select><input type="text"
+                                    id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_FROMYear" maxlength="4"
+                                    placeholder="AAAA"></div>
+                        </div>
+                        <div class="fg"><label>Até</label>
+                            <div class="date-row"><select id="dtlMILITARY_SERVICE_ctl00_ddlMILITARY_SVC_TODay"
+                                    class="sel-day"></select><select
+                                    id="dtlMILITARY_SERVICE_ctl00_ddlMILITARY_SVC_TOMonth"
+                                    class="sel-month"></select><input type="text"
+                                    id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_TOYear" maxlength="4"
+                                    placeholder="AAAA"></div>
+                        </div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlMILITARY_SERVICE')">+
+                        Adicionar</button>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Organização Insurgente</h3>
+            <div class="fg"><label>Membro de org. insurgente? *</label><span class="rg"><label><input type="radio"
+                            name="rblINSURGENT_ORG_IND" value="Y" data-branch="rblINSURGENT_ORG_IND">
+                        Sim</label><label><input type="radio" name="rblINSURGENT_ORG_IND" value="N"
+                            data-branch="rblINSURGENT_ORG_IND"> Não</label></span></div>
+            <div class="br" id="br-rblINSURGENT_ORG_IND">
+                <div class="fg"><label>Explicação</label><textarea id="tbxINSURGENT_ORG_EXPL"
+                        placeholder="Descreva a organização"></textarea></div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 15: Security1 (Saúde) ===== -->
+    <div class="page" id="pg-Security1">
+        <h2>15. Segurança - Saúde</h2>
+        <div class="section">
+            <h3>Questões de Saúde</h3>
+            <div class="fg"><label>Possui doença contagiosa de importância para saúde pública? *</label><span
+                    class="rg"><label><input type="radio" name="rblDisease" value="Y" data-branch="rblDisease">
+                        Sim</label><label><input type="radio" name="rblDisease" value="N" data-branch="rblDisease">
+                        Não</label></span></div>
+            <div class="br" id="br-rblDisease">
+                <div class="fg"><label>Explicação</label><textarea id="tbxDisease_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Possui transtorno mental ou físico que representa ameaça? *</label><span
+                    class="rg"><label><input type="radio" name="rblDisorder" value="Y" data-branch="rblDisorder">
+                        Sim</label><label><input type="radio" name="rblDisorder" value="N" data-branch="rblDisorder">
+                        Não</label></span></div>
+            <div class="br" id="br-rblDisorder">
+                <div class="fg"><label>Explicação</label><textarea id="tbxDisorder_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>É ou foi usuário de drogas? *</label><span class="rg"><label><input type="radio"
+                            name="rblDruguser" value="Y" data-branch="rblDruguser"> Sim</label><label><input
+                            type="radio" name="rblDruguser" value="N" data-branch="rblDruguser"> Não</label></span>
+            </div>
+            <div class="br" id="br-rblDruguser">
+                <div class="fg"><label>Explicação</label><textarea id="tbxDruguser_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 16: Security2 (Criminal) ===== -->
+    <div class="page" id="pg-Security2">
+        <h2>16. Segurança - Criminal</h2>
+        <div class="section">
+            <h3>Questões Criminais</h3>
+            <div class="fg"><label>Já foi preso ou condenado por algum crime? *</label><span class="rg"><label><input
+                            type="radio" name="rblArrested" value="Y" data-branch="rblArrested">
+                        Sim</label><label><input type="radio" name="rblArrested" value="N" data-branch="rblArrested">
+                        Não</label></span></div>
+            <div class="br" id="br-rblArrested">
+                <div class="fg"><label>Explicação</label><textarea id="tbxArrested_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Violou leis de substâncias controladas? *</label><span class="rg"><label><input
+                            type="radio" name="rblControlledSubstances" value="Y" data-branch="rblControlledSubstances">
+                        Sim</label><label><input type="radio" name="rblControlledSubstances" value="N"
+                            data-branch="rblControlledSubstances"> Não</label></span></div>
+            <div class="br" id="br-rblControlledSubstances">
+                <div class="fg"><label>Explicação</label><textarea id="tbxControlledSubstances_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Envolvido em prostituição? *</label><span class="rg"><label><input type="radio"
+                            name="rblProstitution" value="Y" data-branch="rblProstitution"> Sim</label><label><input
+                            type="radio" name="rblProstitution" value="N" data-branch="rblProstitution">
+                        Não</label></span></div>
+            <div class="br" id="br-rblProstitution">
+                <div class="fg"><label>Explicação</label><textarea id="tbxProstitution_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Envolvido em lavagem de dinheiro? *</label><span class="rg"><label><input
+                            type="radio" name="rblMoneyLaundering" value="Y" data-branch="rblMoneyLaundering">
+                        Sim</label><label><input type="radio" name="rblMoneyLaundering" value="N"
+                            data-branch="rblMoneyLaundering"> Não</label></span></div>
+            <div class="br" id="br-rblMoneyLaundering">
+                <div class="fg"><label>Explicação</label><textarea id="tbxMoneyLaundering_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Envolvido em tráfico de pessoas? *</label><span class="rg"><label><input type="radio"
+                            name="rblHumanTrafficking" value="Y" data-branch="rblHumanTrafficking">
+                        Sim</label><label><input type="radio" name="rblHumanTrafficking" value="N"
+                            data-branch="rblHumanTrafficking"> Não</label></span></div>
+            <div class="br" id="br-rblHumanTrafficking">
+                <div class="fg"><label>Explicação</label><textarea id="tbxHumanTrafficking_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Auxiliou em tráfico severo? *</label><span class="rg"><label><input type="radio"
+                            name="rblAssistedSevereTrafficking" value="Y" data-branch="rblAssistedSevereTrafficking">
+                        Sim</label><label><input type="radio" name="rblAssistedSevereTrafficking" value="N"
+                            data-branch="rblAssistedSevereTrafficking"> Não</label></span></div>
+            <div class="br" id="br-rblAssistedSevereTrafficking">
+                <div class="fg"><label>Explicação</label><textarea id="tbxAssistedSevereTrafficking_EXPL"
+                        placeholder="Explique detalhadamente"></textarea>
+                </div>
+            </div>
+            <div class="fg"><label>É parente de pessoa envolvida em tráfico? *</label><span class="rg"><label><input
+                            type="radio" name="rblHumanTraffickingRelated" value="Y"
+                            data-branch="rblHumanTraffickingRelated"> Sim</label><label><input type="radio"
+                            name="rblHumanTraffickingRelated" value="N" data-branch="rblHumanTraffickingRelated">
+                        Não</label></span></div>
+            <div class="br" id="br-rblHumanTraffickingRelated">
+                <div class="fg"><label>Explicação</label><textarea id="tbxHumanTraffickingRelated_EXPL"
+                        placeholder="Explique detalhadamente"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 17: Security3 (Segurança Nacional) ===== -->
+    <div class="page" id="pg-Security3">
+        <h2>17. Segurança Nacional</h2>
+        <div class="section">
+            <h3>Espionagem e Terrorismo</h3>
+            <div class="fg"><label>Busca atividades ilegais ou criminosas nos EUA? *</label><span
+                    class="rg"><label><input type="radio" name="rblIllegalActivity" value="Y"
+                            data-branch="rblIllegalActivity"> Sim</label><label><input type="radio"
+                            name="rblIllegalActivity" value="N" data-branch="rblIllegalActivity"> Não</label></span>
+            </div>
+            <div class="br" id="br-rblIllegalActivity">
+                <div class="fg"><label>Explicação</label><textarea id="tbxIllegalActivity_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Envolvido em atividades terroristas? *</label><span class="rg"><label><input
+                            type="radio" name="rblTerroristActivity" value="Y" data-branch="rblTerroristActivity">
+                        Sim</label><label><input type="radio" name="rblTerroristActivity" value="N"
+                            data-branch="rblTerroristActivity"> Não</label></span></div>
+            <div class="br" id="br-rblTerroristActivity">
+                <div class="fg"><label>Explicação</label><textarea id="tbxTerroristActivity_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Apoiou atividades terroristas financeiramente? *</label><span
+                    class="rg"><label><input type="radio" name="rblTerroristSupport" value="Y"
+                            data-branch="rblTerroristSupport"> Sim</label><label><input type="radio"
+                            name="rblTerroristSupport" value="N" data-branch="rblTerroristSupport"> Não</label></span>
+            </div>
+            <div class="br" id="br-rblTerroristSupport">
+                <div class="fg"><label>Explicação</label><textarea id="tbxTerroristSupport_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Membro de organização terrorista? *</label><span class="rg"><label><input
+                            type="radio" name="rblTerroristOrg" value="Y" data-branch="rblTerroristOrg">
+                        Sim</label><label><input type="radio" name="rblTerroristOrg" value="N"
+                            data-branch="rblTerroristOrg"> Não</label></span></div>
+            <div class="br" id="br-rblTerroristOrg">
+                <div class="fg"><label>Explicação</label><textarea id="tbxTerroristOrg_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Parente de pessoa envolvida em terrorismo? *</label><span class="rg"><label><input
+                            type="radio" name="rblTerroristRel" value="Y" data-branch="rblTerroristRel">
+                        Sim</label><label><input type="radio" name="rblTerroristRel" value="N"
+                            data-branch="rblTerroristRel"> Não</label></span></div>
+            <div class="br" id="br-rblTerroristRel">
+                <div class="fg"><label>Explicação</label><textarea id="tbxTerroristRel_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+        </div>
+        <div class="section">
+            <h3>Violações de Direitos Humanos</h3>
+            <div class="fg"><label>Envolvido em genocídio? *</label><span class="rg"><label><input type="radio"
+                            name="rblGenocide" value="Y" data-branch="rblGenocide"> Sim</label><label><input
+                            type="radio" name="rblGenocide" value="N" data-branch="rblGenocide"> Não</label></span>
+            </div>
+            <div class="br" id="br-rblGenocide">
+                <div class="fg"><label>Explicação</label><textarea id="tbxGenocide_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Cometeu tortura? *</label><span class="rg"><label><input type="radio"
+                            name="rblTorture" value="Y" data-branch="rblTorture"> Sim</label><label><input type="radio"
+                            name="rblTorture" value="N" data-branch="rblTorture"> Não</label></span></div>
+            <div class="br" id="br-rblTorture">
+                <div class="fg"><label>Explicação</label><textarea id="tbxTorture_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Cometeu violência extrajudicial? *</label><span class="rg"><label><input type="radio"
+                            name="rblExViolence" value="Y" data-branch="rblExViolence"> Sim</label><label><input
+                            type="radio" name="rblExViolence" value="N" data-branch="rblExViolence"> Não</label></span>
+            </div>
+            <div class="br" id="br-rblExViolence">
+                <div class="fg"><label>Explicação</label><textarea id="tbxExViolence_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Recrutou crianças como soldados? *</label><span class="rg"><label><input type="radio"
+                            name="rblChildSoldier" value="Y" data-branch="rblChildSoldier"> Sim</label><label><input
+                            type="radio" name="rblChildSoldier" value="N" data-branch="rblChildSoldier">
+                        Não</label></span></div>
+            <div class="br" id="br-rblChildSoldier">
+                <div class="fg"><label>Explicação</label><textarea id="tbxChildSoldier_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Violou liberdade religiosa como oficial? *</label><span class="rg"><label><input
+                            type="radio" name="rblReligiousFreedom" value="Y" data-branch="rblReligiousFreedom">
+                        Sim</label><label><input type="radio" name="rblReligiousFreedom" value="N"
+                            data-branch="rblReligiousFreedom"> Não</label></span></div>
+            <div class="br" id="br-rblReligiousFreedom">
+                <div class="fg"><label>Explicação</label><textarea id="tbxReligiousFreedom_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Envolvido em controle populacional coercivo? *</label><span class="rg"><label><input
+                            type="radio" name="rblPopulationControls" value="Y" data-branch="rblPopulationControls">
+                        Sim</label><label><input type="radio" name="rblPopulationControls" value="N"
+                            data-branch="rblPopulationControls"> Não</label></span></div>
+            <div class="br" id="br-rblPopulationControls">
+                <div class="fg"><label>Explicação</label><textarea id="tbxPopulationControls_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Envolvido em transplante de órgãos coercivo? *</label><span class="rg"><label><input
+                            type="radio" name="rblTransplant" value="Y" data-branch="rblTransplant">
+                        Sim</label><label><input type="radio" name="rblTransplant" value="N"
+                            data-branch="rblTransplant"> Não</label></span></div>
+            <div class="br" id="br-rblTransplant">
+                <div class="fg"><label>Explicação</label><textarea id="tbxTransplant_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 18: Security4 (Imigração) ===== -->
+    <div class="page" id="pg-Security4">
+        <h2>18. Segurança - Imigração</h2>
+        <div class="section">
+            <h3>Violações de Imigração</h3>
+            <div class="fg"><label>Esteve em audiência de remoção (deportação)? *</label><span class="rg"><label><input
+                            type="radio" name="rblRemovalHearing" value="Y" data-branch="rblRemovalHearing">
+                        Sim</label><label><input type="radio" name="rblRemovalHearing" value="N"
+                            data-branch="rblRemovalHearing"> Não</label></span></div>
+            <div class="br" id="br-rblRemovalHearing">
+                <div class="fg"><label>Explicação</label><textarea id="tbxRemovalHearing_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Cometeu fraude de imigração? *</label><span class="rg"><label><input type="radio"
+                            name="rblImmigrationFraud" value="Y" data-branch="rblImmigrationFraud">
+                        Sim</label><label><input type="radio" name="rblImmigrationFraud" value="N"
+                            data-branch="rblImmigrationFraud"> Não</label></span></div>
+            <div class="br" id="br-rblImmigrationFraud">
+                <div class="fg"><label>Explicação</label><textarea id="tbxImmigrationFraud_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Não compareceu a audiência de imigração? *</label><span class="rg"><label><input
+                            type="radio" name="rblFailToAttend" value="Y" data-branch="rblFailToAttend">
+                        Sim</label><label><input type="radio" name="rblFailToAttend" value="N"
+                            data-branch="rblFailToAttend"> Não</label></span></div>
+            <div class="br" id="br-rblFailToAttend">
+                <div class="fg"><label>Explicação</label><textarea id="tbxFailToAttend_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Violou termos do visto? *</label><span class="rg"><label><input type="radio"
+                            name="rblVisaViolation" value="Y" data-branch="rblVisaViolation"> Sim</label><label><input
+                            type="radio" name="rblVisaViolation" value="N" data-branch="rblVisaViolation">
+                        Não</label></span></div>
+            <div class="br" id="br-rblVisaViolation">
+                <div class="fg"><label>Explicação</label><textarea id="tbxVisaViolation_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Foi deportado dos EUA? *</label><span class="rg"><label><input type="radio"
+                            name="rblDeport" value="Y" data-branch="rblDeport"> Sim</label><label><input type="radio"
+                            name="rblDeport" value="N" data-branch="rblDeport"> Não</label></span></div>
+            <div class="br" id="br-rblDeport">
+                <div class="fg"><label>Explicação</label><textarea id="tbxDeport_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+        </div>
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 19: Security5 (Diversos) ===== -->
+    <div class="page" id="pg-Security5">
+        <h2>19. Segurança - Diversos</h2>
+        <div class="section">
+            <h3>Outras Questões</h3>
+            <div class="fg"><label>Reteve custódia de criança de cidadão americano? *</label><span
+                    class="rg"><label><input type="radio" name="rblChildCustody" value="Y"
+                            data-branch="rblChildCustody"> Sim</label><label><input type="radio" name="rblChildCustody"
+                            value="N" data-branch="rblChildCustody"> Não</label></span></div>
+            <div class="br" id="br-rblChildCustody">
+                <div class="fg"><label>Explicação</label><textarea id="tbxChildCustody_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Violou lei eleitoral? *</label><span class="rg"><label><input type="radio"
+                            name="rblVotingViolation" value="Y" data-branch="rblVotingViolation">
+                        Sim</label><label><input type="radio" name="rblVotingViolation" value="N"
+                            data-branch="rblVotingViolation"> Não</label></span></div>
+            <div class="br" id="br-rblVotingViolation">
+                <div class="fg"><label>Explicação</label><textarea id="tbxVotingViolation_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Renunciou cidadania americana para evitar impostos? *</label><span
+                    class="rg"><label><input type="radio" name="rblRenounceExp" value="Y" data-branch="rblRenounceExp">
+                        Sim</label><label><input type="radio" name="rblRenounceExp" value="N"
+                            data-branch="rblRenounceExp"> Não</label></span></div>
+            <div class="br" id="br-rblRenounceExp">
+                <div class="fg"><label>Explicação</label><textarea id="tbxRenounceExp_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+            <div class="fg"><label>Tentou obter assistência sem reembolsar? *</label><span class="rg"><label><input
+                            type="radio" name="rblAttWoReimb" value="Y" data-branch="rblAttWoReimb">
+                        Sim</label><label><input type="radio" name="rblAttWoReimb" value="N"
+                            data-branch="rblAttWoReimb"> Não</label></span></div>
+            <div class="br" id="br-rblAttWoReimb">
+                <div class="fg"><label>Explicação</label><textarea id="tbxAttWoReimb_EXPL"
+                        placeholder="Explique detalhadamente"></textarea></div>
+            </div>
+        </div>
+        <div class="page-btns" style="flex-direction:column;gap:12px;align-items:center">
+            <button class="btn btn-json" onclick="generateJSON()">Gerar JSON</button>
+            <div style="display:flex;gap:12px;width:100%;justify-content:space-between"><button class="btn btn-back"
+                    onclick="prevPage()">← Voltar</button><span></span></div>
+        </div>
+    </div>
+
+    <!-- JSON Modal -->
+    <div class="modal-overlay" id="jsonModal">
+        <div class="modal">
+            <h2>JSON Gerado - DS-160</h2>
+            <textarea id="jsonOutput" readonly></textarea>
+            <div class="modal-btns">
+                <button style="background:#003366;color:#fff" onclick="copyJSON()">Copiar</button>
+                <button style="background:#2e7d32;color:#fff" onclick="downloadJSON()">Download</button>
+                <button id="btnSaveSupabase" style="background:#6366f1;color:#fff" onclick="saveToSupabase()">💾 Salvar
+                    no Supabase</button>
+                <button style="background:#e0e0e0;color:#333" onclick="closeModal()">Fechar</button>
+            </div>
+            <div id="supabaseStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // DS-160 Clone - JavaScript Funcional Completo
+        // ============================================================
+
+        // ===== DATA: Select Options =====
+        const MONTHS = [
+            { v: '', t: '- Mês -' }, { v: 'JAN', t: 'JAN' }, { v: 'FEB', t: 'FEB' }, { v: 'MAR', t: 'MAR' },
+            { v: 'APR', t: 'APR' }, { v: 'MAY', t: 'MAY' }, { v: 'JUN', t: 'JUN' }, { v: 'JUL', t: 'JUL' },
+            { v: 'AUG', t: 'AUG' }, { v: 'SEP', t: 'SEP' }, { v: 'OCT', t: 'OCT' }, { v: 'NOV', t: 'NOV' }, { v: 'DEC', t: 'DEC' }
+        ];
+        const COUNTRIES = [
+            '', 'AFGHANISTAN', 'ALBANIA', 'ALGERIA', 'ANDORRA', 'ANGOLA', 'ANTIGUA AND BARBUDA', 'ARGENTINA',
+            'ARMENIA', 'AUSTRALIA', 'AUSTRIA', 'AZERBAIJAN', 'BAHAMAS', 'BAHRAIN', 'BANGLADESH', 'BARBADOS',
+            'BELARUS', 'BELGIUM', 'BELIZE', 'BENIN', 'BHUTAN', 'BOLIVIA', 'BOSNIA AND HERZEGOVINA', 'BOTSWANA',
+            'BRAZIL', 'BRUNEI', 'BULGARIA', 'BURKINA FASO', 'BURUNDI', 'CABO VERDE', 'CAMBODIA', 'CAMEROON',
+            'CANADA', 'CENTRAL AFRICAN REPUBLIC', 'CHAD', 'CHILE', 'CHINA', 'COLOMBIA', 'COMOROS', 'CONGO',
+            'COSTA RICA', 'CROATIA', 'CUBA', 'CYPRUS', 'CZECH REPUBLIC', 'DENMARK', 'DJIBOUTI', 'DOMINICA',
+            'DOMINICAN REPUBLIC', 'ECUADOR', 'EGYPT', 'EL SALVADOR', 'EQUATORIAL GUINEA', 'ERITREA', 'ESTONIA',
+            'ESWATINI', 'ETHIOPIA', 'FIJI', 'FINLAND', 'FRANCE', 'GABON', 'GAMBIA', 'GEORGIA', 'GERMANY', 'GHANA',
+            'GREECE', 'GRENADA', 'GUATEMALA', 'GUINEA', 'GUINEA-BISSAU', 'GUYANA', 'HAITI', 'HONDURAS', 'HUNGARY',
+            'ICELAND', 'INDIA', 'INDONESIA', 'IRAN', 'IRAQ', 'IRELAND', 'ISRAEL', 'ITALY', 'IVORY COAST', 'JAMAICA',
+            'JAPAN', 'JORDAN', 'KAZAKHSTAN', 'KENYA', 'KIRIBATI', 'KOSOVO', 'KUWAIT', 'KYRGYZSTAN', 'LAOS', 'LATVIA',
+            'LEBANON', 'LESOTHO', 'LIBERIA', 'LIBYA', 'LIECHTENSTEIN', 'LITHUANIA', 'LUXEMBOURG', 'MADAGASCAR',
+            'MALAWI', 'MALAYSIA', 'MALDIVES', 'MALI', 'MALTA', 'MARSHALL ISLANDS', 'MAURITANIA', 'MAURITIUS',
+            'MEXICO', 'MICRONESIA', 'MOLDOVA', 'MONACO', 'MONGOLIA', 'MONTENEGRO', 'MOROCCO', 'MOZAMBIQUE',
+            'MYANMAR', 'NAMIBIA', 'NAURU', 'NEPAL', 'NETHERLANDS', 'NEW ZEALAND', 'NICARAGUA', 'NIGER', 'NIGERIA',
+            'NORTH KOREA', 'NORTH MACEDONIA', 'NORWAY', 'OMAN', 'PAKISTAN', 'PALAU', 'PALESTINE', 'PANAMA',
+            'PAPUA NEW GUINEA', 'PARAGUAY', 'PERU', 'PHILIPPINES', 'POLAND', 'PORTUGAL', 'QATAR', 'ROMANIA',
+            'RUSSIA', 'RWANDA', 'SAINT KITTS AND NEVIS', 'SAINT LUCIA', 'SAINT VINCENT AND THE GRENADINES',
+            'SAMOA', 'SAN MARINO', 'SAO TOME AND PRINCIPE', 'SAUDI ARABIA', 'SENEGAL', 'SERBIA', 'SEYCHELLES',
+            'SIERRA LEONE', 'SINGAPORE', 'SLOVAKIA', 'SLOVENIA', 'SOLOMON ISLANDS', 'SOMALIA', 'SOUTH AFRICA',
+            'SOUTH KOREA', 'SOUTH SUDAN', 'SPAIN', 'SRI LANKA', 'SUDAN', 'SURINAME', 'SWEDEN', 'SWITZERLAND',
+            'SYRIA', 'TAIWAN', 'TAJIKISTAN', 'TANZANIA', 'THAILAND', 'TIMOR-LESTE', 'TOGO', 'TONGA',
+            'TRINIDAD AND TOBAGO', 'TUNISIA', 'TURKEY', 'TURKMENISTAN', 'TUVALU', 'UGANDA', 'UKRAINE',
+            'UNITED ARAB EMIRATES', 'UNITED KINGDOM', 'UNITED STATES', 'URUGUAY', 'UZBEKISTAN', 'VANUATU',
+            'VATICAN CITY', 'VENEZUELA', 'VIETNAM', 'YEMEN', 'ZAMBIA', 'ZIMBABWE'
+        ];
+        const US_STATES = [
+            { v: '', t: '- Selecione -' }, { v: 'AL', t: 'ALABAMA' }, { v: 'AK', t: 'ALASKA' }, { v: 'AZ', t: 'ARIZONA' },
+            { v: 'AR', t: 'ARKANSAS' }, { v: 'CA', t: 'CALIFORNIA' }, { v: 'CO', t: 'COLORADO' }, { v: 'CT', t: 'CONNECTICUT' },
+            { v: 'DE', t: 'DELAWARE' }, { v: 'DC', t: 'DISTRICT OF COLUMBIA' }, { v: 'FL', t: 'FLORIDA' }, { v: 'GA', t: 'GEORGIA' },
+            { v: 'HI', t: 'HAWAII' }, { v: 'ID', t: 'IDAHO' }, { v: 'IL', t: 'ILLINOIS' }, { v: 'IN', t: 'INDIANA' },
+            { v: 'IA', t: 'IOWA' }, { v: 'KS', t: 'KANSAS' }, { v: 'KY', t: 'KENTUCKY' }, { v: 'LA', t: 'LOUISIANA' },
+            { v: 'ME', t: 'MAINE' }, { v: 'MD', t: 'MARYLAND' }, { v: 'MA', t: 'MASSACHUSETTS' }, { v: 'MI', t: 'MICHIGAN' },
+            { v: 'MN', t: 'MINNESOTA' }, { v: 'MS', t: 'MISSISSIPPI' }, { v: 'MO', t: 'MISSOURI' }, { v: 'MT', t: 'MONTANA' },
+            { v: 'NE', t: 'NEBRASKA' }, { v: 'NV', t: 'NEVADA' }, { v: 'NH', t: 'NEW HAMPSHIRE' }, { v: 'NJ', t: 'NEW JERSEY' },
+            { v: 'NM', t: 'NEW MEXICO' }, { v: 'NY', t: 'NEW YORK' }, { v: 'NC', t: 'NORTH CAROLINA' }, { v: 'ND', t: 'NORTH DAKOTA' },
+            { v: 'OH', t: 'OHIO' }, { v: 'OK', t: 'OKLAHOMA' }, { v: 'OR', t: 'OREGON' }, { v: 'PA', t: 'PENNSYLVANIA' },
+            { v: 'PR', t: 'PUERTO RICO' }, { v: 'RI', t: 'RHODE ISLAND' }, { v: 'SC', t: 'SOUTH CAROLINA' },
+            { v: 'SD', t: 'SOUTH DAKOTA' }, { v: 'TN', t: 'TENNESSEE' }, { v: 'TX', t: 'TEXAS' }, { v: 'UT', t: 'UTAH' },
+            { v: 'VT', t: 'VERMONT' }, { v: 'VA', t: 'VIRGINIA' }, { v: 'VI', t: 'VIRGIN ISLANDS' },
+            { v: 'WA', t: 'WASHINGTON' }, { v: 'WV', t: 'WEST VIRGINIA' }, { v: 'WI', t: 'WISCONSIN' }, { v: 'WY', t: 'WYOMING' }
+        ];
+        const SOCIAL_MEDIA = [
+            { v: '', t: '- Selecione -' }, { v: 'ASK.FM', t: 'ASK.FM' }, { v: 'DOUYIN', t: 'DOUYIN' }, { v: 'FACEBOOK', t: 'FACEBOOK' },
+            { v: 'FLICKR', t: 'FLICKR' }, { v: 'INSTAGRAM', t: 'INSTAGRAM' }, { v: 'LINKEDIN', t: 'LINKEDIN' },
+            { v: 'MYSPACE', t: 'MYSPACE' }, { v: 'PINTEREST', t: 'PINTEREST' }, { v: 'QUORA', t: 'QUORA' },
+            { v: 'REDDIT', t: 'REDDIT' }, { v: 'SNAPCHAT', t: 'SNAPCHAT' }, { v: 'TELEGRAM', t: 'TELEGRAM' },
+            { v: 'TIKTOK', t: 'TIKTOK' }, { v: 'TUMBLR', t: 'TUMBLR' }, { v: 'TWITTER', t: 'TWITTER' },
+            { v: 'TWITCH', t: 'TWITCH' }, { v: 'VIBER', t: 'VIBER' }, { v: 'VKONTAKTE', t: 'VKONTAKTE' },
+            { v: 'WEIBO', t: 'WEIBO' }, { v: 'WHATSAPP', t: 'WHATSAPP' }, { v: 'YOUTUBE', t: 'YOUTUBE' }, { v: 'NONE', t: 'NONE' }
+        ];
+        const OCCUPATIONS = [
+            { v: '', t: '- Selecione a Ocupação -' },
+            { v: 'A', t: 'AGRICULTURA (AGRICULTURE)' },
+            { v: 'AP', t: 'ARTISTA / PERFORMER (ARTIST/PERFORMER)' },
+            { v: 'B', t: 'NEGÓCIOS (BUSINESS)' },
+            { v: 'CM', t: 'COMUNICAÇÃO / MÍDIA (COMMUNICATIONS/MEDIA)' },
+            { v: 'CS', t: 'CIÊNCIA DA COMPUTAÇÃO (COMPUTER SCIENCE)' },
+            { v: 'C', t: 'CULINÁRIA / SERVIÇOS DE ALIMENTAÇÃO (CULINARY/FOOD SERVICES)' },
+            { v: 'ED', t: 'EDUCAÇÃO (EDUCATION)' },
+            { v: 'EN', t: 'ENGENHARIA (ENGINEERING)' },
+            { v: 'G', t: 'GOVERNO (GOVERNMENT)' },
+            { v: 'H', t: 'DONA(O) DE CASA (HOMEMAKER)' },
+            { v: 'L', t: 'PROFISSÃO JURÍDICA (LEGAL PROFESSION)' },
+            { v: 'MD', t: 'MÉDICO / SAÚDE (MEDICAL/HEALTH)' },
+            { v: 'ML', t: 'MILITAR (MILITARY)' },
+            { v: 'N', t: 'DESEMPREGADO(A) (NOT EMPLOYED)' },
+            { v: 'O', t: 'OUTRA (OTHER)' },
+            { v: 'RE', t: 'RELIGIOSO(A) (RELIGIOUS)' },
+            { v: 'RS', t: 'PESQUISA / CIÊNCIA (RESEARCH/SCIENCE)' },
+            { v: 'RT', t: 'APOSENTADO(A) (RETIRED)' },
+            { v: 'SC', t: 'SERVIÇOS SOCIAIS (SOCIAL SERVICES)' },
+            { v: 'SM', t: 'MÍDIAS SOCIAIS (SOCIAL MEDIA)' },
+            { v: 'ST', t: 'ESTUDANTE (STUDENT)' },
+            { v: 'T', t: 'CIÊNCIAS FÍSICAS / MATEMÁTICA (PHYSICAL SCIENCES/MATHEMATICS)' }
+        ];
+        const PURPOSES = [
+            { v: '', t: '- Selecione a Categoria -' },
+            { v: 'A', t: 'A - DIPLOMATA / OFICIAL DE GOVERNO ESTRANGEIRO' },
+            { v: 'B1/B2', t: 'B1/B2 - NEGÓCIOS TEMPORÁRIOS / TURISMO' },
+            { v: 'B1', t: 'B1 - NEGÓCIOS TEMPORÁRIOS' },
+            { v: 'B2', t: 'B2 - TURISMO / TRATAMENTO MÉDICO' },
+            { v: 'C', t: 'C - TRÂNSITO' },
+            { v: 'D', t: 'D - TRIPULANTE' },
+            { v: 'E', t: 'E - COMERCIANTE / INVESTIDOR POR TRATADO' },
+            { v: 'F', t: 'F - ESTUDANTE (ACADÊMICO)' },
+            { v: 'G', t: 'G - FUNCIONÁRIO DE ORG. INTERNACIONAL' },
+            { v: 'H', t: 'H - TRABALHADOR TEMPORÁRIO' },
+            { v: 'I', t: 'I - JORNALISTA / MÍDIA' },
+            { v: 'J', t: 'J - VISITANTE DE INTERCÂMBIO' },
+            { v: 'K', t: 'K - NOIVO(A) DE CIDADÃO AMERICANO' },
+            { v: 'L', t: 'L - TRANSFERÊNCIA INTRACOMPANHIA' },
+            { v: 'M', t: 'M - ESTUDANTE (VOCACIONAL)' },
+            { v: 'O', t: 'O - HABILIDADE EXTRAORDINÁRIA' },
+            { v: 'P', t: 'P - ATLETA / ARTISTA' },
+            { v: 'Q', t: 'Q - INTERCÂMBIO CULTURAL' },
+            { v: 'R', t: 'R - TRABALHADOR RELIGIOSO' },
+            { v: 'T', t: 'T - VÍTIMA DE TRÁFICO' },
+            { v: 'U', t: 'U - VÍTIMA DE CRIME' },
+            { v: 'V', t: 'V - CÔNJUGE/FILHO DE RESIDENTE PERMANENTE' }
+        ];
+        // Subtipos de visto por categoria (ddlOtherPurpose)
+        const VISA_SUBTYPES = {
+            'B1/B2': [
+                { v: '', t: '- Selecione -' },
+                { v: 'BUS', t: 'NEGÓCIOS / CONFERÊNCIA (BUSINESS/CONFERENCE)' },
+                { v: 'TOU', t: 'TURISMO / FÉRIAS (TOURISM/VACATION)' },
+                { v: 'BT', t: 'NEGÓCIOS E TURISMO (BUSINESS & TOURISM)' },
+                { v: 'MED', t: 'TRATAMENTO MÉDICO (MEDICAL TREATMENT)' },
+                { v: 'VFF', t: 'VISITAR FAMÍLIA / AMIGOS (VISIT FAMILY/FRIENDS)' }
+            ],
+            'B1': [
+                { v: '', t: '- Selecione -' },
+                { v: 'BUS', t: 'NEGÓCIOS / CONFERÊNCIA (BUSINESS/CONFERENCE)' },
+                { v: 'CON', t: 'CONSULTORIA (CONSULTING)' },
+                { v: 'NEG', t: 'NEGOCIAÇÃO DE CONTRATOS (NEGOTIATE CONTRACT)' },
+                { v: 'TRN', t: 'TREINAMENTO CURTO (SHORT-TERM TRAINING)' }
+            ],
+            'B2': [
+                { v: '', t: '- Selecione -' },
+                { v: 'TOU', t: 'TURISMO / FÉRIAS (TOURISM/VACATION)' },
+                { v: 'MED', t: 'TRATAMENTO MÉDICO (MEDICAL TREATMENT)' },
+                { v: 'VFF', t: 'VISITAR FAMÍLIA / AMIGOS (VISIT FAMILY/FRIENDS)' },
+                { v: 'SOC', t: 'EVENTO SOCIAL (SOCIAL EVENT)' }
+            ],
+            'F': [
+                { v: '', t: '- Selecione -' },
+                { v: 'F1', t: 'F-1 - ESTUDANTE ACADÊMICO' },
+                { v: 'F2', t: 'F-2 - DEPENDENTE DE ESTUDANTE ACADÊMICO' },
+                { v: 'F3', t: 'F-3 - ESTUDANTE FRONTEIRIÇO' }
+            ],
+            'H': [
+                { v: '', t: '- Selecione -' },
+                { v: 'H1B', t: 'H-1B - TRABALHADOR ESPECIALIZADO' },
+                { v: 'H1B1', t: 'H-1B1 - PROFISSIONAL (CHILE/SINGAPURA)' },
+                { v: 'H2A', t: 'H-2A - TRABALHADOR AGRÍCOLA TEMPORÁRIO' },
+                { v: 'H2B', t: 'H-2B - TRABALHADOR NÃO-AGRÍCOLA TEMPORÁRIO' },
+                { v: 'H3', t: 'H-3 - ESTAGIÁRIO' },
+                { v: 'H4', t: 'H-4 - DEPENDENTE DE H' }
+            ],
+            'J': [
+                { v: '', t: '- Selecione -' },
+                { v: 'J1', t: 'J-1 - VISITANTE DE INTERCÂMBIO' },
+                { v: 'J2', t: 'J-2 - DEPENDENTE DE J-1' }
+            ],
+            'L': [
+                { v: '', t: '- Selecione -' },
+                { v: 'L1A', t: 'L-1A - GERENTE / EXECUTIVO' },
+                { v: 'L1B', t: 'L-1B - CONHECIMENTO ESPECIALIZADO' },
+                { v: 'L2', t: 'L-2 - DEPENDENTE DE L-1' }
+            ],
+            'K': [
+                { v: '', t: '- Selecione -' },
+                { v: 'K1', t: 'K-1 - NOIVO(A)' },
+                { v: 'K2', t: 'K-2 - FILHO DE NOIVO(A)' },
+                { v: 'K3', t: 'K-3 - CÔNJUGE DE CIDADÃO AMERICANO' },
+                { v: 'K4', t: 'K-4 - FILHO DE K-3' }
+            ]
+        };
+        const NO_EMPLOYER = ['H', 'N', 'RT', 'ST']; // occupations that hide employer section
+
+        // ===== POPULATE SELECTS =====
+        function populateSelect(el, items) {
+            if (!el) return;
+            el.innerHTML = '';
+            items.forEach(it => {
+                const o = document.createElement('option');
+                if (typeof it === 'string') { o.value = it; o.textContent = it || '- Selecione -'; }
+                else { o.value = it.v; o.textContent = it.t; }
+                el.appendChild(o);
+            });
+        }
+        function populateDays(el) {
+            if (!el) return;
+            el.innerHTML = '<option value="">- Dia -</option>';
+            for (let d = 1; d <= 31; d++) {
+                const v = d < 10 ? '0' + d : '' + d;
+                el.innerHTML += `<option value="${v}">${v}</option>`;
+            }
+        }
+        function initSelects() {
+            document.querySelectorAll('.sel-day').forEach(populateDays);
+            document.querySelectorAll('.sel-month').forEach(el => populateSelect(el, MONTHS));
+            document.querySelectorAll('.sel-country').forEach(el => populateSelect(el, COUNTRIES));
+            document.querySelectorAll('.sel-state').forEach(el => populateSelect(el, US_STATES));
+            document.querySelectorAll('.sel-social').forEach(el => populateSelect(el, SOCIAL_MEDIA));
+            document.querySelectorAll('.sel-occupation').forEach(el => populateSelect(el, OCCUPATIONS));
+            document.querySelectorAll('.sel-purpose').forEach(el => populateSelect(el, PURPOSES));
+        }
+        initSelects();
+
+        // ===== VISA SUBTYPE (ddlOtherPurpose) =====
+        function updateVisaSubtype() {
+            const purpose = document.getElementById('dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip');
+            const sub = document.getElementById('dlPrincipalAppTravel_ctl00_ddlOtherPurpose');
+            const br = document.getElementById('br-visaSubtype');
+            if (!purpose || !sub || !br) return;
+            const cat = purpose.value;
+            const subtypes = VISA_SUBTYPES[cat];
+            if (subtypes) {
+                populateSelect(sub, subtypes);
+                br.classList.add('open');
+            } else {
+                sub.innerHTML = '';
+                br.classList.remove('open');
+            }
+        }
+
+        // ===== INTERVIEW LOCATION (official DS-160 dropdown - 218 locations) =====
+        const LOCATIONS = [
+            { v: '', t: '- SELECT -' },
+            { v: 'TIA', t: 'ALBANIA, TIRANA' }, { v: 'ALG', t: 'ALGERIA, ALGIERS' }, { v: 'LUA', t: 'ANGOLA, LUANDA' },
+            { v: 'BNS', t: 'ARGENTINA, BUENOS AIRES' }, { v: 'YRV', t: 'ARMENIA, YEREVAN' },
+            { v: 'MLB', t: 'AUSTRALIA, MELBOURNE' }, { v: 'PRT', t: 'AUSTRALIA, PERTH' }, { v: 'SYD', t: 'AUSTRALIA, SYDNEY' },
+            { v: 'VNN', t: 'AUSTRIA, VIENNA' }, { v: 'BKU', t: 'AZERBAIJAN, BAKU' },
+            { v: 'NSS', t: 'BAHAMAS, NASSAU' }, { v: 'MNA', t: 'BAHRAIN, MANAMA' }, { v: 'DHK', t: 'BANGLADESH, DHAKA' },
+            { v: 'BGN', t: 'BARBADOS, BRIDGETOWN' }, { v: 'BRS', t: 'BELGIUM, BRUSSELS' },
+            { v: 'BLZ', t: 'BELIZE, BELMOPAN' }, { v: 'COT', t: 'BENIN, COTONOU' }, { v: 'HML', t: 'BERMUDA, HAMILTON' },
+            { v: 'LPZ', t: 'BOLIVIA, LA PAZ' }, { v: 'SAR', t: 'BOSNIA-HERZEGOVINA, SARAJEVO' },
+            { v: 'GAB', t: 'BOTSWANA, GABORONE' },
+            { v: 'BRA', t: 'BRAZIL, BRASILIA' }, { v: 'PTA', t: 'BRAZIL, PORTO ALEGRE' }, { v: 'RCF', t: 'BRAZIL, RECIFE' },
+            { v: 'RDJ', t: 'BRAZIL, RIO DE JANEIRO' }, { v: 'SPL', t: 'BRAZIL, SAO PAULO' },
+            { v: 'BSB', t: 'BRUNEI, BANDAR SERI BEGAWAN' }, { v: 'SOF', t: 'BULGARIA, SOFIA' },
+            { v: 'OUG', t: 'BURKINA FASO, OUAGADOUGOU' }, { v: 'RNG', t: 'BURMA, RANGOON' },
+            { v: 'BUJ', t: 'BURUNDI, BUJUMBURA' }, { v: 'PIA', t: 'CABO VERDE, PRAIA' },
+            { v: 'PHP', t: 'CAMBODIA, PHNOM PENH' }, { v: 'YDE', t: 'CAMEROON, YAOUNDE' },
+            { v: 'CLG', t: 'CANADA, CALGARY' }, { v: 'HLF', t: 'CANADA, HALIFAX' }, { v: 'MTL', t: 'CANADA, MONTREAL' },
+            { v: 'OTT', t: 'CANADA, OTTAWA' }, { v: 'QBC', t: 'CANADA, QUEBEC' }, { v: 'TRT', t: 'CANADA, TORONTO' },
+            { v: 'VAC', t: 'CANADA, VANCOUVER' }, { v: 'NDJ', t: 'CHAD, N`DJAMENA' },
+            { v: 'SNT', t: 'CHILE, SANTIAGO' },
+            { v: 'BEJ', t: 'CHINA, BEIJING' }, { v: 'GUZ', t: 'CHINA, GUANGZHOU' }, { v: 'SHG', t: 'CHINA, SHANGHAI' },
+            { v: 'SNY', t: 'CHINA, SHENYANG' }, { v: 'WUH', t: 'CHINA, WUHAN' },
+            { v: 'BGT', t: 'COLOMBIA, BOGOTA' }, { v: 'BRZ', t: 'CONGO, BRAZZAVILLE' }, { v: 'KIN', t: 'CONGO, KINSHASA' },
+            { v: 'SNJ', t: 'COSTA RICA, SAN JOSE' }, { v: 'ABJ', t: 'COTE D`IVORIE, ABIDJAN' },
+            { v: 'ZGB', t: 'CROATIA, ZAGREB' }, { v: 'HAV', t: 'CUBA, HAVANA' }, { v: 'CRC', t: 'CURACAO, CURACAO' },
+            { v: 'NCS', t: 'CYPRUS, NICOSIA' }, { v: 'PRG', t: 'CZECH REPUBLIC, PRAGUE' },
+            { v: 'CPN', t: 'DENMARK, COPENHAGEN' }, { v: 'DJI', t: 'DJIBOUTI, DJIBOUTI' },
+            { v: 'SDO', t: 'DOMINICAN REPUBLIC, SANTO DOMINGO' },
+            { v: 'GYQ', t: 'ECUADOR, GUAYAQUIL' }, { v: 'QTO', t: 'ECUADOR, QUITO' },
+            { v: 'CRO', t: 'EGYPT, CAIRO' }, { v: 'SNS', t: 'EL SALVADOR, SAN SALVADOR' },
+            { v: 'LND', t: 'ENGLAND, LONDON' }, { v: 'MBO', t: 'EQUATORIAL GUINEA, MALABO' },
+            { v: 'ASM', t: 'ERITREA, ASMARA' }, { v: 'TAL', t: 'ESTONIA, TALLINN' },
+            { v: 'MBA', t: 'ESWATINI, MBABANE' }, { v: 'ADD', t: 'ETHIOPIA, ADDIS ABABA' },
+            { v: 'SUV', t: 'FIJI, SUVA' }, { v: 'HLS', t: 'FINLAND, HELSINKI' }, { v: 'PRS', t: 'FRANCE, PARIS' },
+            { v: 'LIB', t: 'GABON, LIBREVILLE' }, { v: 'BAN', t: 'GAMBIA, BANJUL' }, { v: 'TBL', t: 'GEORGIA, TBILISI' },
+            { v: 'BRL', t: 'GERMANY, BERLIN' }, { v: 'FRN', t: 'GERMANY, FRANKFURT' }, { v: 'MUN', t: 'GERMANY, MUNICH' },
+            { v: 'ACC', t: 'GHANA, ACCRA' }, { v: 'ATH', t: 'GREECE, ATHENS' },
+            { v: 'GTM', t: 'GUATEMALA, GUATEMALA CITY' }, { v: 'CRY', t: 'GUINEA, CONAKRY' },
+            { v: 'GEO', t: 'GUYANA, GEORGETOWN' }, { v: 'PTP', t: 'HAITI, PORT-AU-PRINCE' },
+            { v: 'TGG', t: 'HONDURAS, TEGUCIGALPA' }, { v: 'HNK', t: 'HONG KONG' },
+            { v: 'BDP', t: 'HUNGARY, BUDAPEST' }, { v: 'RKJ', t: 'ICELAND, REYKJAVIK' },
+            { v: 'MDR', t: 'INDIA, CHENNAI' }, { v: 'HYD', t: 'INDIA, HYDERABAD' }, { v: 'CLC', t: 'INDIA, KOLKATA' },
+            { v: 'BMB', t: 'INDIA, MUMBAI' }, { v: 'NWD', t: 'INDIA, NEW DELHI' },
+            { v: 'JAK', t: 'INDONESIA, JAKARTA' }, { v: 'SRB', t: 'INDONESIA, SURABAYA' },
+            { v: 'BGH', t: 'IRAQ, BAGHDAD' }, { v: 'ERB', t: 'IRAQ, ERBIL' },
+            { v: 'DBL', t: 'IRELAND, DUBLIN' }, { v: 'TLV', t: 'ISRAEL, TEL AVIV' },
+            { v: 'FLR', t: 'ITALY, FLORENCE' }, { v: 'MLN', t: 'ITALY, MILAN' }, { v: 'NPL', t: 'ITALY, NAPLES' },
+            { v: 'RME', t: 'ITALY, ROME' }, { v: 'KNG', t: 'JAMAICA, KINGSTON' },
+            { v: 'FKK', t: 'JAPAN, FUKUOKA' }, { v: 'NHA', t: 'JAPAN, NAHA' }, { v: 'KBO', t: 'JAPAN, OSAKA' },
+            { v: 'TKY', t: 'JAPAN, TOKYO/SAPPORO' }, { v: 'JRS', t: 'JERUSALEM' },
+            { v: 'AMM', t: 'JORDAN, AMMAN' }, { v: 'ATA', t: 'KAZAKHSTAN, ALMATY' }, { v: 'AST', t: 'KAZAKHSTAN, ASTANA' },
+            { v: 'NRB', t: 'KENYA, NAIROBI' }, { v: 'PRI', t: 'KOSOVO, PRISTINA' },
+            { v: 'KWT', t: 'KUWAIT, KUWAIT CITY' }, { v: 'BKK', t: 'KYRGYZSTAN, BISHKEK' },
+            { v: 'VNT', t: 'LAOS, VIENTIANE' }, { v: 'RGA', t: 'LATVIA, RIGA' },
+            { v: 'BRT', t: 'LEBANON, BEIRUT' }, { v: 'MAS', t: 'LESOTHO, MASERU' },
+            { v: 'MRV', t: 'LIBERIA, MONROVIA' }, { v: 'VIL', t: 'LITHUANIA, VILNIUS' },
+            { v: 'LXM', t: 'LUXEMBOURG, LUXEMBOURG' }, { v: 'ANT', t: 'MADAGASCAR, ANTANANARIVO' },
+            { v: 'LIL', t: 'MALAWI, LILONGWE' }, { v: 'KLL', t: 'MALAYSIA, KUALA LUMPUR' },
+            { v: 'BAM', t: 'MALI, BAMAKO' }, { v: 'VLL', t: 'MALTA, VALLETTA' },
+            { v: 'MAJ', t: 'MARSHALL ISLANDS, MAJURO' }, { v: 'NUK', t: 'MAURITANIA, NOUAKCHOTT' },
+            { v: 'PTL', t: 'MAURITIUS, PORT LOUIS' },
+            { v: 'CDJ', t: 'MEXICO, CIUDAD JUAREZ' }, { v: 'GDL', t: 'MEXICO, GUADALAJARA' },
+            { v: 'HER', t: 'MEXICO, HERMOSILLO' }, { v: 'MTM', t: 'MEXICO, MATAMOROS' },
+            { v: 'MER', t: 'MEXICO, MERIDA' }, { v: 'MEX', t: 'MEXICO, MEXICO CITY' },
+            { v: 'MTR', t: 'MEXICO, MONTERREY' }, { v: 'NGL', t: 'MEXICO, NOGALES' },
+            { v: 'NVL', t: 'MEXICO, NUEVO LAREDO' }, { v: 'TJT', t: 'MEXICO, TIJUANA' },
+            { v: 'KOL', t: 'MICRONESIA, KOLONIA' }, { v: 'CHS', t: 'MOLDOVA, CHISINAU' },
+            { v: 'ULN', t: 'MONGOLIA, ULAANBAATAR' }, { v: 'POD', t: 'MONTENEGRO, PODGORICA' },
+            { v: 'CSB', t: 'MOROCCO, CASABLANCA' }, { v: 'MAP', t: 'MOZAMBIQUE, MAPUTO' },
+            { v: 'WHK', t: 'NAMIBIA, WINDHOEK' }, { v: 'KDU', t: 'NEPAL, KATHMANDU' },
+            { v: 'AMS', t: 'NETHERLANDS, AMSTERDAM' }, { v: 'ACK', t: 'NEW ZEALAND, AUCKLAND' },
+            { v: 'MNG', t: 'NICARAGUA, MANAGUA' }, { v: 'NMY', t: 'NIGER, NIAMEY' },
+            { v: 'ABU', t: 'NIGERIA, ABUJA' }, { v: 'LGS', t: 'NIGERIA, LAGOS' },
+            { v: 'SKO', t: 'NORTH MACEDONIA, SKOPJE' }, { v: 'BLF', t: 'NORTHERN IRELAND, BELFAST' },
+            { v: 'OSL', t: 'NORWAY, OSLO' }, { v: 'MST', t: 'OMAN, MUSCAT' },
+            { v: 'ISL', t: 'PAKISTAN, ISLAMABAD' }, { v: 'KRC', t: 'PAKISTAN, KARACHI' },
+            { v: 'KOR', t: 'PALAU, KOROR' }, { v: 'PNM', t: 'PANAMA, PANAMA CITY' },
+            { v: 'PTM', t: 'PAPUA NEW GUINEA, PORT MORESBY' }, { v: 'ASN', t: 'PARAGUAY, ASUNCION' },
+            { v: 'LMA', t: 'PERU, LIMA' }, { v: 'MNL', t: 'PHILIPPINES, MANILA' },
+            { v: 'KRK', t: 'POLAND, KRAKOW' }, { v: 'WRW', t: 'POLAND, WARSAW' },
+            { v: 'LSB', t: 'PORTUGAL, LISBON' }, { v: 'DOH', t: 'QATAR, DOHA' },
+            { v: 'BCH', t: 'ROMANIA, BUCHAREST' }, { v: 'MOS', t: 'RUSSIA, MOSCOW' },
+            { v: 'KGL', t: 'RWANDA, KIGALI' }, { v: 'APA', t: 'SAMOA, APIA' },
+            { v: 'DHR', t: 'SAUDI ARABIA, DHAHRAN' }, { v: 'JDD', t: 'SAUDI ARABIA, JEDDAH' },
+            { v: 'RID', t: 'SAUDI ARABIA, RIYADH' }, { v: 'DKR', t: 'SENEGAL, DAKAR' },
+            { v: 'BLG', t: 'SERBIA, BELGRADE' }, { v: 'FTN', t: 'SIERRA LEONE, FREETOWN' },
+            { v: 'SGP', t: 'SINGAPORE, SINGAPORE' }, { v: 'BTS', t: 'SLOVAKIA, BRATISLAVA' },
+            { v: 'LJU', t: 'SLOVENIA, LJUBLJANA' },
+            { v: 'CPT', t: 'SOUTH AFRICA, CAPE TOWN' }, { v: 'DRB', t: 'SOUTH AFRICA, DURBAN' },
+            { v: 'JHN', t: 'SOUTH AFRICA, JOHANNESBURG' }, { v: 'SEO', t: 'SOUTH KOREA, SEOUL' },
+            { v: 'JBA', t: 'SOUTH SUDAN, JUBA' }, { v: 'MDD', t: 'SPAIN, MADRID' },
+            { v: 'CLM', t: 'SRI LANKA, COLOMBO' }, { v: 'PRM', t: 'SURINAME, PARAMARIBO' },
+            { v: 'STK', t: 'SWEDEN, STOCKHOLM' }, { v: 'BEN', t: 'SWITZERLAND, BERN' },
+            { v: 'TAI', t: 'TAIWAN, TAIPEI' }, { v: 'DHB', t: 'TAJIKISTAN, DUSHANBE' },
+            { v: 'DRS', t: 'TANZANIA, DAR ES SALAAM' }, { v: 'BNK', t: 'THAILAND, BANGKOK' },
+            { v: 'CHN', t: 'THAILAND, CHIANG MAI' }, { v: 'DIL', t: 'TIMOR LESTE, DILI' },
+            { v: 'LOM', t: 'TOGO, LOME' }, { v: 'PTS', t: 'TRINIDAD, PORT OF SPAIN' },
+            { v: 'TNS', t: 'TUNISIA, TUNIS' }, { v: 'ANK', t: 'TURKEY, ANKARA' }, { v: 'IST', t: 'TURKEY, ISTANBUL' },
+            { v: 'AKD', t: 'TURKMENISTAN, ASHGABAT' }, { v: 'KMP', t: 'UGANDA, KAMPALA' },
+            { v: 'KEV', t: 'UKRAINE, KYIV' }, { v: 'ABD', t: 'UNITED ARAB EMIRATES, ABU DHABI' },
+            { v: 'DUB', t: 'UNITED ARAB EMIRATES, DUBAI' }, { v: 'MTV', t: 'URUGUAY, MONTEVIDEO' },
+            { v: 'THT', t: 'UZBEKISTAN, TASHKENT' }, { v: 'HAN', t: 'VIETNAM, HANOI' },
+            { v: 'HCM', t: 'VIETNAM, HO CHI MINH CITY' }, { v: 'LUS', t: 'ZAMBIA, LUSAKA' },
+            { v: 'HRE', t: 'ZIMBABWE, HARARE' }
+        ];
+        document.querySelectorAll('.sel-location').forEach(el => populateSelect(el, LOCATIONS));
+
+        // ===== PAGES & NAVIGATION =====
+        const PAGES = ['Start', 'Personal1', 'Personal2', 'Travel', 'TravelCompanions', 'PreviousUSTravel',
+            'AddressPhone', 'Passport', 'USContact', 'Family1', 'Family2', 'PrevSpouse',
+            'WorkEducation1', 'WorkEducation2', 'WorkEducation3',
+            'Security1', 'Security2', 'Security3', 'Security4', 'Security5'];
+        let currentPage = 0;
+
+        function isPageVisible(i) {
+            const pg = document.getElementById('pg-' + PAGES[i]);
+            return pg && pg.style.display !== 'none';
+        }
+        function showPage(i) {
+            if (!isPageVisible(i)) return;
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('pg-' + PAGES[i]).classList.add('active');
+            currentPage = i;
+            document.querySelectorAll('#nav button').forEach((b, j) => {
+                b.classList.toggle('active', j === i);
+            });
+            window.scrollTo(0, 0);
+        }
+        function nextPage() {
+            for (let i = currentPage + 1; i < PAGES.length; i++) {
+                if (isPageVisible(i)) { showPage(i); return; }
+            }
+        }
+        function prevPage() {
+            for (let i = currentPage - 1; i >= 0; i--) {
+                if (isPageVisible(i)) { showPage(i); return; }
+            }
+        }
+        function buildNav() {
+            const nav = document.getElementById('nav');
+            nav.innerHTML = '';
+            PAGES.forEach((p, i) => {
+                const b = document.createElement('button');
+                b.textContent = (i + 1) + '. ' + p.replace(/([A-Z])/g, ' $1').trim();
+                b.onclick = () => showPage(i);
+                if (i === 0) b.classList.add('active');
+                const pg = document.getElementById('pg-' + p);
+                if (pg && pg.style.display === 'none') b.classList.add('hidden-tab');
+                nav.appendChild(b);
+            });
+        }
+
+        // ===== CONDITIONAL PAGE VISIBILITY =====
+        function updatePageVisibility() {
+            const ms = document.getElementById('ddlAPP_MARITAL_STATUS').value;
+            const hasSpouse = ['M', 'C', 'P', 'W', 'D', 'L'].includes(ms);
+            const hasPrevSpouse = ['D', 'W', 'L'].includes(ms);
+
+            document.getElementById('pg-Family2').style.display = hasSpouse ? '' : 'none';
+            document.getElementById('pg-PrevSpouse').style.display = hasPrevSpouse ? '' : 'none';
+
+            // Update nav tabs
+            const navBtns = document.querySelectorAll('#nav button');
+            const f2Idx = PAGES.indexOf('Family2');
+            const psIdx = PAGES.indexOf('PrevSpouse');
+            if (navBtns[f2Idx]) navBtns[f2Idx].classList.toggle('hidden-tab', !hasSpouse);
+            if (navBtns[psIdx]) navBtns[psIdx].classList.toggle('hidden-tab', !hasPrevSpouse);
+            if (navBtns[f2Idx]) navBtns[f2Idx].style.display = hasSpouse ? '' : 'none';
+            if (navBtns[psIdx]) navBtns[psIdx].style.display = hasPrevSpouse ? '' : 'none';
+
+            // Other Marital Status textarea branch (matches official DS-160 tbxOtherMaritalStatus)
+            const brOther = document.getElementById('br-otherMarital');
+            if (brOther) brOther.classList.toggle('open', ms === 'O');
+        }
+
+        // ===== OCCUPATION → EMPLOYER VISIBILITY =====
+        function updateEmployerVisibility() {
+            const occ = document.getElementById('ddlPresentOccupation').value;
+            const sec = document.getElementById('sec-employer');
+            if (sec) sec.style.display = NO_EMPLOYER.includes(occ) ? 'none' : '';
+        }
+
+        // ===== PAYER BRANCH =====
+        function updatePayerBranch() {
+            const val = document.getElementById('ddlWhoIsPaying').value;
+            const brP = document.getElementById('br-payerPerson');
+            const brC = document.getElementById('br-payerCompany');
+            if (brP) brP.classList.toggle('open', val === 'O');
+            if (brC) brC.classList.toggle('open', ['C', 'P', 'H'].includes(val));
+        }
+
+        // ===== SPOUSE ADDRESS BRANCH =====
+        function updateSpouseAddrBranch() {
+            const val = document.getElementById('ddlSpouseAddressType').value;
+            const br = document.getElementById('br-spouseAddr');
+            if (br) br.classList.toggle('open', val === 'O');
+        }
+
+        // ===== PASSPORT TYPE BRANCH =====
+        function updatePptTypeBranch() {
+            const val = document.getElementById('ddlPPT_TYPE').value;
+            const br = document.getElementById('br-pptOther');
+            if (br) br.classList.toggle('open', val === 'T');
+        }
+
+        // ===== SPECIFIC TRAVEL BRANCH (Y shows specific, N shows non-specific) =====
+        function updateTravelBranch() {
+            const radios = document.querySelectorAll('input[name="rblSpecificTravel"]');
+            let val = '';
+            radios.forEach(r => { if (r.checked) val = r.value; });
+            const brY = document.getElementById('br-rblSpecificTravel');
+            const brN = document.getElementById('br-rblSpecificTravel-N');
+            if (brY) brY.classList.toggle('open', val === 'Y');
+            if (brN) brN.classList.toggle('open', val === 'N');
+        }
+
+        // ===== N/A CHECKBOXES =====
+        function setupNACheckboxes() {
+            document.querySelectorAll('.na-cb').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const targets = (cb.dataset.target || '').split(',');
+                    targets.forEach(t => {
+                        const el = document.getElementById(t.trim());
+                        if (el) {
+                            el.disabled = cb.checked;
+                            if (cb.checked) el.value = '';
+                        }
+                    });
+                });
+            });
+        }
+
+        // ===== RADIO BRANCHES =====
+        function setupRadioBranches() {
+            document.querySelectorAll('input[type=radio][data-branch]').forEach(r => {
+                r.addEventListener('change', () => {
+                    const branchName = r.dataset.branch;
+                    // Special case: specific travel has Y and N branches
+                    if (branchName === 'rblSpecificTravel') { updateTravelBranch(); return; }
+                    const br = document.getElementById('br-' + branchName);
+                    if (br) br.classList.toggle('open', r.value === 'Y');
+                });
+            });
+        }
+
+        // ===== ADD ANOTHER =====
+        // Template definitions for each DataList
+        const DATA_LIST_TEMPLATES = {};
+        function registerTemplates() {
+            document.querySelectorAll('.as[data-list]').forEach(container => {
+                const listId = container.dataset.list;
+                const firstEntry = container.querySelector('.entry[data-idx="0"]');
+                if (firstEntry) {
+                    DATA_LIST_TEMPLATES[listId] = firstEntry.innerHTML;
+                }
+            });
+        }
+
+        function addEntry(listId) {
+            const container = document.querySelector(`.as[data-list="${listId}"]`);
+            if (!container) return;
+            const entries = container.querySelectorAll('.entry');
+            const newIdx = entries.length;
+            const entry = document.createElement('div');
+            entry.className = 'entry';
+            entry.dataset.idx = newIdx;
+
+            // Clone template, update ctl00 → ctl0N
+            let html = DATA_LIST_TEMPLATES[listId] || '';
+            const padIdx = newIdx < 10 ? '0' + newIdx : '' + newIdx;
+            html = html.replace(/ctl00/g, 'ctl' + padIdx);
+
+            // Add remove button
+            entry.innerHTML = `<button type="button" class="btn-rm" onclick="removeEntry(this)" title="Remover">×</button>${html}`;
+            // Insert before the add button
+            const addBtn = container.querySelector('.btn-add');
+            container.insertBefore(entry, addBtn);
+
+            // Re-init selects in new entry
+            entry.querySelectorAll('.sel-day').forEach(populateDays);
+            entry.querySelectorAll('.sel-month').forEach(el => populateSelect(el, MONTHS));
+            entry.querySelectorAll('.sel-country').forEach(el => populateSelect(el, COUNTRIES));
+            entry.querySelectorAll('.sel-state').forEach(el => populateSelect(el, US_STATES));
+            entry.querySelectorAll('.sel-social').forEach(el => populateSelect(el, SOCIAL_MEDIA));
+            // Re-init NA checkboxes
+            entry.querySelectorAll('.na-cb').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const targets = (cb.dataset.target || '').split(',');
+                    targets.forEach(t => {
+                        const el = document.getElementById(t.trim());
+                        if (el) { el.disabled = cb.checked; if (cb.checked) el.value = ''; }
+                    });
+                });
+            });
+        }
+
+        function removeEntry(btn) {
+            const entry = btn.closest('.entry');
+            if (entry) entry.remove();
+        }
+
+        // ===== JSON GENERATION =====
+        function val(id) {
+            const el = document.getElementById(id);
+            if (!el) return '';
+            if (el.disabled) return 'N/A';
+            return el.value || '';
+        }
+        function radioVal(name) {
+            const r = document.querySelector(`input[name="${name}"]:checked`);
+            return r ? r.value : '';
+        }
+        function dateVal(dayId, monthId, yearId) {
+            const d = val(dayId), m = val(monthId), y = val(yearId);
+            if (!d && !m && !y) return null;
+            return { day: d, month: m, year: y };
+        }
+        function collectEntries(listId, fieldExtractor) {
+            const container = document.querySelector(`.as[data-list="${listId}"]`);
+            if (!container) return [];
+            const entries = container.querySelectorAll('.entry');
+            const result = [];
+            entries.forEach(entry => {
+                const data = fieldExtractor(entry);
+                if (data) result.push(data);
+            });
+            return result;
+        }
+        function entryVal(entry, partialId) {
+            const el = entry.querySelector(`[id*="${partialId}"]`);
+            if (!el) return '';
+            if (el.disabled) return 'N/A';
+            return el.value || '';
+        }
+
+        function generateJSON() {
+            const data = {
+                // Interview Location (code matches automation profiles)
+                location: val('ddlLocation'),
+                // Personal1
+                personal1: {
+                    surname: val('tbxAPP_SURNAME'),
+                    givenName: val('tbxAPP_GIVEN_NAME'),
+                    fullNameNative: val('tbxAPP_FULL_NAME_NATIVE'),
+                    otherNamesUsed: radioVal('rblOtherNames'),
+                    otherNames: collectEntries('DListAlias', e => ({
+                        surname: entryVal(e, 'tbxSURNAME'), givenName: entryVal(e, 'tbxGIVEN_NAME')
+                    })),
+                    telecode: radioVal('rblTelecodeQuestion'),
+                    telecodeSurname: val('tbxAPP_TelecodeSURNAME'),
+                    telecodeGivenName: val('tbxAPP_TelecodeGIVEN_NAME'),
+                    sex: val('ddlAPP_GENDER'),
+                    maritalStatus: val('ddlAPP_MARITAL_STATUS'),
+                    otherMaritalStatusText: val('tbxOtherMaritalStatus'),
+                    dob: dateVal('ddlDOBDay', 'ddlDOBMonth', 'tbxDOBYear'),
+                    cityOfBirth: val('tbxAPP_POB_CITY'),
+                    stateOfBirth: val('tbxAPP_POB_ST_PROVINCE'),
+                    countryOfBirth: val('ddlAPP_POB_CNTRY'),
+                },
+                // Personal2
+                personal2: {
+                    nationality: val('ddlAPP_NATL'),
+                    otherNationality: radioVal('rblAPP_OTH_NATL_IND'),
+                    otherNationalities: collectEntries('dtlOTHER_NATL', e => ({
+                        country: entryVal(e, 'ddlOTHER_NATL'),
+                        hasPassport: entryVal(e, 'rblOTHER_PPT_IND') || radioVal(e.querySelector('input[name*="rblOTHER_PPT_IND"]')?.name || ''),
+                        passportNumber: entryVal(e, 'tbxOTHER_PPT_NUM')
+                    })),
+                    permanentResident: radioVal('rblPermResOtherCntryInd'),
+                    permanentResidentCountries: collectEntries('dtlOthPermResCntry', e => ({
+                        country: entryVal(e, 'ddlOthPermResCntry')
+                    })),
+                    nationalId: val('tbxAPP_NATIONAL_ID'),
+                    ssn: [val('tbxAPP_SSN1'), val('tbxAPP_SSN2'), val('tbxAPP_SSN3')].filter(s => s).join('-') || 'N/A',
+                    taxId: val('tbxAPP_TAX_ID'),
+                },
+                // Travel
+                travel: {
+                    purposeOfTrip: val('dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip'),
+                    hasSpecificPlans: radioVal('rblSpecificTravel'),
+                    arrivalDate: dateVal('ddlARRIVAL_US_DTEDay', 'ddlARRIVAL_US_DTEMonth', 'tbxARRIVAL_US_DTEYear'),
+                    arrivalFlight: val('tbxArriveFlight'), arrivalCity: val('tbxArriveCity'),
+                    departureDate: dateVal('ddlDEPARTURE_US_DTEDay', 'ddlDEPARTURE_US_DTEMonth', 'tbxDEPARTURE_US_DTEYear'),
+                    departureFlight: val('tbxDepartFlight'), departureCity: val('tbxDepartCity'),
+                    specificLocation: val('dtlTravelLoc_ctl00_tbxSPECTRAVEL_LOCATION'),
+                    nonSpecificArrival: dateVal('ddlARRIVAL_US_NSDTEDay', 'ddlARRIVAL_US_NSDTEMonth', 'tbxARRIVAL_US_NSDTEYear'),
+                    lengthOfStay: val('tbxAPP_LOS'), lengthOfStayUnit: val('ddlAPP_LOS_CD'),
+                    usAddress: {
+                        street1: val('tbxStreetAddress1'), street2: val('tbxStreetAddress2'),
+                        city: val('tbxCity'), state: val('ddlTravelState'), zip: val('tbZIPCode'),
+                    },
+                    whoIsPaying: val('ddlWhoIsPaying'),
+                    payer: {
+                        surname: val('tbxPayerSurname'), givenName: val('tbxPayerGivenName'),
+                        phone: val('tbxPayerPhone'), email: val('tbxPAYER_EMAIL_ADDR'),
+                        relationship: val('ddlPayerRelationship'),
+                        sameAddress: radioVal('rblPayerAddrSameAsInd'),
+                        address: {
+                            street1: val('tbxPayerStreetAddress1'), street2: val('tbxPayerStreetAddress2'),
+                            city: val('tbxPayerCity'), state: val('tbxPayerStateProvince'),
+                            postalCode: val('tbxPayerPostalZIPCode'), country: val('ddlPayerCountry'),
+                        },
+                        companyName: val('tbxPayingCompany'), companyPhone: val('tbxPayerPhoneC'),
+                        companyRelation: val('tbxCompanyRelation'),
+                        companyAddress: {
+                            street1: val('tbxPayerStreetAddress1C'), street2: val('tbxPayerStreetAddress2C'),
+                            city: val('tbxPayerCityC'), state: val('tbxPayerStateProvinceC'),
+                            postalCode: val('tbxPayerPostalZIPCodeC'), country: val('ddlPayerCountryC'),
+                        }
+                    }
+                },
+                // TravelCompanions
+                travelCompanions: {
+                    travelingWithOthers: radioVal('rblOtherPersonsTravelingWithYou'),
+                    partOfGroup: radioVal('rblGroupTravel'),
+                    groupName: val('tbxGroupName'),
+                    companions: collectEntries('dlTravelCompanions', e => ({
+                        surname: entryVal(e, 'tbxTC_SURNAME'),
+                        givenName: entryVal(e, 'tbxTC_GIVEN_NAME'),
+                        relationship: entryVal(e, 'ddlTCRelationship'),
+                    })),
+                },
+                // PreviousUSTravel
+                previousUSTravel: {
+                    hasBeenInUS: radioVal('rblPREV_US_TRAVEL_IND'),
+                    previousVisits: collectEntries('dtlPREV_US_VISIT', e => ({
+                        arrivalDate: {
+                            day: entryVal(e, 'ddlPREV_US_VISIT_DTEDay'),
+                            month: entryVal(e, 'ddlPREV_US_VISIT_DTEMonth'),
+                            year: entryVal(e, 'tbxPREV_US_VISIT_DTEYear')
+                        },
+                        lengthOfStay: entryVal(e, 'tbxPREV_US_VISIT_LOS'),
+                        lengthOfStayUnit: entryVal(e, 'ddlPREV_US_VISIT_LOS_CD'),
+                    })),
+                    hasDriversLicense: radioVal('rblPREV_US_DRIVER_LIC_IND'),
+                    driversLicenses: collectEntries('dtlUS_DRIVER_LICENSE', e => ({
+                        number: entryVal(e, 'tbxUS_DRIVER_LICENSE'),
+                        state: entryVal(e, 'ddlUS_DRIVER_LICENSE_STATE'),
+                    })),
+                    hasUSVisa: radioVal('rblPREV_VISA_IND'),
+                    previousVisa: {
+                        issueDate: dateVal('ddlPREV_VISA_ISSUED_DTEDay', 'ddlPREV_VISA_ISSUED_DTEMonth', 'tbxPREV_VISA_ISSUED_DTEYear'),
+                        number: val('tbxPREV_VISA_FOIL_NUMBER'),
+                        sameType: radioVal('rblPREV_VISA_SAME_TYPE_IND'),
+                        sameCountry: radioVal('rblPREV_VISA_SAME_CNTRY_IND'),
+                        tenPrint: radioVal('rblPREV_VISA_TEN_PRINT_IND'),
+                        lost: radioVal('rblPREV_VISA_LOST_IND'),
+                        cancelled: radioVal('rblPREV_VISA_CANCELLED_IND'),
+                    },
+                    visaRefused: radioVal('rblPREV_VISA_REFUSED_IND'),
+                    visaRefusedExplanation: val('tbxPREV_VISA_REFUSED_EXPL'),
+                    immigrantPetition: radioVal('rblIV_PETITION_IND'),
+                    immigrantPetitionExplanation: val('tbxIV_PETITION_EXPL'),
+                    permanentResident: radioVal('rblPERM_RESIDENT_IND'),
+                    permanentResidentExplanation: val('tbxPERM_RESIDENT_EXPL'),
+                    vwpDenial: radioVal('rblVWP_DENIAL_IND'),
+                    vwpDenialExplanation: val('tbxVWP_DENIAL_EXPL'),
+                },
+                // AddressPhone
+                addressPhone: {
+                    homeAddress: {
+                        street1: val('tbxAPP_ADDR_LN1'), street2: val('tbxAPP_ADDR_LN2'),
+                        city: val('tbxAPP_ADDR_CITY'), state: val('tbxAPP_ADDR_STATE'),
+                        postalCode: val('tbxAPP_ADDR_POSTAL_CD'), country: val('ddlCountry'),
+                    },
+                    mailingAddressSame: radioVal('rblMailingAddrSame'),
+                    mailingAddress: {
+                        street1: val('tbxMAILING_ADDR_LN1'), street2: val('tbxMAILING_ADDR_LN2'),
+                        city: val('tbxMAILING_ADDR_CITY'), state: val('tbxMAILING_ADDR_STATE'),
+                        postalCode: val('tbxMAILING_ADDR_POSTAL_CD'), country: val('ddlMailCountry'),
+                    },
+                    phone: val('tbxAPP_HOME_TEL'),
+                    mobilePhone: val('tbxAPP_MOBILE_TEL'),
+                    businessPhone: val('tbxAPP_BUS_TEL'),
+                    additionalPhones: radioVal('rblAddPhone'),
+                    additionalPhoneNumbers: collectEntries('dtlAddPhone', e => entryVal(e, 'tbxAddPhoneInfo')),
+                    email: val('tbxAPP_EMAIL_ADDR'),
+                    additionalEmails: radioVal('rblAddEmail'),
+                    additionalEmailAddresses: collectEntries('dtlAddEmail', e => entryVal(e, 'tbxAddEmailInfo')),
+                    socialMedia: { platform: val('ddlSocialMedia'), handle: val('tbxSocialMediaIdent') },
+                    additionalSocialMedia: radioVal('rblAddSocial'),
+                    additionalSocialMediaAccounts: collectEntries('dtlAddSocial', e => ({
+                        platform: entryVal(e, 'ddlSocialMedia'), handle: entryVal(e, 'tbxSocialMediaIdent'),
+                    })),
+                },
+                // Passport
+                passport: {
+                    type: val('ddlPPT_TYPE'), typeExplanation: val('tbxPptOtherExpl'),
+                    number: val('tbxPPT_NUM'), bookNumber: val('tbxPPT_BOOK_NUM'),
+                    issuingCountry: val('ddlPPT_ISSUED_CNTRY'),
+                    issuedCity: val('tbxPPT_ISSUED_IN_CITY'), issuedState: val('tbxPPT_ISSUED_IN_STATE'),
+                    issuedCountry: val('ddlPPT_ISSUED_IN_CNTRY'),
+                    issuanceDate: dateVal('ddlPPT_ISSUED_DTEDay', 'ddlPPT_ISSUED_DTEMonth', 'tbxPPT_ISSUEDYear'),
+                    expirationDate: dateVal('ddlPPT_EXPIRE_DTEDay', 'ddlPPT_EXPIRE_DTEMonth', 'tbxPPT_EXPIREYear'),
+                    lostOrStolen: radioVal('rblLOST_PPT_IND'),
+                    lostPassports: collectEntries('dtlLostPPT', e => ({
+                        number: entryVal(e, 'tbxLOST_PPT_NUM'),
+                        country: entryVal(e, 'ddlLOST_PPT_NATL'),
+                        explanation: entryVal(e, 'tbxLOST_PPT_EXPL'),
+                    })),
+                },
+                // USContact
+                usContact: {
+                    surname: val('tbxUS_POC_SURNAME'), givenName: val('tbxUS_POC_GIVEN_NAME'),
+                    organization: val('tbxUS_POC_ORGANIZATION'), relationship: val('ddlUS_POC_REL_TO_APP'),
+                    address: {
+                        street1: val('tbxUS_POC_ADDR_LN1'), street2: val('tbxUS_POC_ADDR_LN2'),
+                        city: val('tbxUS_POC_ADDR_CITY'), state: val('ddlUS_POC_ADDR_STATE'),
+                        zip: val('tbxUS_POC_ADDR_POSTAL_CD'),
+                    },
+                    phone: val('tbxUS_POC_HOME_TEL'), email: val('tbxUS_POC_EMAIL_ADDR'),
+                },
+                // Family1
+                family1: {
+                    father: {
+                        surname: val('tbxFATHER_SURNAME'), givenName: val('tbxFATHER_GIVEN_NAME'),
+                        dob: dateVal('ddlFathersDOBDay', 'ddlFathersDOBMonth', 'tbxFathersDOBYear'),
+                        inUS: radioVal('rblFATHER_LIVE_IN_US_IND'), usStatus: val('ddlFATHER_US_STATUS'),
+                    },
+                    mother: {
+                        surname: val('tbxMOTHER_SURNAME'), givenName: val('tbxMOTHER_GIVEN_NAME'),
+                        dob: dateVal('ddlMothersDOBDay', 'ddlMothersDOBMonth', 'tbxMothersDOBYear'),
+                        inUS: radioVal('rblMOTHER_LIVE_IN_US_IND'), usStatus: val('ddlMOTHER_US_STATUS'),
+                    },
+                    immediateRelativesInUS: radioVal('rblUS_IMMED_RELATIVE_IND'),
+                    relatives: collectEntries('dlUSRelatives', e => ({
+                        surname: entryVal(e, 'tbxUS_REL_SURNAME'), givenName: entryVal(e, 'tbxUS_REL_GIVEN_NAME'),
+                        type: entryVal(e, 'ddlUS_REL_TYPE'), status: entryVal(e, 'ddlUS_REL_STATUS'),
+                    })),
+                },
+                // Family2 (Spouse)
+                family2: {
+                    surname: val('tbxSpouseSurname'), givenName: val('tbxSpouseGivenName'),
+                    dob: dateVal('ddlSpouseDOBDay', 'ddlSpouseDOBMonth', 'tbxSpouseDOBYear'),
+                    nationality: val('ddlSpouseNatDropDownList'),
+                    cityOfBirth: val('tbxSpousePOBCity'), countryOfBirth: val('ddlSpousePOBCountry'),
+                    addressType: val('ddlSpouseAddressType'),
+                    address: {
+                        street1: val('tbxSPOUSE_ADDR_LN1'), street2: val('tbxSPOUSE_ADDR_LN2'),
+                        city: val('tbxSPOUSE_ADDR_CITY'), state: val('tbxSPOUSE_ADDR_STATE'),
+                        postalCode: val('tbxSPOUSE_ADDR_POSTAL_CD'), country: val('ddlSPOUSE_ADDR_CNTRY'),
+                    },
+                },
+                // PrevSpouse
+                prevSpouse: {
+                    numberOfPrevious: val('tbxNumberOfPreviousSpouses'),
+                    surname: val('tbxPREV_SPOUSE_SURNAME'), givenName: val('tbxPREV_SPOUSE_GIVEN_NAME'),
+                    dob: dateVal('ddlPREV_SPOUSE_DOBDay', 'ddlPREV_SPOUSE_DOBMonth', 'tbxPREV_SPOUSE_DOBYear'),
+                    nationality: val('ddlPREV_SPOUSE_NATL'),
+                    cityOfBirth: val('tbxPREV_SPOUSE_CITY'), countryOfBirth: val('ddlPREV_SPOUSE_CNTRY'),
+                    dateOfMarriage: dateVal('ddlDOM_DTEDay', 'ddlDOM_DTEMonth', 'tbxDOM_DTEYear'),
+                    dateMarriageEnded: dateVal('ddlDOME_DTEDay', 'ddlDOME_DTEMonth', 'tbxDOME_DTEYear'),
+                    howEnded: val('ddlHOW_MARRIAGE_ENDED'),
+                    countryTerminated: val('ddlCNTRY_MARRIAGE_TERMINATED'),
+                },
+                // WorkEducation1
+                workEducation1: {
+                    occupation: val('ddlPresentOccupation'),
+                    employer: {
+                        name: val('tbxEmpSchName'), street1: val('tbxEmpSchAddr1'), street2: val('tbxEmpSchAddr2'),
+                        city: val('tbxEmpSchCity'), state: val('tbxWORK_EDUC_ADDR_STATE'),
+                        postalCode: val('tbxWORK_EDUC_ADDR_POSTAL_CD'), country: val('ddlEmpSchCountry'),
+                        phone: val('tbxWORK_EDUC_TEL'),
+                        startDate: { day: val('ddlEmpDateFromDay'), month: val('ddlEmpDateFromMonth'), year: val('tbxEmpDateFromYear') },
+                        monthlySalary: val('tbxCURR_MONTHLY_SALARY'), duties: val('tbxDescribeDuties'),
+                    },
+                },
+                // WorkEducation2
+                workEducation2: {
+                    hasPreviousEmployment: radioVal('rblPreviouslyEmployed'),
+                    previousEmployment: collectEntries('dtlPrevEmpl', e => ({
+                        name: entryVal(e, 'tbEmployerName'), street1: entryVal(e, 'tbEmployerStreetAddress1'),
+                        city: entryVal(e, 'tbEmployerCity'), country: entryVal(e, 'DropDownList2'),
+                        phone: entryVal(e, 'tbEmployerPhone'), jobTitle: entryVal(e, 'tbJobTitle'),
+                        supervisor: entryVal(e, 'tbSupervisorSurname'),
+                        startDate: { month: entryVal(e, 'ddlPREV_EMPL_DTEFromMonth'), year: entryVal(e, 'tbxPREV_EMPL_DTEFromYear') },
+                        endDate: { month: entryVal(e, 'ddlPREV_EMPL_DTEToMonth'), year: entryVal(e, 'tbxPREV_EMPL_DTEToYear') },
+                        duties: entryVal(e, 'tbDescribeDuties'),
+                    })),
+                    hasEducation: radioVal('rblOtherEduc'),
+                    education: collectEntries('dtlPrevEduc', e => ({
+                        name: entryVal(e, 'tbxSchoolName'), city: entryVal(e, 'tbxSchoolCity'),
+                        country: entryVal(e, 'ddlSchoolCountry'), course: entryVal(e, 'tbxSchoolCourseOfStudy'),
+                        startDate: { month: entryVal(e, 'ddlEDUC_INST_DTEFromMonth'), year: entryVal(e, 'tbxEDUC_INST_DTEFromYear') },
+                        endDate: { month: entryVal(e, 'ddlEDUC_INST_DTEToMonth'), year: entryVal(e, 'tbxEDUC_INST_DTEToYear') },
+                    })),
+                },
+                // WorkEducation3
+                workEducation3: {
+                    languages: collectEntries('dtlLANGUAGES', e => entryVal(e, 'tbxLANGUAGE_NAME')),
+                    clanTribe: radioVal('rblCLAN_TRIBE_IND'), clanTribeName: val('tbxCLAN_TRIBE_NAME'),
+                    countriesVisited: radioVal('rblCOUNTRIES_VISITED_IND'),
+                    countriesVisitedList: collectEntries('dtlCountriesVisited', e => entryVal(e, 'ddlCOUNTRIES_VISITED')),
+                    organizationMember: radioVal('rblORGANIZATION_IND'),
+                    organizations: collectEntries('dtlORGANIZATIONS', e => entryVal(e, 'tbxORGANIZATION_NAME')),
+                    specializedSkills: radioVal('rblSPECIALIZED_SKILLS_IND'),
+                    specializedSkillsExplanation: val('tbxSPECIALIZED_SKILLS_EXPL'),
+                    militaryService: radioVal('rblMILITARY_SERVICE_IND'),
+                    military: collectEntries('dtlMILITARY_SERVICE', e => ({
+                        country: entryVal(e, 'ddlMILITARY_SVC_CNTRY'), branch: entryVal(e, 'tbxMILITARY_SVC_BRANCH'),
+                        rank: entryVal(e, 'tbxMILITARY_SVC_RANK'), specialty: entryVal(e, 'tbxMILITARY_SVC_SPECIALTY'),
+                        startDate: {
+                            day: entryVal(e, 'ddlMILITARY_SVC_FROMDay'), month: entryVal(e, 'ddlMILITARY_SVC_FROMMonth'),
+                            year: entryVal(e, 'tbxMILITARY_SVC_FROMYear')
+                        },
+                        endDate: {
+                            day: entryVal(e, 'ddlMILITARY_SVC_TODay'), month: entryVal(e, 'ddlMILITARY_SVC_TOMonth'),
+                            year: entryVal(e, 'tbxMILITARY_SVC_TOYear')
+                        },
+                    })),
+                    insurgentOrg: radioVal('rblINSURGENT_ORG_IND'),
+                    insurgentOrgExplanation: val('tbxINSURGENT_ORG_EXPL'),
+                },
+                // Security
+                security: {
+                    // Security1 - Health
+                    disease: radioVal('rblDisease'), diseaseExpl: val('tbxDisease_EXPL'),
+                    disorder: radioVal('rblDisorder'), disorderExpl: val('tbxDisorder_EXPL'),
+                    drugUser: radioVal('rblDruguser'), drugUserExpl: val('tbxDruguser_EXPL'),
+                    // Security2 - Criminal
+                    arrested: radioVal('rblArrested'), arrestedExpl: val('tbxArrested_EXPL'),
+                    controlledSubstances: radioVal('rblControlledSubstances'), controlledSubstancesExpl: val('tbxControlledSubstances_EXPL'),
+                    prostitution: radioVal('rblProstitution'), prostitutionExpl: val('tbxProstitution_EXPL'),
+                    moneyLaundering: radioVal('rblMoneyLaundering'), moneyLaunderingExpl: val('tbxMoneyLaundering_EXPL'),
+                    humanTrafficking: radioVal('rblHumanTrafficking'), humanTraffickingExpl: val('tbxHumanTrafficking_EXPL'),
+                    assistedSevereTrafficking: radioVal('rblAssistedSevereTrafficking'), assistedSevereTraffickingExpl: val('tbxAssistedSevereTrafficking_EXPL'),
+                    humanTraffickingRelated: radioVal('rblHumanTraffickingRelated'), humanTraffickingRelatedExpl: val('tbxHumanTraffickingRelated_EXPL'),
+                    // Security3 - National Security
+                    illegalActivity: radioVal('rblIllegalActivity'), illegalActivityExpl: val('tbxIllegalActivity_EXPL'),
+                    terroristActivity: radioVal('rblTerroristActivity'), terroristActivityExpl: val('tbxTerroristActivity_EXPL'),
+                    terroristSupport: radioVal('rblTerroristSupport'), terroristSupportExpl: val('tbxTerroristSupport_EXPL'),
+                    terroristOrg: radioVal('rblTerroristOrg'), terroristOrgExpl: val('tbxTerroristOrg_EXPL'),
+                    terroristRel: radioVal('rblTerroristRel'), terroristRelExpl: val('tbxTerroristRel_EXPL'),
+                    genocide: radioVal('rblGenocide'), genocideExpl: val('tbxGenocide_EXPL'),
+                    torture: radioVal('rblTorture'), tortureExpl: val('tbxTorture_EXPL'),
+                    exViolence: radioVal('rblExViolence'), exViolenceExpl: val('tbxExViolence_EXPL'),
+                    childSoldier: radioVal('rblChildSoldier'), childSoldierExpl: val('tbxChildSoldier_EXPL'),
+                    religiousFreedom: radioVal('rblReligiousFreedom'), religiousFreedomExpl: val('tbxReligiousFreedom_EXPL'),
+                    populationControls: radioVal('rblPopulationControls'), populationControlsExpl: val('tbxPopulationControls_EXPL'),
+                    transplant: radioVal('rblTransplant'), transplantExpl: val('tbxTransplant_EXPL'),
+                    // Security4 - Immigration
+                    removalHearing: radioVal('rblRemovalHearing'), removalHearingExpl: val('tbxRemovalHearing_EXPL'),
+                    immigrationFraud: radioVal('rblImmigrationFraud'), immigrationFraudExpl: val('tbxImmigrationFraud_EXPL'),
+                    failToAttend: radioVal('rblFailToAttend'), failToAttendExpl: val('tbxFailToAttend_EXPL'),
+                    visaViolation: radioVal('rblVisaViolation'), visaViolationExpl: val('tbxVisaViolation_EXPL'),
+                    deport: radioVal('rblDeport'), deportExpl: val('tbxDeport_EXPL'),
+                    // Security5 - Miscellaneous
+                    childCustody: radioVal('rblChildCustody'), childCustodyExpl: val('tbxChildCustody_EXPL'),
+                    votingViolation: radioVal('rblVotingViolation'), votingViolationExpl: val('tbxVotingViolation_EXPL'),
+                    renounceExp: radioVal('rblRenounceExp'), renounceExpExpl: val('tbxRenounceExp_EXPL'),
+                    attWoReimb: radioVal('rblAttWoReimb'), attWoReimbExpl: val('tbxAttWoReimb_EXPL'),
+                },
+            };
+
+            // Remove empty/null sections for cleaner output
+            const clean = JSON.stringify(data, (k, v) => {
+                if (v === '' || v === null) return undefined;
+                if (Array.isArray(v) && v.length === 0) return undefined;
+                if (typeof v === 'object' && !Array.isArray(v) && v !== null) {
+                    const keys = Object.keys(v).filter(key => v[key] !== undefined);
+                    if (keys.length === 0) return undefined;
+                }
+                return v;
+            }, 2);
+
+            document.getElementById('jsonOutput').value = clean;
+            document.getElementById('jsonModal').classList.add('open');
+        }
+
+        function copyJSON() {
+            const ta = document.getElementById('jsonOutput');
+            ta.select();
+            navigator.clipboard.writeText(ta.value).then(() => {
+                alert('JSON copiado!');
+            }).catch(() => {
+                document.execCommand('copy');
+                alert('JSON copiado!');
+            });
+        }
+
+        function downloadJSON() {
+            const blob = new Blob([document.getElementById('jsonOutput').value], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'ds160-data.json';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function closeModal() {
+            document.getElementById('jsonModal').classList.remove('open');
+        }
+
+        // ===== SUPABASE INTEGRATION =====
+        const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
+
+        // Resolve organization from ?id= URL param
+        let orgCompanyId = null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const orgShortId = urlParams.get('id');
+        if (orgShortId) {
+            (async () => {
+                try {
+                    const res = await fetch(SUPABASE_URL + '/rest/v1/companies?short_id=eq.' + orgShortId + '&select=id,name', {
+                        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+                    });
+                    const companies = await res.json();
+                    if (companies && companies[0]) {
+                        orgCompanyId = companies[0].id;
+                        const header = document.querySelector('header h1');
+                        if (header) header.textContent = companies[0].name + ' — Formulário DS-160';
+                    }
+                } catch (e) { console.warn('Org not found:', e); }
+            })();
+        }
+
+        function toggleGroupEmail() {
+            const mode = document.querySelector('input[name="rblFormMode"]:checked')?.value;
+            document.getElementById('group-email-box').style.display = mode === 'group' ? 'block' : 'none';
+        }
+
+        async function sbFetch(path, method, body) {
+            const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_KEY,
+                    'Prefer': 'return=representation',
+                },
+                body: body ? JSON.stringify(body) : undefined,
+            });
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(res.status + ': ' + err);
+            }
+            return res.json();
+        }
+
+        async function sbGet(path) {
+            const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+            });
+            if (!res.ok) return [];
+            return res.json();
+        }
+
+        async function saveToSupabase() {
+            const statusEl = document.getElementById('supabaseStatus');
+            const btn = document.getElementById('btnSaveSupabase');
+            const jsonStr = document.getElementById('jsonOutput').value;
+            if (!jsonStr || jsonStr.length < 10) {
+                statusEl.textContent = '\u274c Gere o JSON primeiro!';
+                statusEl.style.color = '#c62828';
+                return;
+            }
+
+            btn.disabled = true;
+            statusEl.textContent = '\u23f3 Salvando...';
+            statusEl.style.color = '#666';
+
+            try {
+                const data = JSON.parse(jsonStr);
+                const mode = document.querySelector('input[name="rblFormMode"]:checked')?.value || 'solo';
+
+                // Extract key fields
+                const surname = (data.personal1?.surname || '').toUpperCase();
+                const givenName = (data.personal1?.givenName || '').toUpperCase();
+                const fullName = (surname + ' ' + givenName).trim();
+                const passportNumber = data.passport?.number || '';
+                const email = data.addressPhone?.email || '';
+                const location = data.location || 'SPL';
+
+                if (!fullName) throw new Error('Nome obrigatório (preencha Personal1)');
+
+                let primaryApplicantId = null;
+                let groupInfo = '';
+
+                // If group mode: find primary applicant by email
+                if (mode === 'group') {
+                    const groupEmail = document.getElementById('txtGroupEmail')?.value?.trim();
+                    if (!groupEmail) throw new Error('Informe o email do solicitante principal');
+
+                    statusEl.textContent = '\u23f3 Buscando solicitante principal...';
+
+                    // Search applicant whose data contains this email
+                    const results = await sbGet(
+                        `applicants?data->>addressPhone->>email=eq.${encodeURIComponent(groupEmail)}&primary_applicant_id=is.null&select=id,full_name&limit=1`
+                    );
+
+                    // Fallback: search by full_name or inside data JSON
+                    let primary = results?.[0];
+                    if (!primary) {
+                        // Try broader search via RPC or filter
+                        const allResults = await sbGet(`applicants?primary_applicant_id=is.null&select=id,full_name,data&limit=50`);
+                        primary = allResults?.find(a => {
+                            const e = a.data?.addressPhone?.email || '';
+                            return e.toLowerCase() === groupEmail.toLowerCase();
+                        });
+                    }
+
+                    if (!primary) throw new Error('Solicitante principal não encontrado com email: ' + groupEmail);
+
+                    primaryApplicantId = primary.id;
+                    groupInfo = ' (Grupo de ' + primary.full_name + ')';
+                    statusEl.textContent = '\u23f3 Principal encontrado: ' + primary.full_name + '. Salvando...';
+                }
+
+                // 1. Create Applicant
+                const applicantPayload = {
+                    full_name: fullName,
+                    passport_number: passportNumber || null,
+                    data: data,
+                    company_id: orgCompanyId || null,
+                };
+                if (primaryApplicantId) {
+                    applicantPayload.primary_applicant_id = primaryApplicantId;
+                }
+
+                const applicants = await sbFetch('applicants', 'POST', applicantPayload);
+                if (!applicants || !applicants[0]?.id) throw new Error('Falha ao criar solicitante');
+                const applicantId = applicants[0].id;
+
+                // 2. Create Application
+                const securityAnswer = Math.random().toString(36).slice(2, 8).toUpperCase();
+                const applications = await sbFetch('applications', 'POST', {
+                    applicant_id: applicantId,
+                    status: 'pending',
+                    security_answer: securityAnswer,
+                    form_data: { ds160_city: location },
+                });
+                const appId = applications?.[0]?.id || '?';
+
+                const modeLabel = mode === 'solo' ? '🧑 Solicitante Principal' : '👨‍👩‍👧 Dependente' + groupInfo;
+
+                statusEl.innerHTML = '\u2705 Salvo!<br>' +
+                    '<b>Tipo:</b> ' + modeLabel + '<br>' +
+                    '<b>Nome:</b> ' + fullName + '<br>' +
+                    '<b>ID:</b> <code style="font-size:10px">' + applicantId + '</code><br>' +
+                    '<small>Abra a extensão DS-160 AI → Dashboard para iniciar a automação.</small>';
+                statusEl.style.color = '#2e7d32';
+
+            } catch (e) {
+                statusEl.textContent = '\u274c Erro: ' + e.message;
+                statusEl.style.color = '#c62828';
+                console.error('Supabase save error:', e);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // ===== INITIALIZATION =====
+        buildNav();
+        registerTemplates();
+        setupNACheckboxes();
+        setupRadioBranches();
+
+        // Initially hide Family2 and PrevSpouse
+        document.getElementById('pg-Family2').style.display = 'none';
+        document.getElementById('pg-PrevSpouse').style.display = 'none';
+        updatePageVisibility();
+
+        // Event listeners for conditional branches
+        document.getElementById('ddlAPP_MARITAL_STATUS').addEventListener('change', updatePageVisibility);
+        document.getElementById('ddlWhoIsPaying').addEventListener('change', updatePayerBranch);
+        document.getElementById('ddlSpouseAddressType').addEventListener('change', updateSpouseAddrBranch);
+        document.getElementById('ddlPPT_TYPE').addEventListener('change', updatePptTypeBranch);
+        document.getElementById('ddlPresentOccupation').addEventListener('change', updateEmployerVisibility);
+        document.getElementById('dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip').addEventListener('change', updateVisaSubtype);
+
+        // Listen for specific travel radio changes
+        document.querySelectorAll('input[name="rblSpecificTravel"]').forEach(r => {
+            r.addEventListener('change', updateTravelBranch);
+        });
+    </script>
+</body>
+
+</html>
