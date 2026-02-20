@@ -1,5 +1,8 @@
 // Queue Runner — polls Supabase for queued applications and processes them
+// Features: countdown timer, immediate refresh, error logging to Supabase
 const { fillApplication } = require('./filler');
+
+const POLL_INTERVAL = 30; // seconds between checks
 
 class QueueRunner {
     constructor(supabase, captchaMode) {
@@ -8,6 +11,9 @@ class QueueRunner {
         this.running = false;
         this.statusCallback = null;
         this.workerId = `worker_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        this._countdown = 0;
+        this._countdownTimer = null;
+        this._skipWait = false; // flag for immediate execution
     }
 
     start(statusCallback) {
@@ -18,6 +24,20 @@ class QueueRunner {
 
     async stop() {
         this.running = false;
+        if (this._countdownTimer) {
+            clearInterval(this._countdownTimer);
+            this._countdownTimer = null;
+        }
+    }
+
+    // Called when user clicks "Refresh" — skip wait and process immediately
+    triggerNow() {
+        this._skipWait = true;
+        if (this._countdownTimer) {
+            clearInterval(this._countdownTimer);
+            this._countdownTimer = null;
+        }
+        this.emit({ type: 'checking', message: 'Verificando fila agora...' });
     }
 
     emit(status) {
@@ -27,23 +47,25 @@ class QueueRunner {
     async _loop() {
         while (this.running) {
             try {
-                // 1. Fetch config (captcha keys + check for code updates)
+                // 1. Fetch config (captcha keys)
                 const config = await this._getConfig();
 
                 // 2. Claim next queued application
                 const app = await this._claimNext();
 
                 if (!app) {
-                    this.emit({ type: 'queue-empty' });
-                    // Wait 30s before checking again
-                    await sleep(30000);
+                    this.emit({ type: 'queue-empty', nextCheck: POLL_INTERVAL });
+                    // Start countdown
+                    await this._waitWithCountdown(POLL_INTERVAL);
                     continue;
                 }
 
                 // 3. Fetch full applicant data
                 const applicant = await this._getApplicant(app.applicant_id);
                 if (!applicant) {
-                    await this._markError(app.id, 'Dados do solicitante não encontrados');
+                    const errMsg = 'Dados do solicitante não encontrados';
+                    await this._markError(app.id, errMsg);
+                    await this._logError(app.id, null, errMsg, null, null);
                     continue;
                 }
 
@@ -53,8 +75,10 @@ class QueueRunner {
                     page: 'Iniciando...'
                 });
 
-                // 4. Run the filler (Playwright - uses its OWN Chromium)
+                // 4. Run the filler (Playwright — opens Chromium visually)
+                let currentPage = '';
                 const result = await fillApplication(applicant, app, config, this.captchaMode, (page) => {
+                    currentPage = page;
                     this.emit({ type: 'filling', applicantName: applicant.full_name, page });
                 });
 
@@ -64,17 +88,50 @@ class QueueRunner {
                     this.emit({ type: 'done', applicantName: applicant.full_name });
                 } else {
                     await this._markError(app.id, result.error);
+                    await this._logError(app.id, applicant.full_name, result.error, result.stack, currentPage);
                     this.emit({ type: 'error', applicantName: applicant.full_name, error: result.error });
                 }
 
             } catch (e) {
                 console.error('Queue loop error:', e);
+                await this._logError(null, null, e.message, e.stack, null);
                 this.emit({ type: 'error', applicantName: '—', error: e.message });
             }
 
             // Brief pause between items
             if (this.running) await sleep(3000);
         }
+    }
+
+    // Wait with visible countdown, can be interrupted by triggerNow()
+    _waitWithCountdown(seconds) {
+        return new Promise(resolve => {
+            this._countdown = seconds;
+            this._skipWait = false;
+
+            this._countdownTimer = setInterval(() => {
+                if (!this.running || this._skipWait) {
+                    clearInterval(this._countdownTimer);
+                    this._countdownTimer = null;
+                    this._skipWait = false;
+                    resolve();
+                    return;
+                }
+
+                this._countdown--;
+                this.emit({
+                    type: 'waiting',
+                    countdown: this._countdown,
+                    message: `Próxima verificação em ${this._countdown}s`
+                });
+
+                if (this._countdown <= 0) {
+                    clearInterval(this._countdownTimer);
+                    this._countdownTimer = null;
+                    resolve();
+                }
+            }, 1000);
+        });
     }
 
     async _getConfig() {
@@ -88,7 +145,6 @@ class QueueRunner {
     }
 
     async _claimNext() {
-        // Get next queued application by priority
         const { data: items } = await this.supabase
             .from('applications')
             .select('id, applicant_id, application_id, security_answer, fill_priority')
@@ -101,7 +157,7 @@ class QueueRunner {
 
         const item = items[0];
 
-        // Claim it (set filling + worker_id to avoid double-processing)
+        // Claim with optimistic lock
         const { error } = await this.supabase
             .from('applications')
             .update({
@@ -110,9 +166,9 @@ class QueueRunner {
                 fill_worker_id: this.workerId
             })
             .eq('id', item.id)
-            .eq('fill_status', 'queued'); // Optimistic lock
+            .eq('fill_status', 'queued');
 
-        if (error) return null; // Someone else claimed it
+        if (error) return null;
         return item;
     }
 
@@ -145,6 +201,24 @@ class QueueRunner {
                 fill_finished_at: new Date().toISOString()
             })
             .eq('id', appId);
+    }
+
+    // Log errors to Supabase for developer visibility
+    async _logError(applicationId, applicantName, errorMessage, errorStack, pageName) {
+        try {
+            await this.supabase
+                .from('error_logs')
+                .insert({
+                    worker_id: this.workerId,
+                    application_id: applicationId,
+                    applicant_name: applicantName,
+                    error_message: errorMessage,
+                    error_stack: errorStack || null,
+                    page_name: pageName || null
+                });
+        } catch (e) {
+            console.warn('Failed to log error to Supabase:', e.message);
+        }
     }
 }
 

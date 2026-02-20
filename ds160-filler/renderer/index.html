@@ -191,6 +191,37 @@
             overflow-y: auto;
             font-family: monospace;
         }
+
+        .timer-badge {
+            background: rgba(233, 69, 96, 0.15);
+            color: #e94560;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            animation: pulse-badge 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-badge {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-row button {
+            flex: 1;
+        }
     </style>
 </head>
 
@@ -231,6 +262,10 @@
                     <span class="status-label">Página</span>
                     <span class="status-value" id="current-page">—</span>
                 </div>
+                <div class="status-row" id="timer-row" style="display:none;">
+                    <span class="status-label">⏱ Próxima</span>
+                    <span class="timer-badge" id="timer-text">—</span>
+                </div>
             </div>
 
             <div class="captcha-toggle">
@@ -241,9 +276,11 @@
                 <label for="cap-ai">IA Vision</label>
             </div>
 
-            <button class="btn-primary" id="btn-start">▶ Iniciar Fila</button>
-            <button class="btn-danger" id="btn-stop" style="display:none">⏹ Parar</button>
-            <button class="btn-secondary" id="btn-refresh">↻ Atualizar Fila</button>
+            <div class="btn-row">
+                <button class="btn-primary" id="btn-start">▶ Iniciar</button>
+                <button class="btn-secondary" id="btn-refresh">↻ Atualizar</button>
+            </div>
+            <button class="btn-danger" id="btn-stop" style="display:none">⏹ Parar Automação</button>
 
             <div class="log" id="log"></div>
         </div>

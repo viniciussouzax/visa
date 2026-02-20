@@ -89,3 +89,11 @@ ipcMain.handle('stop-automation', async () => {
     }
     return { success: true };
 });
+
+ipcMain.handle('refresh-queue', async () => {
+    if (automationRunner) {
+        automationRunner.triggerNow();
+        return { success: true };
+    }
+    return { success: false, error: 'Automação não iniciada' };
+});

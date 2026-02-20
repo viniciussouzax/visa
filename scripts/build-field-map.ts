@@ -32,6 +32,7 @@ export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
     spouse: a.spouse || {} as any,
   };
   const emptyDate = { day: '', month: '', year: '' };
+  a.dob = a.dob || emptyDate;
   const t = a.travel || {} as any;
   t.arrivalDate = t.arrivalDate || emptyDate;
   t.departureDate = t.departureDate || emptyDate;

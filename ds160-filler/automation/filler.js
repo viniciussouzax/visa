@@ -212,7 +212,7 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
 
     } catch (e) {
         console.error('[Filler] Error:', e);
-        return { success: false, error: e.message };
+        return { success: false, error: e.message, stack: e.stack };
     } finally {
         if (browser) await browser.close().catch(() => { });
     }

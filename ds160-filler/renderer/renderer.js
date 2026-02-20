@@ -33,7 +33,16 @@ $('password').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-l
 // ============================================================
 // QUEUE & AUTOMATION
 // ============================================================
-$('btn-refresh').addEventListener('click', refreshQueue);
+$('btn-refresh').addEventListener('click', async () => {
+    if (isRunning) {
+        // Trigger immediate check + process
+        await window.api.refreshQueue();
+        log('⚡ Verificação imediata solicitada');
+        hideTimer();
+    } else {
+        refreshQueue();
+    }
+});
 
 $('btn-start').addEventListener('click', async () => {
     const mode = document.querySelector('input[name="captcha"]:checked').value;
@@ -52,9 +61,11 @@ $('btn-start').addEventListener('click', async () => {
 $('btn-stop').addEventListener('click', async () => {
     await window.api.stopAutomation();
     isRunning = false;
-    $('btn-start').style.display = 'block';
+    $('btn-start').style.display = 'none'; // show btn-row
+    document.querySelector('.btn-row').style.display = 'flex';
     $('btn-stop').style.display = 'none';
     setStatus('stopped', 'Parado');
+    hideTimer();
     log('⏹ Automação parada');
 });
 
@@ -69,6 +80,19 @@ async function refreshQueue() {
 }
 
 // ============================================================
+// TIMER
+// ============================================================
+function showTimer(seconds) {
+    $('timer-row').style.display = 'flex';
+    $('timer-text').textContent = `${seconds}s`;
+}
+
+function hideTimer() {
+    $('timer-row').style.display = 'none';
+    $('timer-text').textContent = '—';
+}
+
+// ============================================================
 // STATUS UPDATES (from main process)
 // ============================================================
 window.api.onStatus((status) => {
@@ -76,6 +100,7 @@ window.api.onStatus((status) => {
         setStatus('running', 'Preenchendo...');
         $('current-task').textContent = status.applicantName || '—';
         $('current-page').textContent = status.page || '—';
+        hideTimer();
     } else if (status.type === 'done') {
         $('current-task').textContent = '—';
         $('current-page').textContent = '—';
@@ -90,6 +115,12 @@ window.api.onStatus((status) => {
     } else if (status.type === 'queue-empty') {
         setStatus('idle', 'Fila vazia — aguardando');
         $('queue-count').textContent = '0 pendentes';
+        if (status.nextCheck) showTimer(status.nextCheck);
+    } else if (status.type === 'waiting') {
+        showTimer(status.countdown);
+    } else if (status.type === 'checking') {
+        setStatus('running', 'Verificando fila...');
+        hideTimer();
     }
 });
 
