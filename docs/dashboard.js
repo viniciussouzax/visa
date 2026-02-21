@@ -76,12 +76,6 @@ async function initApp() {
     }
     $('user-role-display').textContent = userRole.toUpperCase();
 
-    // Config capmonster visibility
-    if (isMaster || userRole === 'admin') {
-        $('config-capmonster').style.display = 'block';
-        loadCapmonsterKey();
-    }
-
     // Short ID & form link
     if (companyId) {
         const { data: company } = await sb.from('companies').select('short_id').eq('id', companyId).single();
@@ -118,10 +112,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
 
         if (item.dataset.view === 'dashboard') loadDashboard();
         if (item.dataset.view === 'applicants') loadApplicants();
-        if (item.dataset.view === 'import') loadOrphans();
-        if (item.dataset.view === 'queue') loadQueue();
-        if (item.dataset.view === 'logs') loadLogs();
-        if (item.dataset.view === 'master') loadMasterOrgs();
+        if (item.dataset.view === 'master') { loadMasterOrgs(); loadCapmonsterKey(); loadLogs(); }
     };
 });
 
@@ -129,10 +120,7 @@ $('btn-refresh').onclick = () => {
     const active = document.querySelector('.nav-item.active')?.dataset.view;
     if (active === 'dashboard') loadDashboard();
     if (active === 'applicants') loadApplicants();
-    if (active === 'import') loadOrphans();
-    if (active === 'queue') loadQueue();
-    if (active === 'logs') loadLogs();
-    if (active === 'master') loadMasterOrgs();
+    if (active === 'master') { loadMasterOrgs(); loadCapmonsterKey(); loadLogs(); }
     toast('Dados atualizados', 'success');
 };
 
@@ -408,67 +396,7 @@ $('btn-delete-applicant').onclick = () => {
     if (selectedApplicant) deleteApplicant(selectedApplicant.id, selectedApplicant.full_name);
 };
 
-// ============================================================
-// IMPORT ORPHANS
-// ============================================================
-async function loadOrphans() {
-    const { data } = await sb.from('applicants')
-        .select('*')
-        .is('company_id', null)
-        .is('primary_applicant_id', null)
-        .order('created_at', { ascending: false })
-        .limit(50);
 
-    $('orphans-list').innerHTML = (data || []).map(a => {
-        const email = a.data?.addressPhone?.email || a.data?.contact?.email || '—';
-        const passport = a.passport_number || '—';
-        return `
-        <tr>
-            <td><strong>${a.full_name}</strong></td>
-            <td style="font-size:12px">${email}</td>
-            <td style="font-family:monospace;font-size:12px">${passport}</td>
-            <td style="font-size:12px">${new Date(a.created_at).toLocaleDateString('pt-BR')}</td>
-            <td><button class="btn-sm btn-success" onclick="claimApplicant('${a.id}', this)">✅ Vincular</button></td>
-        </tr>`;
-    }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Nenhum solicitante pendente</td></tr>';
-}
-
-async function claimApplicant(id, btn) {
-    if (!companyId) { toast('Empresa não identificada', 'error'); return; }
-    if (!confirm('Vincular este solicitante à sua empresa?')) return;
-    btn.disabled = true; btn.textContent = '⏳...';
-
-    const { error } = await sb.from('applicants').update({ company_id: companyId, responsible_id: currentUser.id }).eq('id', id);
-    if (error) { toast('Erro: ' + error.message, 'error'); btn.disabled = false; btn.textContent = '✅ Vincular'; return; }
-
-    // Also update dependents
-    await sb.from('applicants').update({ company_id: companyId, responsible_id: currentUser.id }).eq('primary_applicant_id', id);
-    toast('Solicitante vinculado!', 'success');
-    loadOrphans();
-    loadApplicants();
-}
-
-// ============================================================
-// QUEUE
-// ============================================================
-async function loadQueue() {
-    const { data } = await sb.from('applications')
-        .select('*, applicants(full_name)')
-        .in('fill_status', ['queued', 'filling'])
-        .order('fill_priority', { ascending: true })
-        .order('fill_queued_at', { ascending: true });
-
-    $('queue-list').innerHTML = (data || []).map(a => `
-        <tr>
-            <td>${a.applicants?.full_name || '—'}</td>
-            <td>${a.fill_priority || 3}</td>
-            <td style="font-size:12px">${a.fill_queued_at ? new Date(a.fill_queued_at).toLocaleString('pt-BR') : '—'}</td>
-            <td><span class="badge badge-${a.fill_status}">${a.fill_status}</span></td>
-            <td style="font-size:11px;font-family:monospace">${a.fill_worker_id || '—'}</td>
-            <td><button class="btn-sm btn-danger" onclick="removeFromQueue('${a.id}')">✖ Remover</button></td>
-        </tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Fila vazia</td></tr>';
-}
 
 // ============================================================
 // LOGS
@@ -507,7 +435,7 @@ async function addToQueue(appId) {
     }).eq('id', appId);
     if (error) { toast('Erro: ' + error.message, 'error'); return; }
     toast('Adicionado à fila!', 'success');
-    loadDashboard(); loadQueue();
+    loadDashboard();
 }
 
 async function clearAppId(appId) {
@@ -529,7 +457,7 @@ async function removeFromQueue(appId) {
     }).eq('id', appId);
     if (error) { toast('Erro: ' + error.message, 'error'); return; }
     toast('Removido da fila!', 'success');
-    loadDashboard(); loadQueue();
+    loadDashboard();
 }
 
 // ============================================================

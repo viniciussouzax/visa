@@ -926,9 +926,6 @@
                 <div class="sidebar-nav">
                     <div class="nav-item active" data-view="dashboard">📊 Dashboard</div>
                     <div class="nav-item" data-view="applicants">👤 Solicitantes</div>
-                    <div class="nav-item" data-view="import">📥 Importar</div>
-                    <div class="nav-item" data-view="queue">📋 Fila</div>
-                    <div class="nav-item" data-view="logs">🔍 Logs</div>
                     <div class="nav-item" data-view="config">⚙️ Configurações</div>
                     <div class="nav-separator"></div>
                     <div class="nav-item hidden" id="nav-master" data-view="master">🏢 Painel Master</div>
@@ -1039,70 +1036,7 @@
                         </div>
                     </div>
 
-                    <!-- Import View (Orphans) -->
-                    <div class="view" id="view-import">
-                        <div class="config-card" style="margin-bottom: 20px">
-                            <h3>📥 Solicitantes Disponíveis</h3>
-                            <p style="color:var(--text-muted);font-size:13px;margin-top:6px">
-                                Solicitantes que preencheram o formulário online mas ainda não foram vinculados a
-                                nenhuma agência.
-                                Clique em "Vincular" para adicioná-los à sua empresa.
-                            </p>
-                        </div>
-                        <div class="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Nome</th>
-                                        <th>Email</th>
-                                        <th>Passaporte</th>
-                                        <th>Data</th>
-                                        <th>Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="orphans-list"></tbody>
-                            </table>
-                        </div>
-                    </div>
 
-                    <!-- Queue View -->
-                    <div class="view" id="view-queue">
-                        <div class="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Nome</th>
-                                        <th>Prioridade</th>
-                                        <th>Adicionado</th>
-                                        <th>Status</th>
-                                        <th>Worker</th>
-                                        <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="queue-list"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Logs View -->
-                    <div class="view" id="view-logs">
-                        <div class="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Data</th>
-                                        <th>Solicitante</th>
-                                        <th>Página</th>
-                                        <th>Erro</th>
-                                        <th>Causa</th>
-                                        <th>Tentativa</th>
-                                        <th>Versão</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="logs-list"></tbody>
-                            </table>
-                        </div>
-                    </div>
 
                     <!-- Config View -->
                     <div class="view" id="view-config">
@@ -1115,17 +1049,6 @@
                         <div class="config-card">
                             <h3>📋 ID da Organização</h3>
                             <div class="copy-link" id="org-id-display">—</div>
-                        </div>
-                        <div class="config-card" id="config-capmonster" style="display:none">
-                            <h3>🔑 CapMonster API Key</h3>
-                            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">Chave para resolução
-                                automática de captchas</p>
-                            <div style="display:flex;gap:10px">
-                                <input type="password" id="capmonster-key" placeholder="Sua Client Key"
-                                    style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
-                                <button class="btn-sm btn-primary-sm" id="btn-save-capmonster"
-                                    style="padding:10px 16px">💾 Salvar</button>
-                            </div>
                         </div>
                     </div>
 
@@ -1141,6 +1064,15 @@
                                         style="width:180px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
                                     <button class="btn-sm btn-primary-sm" id="btn-create-org"
                                         style="padding:10px 16px;white-space:nowrap">+ Criar</button>
+                                </div>
+                            </div>
+                            <div class="config-card" style="flex:1;margin:0">
+                                <h3>🔑 CapMonster API Key</h3>
+                                <div style="display:flex;gap:10px;margin-top:12px">
+                                    <input type="password" id="capmonster-key" placeholder="Sua Client Key"
+                                        style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+                                    <button class="btn-sm btn-primary-sm" id="btn-save-capmonster"
+                                        style="padding:10px 16px">💾 Salvar</button>
                                 </div>
                             </div>
                         </div>
@@ -1165,6 +1097,28 @@
                                             style="padding:10px">Adicionar Membro</button>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                        <!-- Logs (Master only) -->
+                        <div style="margin-top:24px">
+                            <div class="config-card" style="margin-bottom:0">
+                                <h3>🔍 Logs de Erros (Todos os preenchimentos)</h3>
+                            </div>
+                            <div class="table-container" style="border-top:none;border-radius:0 0 12px 12px">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Solicitante</th>
+                                            <th>Página</th>
+                                            <th>Erro</th>
+                                            <th>Causa</th>
+                                            <th>Tentativa</th>
+                                            <th>Versão</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="logs-list"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
