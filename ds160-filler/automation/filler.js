@@ -204,7 +204,18 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                 await fillPageCompletely(page, fieldMap);
                 const { navigated } = await clickNextAndWait(page);
                 if (navigated) break;
-                if (attempt < 3) await waitForPageReady(page);
+
+                // Capture validation errors from DS-160 form
+                const validationErrors = await page.locator('.error-message li').allTextContents().catch(() => []);
+                if (validationErrors.length > 0) {
+                    console.warn(`[Filler] Validation errors on ${pageName}:`, validationErrors);
+                }
+
+                if (attempt === 3 && !navigated) {
+                    const errDetail = validationErrors.length > 0 ? validationErrors.join('; ') : 'Page stuck after 3 attempts';
+                    throw new Error(`${pageName}: ${errDetail}`);
+                }
+                await waitForPageReady(page);
             }
         }
 

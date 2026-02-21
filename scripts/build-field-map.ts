@@ -185,11 +185,6 @@ export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
   if (a.hasSpecificPlans) {
     map.push(
       { pattern: /rblSpecificTravel_0$/i, value: "", type: "click" },
-      { pattern: /ddlARRIVAL_US_DTEDay$/i, value: t.arrivalDate.day, type: "select" },
-      { pattern: /ddlARRIVAL_US_DTEMonth$/i, value: t.arrivalDate.month, type: "select" },
-      { pattern: /tbxARRIVAL_US_DTEYear$/i, value: t.arrivalDate.year, type: "text" },
-      { pattern: /tbxAPP_LOS_AMT$/i, value: t.lengthOfStay.value, type: "text" },
-      { pattern: /ddlAPP_LOS_CD$/i, value: t.lengthOfStay.unit, type: "select" },
       { pattern: /tbxStreetAddress1$/i, value: t.usAddress.street1, type: "text" },
       { pattern: /tbxStreetAddress2$/i, value: t.usAddress.street2 || "", type: "text" },
       { pattern: /tbxCity$/i, value: t.usAddress.city, type: "text" },
@@ -198,19 +193,34 @@ export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
       { pattern: /tbZIPCode$/i, value: t.usAddress.zip, type: "text" },
       { pattern: /tbxSPECTRAVEL_LOCATION$/i, value: t.location || t.usAddress.city, type: "text" },
     );
-    if (t.departureDate) {
-      map.push(
-        { pattern: /ddlDEPARTURE_US_DTEDay$/i, value: t.departureDate.day, type: "select" },
-        { pattern: /ddlDEPARTURE_US_DTEMonth$/i, value: t.departureDate.month, type: "select" },
-        { pattern: /tbxDEPARTURE_US_DTEYear$/i, value: t.departureDate.year, type: "text" },
-      );
-    }
     if (t.arrivalFlight) map.push({ pattern: /tbxArriveFlight$/i, value: t.arrivalFlight, type: "text" });
     if (t.arrivalCity) map.push({ pattern: /tbxArriveCity$/i, value: t.arrivalCity, type: "text" });
     if (t.departureFlight) map.push({ pattern: /tbxDepartFlight$/i, value: t.departureFlight, type: "text" });
     if (t.departureCity) map.push({ pattern: /tbxDepartCity$/i, value: t.departureCity, type: "text" });
   } else {
     map.push({ pattern: /rblSpecificTravel_1$/i, value: "", type: "click" });
+  }
+
+  // Arrival date & length of stay — ALWAYS required by DS-160
+  if (t.arrivalDate) {
+    map.push(
+      { pattern: /ddlARRIVAL_US_DTEDay$/i, value: t.arrivalDate.day, type: "select" },
+      { pattern: /ddlARRIVAL_US_DTEMonth$/i, value: t.arrivalDate.month, type: "select" },
+      { pattern: /tbxARRIVAL_US_DTEYear$/i, value: t.arrivalDate.year, type: "text" },
+    );
+  }
+  if (t.lengthOfStay) {
+    map.push(
+      { pattern: /tbxAPP_LOS_AMT$/i, value: t.lengthOfStay.value, type: "text" },
+      { pattern: /ddlAPP_LOS_CD$/i, value: t.lengthOfStay.unit, type: "select" },
+    );
+  }
+  if (t.departureDate) {
+    map.push(
+      { pattern: /ddlDEPARTURE_US_DTEDay$/i, value: t.departureDate.day, type: "select" },
+      { pattern: /ddlDEPARTURE_US_DTEMonth$/i, value: t.departureDate.month, type: "select" },
+      { pattern: /tbxDEPARTURE_US_DTEYear$/i, value: t.departureDate.year, type: "text" },
+    );
   }
 
   // Who is paying
