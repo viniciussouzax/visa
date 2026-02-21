@@ -593,11 +593,15 @@
                                 id="dtlOTHER_NATL_ctl00_ddlOTHER_NATL" class="sel-country"></select></div>
                         <div class="fg"><label>Você possui passaporte do outro país / região de origem (nacionalidade)
                                 indicado acima?</label><span class="rg"><label><input type="radio"
-                                        name="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND" value="Y">
+                                        name="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND" value="Y"
+                                        data-branch="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND">
                                     Sim</label><label><input type="radio" name="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND"
-                                        value="N"> Não</label></span></div>
-                        <div class="fg"><label>Número do Passaporte</label><input type="text"
-                                id="dtlOTHER_NATL_ctl00_tbxOTHER_PPT_NUM" placeholder="Nº do passaporte"></div>
+                                        value="N" data-branch="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND"> Não</label></span>
+                        </div>
+                        <div class="br" id="br-dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND">
+                            <div class="fg"><label>Número do Passaporte</label><input type="text"
+                                    id="dtlOTHER_NATL_ctl00_tbxOTHER_PPT_NUM" placeholder="Nº do passaporte"></div>
+                        </div>
                     </div><button type="button" class="btn-add" onclick="addEntry('dtlOTHER_NATL')">+ Adicionar
                         Outro</button>
                 </div>
