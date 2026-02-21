@@ -568,75 +568,83 @@
 
     <!-- ===== PAGE 2: Personal2 ===== -->
     <div class="page" id="pg-Personal2">
-        <h2>2. Informações Pessoais (continuação)</h2>
+        <h2>2. Informações Pessoais 2</h2>
         <div class="section">
-            <h3>Nacionalidade / Cidadania</h3>
-            <div class="fg"><label>País / Região de Nacionalidade *</label><select id="ddlAPP_NATL"
-                    class="sel-country"></select>
-                <small style="color:#888">Selecione o país do qual você é cidadão(ã).</small>
-            </div>
+            <h3>Nacionalidade</h3>
+            <div class="fg"><label>País / Região de Origem (Nacionalidade) *</label><select id="ddlAPP_NATL"
+                    class="sel-country"></select></div>
         </div>
         <div class="section">
-            <h3>Outra Nacionalidade / Cidadania</h3>
-            <div class="fg"><label>Possui ou já possuiu outra nacionalidade? *</label><span class="rg"><label><input
-                            type="radio" name="rblAPP_OTH_NATL_IND" value="Y" data-branch="rblAPP_OTH_NATL_IND">
+            <h3>Outra Nacionalidade</h3>
+            <p style="color:#666;font-size:13px;margin-bottom:10px">Informe todas as nacionalidades que você possui
+                atualmente e todas que já possuiu anteriormente, independente de ter renunciado formalmente ou não. Se o
+                país da nacionalidade anterior não existir mais como entidade política, selecione a nacionalidade que
+                corresponde ao nome atualmente usado para aquele local.</p>
+            <div class="fg"><label>Você possui ou já possuiu alguma nacionalidade diferente da indicada acima?
+                    *</label><span class="rg"><label><input type="radio" name="rblAPP_OTH_NATL_IND" value="Y"
+                            data-branch="rblAPP_OTH_NATL_IND">
                         Sim</label><label><input type="radio" name="rblAPP_OTH_NATL_IND" value="N"
                             data-branch="rblAPP_OTH_NATL_IND"> Não</label></span></div>
             <div class="br" id="br-rblAPP_OTH_NATL_IND">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações:</p>
                 <div class="as" data-list="dtlOTHER_NATL">
                     <div class="entry" data-idx="0">
-                        <div class="fg"><label>Outra Nacionalidade</label><select id="dtlOTHER_NATL_ctl00_ddlOTHER_NATL"
-                                class="sel-country"></select></div>
-                        <div class="fg"><label>Possui passaporte dessa outra nacionalidade?</label><span
-                                class="rg"><label><input type="radio" name="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND"
-                                        value="Y">
+                        <div class="fg"><label>Outro País / Região de Origem (Nacionalidade)</label><select
+                                id="dtlOTHER_NATL_ctl00_ddlOTHER_NATL" class="sel-country"></select></div>
+                        <div class="fg"><label>Você possui passaporte do outro país / região de origem (nacionalidade)
+                                indicado acima?</label><span class="rg"><label><input type="radio"
+                                        name="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND" value="Y">
                                     Sim</label><label><input type="radio" name="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND"
                                         value="N"> Não</label></span></div>
                         <div class="fg"><label>Número do Passaporte</label><input type="text"
                                 id="dtlOTHER_NATL_ctl00_tbxOTHER_PPT_NUM" placeholder="Nº do passaporte"></div>
                     </div><button type="button" class="btn-add" onclick="addEntry('dtlOTHER_NATL')">+ Adicionar
-                        Nacionalidade</button>
+                        Outro</button>
                 </div>
             </div>
         </div>
         <div class="section">
             <h3>Residente Permanente</h3>
-            <div class="fg"><label>Você é residente permanente de algum país diferente do seu país de nacionalidade?
-                    *</label><span class="rg"><label><input type="radio" name="rblPermResOtherCntryInd" value="Y"
-                            data-branch="rblPermResOtherCntryInd">
+            <p style="color:#666;font-size:13px;margin-bottom:10px">Residente permanente é qualquer pessoa que recebeu
+                de um país / região permissão legal para viver e trabalhar sem limitação de tempo naquele país / região.
+            </p>
+            <div class="fg"><label>Você é residente permanente de algum país / região diferente do seu país / região de
+                    origem (nacionalidade) indicado acima? *</label><span class="rg"><label><input type="radio"
+                            name="rblPermResOtherCntryInd" value="Y" data-branch="rblPermResOtherCntryInd">
                         Sim</label><label><input type="radio" name="rblPermResOtherCntryInd" value="N"
                             data-branch="rblPermResOtherCntryInd"> Não</label></span></div>
             <div class="br" id="br-rblPermResOtherCntryInd">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações:</p>
                 <div class="as" data-list="dtlOthPermResCntry">
                     <div class="entry" data-idx="0">
-                        <div class="fg"><label>País de Residência Permanente</label><select
+                        <div class="fg"><label>Outro País / Região de Residência Permanente</label><select
                                 id="dtlOthPermResCntry_ctl00_ddlOthPermResCntry" class="sel-country"></select></div>
                     </div><button type="button" class="btn-add" onclick="addEntry('dtlOthPermResCntry')">+ Adicionar
-                        País</button>
+                        Outro</button>
                 </div>
             </div>
         </div>
         <div class="section">
-            <h3>Documento Nacional de Identidade</h3>
-            <p style="color:#666;font-size:13px;margin-bottom:10px">Número de identificação nacional do seu país (ex:
-                CPF para brasileiros).</p>
+            <h3>Números de Identificação</h3>
+            <p style="color:#666;font-size:13px;margin-bottom:10px">O Número de Identificação Nacional é um número único
+                fornecido pelo seu governo (ex: CPF para brasileiros). O governo dos EUA fornece números únicos para
+                quem busca emprego (Social Security Number) ou paga impostos (Taxpayer ID).</p>
             <div class="fg"><label>Número de Identificação Nacional (CPF) *</label><input type="text"
                     id="tbxAPP_NATIONAL_ID" maxlength="20" placeholder="Ex: 123.456.789-00"><label class="na-lbl"><input
                         type="checkbox" class="na-cb" id="cbexAPP_NATIONAL_ID_NA" data-target="tbxAPP_NATIONAL_ID"> Não
                     se Aplica</label>
             </div>
-            <div class="fg"><label>Número do Seguro Social dos EUA (US SSN)</label>
-                <small style="color:#888">Apenas se possuir.</small>
+            <div class="fg"><label>Número do Seguro Social dos EUA (U.S. Social Security Number)</label>
                 <div class="ssn-row"><input type="text" id="tbxAPP_SSN1" maxlength="3"
                         placeholder="XXX"><span>-</span><input type="text" id="tbxAPP_SSN2" maxlength="2"
                         placeholder="XX"><span>-</span><input type="text" id="tbxAPP_SSN3" maxlength="4"
                         placeholder="XXXX"></div><label class="na-lbl"><input type="checkbox" class="na-cb"
                         data-target="tbxAPP_SSN1,tbxAPP_SSN2,tbxAPP_SSN3" id="cbexAPP_SSN_NA"> Não se Aplica</label>
             </div>
-            <div class="fg"><label>Número de Identificação Fiscal dos EUA (ITIN)</label><input type="text"
-                    id="tbxAPP_TAX_ID" maxlength="20" placeholder="Ex: XXX-XX-XXXX"><label class="na-lbl"><input
-                        type="checkbox" class="na-cb" data-target="tbxAPP_TAX_ID" id="cbexAPP_TAX_ID_NA"> Não se
-                    Aplica</label></div>
+            <div class="fg"><label>Número de Identificação Fiscal dos EUA (U.S. Taxpayer ID Number)</label><input
+                    type="text" id="tbxAPP_TAX_ID" maxlength="20" placeholder="Ex: XXX-XX-XXXX"><label
+                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxAPP_TAX_ID"
+                        id="cbexAPP_TAX_ID_NA"> Não se Aplica</label></div>
         </div>
         <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
@@ -2237,7 +2245,7 @@
 
         // ===== INTERVIEW LOCATION (official DS-160 dropdown - 218 locations) =====
         const LOCATIONS = [
-            { v: '', t: '- SELECT -' },
+            { v: '', t: '- Selecione -' },
             { v: 'TIA', t: 'ALBANIA, TIRANA' }, { v: 'ALG', t: 'ALGERIA, ALGIERS' }, { v: 'LUA', t: 'ANGOLA, LUANDA' },
             { v: 'BNS', t: 'ARGENTINA, BUENOS AIRES' }, { v: 'YRV', t: 'ARMENIA, YEREVAN' },
             { v: 'MLB', t: 'AUSTRALIA, MELBOURNE' }, { v: 'PRT', t: 'AUSTRALIA, PERTH' }, { v: 'SYD', t: 'AUSTRALIA, SYDNEY' },
