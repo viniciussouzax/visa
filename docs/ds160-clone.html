@@ -1513,49 +1513,80 @@
 
     <!-- ===== PAGE 8: USContact ===== -->
     <div class="page" id="pg-USContact">
-        <h2>8. Contato nos EUA</h2>
+        <h2>8. Informações de Contato nos EUA (U.S. Point of Contact Information)</h2>
+
         <div class="section">
-            <h3>Pessoa de Contato</h3>
-            <div class="fg"><label>Sobrenome *</label><input type="text" id="tbxUS_POC_SURNAME" maxlength="33"
-                    placeholder="Sobrenome do contato"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbxUS_POC_NAME_NA" data-target="tbxUS_POC_SURNAME"> Não Sabe</label><label
-                    class="na-lbl"><input type="checkbox" class="na-cb"
-                        data-target="tbxUS_POC_SURNAME,tbxUS_POC_GIVEN_NAME"> Não Sabe</label></div>
-            <div class="fg"><label>Nome *</label><input type="text" id="tbxUS_POC_GIVEN_NAME" maxlength="33"
-                    placeholder="Nome do contato"></div>
-            <div class="fg"><label>Organização</label><input type="text" id="tbxUS_POC_ORGANIZATION" maxlength="40"
-                    placeholder="Nome da organização"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbxUS_POC_ORG_NA_IND" data-target="tbxUS_POC_ORGANIZATION"> Não Sabe</label><label
-                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxUS_POC_ORGANIZATION">
-                    N/A</label></div>
-            <div class="fg"><label>Relação *</label><select id="ddlUS_POC_REL_TO_APP">
-                    <option value="">-</option>
-                    <option value="R">PARENTE</option>
-                    <option value="S">CÔNJUGE</option>
-                    <option value="C">AMIGO(A)</option>
-                    <option value="B">COLEGA DE TRABALHO</option>
-                    <option value="P">EMPREGADOR</option>
-                    <option value="H">FUNCIONÁRIO DA ESCOLA</option>
-                    <option value="O">OUTRO</option>
-                </select></div>
-            <div class="fg"><label>Endereço - Rua 1 *</label><input type="text" id="tbxUS_POC_ADDR_LN1" maxlength="40"
-                    placeholder="Endereço"></div>
-            <div class="fg"><label>Endereço - Rua 2</label><input type="text" id="tbxUS_POC_ADDR_LN2"
-                    placeholder="Complemento"></div>
-            <div class="fg"><label>Cidade *</label><input type="text" id="tbxUS_POC_ADDR_CITY" maxlength="20"
-                    placeholder="Cidade">
+            <h3>Pessoa de Contato ou Organização nos Estados Unidos (Contact Person or Organization in the United
+                States)</h3>
+
+            <!-- Contact Person -->
+            <p style="color:#666;font-size:13px;margin-bottom:10px"><strong>Pessoa de Contato (Contact Person)</strong>
+            </p>
+            <div class="fg"><label>Sobrenomes (Surnames) *</label>
+                <input type="text" id="tbxUS_POC_SURNAME" maxlength="33" placeholder="Sobrenome do contato">
             </div>
-            <div class="fg"><label>Estado *</label><select id="ddlUS_POC_ADDR_STATE" class="sel-state"></select></div>
-            <div class="fg"><label>CEP *</label><input type="text" id="tbxUS_POC_ADDR_POSTAL_CD" maxlength="10"
-                    placeholder="CEP (ZIP)"></div>
-            <div class="fg"><label>Telefone *</label><input type="text" id="tbxUS_POC_HOME_TEL" maxlength="20"
-                    placeholder="Telefone">
+            <div class="fg"><label>Nomes (Given Names) *</label>
+                <input type="text" id="tbxUS_POC_GIVEN_NAME" maxlength="33" placeholder="Nome do contato">
             </div>
-            <div class="fg"><label>Email</label><input type="text" id="tbxUS_POC_EMAIL_ADDR"
-                    placeholder="email@exemplo.com"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbexUS_POC_EMAIL_ADDR_NA" data-target="tbxUS_POC_EMAIL_ADDR"> N/A</label>
+            <div class="fg" style="text-align:right">
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxUS_POC_NAME_NA"
+                        data-target="tbxUS_POC_SURNAME,tbxUS_POC_GIVEN_NAME"> Não sei (Do Not Know)</label>
+            </div>
+
+            <!-- Organization -->
+            <div class="fg"><label>Nome da Organização (Organization Name)</label>
+                <input type="text" id="tbxUS_POC_ORGANIZATION" maxlength="40" placeholder="Nome da organização">
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxUS_POC_ORG_NA_IND"
+                        data-target="tbxUS_POC_ORGANIZATION"> Não sei (Do Not Know)</label>
+            </div>
+
+            <!-- Relationship -->
+            <div class="fg"><label>Relação com Você (Relationship to You) *</label>
+                <select id="ddlUS_POC_REL_TO_APP">
+                    <option value="">- SELECIONE - / - SELECT ONE -</option>
+                    <option value="R">RELATIVE / Parente</option>
+                    <option value="S">SPOUSE / Cônjuge</option>
+                    <option value="C">FRIEND / Amigo/Amiga</option>
+                    <option value="B">BUSINESS ASSOCIATE / Sócio/Sócia</option>
+                    <option value="P">EMPLOYER / Empregador</option>
+                    <option value="H">SCHOOL OFFICIAL / Oficial de Escola</option>
+                    <option value="U">U.S. PETITIONER / Peticionário nos EUA</option>
+                    <option value="O">OTHER / Outro</option>
+                </select>
+            </div>
+
+            <!-- Address and Phone -->
+            <p style="color:#666;font-size:13px;margin:16px 0 10px"><strong>Endereço e Telefone do Ponto de Contato
+                    (Address and Phone Number of Point of Contact)</strong></p>
+
+            <div class="fg"><label>Endereço nos EUA - Linha 1 (U.S. Street Address (Line 1)) *</label>
+                <input type="text" id="tbxUS_POC_ADDR_LN1" maxlength="40" placeholder="Endereço nos EUA">
+            </div>
+            <div class="fg"><label>Endereço nos EUA - Linha 2 (U.S. Street Address (Line 2)) <em>*Opcional</em></label>
+                <input type="text" id="tbxUS_POC_ADDR_LN2" maxlength="40" placeholder="Complemento">
+            </div>
+            <div class="fg"><label>Cidade (City) *</label>
+                <input type="text" id="tbxUS_POC_ADDR_CITY" maxlength="20" placeholder="Cidade nos EUA">
+            </div>
+            <div class="fg"><label>Estado (State) *</label>
+                <select id="ddlUS_POC_ADDR_STATE" class="sel-state"></select>
+            </div>
+            <div class="fg"><label>CEP (ZIP Code) <em>(se conhecido / if known)</em></label>
+                <input type="text" id="tbxUS_POC_ADDR_POSTAL_CD" maxlength="10" placeholder="55555 ou 55555-5555">
+                <span style="font-size:11px;color:#999">(Ex: 55555 ou 55555-5555 / e.g., 55555 or 55555-5555)</span>
+            </div>
+            <div class="fg"><label>Telefone (Phone Number) *</label>
+                <input type="text" id="tbxUS_POC_HOME_TEL" maxlength="20" placeholder="5555555555">
+                <span style="font-size:11px;color:#999">(Ex: 5555555555 / e.g., 5555555555)</span>
+            </div>
+            <div class="fg"><label>Endereço de Email (Email Address)</label>
+                <input type="email" id="tbxUS_POC_EMAIL_ADDR" maxlength="50" placeholder="emailaddress@example.com">
+                <span style="font-size:11px;color:#999">(Ex: emailaddress@example.com)</span>
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexUS_POC_EMAIL_ADDR_NA"
+                        data-target="tbxUS_POC_EMAIL_ADDR"> Não se Aplica (Does Not Apply)</label>
             </div>
         </div>
+
         <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
