@@ -97,16 +97,37 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
             return { success: false, error: 'Captcha não resolvido após 3 tentativas' };
         }
 
-        // Click Start New Application
+        // Click Start New Application — retry if captcha was wrong
         const isRetrieve = !!(application?.application_id);
         if (isRetrieve) {
-            // TODO: implement retrieve flow
             return { success: false, error: 'Retrieve flow not implemented yet' };
         }
 
-        const startLink = page.locator("a[id$='_lnkNew']").first();
-        await startLink.click();
-        await page.waitForURL(/ConfirmApplicationID|SecureQuestion|complete_personal/i, { timeout: 15000 }).catch(() => { });
+        for (let startAttempt = 1; startAttempt <= 3; startAttempt++) {
+            const startLink = page.locator("a[id$='_lnkNew']").first();
+            await startLink.click();
+            const navOk = await page.waitForURL(/ConfirmApplicationID|SecureQuestion|complete_personal/i, { timeout: 30000 }).then(() => true).catch(() => false);
+            if (navOk) break;
+
+            // Check if still on landing (captcha might be wrong)
+            console.warn(`[Filler] Landing did not advance (attempt ${startAttempt}/3) — retrying captcha...`);
+            if (startAttempt >= 3) {
+                return { success: false, error: 'Landing page timeout after 3 captcha attempts', page: 'Landing', cause: 'timeout' };
+            }
+            // Re-solve captcha
+            try {
+                const img2 = page.locator("img[id$='_CaptchaImage']").first();
+                const imgPath2 = path.join(require('os').tmpdir(), `captcha_retry_${Date.now()}.png`);
+                await img2.screenshot({ path: imgPath2 });
+                const answer2 = await solveCaptcha(imgPath2, captchaMode, { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key });
+                console.log(`[Filler] Captcha retry answer: ${answer2}`);
+                const input2 = page.locator("input[id$='_txtCodeTextBox']").first();
+                await input2.fill('');
+                await input2.fill(answer2);
+            } catch (e) {
+                console.warn(`[Filler] Captcha retry failed:`, e.message);
+            }
+        }
         await waitForPageReady(page);
 
         // ============================================================
@@ -371,18 +392,32 @@ async function autoFillPass(page, fieldMap) {
     const fields = await discoverFields(page);
     const visible = fields.filter(f => f.visible && f.id);
     let postbackNeeded = false, filled = 0;
-    const unmatched = [];
 
-    for (const field of visible) {
-        if (!field.id) continue;
+    // Build a quick lookup of visible fields by ID
+    const visibleMap = new Map();
+    for (const f of visible) {
+        if (f.id) visibleMap.set(f.id, f);
+    }
+
+    // CRITICAL: iterate in FIELD MAP order, not DOM order.
+    // The field map is carefully ordered to respect form dependencies:
+    // - Parent questions (radio Y/N) come before child fields (text/select)
+    // - Postback triggers come before dependent dropdowns
+    // - This ensures A is always filled before B
+    for (const match of fieldMap) {
+        // Find the visible field that matches this field map entry
+        let field = null;
+        for (const [id, f] of visibleMap) {
+            if (match.pattern.test(id)) {
+                field = f;
+                break;
+            }
+        }
+        if (!field) continue;
+
         if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
         if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
 
-        const match = fieldMap.find(m => m.pattern.test(field.id));
-        if (!match) {
-            unmatched.push(field.id + '(' + field.type + ')');
-            continue;
-        }
         const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
 
         try {
@@ -437,9 +472,6 @@ async function autoFillPass(page, fieldMap) {
         if (postbackNeeded) break;
     }
 
-    if (unmatched.length > 0) {
-        console.warn('[Filler] Unmatched date/stay fields:', unmatched);
-    }
     if (postbackNeeded) {
         await waitForPostback(page);
         return true;
