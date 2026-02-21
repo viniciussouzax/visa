@@ -205,16 +205,18 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                 const { navigated } = await clickNextAndWait(page);
                 if (navigated) break;
 
-                // Capture validation errors from DS-160 form
-                const validationErrors = await page.locator('.error-message li').allTextContents().catch(() => []);
+                // Capture validation errors from DS-160 form (multiple selectors)
+                const validationErrors = await captureValidationErrors(page);
                 if (validationErrors.length > 0) {
-                    console.warn(`[Filler] Validation errors on ${pageName}:`, validationErrors);
+                    console.warn(`\n🔴 [${pageName}] Validation errors (attempt ${attempt}/3):`);
+                    validationErrors.forEach((e, i) => console.warn(`   ${i + 1}. ${e}`));
                 }
 
                 if (attempt === 3 && !navigated) {
                     const errDetail = validationErrors.length > 0 ? validationErrors.join('; ') : 'Page stuck after 3 attempts';
                     throw new Error(`${pageName}: ${errDetail}`);
                 }
+                console.log(`[Filler] Retrying page ${pageName} (attempt ${attempt + 1}/3)...`);
                 await waitForPageReady(page);
             }
         }
@@ -267,6 +269,7 @@ function identifyPage(url) {
     if (file.includes('complete_uscontact')) return 'USContact';
     if (file.includes('complete_family1')) return 'Family1';
     if (file.includes('complete_family2')) return 'Family2';
+    if (file.includes('complete_family3') || node === 'DeceasedSpouse') return 'DeceasedSpouse';
     if (file.includes('complete_family4') || node === 'PrevSpouse') return 'PrevSpouse';
     if (file.includes('complete_workeducation1')) return 'WorkEducation1';
     if (file.includes('complete_workeducation2')) return 'WorkEducation2';
@@ -474,6 +477,37 @@ async function clickNextAndWait(page) {
     return { navigated: page.url() !== urlBefore, newPage: identifyPage(page.url()) };
 }
 
+async function captureValidationErrors(page) {
+    return page.evaluate(() => {
+        const errors = new Set();
+
+        // 1. ValidationSummary (official DS-160 error box at top of page)
+        document.querySelectorAll('[id*="ValidationSummary"] li, [id*="valSummary"] li, .aspNetValidator, .validationSummary li').forEach(el => {
+            const text = el.textContent?.trim();
+            if (text && text.length > 5) errors.add(text);
+        });
+
+        // 2. Error spans with red color (inline validation messages)
+        document.querySelectorAll('span[style*="color"], span.error, span[id*="validator"], span[id*="Validator"]').forEach(el => {
+            const style = window.getComputedStyle(el);
+            const color = style.color;
+            const isRed = color === 'rgb(255, 0, 0)' || color === 'red' || el.style.color === 'Red' || el.style.color === 'red';
+            const isVisible = el.offsetParent !== null && el.textContent?.trim().length > 3;
+            if ((isRed || el.classList.contains('error')) && isVisible) {
+                errors.add(el.textContent.trim());
+            }
+        });
+
+        // 3. Error message divs
+        document.querySelectorAll('.error-message li, .validation-error, [id*="errMsg"]').forEach(el => {
+            const text = el.textContent?.trim();
+            if (text && text.length > 5) errors.add(text);
+        });
+
+        return Array.from(errors);
+    }).catch(() => []);
+}
+
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ====================================================================
@@ -502,24 +536,42 @@ function normalizeProfile(data) {
     const g = (obj, camel, snake) => obj[camel] || obj[snake] || '';
 
     return {
+        // --- Personal1 ---
         surname: g(p1, 'surname', 'surname'),
         givenName: g(p1, 'givenName', 'given_name'),
         fullNameNative: g(p1, 'fullNameNative', 'full_name_native'),
         otherNamesUsed: p1.otherNamesUsed === 'Y' || p1.other_names_used === 'Y',
         otherNames: p1.otherNames || p1.other_names || [],
+        telecode: p1.telecode === 'Y',
+        telecodeSurname: p1.telecodeSurname || p1.telecode_surname || '',
+        telecodeGivenName: p1.telecodeGivenName || p1.telecode_given_name || '',
         sex: g(p1, 'sex', 'sex') || 'M',
         maritalStatus: g(p1, 'maritalStatus', 'marital_status') || 'S',
+        otherMaritalStatusText: p1.otherMaritalStatusText || '',
         dob: p1.dob || { day: '', month: '', year: '' },
         cityOfBirth: g(p1, 'cityOfBirth', 'city_of_birth'),
         stateOfBirth: g(p1, 'stateOfBirth', 'state_of_birth'),
         countryOfBirth: g(p1, 'countryOfBirth', 'country_of_birth') || 'BRAZIL',
+        // --- Personal2 ---
         nationality: g(p2, 'nationality', 'nationality') || 'BRAZIL',
+        otherNationality: p2.otherNationality === 'Y',
+        otherNationalityCountry: p2.otherNationalities?.[0]?.country,
+        otherNationalityPassport: p2.otherNationalities?.[0]?.hasPassport === 'Y',
+        otherNationalityPassportNumber: p2.otherNationalities?.[0]?.passportNumber,
+        permanentResidentOtherCountry: p2.permanentResident === 'Y',
+        permanentResidentCountry: p2.permanentResidentCountries?.[0]?.country,
         nationalId: g(p2, 'nationalId', 'national_id'),
+        usSsn: p2.ssn !== 'N/A' ? p2.ssn?.replace(/-/g, '') : null,
+        usTaxpayerId: p2.taxId || null,
+        // --- Travel ---
         purposeOfTrip: g(trav, 'purposeOfTrip', 'purpose_of_trip') || 'B1/B2',
-        hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.hasSpecificPlans === true || trav.has_specific_plans === 'Y',
+        hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.hasSpecificPlans === true,
         travel: {
             arrivalDate: trav.arrivalDate || trav.arrival_date,
             departureDate: trav.departureDate || trav.departure_date,
+            arrivalFlight: trav.arrivalFlight, arrivalCity: trav.arrivalCity,
+            departureFlight: trav.departureFlight, departureCity: trav.departureCity,
+            location: trav.specificLocation,
             lengthOfStay: {
                 value: (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.value : trav.lengthOfStay) || trav.length_of_stay || '30',
                 unit: (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.unit : trav.lengthOfStayUnit) || trav.length_of_stay_unit || 'D'
@@ -527,27 +579,83 @@ function normalizeProfile(data) {
             usAddress: trav.usAddress || trav.us_address || { street1: 'N/A', street2: '', city: 'N/A', state: 'FL', zip: '00000' }
         },
         payingForTrip: trav.whoIsPaying || trav.who_is_paying || 'S',
+        payer: trav.payer ? (() => {
+            const p = trav.payer;
+            const pa = p.address || {};
+            return {
+                surname: p.surname, givenName: p.givenName,
+                phone: p.phone, email: p.email,
+                relationship: p.relationship,
+                sameAddress: p.sameAddress === 'Y' || p.sameAddress === true,
+                street1: p.street1 || pa.street1 || '',
+                street2: p.street2 || pa.street2 || '',
+                city: p.city || pa.city || '',
+                state: p.state || pa.state || '',
+                postalCode: p.postalCode || pa.postalCode || '',
+                country: p.country || pa.country || '',
+                companyName: p.companyName, companyPhone: p.companyPhone,
+                companyRelation: p.companyRelation,
+            };
+        })() : null,
+        // --- Travel Companions ---
+        travelingWithOthers: tc.travelingWithOthers === 'Y',
+        companions: tc.companions || [],
+        partOfGroup: tc.partOfGroup === 'Y',
+        groupName: tc.groupName || '',
+        // --- Previous US Travel ---
+        hasBeenInUS: prev.hasBeenInUS === 'Y',
+        previousUSVisit: prev.previousVisits?.[0] || null,
+        previousUSDriversLicense: prev.hasDriversLicense === 'Y',
+        previousUSDriversLicenseNumber: prev.driversLicenses?.[0]?.number,
+        previousUSDriversLicenseState: prev.driversLicenses?.[0]?.state,
+        hasUSVisa: prev.hasUSVisa === 'Y',
+        previousVisa: prev.previousVisa ? {
+            ...prev.previousVisa,
+            sameType: prev.previousVisa.sameType === 'Y' || prev.previousVisa.sameType === true,
+            sameCountry: prev.previousVisa.sameCountry === 'Y' || prev.previousVisa.sameCountry === true,
+            tenPrint: prev.previousVisa.tenPrint === 'Y' || prev.previousVisa.tenPrint === true,
+            lost: prev.previousVisa.lost === 'Y' || prev.previousVisa.lost === true,
+            cancelled: prev.previousVisa.cancelled === 'Y' || prev.previousVisa.cancelled === true,
+        } : null,
+        visaRefused: prev.visaRefused === 'Y',
+        visaRefusedExplanation: prev.visaRefusedExplanation || '',
+        immigrantPetition: prev.immigrantPetition === 'Y',
+        immigrantPetitionExplanation: prev.immigrantPetitionExplanation || '',
+        permanentResident: prev.permanentResident === 'Y',
+        permanentResidentExplanation: prev.permanentResidentExplanation || '',
+        vwpDenial: prev.vwpDenial === 'Y',
+        vwpDenialExplanation: prev.vwpDenialExplanation || '',
+        // --- Address & Phone ---
         homeAddress: addr.homeAddress || addr.home_address || {},
-        mailingAddressSame: addr.mailingAddressSame !== false && addr.mailing_address_same !== false,
+        mailingAddressSame: addr.mailingAddressSame === 'Y' || addr.mailingAddressSame === true,
         mailingAddress: addr.mailingAddress || addr.mailing_address || null,
         phone: g(addr, 'phone', 'phone'),
         mobilePhone: addr.mobilePhone || addr.mobile_phone || null,
         businessPhone: addr.businessPhone || addr.business_phone || null,
         email: g(addr, 'email', 'email'),
-        additionalPhones: addr.additionalPhones === 'Y' || addr.additional_phones === 'Y' || false,
-        additionalEmails: addr.additionalEmails === 'Y' || addr.additional_emails === 'Y' || false,
+        additionalPhones: addr.additionalPhones === 'Y',
+        additionalPhoneNumbers: addr.additionalPhoneNumbers || [],
+        additionalEmails: addr.additionalEmails === 'Y',
+        additionalEmailAddresses: addr.additionalEmailAddresses || [],
         additionalWebsites: false,
-        socialMedia: addr.socialMedia || addr.social_media || [],
+        socialMedia: addr.socialMedia ? [addr.socialMedia] : (addr.social_media || []),
+        additionalSocialMedia: addr.additionalSocialMedia === 'Y',
+        additionalSocialMediaAccounts: addr.additionalSocialMediaAccounts || [],
+        // --- Passport ---
         passport: {
             type: g(ppt, 'type', 'type') || 'R',
             number: g(ppt, 'number', 'number'),
+            bookNumber: ppt.bookNumber || '',
             issuingCountry: g(ppt, 'issuingCountry', 'issuing_country') || 'BRAZIL',
             issuedCity: g(ppt, 'issuedCity', 'issued_city'),
             issuedState: g(ppt, 'issuedState', 'issued_state'),
             issuedCountry: g(ppt, 'issuedCountry', 'issued_country') || 'BRAZIL',
             issuanceDate: ppt.issuanceDate || ppt.issuance_date,
             expirationDate: ppt.expirationDate || ppt.expiration_date,
+            lostOrStolen: ppt.lostOrStolen === 'Y',
+            lostPassport: ppt.lostPassports?.[0] || null,
         },
+        // --- US Contact ---
         usContact: (() => {
             const uc = data.usContact || data.us_contact || {};
             const ucAddr = uc.address || {};
@@ -564,33 +672,70 @@ function normalizeProfile(data) {
                 email: uc.email || '',
             };
         })(),
+        // --- Family ---
         father: fam1.father || {},
         mother: fam1.mother || {},
-        spouse: fam2 || {},
-        relativesInUS: fam1.immediateRelativesInUS === 'Y' || fam1.relatives_in_us === 'Y',
+        spouse: fam2.spouse || (fam2.surname ? fam2 : null),
+        relativesInUS: (fam1.immediateRelativesInUS || fam1.relativesInUS) === 'Y',
+        immediateRelative: (() => {
+            const rel = fam1.relatives?.[0] || fam1.immediateRelative;
+            if (!rel) return null;
+            return {
+                surname: rel.surname || '',
+                givenName: rel.givenName || rel.given_name || '',
+                relationship: rel.type || rel.relationship || '',
+                status: rel.status || '',
+            };
+        })(),
+        otherRelativesInUS: fam1.otherRelativesInUS === 'Y',
+        previousSpouse: data.prevSpouse || data.previousSpouse || null,
+        // --- Work/Education ---
         occupationCode: g(we1, 'occupation', 'occupation') || 'H',
-        employer: we1.employer || {},
+        employer: (() => {
+            const e = we1.employer || {};
+            return {
+                name: e.name || '',
+                street1: e.street1 || '',
+                street2: e.street2 || '',
+                city: e.city || '',
+                state: e.state || '',
+                postalCode: e.postalCode || '',
+                country: e.country || 'BRAZIL',
+                phone: e.phone || '',
+                monthlyIncome: String(e.monthlyIncome || e.monthlySalary || e.monthly_salary || '').replace(/[^\d]/g, ''),
+                startDate: e.startDate || e.start_date || { month: '', year: '' },
+                duties: e.duties || '',
+            };
+        })(),
         hasPreviousEmployment: we2.hasPreviousEmployment === 'Y' || we2.has_previous_employment === 'Y',
         previousEmployment: we2.previousEmployment || we2.previous_employment || [],
         hasEducation: we2.hasEducation === 'Y' || we2.has_education === 'Y',
         education: (we2.education || []).map(e => ({
             name: e.name || '',
-            street1: e.street1 || (e.city ? e.city + ' CAMPUS' : 'N/A'),
+            street1: e.street1 || '',
+            street2: e.street2 || '',
             city: e.city || '',
-            state: e.state || e.city || '',
-            postalCode: e.postalCode || e.postal_code || (addr.homeAddress || addr.home_address || {}).postalCode || '00000-000',
+            state: e.state || '',
+            postalCode: e.postalCode || e.postal_code || '',
             country: e.country || 'BRAZIL',
             courseOfStudy: e.courseOfStudy || e.course_of_study || e.course || '',
             startDate: e.startDate || e.start_date || { month: '', year: '' },
             endDate: e.endDate || e.end_date || { month: '', year: '' },
         })),
         languages: we3.languages || ['PORTUGUESE'],
-        clanTribe: we3.clanTribe === 'Y' || we3.clan_tribe === 'Y',
-        countriesVisited: we3.countriesVisited === 'Y' || we3.countries_visited === 'Y',
-        organizationMember: we3.organizationMember === 'Y' || we3.organization_member === 'Y',
-        specializedSkills: we3.specializedSkills === 'Y' || we3.specialized_skills === 'Y',
-        militaryService: we3.militaryService === 'Y' || we3.military_service === 'Y',
-        insurgentOrg: we3.insurgentOrg === 'Y' || we3.insurgent_org === 'Y',
+        clanTribe: we3.clanTribe === 'Y',
+        clanTribeName: we3.clanTribeName || '',
+        countriesVisited: we3.countriesVisited === 'Y',
+        countriesVisitedList: we3.countriesVisitedList || [],
+        organizationMember: we3.organizationMember === 'Y',
+        organizationName: Array.isArray(we3.organizations) ? we3.organizations[0] : we3.organizationName || '',
+        specializedSkills: we3.specializedSkills === 'Y',
+        specializedSkillsExplanation: we3.specializedSkillsExplanation || '',
+        militaryService: we3.militaryService === 'Y',
+        military: Array.isArray(we3.military) ? we3.military[0] : we3.military || null,
+        insurgentOrg: we3.insurgentOrg === 'Y',
+        insurgentOrgExplanation: we3.insurgentOrgExplanation || '',
+        // --- Meta ---
         location: data.location || 'SPL',
         securityAnswer: data.securityAnswer || data.security_answer || 'BRAZIL'
     };
