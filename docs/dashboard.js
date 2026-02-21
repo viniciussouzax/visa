@@ -540,6 +540,8 @@ async function openAgencyDetail(companyId) {
                 style="font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;background:${company.active !== false ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)'};color:${company.active !== false ? '#22c55e' : '#ef4444'};border:1px solid ${company.active !== false ? '#22c55e44' : '#ef444444'}">
                 ${company.active !== false ? '✓ Agência Ativa' : '✗ Agência Inativa'}
             </button>
+            ${memberDetails.length === 0 ? `<button onclick="deleteCompany('${company.id}', '${company.name.replace(/'/g, "\\'")}')"
+                style="font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid #ef444444;margin-left:8px">🗑 Excluir</button>` : ''}
         </div>
     </div>
 
@@ -591,6 +593,21 @@ async function toggleCompany(id, active) {
     await sb.from('companies').update({ active }).eq('id', id);
     loadAgencies();
     openAgencyDetail(id);
+}
+
+async function deleteCompany(id, name) {
+    // Check if there are members
+    const { data: members } = await sb.from('company_members').select('id').eq('company_id', id);
+    if (members && members.length > 0) {
+        toast('Não é possível excluir: existem ' + members.length + ' assessor(es) vinculado(s)', 'error');
+        return;
+    }
+    if (!confirm('Tem certeza que deseja excluir a organização "' + name + '"? Esta ação não pode ser desfeita.')) return;
+    const { error } = await sb.from('companies').delete().eq('id', id);
+    if (error) { toast('Erro: ' + error.message, 'error'); return; }
+    toast('Organização excluída!', 'success');
+    showMasterSub('agencies');
+    loadAgencies();
 }
 
 const createAgBtn = $('btn-create-agency');
