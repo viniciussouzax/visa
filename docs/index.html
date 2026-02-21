@@ -37,7 +37,7 @@
             min-height: 100vh;
         }
 
-        /* ========== AUTH SCREEN ========== */
+        /* ========== AUTH ========== */
         #auth-screen {
             display: flex;
             align-items: center;
@@ -53,7 +53,7 @@
             padding: 40px;
             width: 100%;
             max-width: 400px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .5);
         }
 
         .auth-card h1 {
@@ -94,7 +94,7 @@
             color: var(--text);
             font-size: 14px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color .2s;
         }
 
         .form-group input:focus {
@@ -108,7 +108,7 @@
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all .2s;
             width: 100%;
         }
 
@@ -120,7 +120,7 @@
         .btn-accent:hover {
             background: var(--accent-hover);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3);
+            box-shadow: 0 4px 12px rgba(233, 69, 96, .3);
         }
 
         .error-msg {
@@ -142,13 +142,13 @@
             height: 100%;
         }
 
-        /* Sidebar */
         .sidebar {
-            width: 240px;
+            width: 250px;
             background: var(--surface);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
+            flex-shrink: 0;
         }
 
         .sidebar-brand {
@@ -167,6 +167,7 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
+            overflow-y: auto;
         }
 
         .nav-item {
@@ -175,7 +176,7 @@
             cursor: pointer;
             font-size: 14px;
             color: var(--text-muted);
-            transition: all 0.15s;
+            transition: all .15s;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -187,9 +188,19 @@
         }
 
         .nav-item.active {
-            background: rgba(233, 69, 96, 0.15);
+            background: rgba(233, 69, 96, .15);
             color: var(--accent);
             font-weight: 600;
+        }
+
+        .nav-item.hidden {
+            display: none;
+        }
+
+        .nav-separator {
+            height: 1px;
+            background: var(--border);
+            margin: 8px 0;
         }
 
         .sidebar-footer {
@@ -217,29 +228,29 @@
         }
 
         .btn-copy-link {
-            background: rgba(233, 69, 96, 0.1) !important;
-            border: 1px solid rgba(233, 69, 96, 0.3) !important;
+            background: rgba(233, 69, 96, .1) !important;
+            border: 1px solid rgba(233, 69, 96, .3) !important;
             color: var(--accent) !important;
             display: flex !important;
             align-items: center;
             justify-content: center;
             gap: 6px;
             font-weight: 500;
-            transition: all 0.2s;
+            transition: all .2s;
         }
 
         .btn-copy-link:hover {
-            background: rgba(233, 69, 96, 0.2) !important;
+            background: rgba(233, 69, 96, .2) !important;
             border-color: var(--accent) !important;
         }
 
         .btn-copy-link.copied {
-            background: rgba(34, 197, 94, 0.15) !important;
+            background: rgba(34, 197, 94, .15) !important;
             border-color: var(--success) !important;
             color: var(--success) !important;
         }
 
-        /* Main content */
+        /* Main */
         .main {
             flex: 1;
             display: flex;
@@ -259,6 +270,12 @@
         .topbar h2 {
             font-size: 18px;
             font-weight: 600;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
 
         .content {
@@ -296,8 +313,8 @@
             font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: rgba(0, 0, 0, 0.2);
+            letter-spacing: .5px;
+            background: rgba(0, 0, 0, .2);
             border-bottom: 1px solid var(--border);
         }
 
@@ -315,7 +332,11 @@
             background: var(--surface-hover);
         }
 
-        /* Status badges */
+        tr.selected td {
+            background: rgba(233, 69, 96, .1) !important;
+        }
+
+        /* Badges */
         .badge {
             display: inline-block;
             padding: 3px 10px;
@@ -326,31 +347,46 @@
         }
 
         .badge-draft {
-            background: rgba(148, 163, 184, 0.2);
+            background: rgba(148, 163, 184, .2);
             color: #94a3b8;
         }
 
         .badge-queued {
-            background: rgba(245, 158, 11, 0.2);
+            background: rgba(245, 158, 11, .2);
             color: #f59e0b;
         }
 
         .badge-filling {
-            background: rgba(59, 130, 246, 0.2);
+            background: rgba(59, 130, 246, .2);
             color: #3b82f6;
         }
 
         .badge-filled {
-            background: rgba(34, 197, 94, 0.2);
+            background: rgba(34, 197, 94, .2);
             color: #22c55e;
         }
 
         .badge-error {
-            background: rgba(239, 68, 68, 0.2);
+            background: rgba(239, 68, 68, .2);
             color: #ef4444;
         }
 
-        /* Action buttons */
+        .badge-pending {
+            background: rgba(245, 158, 11, .2);
+            color: #f59e0b;
+        }
+
+        .badge-in_progress {
+            background: rgba(59, 130, 246, .2);
+            color: #3b82f6;
+        }
+
+        .badge-completed {
+            background: rgba(34, 197, 94, .2);
+            color: #22c55e;
+        }
+
+        /* Buttons */
         .btn-sm {
             padding: 6px 14px;
             border-radius: 6px;
@@ -358,25 +394,65 @@
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all .15s;
         }
 
         .btn-queue {
-            background: rgba(245, 158, 11, 0.2);
+            background: rgba(245, 158, 11, .2);
             color: #f59e0b;
         }
 
         .btn-queue:hover {
-            background: rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, .3);
         }
 
         .btn-view {
-            background: rgba(59, 130, 246, 0.2);
+            background: rgba(59, 130, 246, .2);
             color: #3b82f6;
         }
 
         .btn-view:hover {
-            background: rgba(59, 130, 246, 0.3);
+            background: rgba(59, 130, 246, .3);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, .15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, .3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, .25);
+        }
+
+        .btn-success {
+            background: rgba(34, 197, 94, .15);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, .3);
+        }
+
+        .btn-success:hover {
+            background: rgba(34, 197, 94, .25);
+        }
+
+        .btn-accent-sm {
+            background: rgba(233, 69, 96, .15);
+            color: var(--accent);
+            border: 1px solid rgba(233, 69, 96, .3);
+        }
+
+        .btn-accent-sm:hover {
+            background: rgba(233, 69, 96, .25);
+        }
+
+        .btn-primary-sm {
+            background: var(--accent);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary-sm:hover {
+            background: var(--accent-hover);
         }
 
         /* Stats cards */
@@ -398,7 +474,7 @@
             font-size: 12px;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: .5px;
         }
 
         .stat-card .value {
@@ -419,7 +495,7 @@
             color: var(--warning);
         }
 
-        /* Config view */
+        /* Config / Cards */
         .config-card {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -431,17 +507,6 @@
         .config-card h3 {
             font-size: 16px;
             margin-bottom: 16px;
-        }
-
-        .config-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 0;
-        }
-
-        .config-row label {
-            font-size: 14px;
         }
 
         .copy-link {
@@ -460,6 +525,248 @@
             border-color: var(--accent);
         }
 
+        /* Search bar */
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 10px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-bar input:focus {
+            border-color: var(--accent);
+        }
+
+        .search-bar input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .pagination button {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .pagination button:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .pagination button:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .pagination span {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Detail Panel (split layout) */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+            min-height: 0;
+        }
+
+        .split-layout.no-detail {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 160px);
+            overflow-y: auto;
+        }
+
+        .detail-panel h3 {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .detail-section {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-section:last-child {
+            border-bottom: none;
+        }
+
+        .detail-section h4 {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 10px;
+        }
+
+        .detail-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 13px;
+        }
+
+        .detail-field .label {
+            color: var(--text-muted);
+        }
+
+        .detail-actions {
+            padding: 16px 20px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* App list items */
+        .app-item {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background .1s;
+        }
+
+        .app-item:hover {
+            background: var(--surface-hover);
+        }
+
+        .app-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Master grid */
+        .master-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .master-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .master-card-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .master-card-body {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .master-form {
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .master-form input {
+            padding: 10px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .master-form input:focus {
+            border-color: var(--accent);
+        }
+
+        /* Switch toggle */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #475569;
+            transition: .3s;
+            border-radius: 22px;
+        }
+
+        .switch .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        .switch input:checked+.slider {
+            background-color: var(--success);
+        }
+
+        .switch input:checked+.slider:before {
+            transform: translateX(18px);
+        }
+
         /* Toast */
         .toast {
             position: fixed;
@@ -470,7 +777,7 @@
             background: var(--surface);
             border: 1px solid var(--border);
             font-size: 13px;
-            animation: slideUp 0.3s ease;
+            animation: slideUp .3s ease;
             z-index: 999;
         }
 
@@ -494,6 +801,82 @@
             }
         }
 
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .modal-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .modal-info-item {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .modal-info-item .label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .modal-info-item .value {
+            font-size: 14px;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 display: none;
@@ -502,13 +885,21 @@
             .stats {
                 grid-template-columns: repeat(2, 1fr);
             }
+
+            .split-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .master-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <!-- ========== AUTH SCREEN ========== -->
+    <!-- AUTH SCREEN -->
     <div id="auth-screen">
         <div class="auth-card">
             <h1>⚡ DS-160 IA</h1>
@@ -526,7 +917,7 @@
         </div>
     </div>
 
-    <!-- ========== APP SCREEN ========== -->
+    <!-- APP SCREEN -->
     <div id="app-screen">
         <div class="app-layout">
             <!-- Sidebar -->
@@ -535,9 +926,12 @@
                 <div class="sidebar-nav">
                     <div class="nav-item active" data-view="dashboard">📊 Dashboard</div>
                     <div class="nav-item" data-view="applicants">👤 Solicitantes</div>
+                    <div class="nav-item" data-view="import">📥 Importar</div>
                     <div class="nav-item" data-view="queue">📋 Fila</div>
                     <div class="nav-item" data-view="logs">🔍 Logs</div>
                     <div class="nav-item" data-view="config">⚙️ Configurações</div>
+                    <div class="nav-separator"></div>
+                    <div class="nav-item hidden" id="nav-master" data-view="master">🏢 Painel Master</div>
                 </div>
                 <div style="padding: 8px 12px;">
                     <button class="btn-copy-link" id="btn-copy-form" title="Copiar link do formulário">📋 Copiar link do
@@ -545,6 +939,7 @@
                 </div>
                 <div class="sidebar-footer">
                     <div id="user-email">—</div>
+                    <div style="font-size:10px;margin-top:2px;color:var(--text-muted)" id="user-role-display"></div>
                     <button id="btn-logout">Sair</button>
                 </div>
             </div>
@@ -553,7 +948,9 @@
             <div class="main">
                 <div class="topbar">
                     <h2 id="page-title">Dashboard</h2>
-                    <button class="btn-sm btn-queue" id="btn-refresh" style="padding:8px 16px">↻ Atualizar</button>
+                    <div class="topbar-actions">
+                        <button class="btn-sm btn-queue" id="btn-refresh" style="padding:8px 16px">↻ Atualizar</button>
+                    </div>
                 </div>
                 <div class="content">
 
@@ -595,17 +992,75 @@
 
                     <!-- Applicants View -->
                     <div class="view" id="view-applicants">
+                        <div class="search-bar">
+                            <input type="text" id="search-applicants"
+                                placeholder="🔍 Buscar por nome, passaporte ou email...">
+                            <button class="btn-sm btn-accent-sm" id="btn-create-app">+ Nova Aplicação</button>
+                        </div>
+                        <div class="split-layout" id="applicants-layout">
+                            <div>
+                                <div class="table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Passaporte</th>
+                                                <th>Criado em</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="applicants-list"></tbody>
+                                    </table>
+                                </div>
+                                <div class="pagination">
+                                    <button id="app-prev" disabled>← Anterior</button>
+                                    <span id="app-page-info">Página 1</span>
+                                    <button id="app-next">Próxima →</button>
+                                </div>
+                            </div>
+                            <div class="detail-panel" id="detail-panel" style="display:none">
+                                <h3 id="detail-name">Detalhes</h3>
+                                <div class="detail-section" id="detail-info"></div>
+                                <div class="detail-section">
+                                    <h4>Aplicações DS-160</h4>
+                                    <div id="detail-applications"></div>
+                                </div>
+                                <div class="detail-section" id="detail-dependents-section" style="display:none">
+                                    <h4>Dependentes</h4>
+                                    <div id="detail-dependents"></div>
+                                </div>
+                                <div class="detail-actions">
+                                    <button class="btn-sm btn-view" id="btn-view-full">👁 Ver Dados</button>
+                                    <button class="btn-sm btn-accent-sm" id="btn-new-application">+ Nova
+                                        Aplicação</button>
+                                    <button class="btn-sm btn-danger" id="btn-delete-applicant">🗑 Excluir</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Import View (Orphans) -->
+                    <div class="view" id="view-import">
+                        <div class="config-card" style="margin-bottom: 20px">
+                            <h3>📥 Solicitantes Disponíveis</h3>
+                            <p style="color:var(--text-muted);font-size:13px;margin-top:6px">
+                                Solicitantes que preencheram o formulário online mas ainda não foram vinculados a
+                                nenhuma agência.
+                                Clique em "Vincular" para adicioná-los à sua empresa.
+                            </p>
+                        </div>
                         <div class="table-container">
                             <table>
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
+                                        <th>Email</th>
                                         <th>Passaporte</th>
-                                        <th>Criado em</th>
-                                        <th>Ações</th>
+                                        <th>Data</th>
+                                        <th>Ação</th>
                                     </tr>
                                 </thead>
-                                <tbody id="applicants-list"></tbody>
+                                <tbody id="orphans-list"></tbody>
                             </table>
                         </div>
                     </div>
@@ -621,24 +1076,11 @@
                                         <th>Adicionado</th>
                                         <th>Status</th>
                                         <th>Worker</th>
+                                        <th>Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody id="queue-list"></tbody>
                             </table>
-                        </div>
-                    </div>
-
-                    <!-- Config View -->
-                    <div class="view" id="view-config">
-                        <div class="config-card">
-                            <h3>🔗 Link do Formulário Público</h3>
-                            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">Envie este link para
-                                seus clientes preencherem os dados:</p>
-                            <div class="copy-link" id="form-link" title="Clique para copiar">—</div>
-                        </div>
-                        <div class="config-card">
-                            <h3>📋 ID da Organização</h3>
-                            <div class="copy-link" id="org-id-display">—</div>
                         </div>
                     </div>
 
@@ -662,306 +1104,91 @@
                         </div>
                     </div>
 
+                    <!-- Config View -->
+                    <div class="view" id="view-config">
+                        <div class="config-card">
+                            <h3>🔗 Link do Formulário Público</h3>
+                            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">Envie este link para
+                                seus clientes:</p>
+                            <div class="copy-link" id="form-link" title="Clique para copiar">—</div>
+                        </div>
+                        <div class="config-card">
+                            <h3>📋 ID da Organização</h3>
+                            <div class="copy-link" id="org-id-display">—</div>
+                        </div>
+                        <div class="config-card" id="config-capmonster" style="display:none">
+                            <h3>🔑 CapMonster API Key</h3>
+                            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">Chave para resolução
+                                automática de captchas</p>
+                            <div style="display:flex;gap:10px">
+                                <input type="password" id="capmonster-key" placeholder="Sua Client Key"
+                                    style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+                                <button class="btn-sm btn-primary-sm" id="btn-save-capmonster"
+                                    style="padding:10px 16px">💾 Salvar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Master View -->
+                    <div class="view" id="view-master">
+                        <div style="display:flex;gap:16px;margin-bottom:20px">
+                            <div class="config-card" style="flex:2;margin:0">
+                                <h3>➕ Nova Agência</h3>
+                                <div style="display:flex;gap:12px;margin-top:12px">
+                                    <input type="text" id="new-org-name" placeholder="Nome da Empresa"
+                                        style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+                                    <input type="text" id="new-org-cnpj" placeholder="CNPJ"
+                                        style="width:180px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+                                    <button class="btn-sm btn-primary-sm" id="btn-create-org"
+                                        style="padding:10px 16px;white-space:nowrap">+ Criar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="master-grid">
+                            <div class="master-card">
+                                <div class="master-card-header">Organizações</div>
+                                <div class="master-card-body" id="master-orgs-list"></div>
+                            </div>
+                            <div class="master-card">
+                                <div class="master-card-header">Equipe da Agência</div>
+                                <div class="master-card-body" id="master-staff-list">
+                                    <div style="padding:30px;text-align:center;color:var(--text-muted);font-size:13px">
+                                        Selecione uma agência</div>
+                                </div>
+                                <div id="invite-form-container" style="display:none;border-top:1px solid var(--border)">
+                                    <div class="master-form">
+                                        <h4 style="font-size:13px;color:var(--text-muted)">Novo Membro</h4>
+                                        <input type="text" id="invite-name" placeholder="Nome">
+                                        <input type="email" id="invite-email" placeholder="Email">
+                                        <input type="password" id="invite-pass" placeholder="Senha Provisória">
+                                        <button class="btn-sm btn-primary-sm" id="btn-invite"
+                                            style="padding:10px">Adicionar Membro</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div class="modal-overlay hidden" id="info-modal">
+        <div class="modal">
+            <h2 id="modal-title">Informações</h2>
+            <div id="modal-body"></div>
+            <div class="modal-actions">
+                <button style="background:var(--surface-hover);color:var(--text)"
+                    onclick="document.getElementById('info-modal').classList.add('hidden')">Fechar</button>
             </div>
         </div>
     </div>
 
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script>
-        const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        let currentUser = null;
-        let companyId = null;
-        const $ = id => document.getElementById(id);
-
-        // ============================================================
-        // AUTH
-        // ============================================================
-        $('btn-login').onclick = async () => {
-            const email = $('login-email').value.trim();
-            const pw = $('login-password').value;
-            if (!email || !pw) { $('login-error').textContent = 'Preencha email e senha'; return; }
-            $('btn-login').disabled = true;
-            $('btn-login').textContent = 'Entrando...';
-            const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
-            if (error) {
-                $('login-error').textContent = error.message;
-                $('btn-login').disabled = false;
-                $('btn-login').textContent = 'Entrar';
-                return;
-            }
-            currentUser = data.user;
-            await initApp();
-        };
-
-        $('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-login').click(); });
-
-        $('btn-logout').onclick = async () => {
-            await sb.auth.signOut();
-            location.reload();
-        };
-
-        // Auto-login if session exists
-        sb.auth.getSession().then(({ data }) => {
-            if (data.session) {
-                currentUser = data.session.user;
-                initApp();
-            }
-        });
-
-        // ============================================================
-        // APP INIT
-        // ============================================================
-        async function initApp() {
-            $('auth-screen').style.display = 'none';
-            $('app-screen').style.display = 'block';
-            $('user-email').textContent = currentUser.email;
-
-            // Get user's company
-            const { data: member } = await sb.from('members').select('company_id').eq('user_id', currentUser.id).single();
-            if (member) {
-                companyId = member.company_id;
-
-                // Get short_id for clean URL
-                const { data: company } = await sb.from('companies').select('short_id').eq('id', companyId).single();
-                const shortId = company?.short_id || companyId;
-
-                const baseUrl = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
-                const formUrl = baseUrl + '/ds160/?id=' + shortId;
-                $('form-link').textContent = formUrl;
-                $('form-link').onclick = () => { navigator.clipboard.writeText(formUrl); toast('Link copiado!', 'success'); };
-                $('org-id-display').textContent = shortId;
-
-                // Sidebar copy button
-                $('btn-copy-form').onclick = () => {
-                    navigator.clipboard.writeText(formUrl);
-                    const btn = $('btn-copy-form');
-                    btn.classList.add('copied');
-                    btn.textContent = '✅ Link copiado!';
-                    setTimeout(() => {
-                        btn.classList.remove('copied');
-                        btn.textContent = '📋 Copiar link do formulário';
-                    }, 2000);
-                    toast('Link copiado!', 'success');
-                };
-            }
-
-            loadDashboard();
-        }
-
-        // ============================================================
-        // NAVIGATION
-        // ============================================================
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.onclick = () => {
-                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-                item.classList.add('active');
-                const viewId = 'view-' + item.dataset.view;
-                $(viewId).classList.add('active');
-                $('page-title').textContent = item.textContent.trim();
-
-                if (item.dataset.view === 'dashboard') loadDashboard();
-                if (item.dataset.view === 'applicants') loadApplicants();
-                if (item.dataset.view === 'queue') loadQueue();
-                if (item.dataset.view === 'logs') loadLogs();
-            };
-        });
-
-        $('btn-refresh').onclick = () => {
-            const activeView = document.querySelector('.nav-item.active')?.dataset.view;
-            if (activeView === 'dashboard') loadDashboard();
-            if (activeView === 'applicants') loadApplicants();
-            if (activeView === 'queue') loadQueue();
-            if (activeView === 'logs') loadLogs();
-            toast('Dados atualizados', 'success');
-        };
-
-        // ============================================================
-        // DASHBOARD
-        // ============================================================
-        async function loadDashboard() {
-            const { data: apps } = await sb.from('applications')
-                .select('*, applicants(full_name)')
-                .order('created_at', { ascending: false });
-
-            if (!apps) return;
-            $('stat-total').textContent = apps.length;
-            $('stat-queued').textContent = apps.filter(a => a.fill_status === 'queued').length;
-            $('stat-filled').textContent = apps.filter(a => a.fill_status === 'filled').length;
-            $('stat-errors').textContent = apps.filter(a => a.fill_status === 'error').length;
-
-            $('dashboard-list').innerHTML = apps.map(a => `
-        <tr>
-            <td><strong>${a.applicants?.full_name || '—'}</strong></td>
-            <td><span class="badge badge-${a.fill_status || 'draft'}">${a.fill_status || 'draft'}</span></td>
-            <td style="font-size:11px;font-family:monospace;max-width:120px;overflow:hidden;text-overflow:ellipsis">${a.application_id || '—'}</td>
-            <td>${new Date(a.created_at).toLocaleDateString('pt-BR')}</td>
-            <td style="display:flex;gap:4px;flex-wrap:wrap">
-                ${a.fill_status === 'draft' ? `<button class="btn-sm btn-queue" onclick="addToQueue('${a.id}')">📋 Fila</button>` : ''}
-                ${a.fill_status === 'error' ? `<button class="btn-sm btn-queue" onclick="addToQueue('${a.id}')">🔄 Refazer</button>` : ''}
-                ${a.fill_status === 'filled' && a.application_id ? `<button class="btn-sm" style="background:#334155;color:#e94560;border:1px solid #e94560" onclick="clearAppId('${a.id}')">🗑 Limpar ID</button>` : ''}
-                ${a.fill_status === 'filled' ? `<button class="btn-sm btn-queue" onclick="addToQueue('${a.id}')">🔄 Refazer</button>` : ''}
-                ${a.fill_status === 'queued' || a.fill_status === 'filling' ? `<button class="btn-sm" style="background:#334155;color:#ef4444;border:1px solid #ef4444" onclick="removeFromQueue('${a.id}')">✖ Remover</button>` : ''}
-            </td>
-        </tr>
-    `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Nenhuma aplicação encontrada</td></tr>';
-        }
-
-        // ============================================================
-        // APPLICANTS
-        // ============================================================
-        async function loadApplicants() {
-            const { data } = await sb.from('applicants').select('*').order('created_at', { ascending: false });
-            $('applicants-list').innerHTML = (data || []).map(a => `
-        <tr>
-            <td><strong>${a.full_name}</strong></td>
-            <td>${a.passport_number || '—'}</td>
-            <td>${new Date(a.created_at).toLocaleDateString('pt-BR')}</td>
-            <td><button class="btn-sm btn-view" onclick="viewApplicant('${a.id}')">👁 Ver</button></td>
-        </tr>
-    `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">Nenhum solicitante</td></tr>';
-        }
-
-        // ============================================================
-        // QUEUE
-        // ============================================================
-        async function loadQueue() {
-            const { data } = await sb.from('applications')
-                .select('*, applicants(full_name)')
-                .in('fill_status', ['queued', 'filling'])
-                .order('fill_priority', { ascending: true })
-                .order('fill_queued_at', { ascending: true });
-
-            $('queue-list').innerHTML = (data || []).map(a => `
-        <tr>
-            <td>${a.applicants?.full_name || '—'}</td>
-            <td>${a.fill_priority || 3}</td>
-            <td>${a.fill_queued_at ? new Date(a.fill_queued_at).toLocaleString('pt-BR') : '—'}</td>
-            <td><span class="badge badge-${a.fill_status}">${a.fill_status}</span></td>
-            <td>
-                <button class="btn-sm" style="background:#334155;color:#ef4444;border:1px solid #ef4444" onclick="removeFromQueue('${a.id}')">✖ Remover</button>
-            </td>
-        </tr>
-    `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Fila vazia</td></tr>';
-        }
-
-        // ============================================================
-        // ERROR LOGS
-        // ============================================================
-        async function loadLogs() {
-            const { data } = await sb.from('error_logs')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(50);
-
-            const causeLabels = {
-                browser_closed: '🔴 Browser fechado',
-                network_error: '🌐 Internet',
-                timeout: '⏱ Timeout',
-                field_error: '📝 Campo',
-                unknown: '❓ Desconhecido'
-            };
-            const causeBg = {
-                browser_closed: '#7f1d1d',
-                network_error: '#713f12',
-                timeout: '#1e3a5f',
-                field_error: '#4a1d7a',
-                unknown: '#334155'
-            };
-
-            $('logs-list').innerHTML = (data || []).map((l, i) => `
-        <tr style="cursor:pointer" onclick="document.getElementById('stack-${i}').style.display = document.getElementById('stack-${i}').style.display === 'none' ? 'table-row' : 'none'">
-            <td style="font-size:11px;white-space:nowrap">${new Date(l.created_at).toLocaleString('pt-BR')}</td>
-            <td>${l.applicant_name || '—'}</td>
-            <td><span class="badge badge-queued">${l.page_name || '—'}</span></td>
-            <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis">${l.error_message || '—'}</td>
-            <td><span style="background:${causeBg[l.error_cause] || causeBg.unknown};padding:2px 8px;border-radius:6px;font-size:11px">${causeLabels[l.error_cause] || causeLabels.unknown}</span></td>
-            <td>${l.retry_number || '—'}</td>
-            <td style="font-size:11px;color:#888">${l.software_version || '—'}</td>
-        </tr>
-        <tr id="stack-${i}" style="display:none">
-            <td colspan="7" style="background:#0f172a;padding:12px">
-                ${l.field_name ? '<strong style="color:#e94560">Campo:</strong> ' + l.field_name + '<br><br>' : ''}
-                <pre style="font-size:11px;color:#94a3b8;white-space:pre-wrap;margin:0;max-height:200px;overflow-y:auto">${l.error_stack || 'Sem stack trace'}</pre>
-            </td>
-        </tr>
-    `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Nenhum erro registrado 🎉</td></tr>';
-        }
-
-        // ============================================================
-        // ACTIONS
-        // ============================================================
-        async function addToQueue(appId) {
-            const { error } = await sb.from('applications').update({
-                fill_status: 'queued',
-                fill_priority: 3,
-                fill_queued_at: new Date().toISOString(),
-                fill_error: null,
-                fill_started_at: null,
-                fill_finished_at: null,
-                fill_worker_id: null
-            }).eq('id', appId);
-
-            if (error) { toast('Erro: ' + error.message, 'error'); return; }
-            toast('Adicionado à fila!', 'success');
-            loadDashboard();
-            loadQueue();
-        }
-
-        async function clearAppId(appId) {
-            if (!confirm('Tem certeza que deseja limpar o Application ID? Isso permitirá refazer o preenchimento.')) return;
-            const { error } = await sb.from('applications').update({
-                application_id: null,
-                fill_status: 'draft',
-                fill_error: null,
-                fill_started_at: null,
-                fill_finished_at: null,
-                fill_worker_id: null
-            }).eq('id', appId);
-
-            if (error) { toast('Erro: ' + error.message, 'error'); return; }
-            toast('Application ID limpo! Pode reenviar para a fila.', 'success');
-            loadDashboard();
-        }
-
-        async function removeFromQueue(appId) {
-            if (!confirm('Remover esta aplicação da fila?')) return;
-            const { error } = await sb.from('applications').update({
-                fill_status: 'draft',
-                fill_queued_at: null,
-                fill_started_at: null,
-                fill_finished_at: null,
-                fill_worker_id: null,
-                fill_error: null
-            }).eq('id', appId);
-
-            if (error) { toast('Erro: ' + error.message, 'error'); return; }
-            toast('Removido da fila!', 'success');
-            loadDashboard();
-            loadQueue();
-        }
-
-        function viewApplicant(id) {
-            // TODO: modal com dados completos
-            toast('Visualização em breve', 'success');
-        }
-
-        // ============================================================
-        // HELPERS
-        // ============================================================
-        function toast(msg, type = 'success') {
-            const el = document.createElement('div');
-            el.className = `toast ${type}`;
-            el.textContent = msg;
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 3000);
-        }
-    </script>
+    <script src="dashboard.js"></script>
 
 </body>
 
