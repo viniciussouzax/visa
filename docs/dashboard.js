@@ -514,19 +514,16 @@ async function openAgencyDetail(companyId) {
     const { data: company } = await sb.from('companies').select('*').eq('id', companyId).single();
     if (!company) return;
 
-    // Fetch members
-    const { data: members } = await sb.from('company_members').select('*').eq('company_id', companyId);
+    // Fetch members with email/name via view
+    const { data: members } = await sb.from('members_view').select('*').eq('company_id', companyId);
 
-    // Fetch user emails for members
-    let memberDetails = [];
-    for (const m of (members || [])) {
-        const { data: profile } = await sb.from('profiles').select('email, full_name').eq('id', m.user_id).single();
-        memberDetails.push({
-            ...m,
-            email: profile?.email || m.user_id,
-            name: profile?.full_name || 'Assessor'
-        });
-    }
+    let memberDetails = (members || []).map(m => ({
+        user_id: m.user_id,
+        company_id: m.company_id,
+        role: m.role,
+        email: m.email || m.user_id,
+        name: m.full_name || 'Assessor'
+    }));
 
     let html = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px">
@@ -575,18 +572,26 @@ async function openAgencyDetail(companyId) {
 }
 
 async function createAgency() {
-    const name = $('new-agency-name').value.trim();
-    const cnpj = $('new-agency-cnpj').value.trim();
-    const active = $('new-agency-active').checked;
-    if (!name) { toast('Informe o nome', 'error'); return; }
-    const { error } = await sb.from('companies').insert({ name, cnpj: cnpj || null, active });
-    if (error) { toast('Erro: ' + error.message, 'error'); return; }
-    $('new-agency-name').value = '';
-    $('new-agency-cnpj').value = '';
-    $('new-agency-active').checked = true;
-    $('modal-create-agency').classList.add('hidden');
-    toast('Organização criada!', 'success');
-    loadAgencies();
+    const btn = $('btn-create-agency');
+    btn.disabled = true;
+    btn.textContent = 'Criando...';
+    try {
+        const name = $('new-agency-name').value.trim();
+        const cnpj = $('new-agency-cnpj').value.trim();
+        const active = $('new-agency-active').checked;
+        if (!name) { toast('Informe o nome', 'error'); return; }
+        const { error } = await sb.from('companies').insert({ name, cnpj: cnpj || null, active });
+        if (error) { toast('Erro: ' + error.message, 'error'); return; }
+        $('new-agency-name').value = '';
+        $('new-agency-cnpj').value = '';
+        $('new-agency-active').checked = true;
+        $('modal-create-agency').classList.add('hidden');
+        toast('Organização criada!', 'success');
+        loadAgencies();
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Criar Organização';
+    }
 }
 
 async function toggleCompany(id, active) {
@@ -596,8 +601,7 @@ async function toggleCompany(id, active) {
 }
 
 async function deleteCompany(id, name) {
-    // Check if there are members
-    const { data: members } = await sb.from('company_members').select('id').eq('company_id', id);
+    const { data: members } = await sb.from('members').select('user_id').eq('company_id', id);
     if (members && members.length > 0) {
         toast('Não é possível excluir: existem ' + members.length + ' assessor(es) vinculado(s)', 'error');
         return;
@@ -625,30 +629,40 @@ if (addAssessorBtn) {
         if (!name || !email || !pass) { toast('Preencha todos os campos', 'error'); return; }
         if (pass.length < 6) { toast('Senha deve ter ao menos 6 caracteres', 'error'); return; }
 
-        // Create user via admin invite (signup)
-        const { data: authData, error: authError } = await sb.auth.signUp({
-            email,
-            password: pass,
-            options: { data: { full_name: name } }
-        });
+        addAssessorBtn.disabled = true;
+        addAssessorBtn.textContent = 'Adicionando...';
 
-        if (authError) { toast('Erro ao criar usuário: ' + authError.message, 'error'); return; }
+        try {
+            // Create user via signUp (separate client to not lose master session)
+            const tempClient = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+            const { data: authData, error: authError } = await tempClient.auth.signUp({
+                email,
+                password: pass,
+                options: { data: { full_name: name } }
+            });
 
-        // Link to company
-        if (authData?.user) {
-            await sb.from('company_members').insert({
+            if (authError) { toast('Erro ao criar usuário: ' + authError.message, 'error'); return; }
+            if (!authData?.user?.id) { toast('Erro: usuário não foi criado', 'error'); return; }
+
+            // Link to company in members table
+            const { error: memberError } = await sb.from('members').insert({
                 user_id: authData.user.id,
                 company_id: companyId,
-                role: 'member'
+                role: 'assessor'
             });
-        }
 
-        $('assessor-name').value = '';
-        $('assessor-email').value = '';
-        $('assessor-password').value = '';
-        $('modal-add-assessor').classList.add('hidden');
-        toast('Assessor adicionado!', 'success');
-        openAgencyDetail(companyId);
+            if (memberError) { toast('Usuário criado mas erro ao vincular: ' + memberError.message, 'error'); return; }
+
+            $('assessor-name').value = '';
+            $('assessor-email').value = '';
+            $('assessor-password').value = '';
+            $('modal-add-assessor').classList.add('hidden');
+            toast('Assessor adicionado!', 'success');
+            openAgencyDetail(companyId);
+        } finally {
+            addAssessorBtn.disabled = false;
+            addAssessorBtn.textContent = 'Adicionar';
+        }
     };
 }
 
