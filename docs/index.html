@@ -63,6 +63,7 @@
             margin-bottom: 8px;
             background: linear-gradient(135deg, #e94560, #f59e0b);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -158,6 +159,7 @@
             border-bottom: 1px solid var(--border);
             background: linear-gradient(135deg, #e94560, #f59e0b);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -306,44 +308,55 @@
             border-collapse: collapse;
         }
 
-        th {
+        table th {
             text-align: left;
-            padding: 12px 16px;
-            font-size: 12px;
+            padding: 14px 16px;
+            font-size: 11px;
             font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: .5px;
-            background: rgba(0, 0, 0, .2);
+            letter-spacing: 0.8px;
+            background: rgba(15, 23, 42, .5);
             border-bottom: 1px solid var(--border);
         }
 
         td {
             padding: 12px 16px;
-            font-size: 14px;
-            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            border-bottom: 1px solid rgba(51, 65, 85, .5);
+            transition: background .15s;
+        }
+
+        tr:hover td {
+            background: rgba(30, 41, 59, .5);
+        }
+
+        tbody tr:nth-child(even) td {
+            background: rgba(15, 23, 42, .2);
+        }
+
+        tbody tr:nth-child(even):hover td {
+            background: rgba(30, 41, 59, .5);
         }
 
         tr:last-child td {
             border-bottom: none;
         }
 
-        tr:hover td {
-            background: var(--surface-hover);
-        }
-
         tr.selected td {
-            background: rgba(233, 69, 96, .1) !important;
+            background: rgba(233, 69, 96, .12) !important;
+            border-left: 3px solid var(--accent);
         }
 
         /* Badges */
         .badge {
             display: inline-block;
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 10px;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .badge-draft {
@@ -467,20 +480,57 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 20px;
+            padding: 20px 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--text-muted);
+            border-radius: 12px 0 0 12px;
+        }
+
+        .stat-card:nth-child(1)::before {
+            background: var(--accent);
+        }
+
+        .stat-card:nth-child(2)::before {
+            background: var(--warning);
+        }
+
+        .stat-card:nth-child(3)::before {
+            background: var(--success);
+        }
+
+        .stat-card:nth-child(4)::before {
+            background: var(--error);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
         }
 
         .stat-card .label {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: .5px;
+            letter-spacing: .8px;
+            font-weight: 600;
         }
 
         .stat-card .value {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 700;
-            margin-top: 4px;
+            margin-top: 6px;
+            line-height: 1;
         }
 
         .stat-card .value.accent {
@@ -992,7 +1042,6 @@
                         <div class="search-bar">
                             <input type="text" id="search-applicants"
                                 placeholder="🔍 Buscar por nome, passaporte ou email...">
-                            <button class="btn-sm btn-accent-sm" id="btn-create-app">+ Nova Aplicação</button>
                         </div>
                         <div class="split-layout" id="applicants-layout">
                             <div>
@@ -1028,8 +1077,6 @@
                                 </div>
                                 <div class="detail-actions">
                                     <button class="btn-sm btn-view" id="btn-view-full">👁 Ver Dados</button>
-                                    <button class="btn-sm btn-accent-sm" id="btn-new-application">+ Nova
-                                        Aplicação</button>
                                     <button class="btn-sm btn-danger" id="btn-delete-applicant">🗑 Excluir</button>
                                 </div>
                             </div>

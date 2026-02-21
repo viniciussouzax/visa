@@ -368,26 +368,6 @@ async function deleteApplicant(id, name) {
     loadApplicants();
 }
 
-// Create new application for selected applicant
-$('btn-new-application').onclick = async () => {
-    if (!selectedApplicant) { toast('Selecione um solicitante primeiro', 'error'); return; }
-    if (!confirm(`Criar nova aplicação DS-160 para ${selectedApplicant.full_name}?`)) return;
-    const { error } = await sb.from('applications').insert({
-        applicant_id: selectedApplicant.id,
-        status: 'pending',
-        fill_status: 'draft'
-    });
-    if (error) { toast('Erro: ' + error.message, 'error'); return; }
-    toast('Aplicação criada!', 'success');
-    selectApplicant(selectedApplicant.id);
-    loadDashboard();
-};
-
-$('btn-create-app').onclick = () => {
-    if (!selectedApplicant) { toast('Selecione um solicitante primeiro na lista', 'error'); return; }
-    $('btn-new-application').click();
-};
-
 $('btn-view-full').onclick = () => {
     if (selectedApplicant) viewApplicantInfo(selectedApplicant.id);
 };
