@@ -1021,126 +1021,191 @@
 
     <!-- ===== PAGE 5: PreviousUSTravel ===== -->
     <div class="page" id="pg-PreviousUSTravel">
-        <h2>5. Viagens Anteriores aos EUA</h2>
+        <h2>5. Informações sobre Viagens Anteriores aos EUA (Previous U.S. Travel Information)</h2>
+
         <div class="section">
-            <h3>Viagens Anteriores</h3>
-            <div class="fg"><label>Já esteve nos EUA? *</label><span class="rg"><label><input type="radio"
-                            name="rblPREV_US_TRAVEL_IND" value="Y" data-branch="rblPREV_US_TRAVEL_IND">
-                        Sim</label><label><input type="radio" name="rblPREV_US_TRAVEL_IND" value="N"
-                            data-branch="rblPREV_US_TRAVEL_IND"> Não</label></span></div>
+            <h3>Viagens Anteriores aos EUA (Previous U.S. Travel)</h3>
+
+            <!-- Q1: Have you ever been in the U.S.? -->
+            <div class="fg"><label>Você já esteve nos EUA? (Have you ever been in the U.S.?) *</label>
+                <span class="rg"><label><input type="radio" name="rblPREV_US_TRAVEL_IND" value="Y"
+                            data-branch="rblPREV_US_TRAVEL_IND"> Sim</label><label><input type="radio"
+                            name="rblPREV_US_TRAVEL_IND" value="N" data-branch="rblPREV_US_TRAVEL_IND">
+                        Não</label></span>
+            </div>
             <div class="br" id="br-rblPREV_US_TRAVEL_IND">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Informe suas últimas cinco visitas aos EUA
+                    (Provide information on your last five U.S. visits)</p>
                 <div class="as" data-list="dtlPREV_US_VISIT">
                     <div class="entry" data-idx="0">
-                        <div class="fg"><label>Data de Chegada</label>
+                        <div class="fg"><label>Data de Chegada (Date Arrived)</label>
                             <div class="date-row"><select id="dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_DTEDay"
                                     class="sel-day"></select><select
                                     id="dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_DTEMonth"
                                     class="sel-month"></select><input type="text"
                                     id="dtlPREV_US_VISIT_ctl00_tbxPREV_US_VISIT_DTEYear" maxlength="4"
                                     placeholder="AAAA"></div>
+                            <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
                         </div>
-                        <div class="fg"><label>Tempo de Permanência</label><input type="text"
-                                id="dtlPREV_US_VISIT_ctl00_tbxPREV_US_VISIT_LOS"
-                                placeholder="Tempo de permanência anterior" style="max-width:80px"><select
-                                id="dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_LOS_CD">
-                                <option value="">-</option>
-                                <option value="Y">Year(s)</option>
-                                <option value="M">Month(s)</option>
-                                <option value="W">Week(s)</option>
-                                <option value="D">Day(s)</option>
-                                <option value="H">&lt;24 Hours</option>
-                            </select></div>
-                    </div><button type="button" class="btn-add" onclick="addEntry('dtlPREV_US_VISIT')">+
-                        Adicionar</button>
+                        <div class="fg"><label>Tempo de Permanência (Length of Stay)</label>
+                            <input type="text" id="dtlPREV_US_VISIT_ctl00_tbxPREV_US_VISIT_LOS" placeholder="Ex: 10"
+                                style="max-width:80px" maxlength="3">
+                            <select id="dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_LOS_CD">
+                                <option value="">- Selecione -</option>
+                                <option value="Y">Ano(s) / Year(s)</option>
+                                <option value="M">Mês(es) / Month(s)</option>
+                                <option value="W">Semana(s) / Week(s)</option>
+                                <option value="D">Dia(s) / Day(s)</option>
+                                <option value="H">&lt;24 Horas / Hours</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-add" onclick="addEntry('dtlPREV_US_VISIT')">+ Adicionar Outro (Add
+                        Another)</button>
                 </div>
-                <div class="fg"><label>Carteira de motorista dos EUA?</label><span class="rg"><label><input type="radio"
-                                name="rblPREV_US_DRIVER_LIC_IND" value="Y" data-branch="rblPREV_US_DRIVER_LIC_IND">
-                            Sim</label><label><input type="radio" name="rblPREV_US_DRIVER_LIC_IND" value="N"
-                                data-branch="rblPREV_US_DRIVER_LIC_IND"> Não</label></span></div>
+
+                <!-- Driver's License -->
+                <div class="fg" style="margin-top:16px"><label>Você possui ou já possuiu carteira de motorista dos EUA?
+                        (Do you or did you ever hold a U.S. Driver's License?) *</label>
+                    <span class="rg"><label><input type="radio" name="rblPREV_US_DRIVER_LIC_IND" value="Y"
+                                data-branch="rblPREV_US_DRIVER_LIC_IND"> Sim</label><label><input type="radio"
+                                name="rblPREV_US_DRIVER_LIC_IND" value="N" data-branch="rblPREV_US_DRIVER_LIC_IND">
+                            Não</label></span>
+                </div>
                 <div class="br" id="br-rblPREV_US_DRIVER_LIC_IND">
                     <div class="as" data-list="dtlUS_DRIVER_LICENSE">
                         <div class="entry" data-idx="0">
-                            <div class="fg"><label>Número da Carteira</label><input type="text"
-                                    id="dtlUS_DRIVER_LICENSE_ctl00_tbxUS_DRIVER_LICENSE" placeholder="Nº da licença">
+                            <div class="fg"><label>Número da Carteira de Motorista (Driver's License Number)</label>
+                                <input type="text" id="dtlUS_DRIVER_LICENSE_ctl00_tbxUS_DRIVER_LICENSE"
+                                    placeholder="Nº da licença" maxlength="20">
+                                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAUS_DRIVER_LICENSE"
+                                        data-target="dtlUS_DRIVER_LICENSE_ctl00_tbxUS_DRIVER_LICENSE"> Não sei (Do Not
+                                    Know)</label>
                             </div>
-                            <div class="fg"><label>Estado</label><select
-                                    id="dtlUS_DRIVER_LICENSE_ctl00_ddlUS_DRIVER_LICENSE_STATE"
-                                    class="sel-state"></select></div>
-                        </div><button type="button" class="btn-add" onclick="addEntry('dtlUS_DRIVER_LICENSE')">+
-                            Adicionar</button>
+                            <div class="fg"><label>Estado da Carteira (State of Driver's License)</label>
+                                <select id="dtlUS_DRIVER_LICENSE_ctl00_ddlUS_DRIVER_LICENSE_STATE"
+                                    class="sel-state"></select>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-add" onclick="addEntry('dtlUS_DRIVER_LICENSE')">+ Adicionar
+                            Outro (Add Another)</button>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="section">
-            <h3>Visto Anterior</h3>
-            <div class="fg"><label>Já teve visto americano? *</label><span class="rg"><label><input type="radio"
-                            name="rblPREV_VISA_IND" value="Y" data-branch="rblPREV_VISA_IND"> Sim</label><label><input
-                            type="radio" name="rblPREV_VISA_IND" value="N" data-branch="rblPREV_VISA_IND">
-                        Não</label></span></div>
+            <h3>Visto Americano Anterior (Previous U.S. Visas)</h3>
+
+            <!-- Q2: Have you ever been issued a U.S. Visa? -->
+            <div class="fg"><label>Você já obteve um visto americano? (Have you ever been issued a U.S. Visa?) *</label>
+                <span class="rg"><label><input type="radio" name="rblPREV_VISA_IND" value="Y"
+                            data-branch="rblPREV_VISA_IND"> Sim</label><label><input type="radio"
+                            name="rblPREV_VISA_IND" value="N" data-branch="rblPREV_VISA_IND">
+                        Não</label></span>
+            </div>
             <div class="br" id="br-rblPREV_VISA_IND">
-                <div class="fg"><label>Data de Emissão</label>
+                <div class="fg"><label>Data de Emissão do Último Visto (Date Last Visa Was Issued)</label>
                     <div class="date-row"><select id="ddlPREV_VISA_ISSUED_DTEDay" class="sel-day"></select><select
                             id="ddlPREV_VISA_ISSUED_DTEMonth" class="sel-month"></select><input type="text"
                             id="tbxPREV_VISA_ISSUED_DTEYear" maxlength="4" placeholder="AAAA"></div>
+                    <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
                 </div>
-                <div class="fg"><label>Número do Visto (Foil)</label><input type="text" id="tbxPREV_VISA_FOIL_NUMBER"
-                        placeholder="Nº do visto anterior"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                            id="cbxPREV_VISA_FOIL_NUMBER_NA" data-target="tbxPREV_VISA_FOIL_NUMBER"> N/A</label><label
-                        class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxPREV_VISA_FOIL_NUMBER">
-                        N/A</label></div>
-                <div class="fg"><label>Mesmo tipo de visto?</label><span class="rg"><label><input type="radio"
-                                name="rblPREV_VISA_SAME_TYPE_IND" value="Y"> Sim</label><label><input type="radio"
-                                name="rblPREV_VISA_SAME_TYPE_IND" value="N"> Não</label></span></div>
-                <div class="fg"><label>Mesmo país de emissão?</label><span class="rg"><label><input type="radio"
-                                name="rblPREV_VISA_SAME_CNTRY_IND" value="Y"> Sim</label><label><input type="radio"
-                                name="rblPREV_VISA_SAME_CNTRY_IND" value="N"> Não</label></span></div>
-                <div class="fg"><label>10 impressões digitais?</label><span class="rg"><label><input type="radio"
-                                name="rblPREV_VISA_TEN_PRINT_IND" value="Y"> Sim</label><label><input type="radio"
-                                name="rblPREV_VISA_TEN_PRINT_IND" value="N"> Não</label></span></div>
-                <div class="fg"><label>Visto perdido/roubado?</label><span class="rg"><label><input type="radio"
-                                name="rblPREV_VISA_LOST_IND" value="Y"> Sim</label><label><input type="radio"
-                                name="rblPREV_VISA_LOST_IND" value="N"> Não</label></span></div>
-                <div class="fg"><label>Visto cancelado?</label><span class="rg"><label><input type="radio"
-                                name="rblPREV_VISA_CANCELLED_IND" value="Y"> Sim</label><label><input type="radio"
-                                name="rblPREV_VISA_CANCELLED_IND" value="N"> Não</label></span></div>
+                <div class="fg"><label>Número do Visto (Visa Number)</label>
+                    <input type="text" id="tbxPREV_VISA_FOIL_NUMBER"
+                        placeholder="Número de 8 dígitos em vermelho no visto" maxlength="12">
+                    <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPREV_VISA_FOIL_NUMBER"
+                            data-target="tbxPREV_VISA_FOIL_NUMBER"> Não sei (Do Not Know)</label>
+                </div>
+                <div class="fg"><label>Você está solicitando o mesmo tipo de visto? (Are you applying for the same type
+                        of visa?) *</label>
+                    <span class="rg"><label><input type="radio" name="rblPREV_VISA_SAME_TYPE_IND" value="Y">
+                            Sim</label><label><input type="radio" name="rblPREV_VISA_SAME_TYPE_IND" value="N">
+                            Não</label></span>
+                </div>
+                <div class="fg"><label>Você está solicitando no mesmo país ou local onde o visto acima foi emitido, e
+                        este é o país ou local do seu domicílio principal? (Are you applying in the same country or
+                        location where the visa above was issued, and is this country or location your place of
+                        principal of residence?) *</label>
+                    <span class="rg"><label><input type="radio" name="rblPREV_VISA_SAME_CNTRY_IND" value="Y">
+                            Sim</label><label><input type="radio" name="rblPREV_VISA_SAME_CNTRY_IND" value="N">
+                            Não</label></span>
+                </div>
+                <div class="fg"><label>Foram coletadas as 10 impressões digitais? (Have you been ten-printed?) *</label>
+                    <span class="rg"><label><input type="radio" name="rblPREV_VISA_TEN_PRINT_IND" value="Y">
+                            Sim</label><label><input type="radio" name="rblPREV_VISA_TEN_PRINT_IND" value="N">
+                            Não</label></span>
+                </div>
+                <div class="fg"><label>Seu visto americano já foi perdido ou roubado? (Has your U.S. Visa ever been lost
+                        or stolen?) *</label>
+                    <span class="rg"><label><input type="radio" name="rblPREV_VISA_LOST_IND" value="Y"
+                                data-branch="rblPREV_VISA_LOST_IND"> Sim</label><label><input type="radio"
+                                name="rblPREV_VISA_LOST_IND" value="N" data-branch="rblPREV_VISA_LOST_IND">
+                            Não</label></span>
+                </div>
+                <div class="br" id="br-rblPREV_VISA_LOST_IND">
+                    <p style="color:#666;font-size:13px;margin-bottom:10px">Informe o ano em que o visto foi perdido ou
+                        roubado (Enter year visa was lost or stolen)</p>
+                    <div class="fg"><label>Ano (Year)</label>
+                        <input type="text" id="tbxLOST_VISA_YEAR" maxlength="4" placeholder="AAAA"
+                            style="max-width:100px">
+                    </div>
+                    <div class="fg"><label>Explique (Explain)</label>
+                        <textarea id="tbxLOST_VISA_EXPL" placeholder="Descreva as circunstâncias" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="fg"><label>Seu visto americano já foi cancelado ou revogado? (Has your U.S. Visa ever been
+                        cancelled or revoked?) *</label>
+                    <span class="rg"><label><input type="radio" name="rblPREV_VISA_CANCELLED_IND" value="Y"
+                                data-branch="rblPREV_VISA_CANCELLED_IND"> Sim</label><label><input type="radio"
+                                name="rblPREV_VISA_CANCELLED_IND" value="N" data-branch="rblPREV_VISA_CANCELLED_IND">
+                            Não</label></span>
+                </div>
+                <div class="br" id="br-rblPREV_VISA_CANCELLED_IND">
+                    <div class="fg"><label>Explique (Explain)</label>
+                        <textarea id="tbxCANCELLED_VISA_EXPL" placeholder="Descreva as circunstâncias"
+                            rows="4"></textarea>
+                    </div>
+                </div>
             </div>
         </div>
+
         <div class="section">
-            <h3>Histórico</h3>
-            <div class="fg"><label>Visto recusado? *</label><span class="rg"><label><input type="radio"
-                            name="rblPREV_VISA_REFUSED_IND" value="Y" data-branch="rblPREV_VISA_REFUSED_IND">
-                        Sim</label><label><input type="radio" name="rblPREV_VISA_REFUSED_IND" value="N"
-                            data-branch="rblPREV_VISA_REFUSED_IND"> Não</label></span></div>
+            <h3>Histórico (History)</h3>
+
+            <!-- Q3: Has your visa ever been refused? -->
+            <div class="fg"><label>Você já teve visto americano recusado, ou foi recusada a admissão nos EUA, ou retirou
+                    sua solicitação de admissão no porto de entrada? (Have you ever been refused a U.S. Visa, or been
+                    refused admission to the United States, or withdrawn your application for admission at the port of
+                    entry?) *</label>
+                <span class="rg"><label><input type="radio" name="rblPREV_VISA_REFUSED_IND" value="Y"
+                            data-branch="rblPREV_VISA_REFUSED_IND"> Sim</label><label><input type="radio"
+                            name="rblPREV_VISA_REFUSED_IND" value="N" data-branch="rblPREV_VISA_REFUSED_IND">
+                        Não</label></span>
+            </div>
             <div class="br" id="br-rblPREV_VISA_REFUSED_IND">
-                <div class="fg"><label>Explicação</label><textarea id="tbxPREV_VISA_REFUSED_EXPL"
-                        placeholder="Explique a recusa"></textarea></div>
+                <div class="fg"><label>Explique (Explain)</label>
+                    <textarea id="tbxPREV_VISA_REFUSED_EXPL" placeholder="Descreva as circunstâncias"
+                        rows="4"></textarea>
+                </div>
             </div>
-            <div class="fg"><label>Petição de imigrante? *</label><span class="rg"><label><input type="radio"
-                            name="rblIV_PETITION_IND" value="Y" data-branch="rblIV_PETITION_IND">
-                        Sim</label><label><input type="radio" name="rblIV_PETITION_IND" value="N"
-                            data-branch="rblIV_PETITION_IND"> Não</label></span></div>
+
+            <!-- Q4: Has anyone ever filed an immigrant petition? -->
+            <div class="fg"><label>Alguém já apresentou uma petição de imigrante em seu nome junto ao Serviço de
+                    Cidadania e Imigração dos EUA? (Has anyone ever filed an immigrant petition on your behalf with the
+                    United States Citizenship and Immigration Services?) *</label>
+                <span class="rg"><label><input type="radio" name="rblIV_PETITION_IND" value="Y"
+                            data-branch="rblIV_PETITION_IND"> Sim</label><label><input type="radio"
+                            name="rblIV_PETITION_IND" value="N" data-branch="rblIV_PETITION_IND">
+                        Não</label></span>
+            </div>
             <div class="br" id="br-rblIV_PETITION_IND">
-                <div class="fg"><label>Explicação</label><textarea id="tbxIV_PETITION_EXPL"
-                        placeholder="Explique a petição"></textarea></div>
-            </div>
-            <div class="fg"><label>Residente permanente? *</label><span class="rg"><label><input type="radio"
-                            name="rblPERM_RESIDENT_IND" value="Y" data-branch="rblPERM_RESIDENT_IND">
-                        Sim</label><label><input type="radio" name="rblPERM_RESIDENT_IND" value="N"
-                            data-branch="rblPERM_RESIDENT_IND"> Não</label></span></div>
-            <div class="br" id="br-rblPERM_RESIDENT_IND">
-                <div class="fg"><label>Explicação</label><textarea id="tbxPERM_RESIDENT_EXPL"
-                        placeholder="Explique"></textarea></div>
-            </div>
-            <div class="fg"><label>Negado entrada VWP? *</label><span class="rg"><label><input type="radio"
-                            name="rblVWP_DENIAL_IND" value="Y" data-branch="rblVWP_DENIAL_IND"> Sim</label><label><input
-                            type="radio" name="rblVWP_DENIAL_IND" value="N" data-branch="rblVWP_DENIAL_IND">
-                        Não</label></span></div>
-            <div class="br" id="br-rblVWP_DENIAL_IND">
-                <div class="fg"><label>Explicação</label><textarea id="tbxVWP_DENIAL_EXPL"
-                        placeholder="Explique a negação"></textarea></div>
+                <div class="fg"><label>Explique (Explain)</label>
+                    <textarea id="tbxIV_PETITION_EXPL" placeholder="Descreva as circunstâncias" rows="4"></textarea>
+                </div>
             </div>
         </div>
+
         <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
