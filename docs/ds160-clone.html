@@ -399,46 +399,68 @@
                 min-width: auto
             }
         }
+
+        /* Seção desabilitada (campos fixos/padrão) */
+        .section-disabled {
+            opacity: 0.55;
+            background: #1a1a2e;
+            border-left: 3px solid #444;
+            padding: 12px 16px;
+            border-radius: 6px;
+            pointer-events: none;
+        }
+
+        .section-disabled h3,
+        .section-disabled label,
+        .section-disabled p,
+        .section-disabled small,
+        .section-disabled span {
+            color: #777 !important;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
     <header>
-        <h1>DS-160 Clone - Formulário Funcional</h1>
-        <p>Preencha todos os campos e clique "Gerar JSON" na última página</p>
+        <h1>Formulário DS-160</h1>
+        <p>Preencha todas as informações solicitadas. Ao finalizar, clique em "Gerar JSON" na última página.</p>
     </header>
     <nav id="nav"></nav>
 
     <!-- ===== PAGE 0: Start (Mode + Location) ===== -->
     <div class="page active" id="pg-Start">
-        <h2>Bem-vindo ao DS-160</h2>
+        <h2>Início</h2>
         <div class="section">
-            <h3>Como deseja preencher?</h3>
-            <p style="color:#555;margin-bottom:16px">Escolha se você é o solicitante principal ou se está adicionando um
-                acompanhante ao grupo de outro solicitante.</p>
+            <h3>Modo de Preenchimento</h3>
+            <p style="color:#555;margin-bottom:16px">Selecione se este formulário é para um solicitante individual ou se
+                você está adicionando um dependente/acompanhante a um grupo já existente.</p>
             <div class="fg">
-                <label style="min-width:auto">Tipo de preenchimento *</label>
+                <label style="min-width:auto">Tipo de solicitação *</label>
                 <span class="rg">
                     <label><input type="radio" name="rblFormMode" value="solo" checked onchange="toggleGroupEmail()"> 🧑
-                        Solicitante Principal</label>
+                        Solicitante Individual</label>
                     <label><input type="radio" name="rblFormMode" value="group" onchange="toggleGroupEmail()"> 👨‍👩‍👧
-                        Adicionar ao grupo</label>
+                        Acompanhante de Grupo</label>
                 </span>
             </div>
             <div id="group-email-box"
                 style="display:none; margin:12px 0; padding:12px; background:#fff8e1; border-left:3px solid #ff9800; border-radius:0 4px 4px 0">
                 <div class="fg"><label>Email do Solicitante Principal *</label><input type="email" id="txtGroupEmail"
-                        placeholder="email@do-solicitante-principal.com"></div>
+                        placeholder="email@do-solicitante-principal.com">
+                    <small style="color:#888">Informe o email de quem iniciou o grupo.</small>
+                </div>
                 <div id="group-status" style="font-size:12px;margin-top:4px;color:#666"></div>
             </div>
         </div>
         <div class="section">
             <h3>Local da Entrevista</h3>
-            <p style="color:#555;margin-bottom:16px">Selecione a embaixada ou consulado dos EUA onde pretende comparecer
-                para a entrevista.</p>
-            <div class="fg"><label>Location (Embassy/Consulate) *</label><select id="ddlLocation"
-                    class="sel-location"></select></div>
+            <p style="color:#555;margin-bottom:16px">Selecione a Embaixada ou Consulado dos EUA onde será realizada a
+                entrevista do visto.</p>
+            <div class="fg"><label>Embaixada / Consulado *</label><select id="ddlLocation"
+                    class="sel-location"></select>
+                <small style="color:#888">Escolha o posto consular mais próximo de você.</small>
+            </div>
         </div>
         <div class="page-btns"><span></span><button class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
@@ -458,10 +480,9 @@
                 <small style="color:#888">Se o passaporte não tiver nome, insira "FNU".</small>
             </div>
             <div class="fg"><label>Nome Completo no Alfabeto Nativo</label><input type="text"
-                    id="tbxAPP_FULL_NAME_NATIVE" maxlength="100" placeholder="Ex: MARCOS SILVA"><label
-                    class="na-lbl"><input type="checkbox" class="na-cb" id="cbexAPP_FULL_NAME_NATIVE_NA"
-                        data-target="tbxAPP_FULL_NAME_NATIVE">
-                    Não se Aplica</label></div>
+                    id="tbxAPP_FULL_NAME_NATIVE" maxlength="100" placeholder="Ex: MARCOS SILVA">
+                <small style="color:#888">Escreva seu nome completo no alfabeto do seu país.</small>
+            </div>
         </div>
         <div class="section">
             <h3>Outros Nomes</h3>
@@ -485,7 +506,7 @@
                 </div>
             </div>
         </div>
-        <div class="section">
+        <div class="section section-disabled">
             <h3>Telecode</h3>
             <p style="color:#666;font-size:13px;margin-bottom:10px">Telecodes são códigos numéricos de 4 dígitos que
                 representam caracteres em nomes com alfabeto não-romano.</p>
@@ -535,10 +556,8 @@
             </div>
             <div class="fg"><label>Cidade de Nascimento *</label><input type="text" id="tbxAPP_POB_CITY"
                     placeholder="Ex: SAO PAULO"></div>
-            <div class="fg"><label>Estado / Província</label><input type="text" id="tbxAPP_POB_ST_PROVINCE"
-                    placeholder="Ex: SP"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbexAPP_POB_ST_PROVINCE_NA" data-target="tbxAPP_POB_ST_PROVINCE">
-                    Não se Aplica</label></div>
+            <div class="fg"><label>Estado / Província de Nascimento</label><input type="text"
+                    id="tbxAPP_POB_ST_PROVINCE" placeholder="Ex: SP"></div>
             <div class="fg"><label>País / Região de Nascimento *</label><select id="ddlAPP_POB_CNTRY"
                     class="sel-country"></select>
                 <small style="color:#888">Selecione o nome atualmente usado para o local onde você nasceu.</small>
@@ -549,15 +568,18 @@
 
     <!-- ===== PAGE 2: Personal2 ===== -->
     <div class="page" id="pg-Personal2">
-        <h2>2. Informações Pessoais 2</h2>
+        <h2>2. Informações Pessoais (continuação)</h2>
         <div class="section">
-            <h3>Nacionalidade</h3>
-            <div class="fg"><label>Nacionalidade *</label><select id="ddlAPP_NATL" class="sel-country"></select></div>
+            <h3>Nacionalidade / Cidadania</h3>
+            <div class="fg"><label>País / Região de Nacionalidade *</label><select id="ddlAPP_NATL"
+                    class="sel-country"></select>
+                <small style="color:#888">Selecione o país do qual você é cidadão(ã).</small>
+            </div>
         </div>
         <div class="section">
-            <h3>Outra Nacionalidade</h3>
-            <div class="fg"><label>Possui outra nacionalidade? *</label><span class="rg"><label><input type="radio"
-                            name="rblAPP_OTH_NATL_IND" value="Y" data-branch="rblAPP_OTH_NATL_IND">
+            <h3>Outra Nacionalidade / Cidadania</h3>
+            <div class="fg"><label>Possui ou já possuiu outra nacionalidade? *</label><span class="rg"><label><input
+                            type="radio" name="rblAPP_OTH_NATL_IND" value="Y" data-branch="rblAPP_OTH_NATL_IND">
                         Sim</label><label><input type="radio" name="rblAPP_OTH_NATL_IND" value="N"
                             data-branch="rblAPP_OTH_NATL_IND"> Não</label></span></div>
             <div class="br" id="br-rblAPP_OTH_NATL_IND">
@@ -565,48 +587,56 @@
                     <div class="entry" data-idx="0">
                         <div class="fg"><label>Outra Nacionalidade</label><select id="dtlOTHER_NATL_ctl00_ddlOTHER_NATL"
                                 class="sel-country"></select></div>
-                        <div class="fg"><label>Passaporte dessa nacionalidade?</label><span class="rg"><label><input
-                                        type="radio" name="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND" value="Y">
+                        <div class="fg"><label>Possui passaporte dessa outra nacionalidade?</label><span
+                                class="rg"><label><input type="radio" name="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND"
+                                        value="Y">
                                     Sim</label><label><input type="radio" name="dtlOTHER_NATL_ctl00_rblOTHER_PPT_IND"
                                         value="N"> Não</label></span></div>
                         <div class="fg"><label>Número do Passaporte</label><input type="text"
                                 id="dtlOTHER_NATL_ctl00_tbxOTHER_PPT_NUM" placeholder="Nº do passaporte"></div>
-                    </div><button type="button" class="btn-add" onclick="addEntry('dtlOTHER_NATL')">+ Adicionar</button>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlOTHER_NATL')">+ Adicionar
+                        Nacionalidade</button>
                 </div>
             </div>
         </div>
         <div class="section">
             <h3>Residente Permanente</h3>
-            <div class="fg"><label>Residente permanente em outro país? *</label><span class="rg"><label><input
-                            type="radio" name="rblPermResOtherCntryInd" value="Y" data-branch="rblPermResOtherCntryInd">
+            <div class="fg"><label>Você é residente permanente de algum país diferente do seu país de nacionalidade?
+                    *</label><span class="rg"><label><input type="radio" name="rblPermResOtherCntryInd" value="Y"
+                            data-branch="rblPermResOtherCntryInd">
                         Sim</label><label><input type="radio" name="rblPermResOtherCntryInd" value="N"
                             data-branch="rblPermResOtherCntryInd"> Não</label></span></div>
             <div class="br" id="br-rblPermResOtherCntryInd">
                 <div class="as" data-list="dtlOthPermResCntry">
                     <div class="entry" data-idx="0">
-                        <div class="fg"><label>País</label><select id="dtlOthPermResCntry_ctl00_ddlOthPermResCntry"
-                                class="sel-country"></select></div>
-                    </div><button type="button" class="btn-add" onclick="addEntry('dtlOthPermResCntry')">+
-                        Adicionar</button>
+                        <div class="fg"><label>País de Residência Permanente</label><select
+                                id="dtlOthPermResCntry_ctl00_ddlOthPermResCntry" class="sel-country"></select></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlOthPermResCntry')">+ Adicionar
+                        País</button>
                 </div>
             </div>
         </div>
         <div class="section">
-            <h3>Documentos de Identificação</h3>
-            <div class="fg"><label>Documento Nacional (CPF) *</label><input type="text" id="tbxAPP_NATIONAL_ID"
-                    maxlength="20" placeholder="Ex: 123.456.789-00 (CPF)"><label class="na-lbl"><input type="checkbox"
-                        class="na-cb" id="cbexAPP_NATIONAL_ID_NA" data-target="tbxAPP_NATIONAL_ID"> N/A</label>
+            <h3>Documento Nacional de Identidade</h3>
+            <p style="color:#666;font-size:13px;margin-bottom:10px">Número de identificação nacional do seu país (ex:
+                CPF para brasileiros).</p>
+            <div class="fg"><label>Número de Identificação Nacional (CPF) *</label><input type="text"
+                    id="tbxAPP_NATIONAL_ID" maxlength="20" placeholder="Ex: 123.456.789-00"><label class="na-lbl"><input
+                        type="checkbox" class="na-cb" id="cbexAPP_NATIONAL_ID_NA" data-target="tbxAPP_NATIONAL_ID"> Não
+                    se Aplica</label>
             </div>
-            <div class="fg"><label>US Social Security Number</label>
+            <div class="fg"><label>Número do Seguro Social dos EUA (US SSN)</label>
+                <small style="color:#888">Apenas se possuir.</small>
                 <div class="ssn-row"><input type="text" id="tbxAPP_SSN1" maxlength="3"
                         placeholder="XXX"><span>-</span><input type="text" id="tbxAPP_SSN2" maxlength="2"
                         placeholder="XX"><span>-</span><input type="text" id="tbxAPP_SSN3" maxlength="4"
                         placeholder="XXXX"></div><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        data-target="tbxAPP_SSN1,tbxAPP_SSN2,tbxAPP_SSN3" id="cbexAPP_SSN_NA"> N/A</label>
+                        data-target="tbxAPP_SSN1,tbxAPP_SSN2,tbxAPP_SSN3" id="cbexAPP_SSN_NA"> Não se Aplica</label>
             </div>
-            <div class="fg"><label>US Tax ID (ITIN)</label><input type="text" id="tbxAPP_TAX_ID" maxlength="20"
-                    placeholder="Ex: XXX-XX-XXXX"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        data-target="tbxAPP_TAX_ID" id="cbexAPP_TAX_ID_NA"> N/A</label></div>
+            <div class="fg"><label>Número de Identificação Fiscal dos EUA (ITIN)</label><input type="text"
+                    id="tbxAPP_TAX_ID" maxlength="20" placeholder="Ex: XXX-XX-XXXX"><label class="na-lbl"><input
+                        type="checkbox" class="na-cb" data-target="tbxAPP_TAX_ID" id="cbexAPP_TAX_ID_NA"> Não se
+                    Aplica</label></div>
         </div>
         <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
@@ -617,6 +647,8 @@
         <h2>3. Informações de Viagem</h2>
         <div class="section">
             <h3>Propósito da Viagem</h3>
+            <p style="color:#666;font-size:13px;margin-bottom:10px">Selecione a categoria e o tipo específico de visto
+                que você está solicitando.</p>
             <div class="fg"><label>Categoria do Visto *</label><select id="dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip"
                     class="sel-purpose"></select></div>
             <div class="br" id="br-visaSubtype">
@@ -630,9 +662,10 @@
         </div>
         <div class="section">
             <h3>Planos de Viagem</h3>
-            <div class="fg"><label>Planos específicos? *</label><span class="rg"><label><input type="radio"
-                            name="rblSpecificTravel" value="Y" data-branch="rblSpecificTravel"> Sim</label><label><input
-                            type="radio" name="rblSpecificTravel" value="N" data-branch="rblSpecificTravel">
+            <div class="fg"><label>Você já possui planos específicos de viagem? *</label><span class="rg"><label><input
+                            type="radio" name="rblSpecificTravel" value="Y" data-branch="rblSpecificTravel">
+                        Sim</label><label><input type="radio" name="rblSpecificTravel" value="N"
+                            data-branch="rblSpecificTravel">
                         Não</label></span></div>
             <div class="br" id="br-rblSpecificTravel">
                 <div class="fg"><label>Data de Chegada *</label>
@@ -640,20 +673,22 @@
                             id="ddlARRIVAL_US_DTEMonth" class="sel-month"></select><input type="text"
                             id="tbxARRIVAL_US_DTEYear" maxlength="4" placeholder="AAAA"></div>
                 </div>
-                <div class="fg"><label>Voo de Chegada</label><input type="text" id="tbxArriveFlight"
-                        placeholder="Ex: AA1234"></div>
-                <div class="fg"><label>Cidade de Chegada</label><input type="text" id="tbxArriveCity"
+                <div class="fg"><label>Número do Voo de Chegada</label><input type="text" id="tbxArriveFlight"
+                        placeholder="Ex: AA1234">
+                    <small style="color:#888">Se souber.</small>
+                </div>
+                <div class="fg"><label>Cidade de Chegada nos EUA</label><input type="text" id="tbxArriveCity"
                         placeholder="Ex: NEW YORK"></div>
                 <div class="fg"><label>Data de Partida *</label>
                     <div class="date-row"><select id="ddlDEPARTURE_US_DTEDay" class="sel-day"></select><select
                             id="ddlDEPARTURE_US_DTEMonth" class="sel-month"></select><input type="text"
                             id="tbxDEPARTURE_US_DTEYear" maxlength="4" placeholder="AAAA"></div>
                 </div>
-                <div class="fg"><label>Voo de Partida</label><input type="text" id="tbxDepartFlight"
+                <div class="fg"><label>Número do Voo de Partida</label><input type="text" id="tbxDepartFlight"
                         placeholder="Ex: AA5678"></div>
-                <div class="fg"><label>Cidade de Partida</label><input type="text" id="tbxDepartCity"
-                        placeholder="Ex: SAO PAULO"></div>
-                <div class="fg"><label>Local Específico</label><input type="text"
+                <div class="fg"><label>Cidade de Partida dos EUA</label><input type="text" id="tbxDepartCity"
+                        placeholder="Ex: MIAMI"></div>
+                <div class="fg"><label>Endereço ou Local que Pretende Visitar</label><input type="text"
                         id="dtlTravelLoc_ctl00_tbxSPECTRAVEL_LOCATION" placeholder="Local a ser visitado"></div>
             </div>
             <div class="br" id="br-rblSpecificTravel-N">
@@ -662,59 +697,60 @@
                             id="ddlARRIVAL_US_NSDTEMonth" class="sel-month"></select><input type="text"
                             id="tbxARRIVAL_US_NSDTEYear" maxlength="4" placeholder="AAAA"></div>
                 </div>
-                <div class="fg"><label>Tempo de Permanência</label><input type="text" id="tbxAPP_LOS"
-                        placeholder="Tempo de permanência" style="max-width:80px"><select id="ddlAPP_LOS_CD">
-                        <option value="">-</option>
-                        <option value="Y">Year(s)</option>
-                        <option value="M">Month(s)</option>
-                        <option value="W">Week(s)</option>
-                        <option value="D">Day(s)</option>
-                        <option value="H">&lt;24 Hours</option>
+                <div class="fg"><label>Tempo Estimado de Permanência nos EUA</label><input type="text" id="tbxAPP_LOS"
+                        placeholder="Quantidade" style="max-width:80px"><select id="ddlAPP_LOS_CD">
+                        <option value="">- Período -</option>
+                        <option value="Y">Ano(s)</option>
+                        <option value="M">Mês(es)</option>
+                        <option value="W">Semana(s)</option>
+                        <option value="D">Dia(s)</option>
+                        <option value="H">Menos de 24 Horas</option>
                     </select></div>
             </div>
-            <div class="fg"><label>Endereço nos EUA - Rua 1 *</label><input type="text" id="tbxStreetAddress1"
-                    maxlength="40" placeholder="Ex: 123 MAIN STREET"></div>
-            <div class="fg"><label>Endereço nos EUA - Rua 2</label><input type="text" id="tbxStreetAddress2"
-                    placeholder="Complemento (apartamento, suíte)" maxlength="40"></div>
-            <div class="fg"><label>Cidade *</label><input type="text" id="tbxCity" maxlength="20"
+            <div class="fg"><label>Endereço onde ficará nos EUA - Linha 1 *</label><input type="text"
+                    id="tbxStreetAddress1" maxlength="40" placeholder="Ex: 123 MAIN STREET"></div>
+            <div class="fg"><label>Endereço nos EUA - Linha 2</label><input type="text" id="tbxStreetAddress2"
+                    placeholder="Apartamento, suíte, andar" maxlength="40"></div>
+            <div class="fg"><label>Cidade nos EUA *</label><input type="text" id="tbxCity" maxlength="20"
                     placeholder="Ex: NEW YORK"></div>
-            <div class="fg"><label>Estado *</label><select id="ddlTravelState" class="sel-state"></select></div>
-            <div class="fg"><label>CEP *</label><input type="text" id="tbZIPCode" maxlength="10"
+            <div class="fg"><label>Estado nos EUA *</label><select id="ddlTravelState" class="sel-state"></select></div>
+            <div class="fg"><label>CEP (ZIP Code) *</label><input type="text" id="tbZIPCode" maxlength="10"
                     placeholder="Ex: 10001"></div>
         </div>
         <div class="section">
-            <h3>Pagamento da Viagem</h3>
-            <div class="fg"><label>Quem paga? *</label><select id="ddlWhoIsPaying">
+            <h3>Quem Pagará pela Viagem</h3>
+            <div class="fg"><label>Quem pagará pela sua viagem? *</label><select id="ddlWhoIsPaying">
                     <option value="">- Selecione -</option>
-                    <option value="S">EU MESMO</option>
-                    <option value="O">OUTRA PESSOA</option>
-                    <option value="C">OUTRA EMPRESA/ORGANIZAÇÃO</option>
-                    <option value="P">EMPREGADOR ATUAL</option>
-                    <option value="H">PETICIONÁRIO NOS EUA</option>
+                    <option value="S">Eu Mesmo(a) (Self)</option>
+                    <option value="O">Outra Pessoa (Other Person)</option>
+                    <option value="C">Outra Empresa/Organização (Other Company)</option>
+                    <option value="P">Meu Empregador Atual (Present Employer)</option>
+                    <option value="H">Peticionário nos EUA (U.S. Petitioner)</option>
                 </select></div>
             <div class="br" id="br-payerPerson">
                 <div class="fg"><label>Sobrenome do Pagador</label><input type="text" id="tbxPayerSurname"
-                        maxlength="33" placeholder="Sobrenome do pagador"></div>
+                        maxlength="33" placeholder="Sobrenome da pessoa que pagará"></div>
                 <div class="fg"><label>Nome do Pagador</label><input type="text" id="tbxPayerGivenName" maxlength="33"
-                        placeholder="Nome do pagador"></div>
-                <div class="fg"><label>Telefone</label><input type="text" id="tbxPayerPhone" maxlength="20"
+                        placeholder="Nome da pessoa que pagará"></div>
+                <div class="fg"><label>Telefone do Pagador</label><input type="text" id="tbxPayerPhone" maxlength="20"
                         placeholder="Ex: 011-5511999998888"></div>
-                <div class="fg"><label>Email</label><input type="text" id="tbxPAYER_EMAIL_ADDR"
+                <div class="fg"><label>Email do Pagador</label><input type="text" id="tbxPAYER_EMAIL_ADDR"
                         placeholder="email@exemplo.com"><label class="na-lbl"><input type="checkbox" class="na-cb"
                             id="cbxDNAPAYER_EMAIL_ADDR_NA" data-target="tbxPAYER_EMAIL_ADDR">
-                        N/A</label></div>
-                <div class="fg"><label>Relação</label><select id="ddlPayerRelationship">
-                        <option value="">-</option>
-                        <option value="C">FILHO(A)</option>
-                        <option value="P">PAI/MÃE</option>
-                        <option value="S">CÔNJUGE</option>
-                        <option value="R">OUTRO PARENTE</option>
-                        <option value="F">AMIGO(A)</option>
-                        <option value="O">OUTRO</option>
+                        Não se Aplica</label></div>
+                <div class="fg"><label>Relação com o Pagador</label><select id="ddlPayerRelationship">
+                        <option value="">- Selecione -</option>
+                        <option value="C">Filho(a) (Child)</option>
+                        <option value="P">Pai / Mãe (Parent)</option>
+                        <option value="S">Cônjuge (Spouse)</option>
+                        <option value="R">Outro Parente (Other Relative)</option>
+                        <option value="F">Amigo(a) (Friend)</option>
+                        <option value="O">Outro (Other)</option>
                     </select></div>
-                <div class="fg"><label>Mesmo endereço?</label><span class="rg"><label><input type="radio"
-                                name="rblPayerAddrSameAsInd" value="Y"> Sim</label><label><input type="radio"
-                                name="rblPayerAddrSameAsInd" value="N" data-branch="payerAddr"> Não</label></span></div>
+                <div class="fg"><label>O pagador reside no mesmo endereço que você?</label><span
+                        class="rg"><label><input type="radio" name="rblPayerAddrSameAsInd" value="Y">
+                            Sim</label><label><input type="radio" name="rblPayerAddrSameAsInd" value="N"
+                                data-branch="payerAddr"> Não</label></span></div>
                 <div class="br" id="br-payerAddr">
                     <div class="fg"><label>Rua 1</label><input type="text" id="tbxPayerStreetAddress1"
                             placeholder="Endereço linha 1"></div>
@@ -732,12 +768,12 @@
                 </div>
             </div>
             <div class="br" id="br-payerCompany">
-                <div class="fg"><label>Nome da Empresa</label><input type="text" id="tbxPayingCompany"
-                        placeholder="Nome da empresa"></div>
-                <div class="fg"><label>Telefone</label><input type="text" id="tbxPayerPhoneC"
+                <div class="fg"><label>Nome da Empresa / Organização</label><input type="text" id="tbxPayingCompany"
+                        placeholder="Nome da empresa ou organização"></div>
+                <div class="fg"><label>Telefone da Empresa</label><input type="text" id="tbxPayerPhoneC"
                         placeholder="Telefone da empresa"></div>
-                <div class="fg"><label>Relação com a Empresa</label><input type="text" id="tbxCompanyRelation"
-                        placeholder="Relação com a empresa"></div>
+                <div class="fg"><label>Sua Relação com a Empresa</label><input type="text" id="tbxCompanyRelation"
+                        placeholder="Ex: Funcionário, Cliente"></div>
                 <div class="fg"><label>Rua 1</label><input type="text" id="tbxPayerStreetAddress1C"
                         placeholder="Endereço da empresa"></div>
                 <div class="fg"><label>Rua 2</label><input type="text" id="tbxPayerStreetAddress2C"
