@@ -871,7 +871,7 @@ export const POSTBACK_SELECT_IDS = [
 ];
 
 export const POSTBACK_CLICK_YES_IDS = [
-  "SpecificTravel", "PreviouslyEmployed", "AttendedEduc", "OtherEduc", "OTH_NATL",
+  "PreviouslyEmployed", "AttendedEduc", "OtherEduc", "OTH_NATL",
   "OtherNames", "TelecodeQuestion", "PermResOtherCntryInd",
   "OtherPersonsTravelingWithYou", "GroupTravel",
   "PREV_US_TRAVEL_IND", "PREV_US_DRIVER_LIC_IND", "PREV_VISA_IND", "PREV_VISA_REFUSED_IND", "IV_PETITION_IND", "PERM_RESIDENT_IND", "VWP_DENIAL_IND",
@@ -883,6 +883,7 @@ export const POSTBACK_CLICK_YES_IDS = [
 ];
 
 export const POSTBACK_CLICK_ANY_IDS = [
+  "SpecificTravel",
   "IMMED_RELATIVE",
   "MailingAddrSame", "MailingAddr",
 ];
