@@ -785,16 +785,21 @@
                             id="tbxARRIVAL_US_NSDTEYear" maxlength="4" placeholder="AAAA"></div>
                     <small style="color:#888;width:100%;margin-top:2px">Formato: DD-MMM-AAAA</small>
                 </div>
-                <div class="fg"><label>Tempo Estimado de Permanência nos EUA (Intended Length of Stay in U.S.) *</label>
-                    <input type="text" id="tbxAPP_LOS" placeholder="Quantidade" style="max-width:80px;flex:none">
-                    <select id="ddlAPP_LOS_CD" style="max-width:200px">
-                        <option value="">- Período -</option>
-                        <option value="Y">Ano(s)</option>
-                        <option value="M">Mês(es)</option>
-                        <option value="W">Semana(s)</option>
-                        <option value="D">Dia(s)</option>
-                        <option value="H">Menos de 24 Horas</option>
-                    </select>
+                <div class="fg" style="flex-wrap:wrap"><label style="width:100%">Tempo Estimado de Permanência nos EUA
+                        (Intended Length of Stay in U.S.) *</label>
+                    <div style="display:flex;gap:6px;align-items:center">
+                        <input type="text" id="tbxAPP_LOS" placeholder="Quantidade"
+                            style="width:80px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+                        <select id="ddlAPP_LOS_CD"
+                            style="width:180px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+                            <option value="">- Período -</option>
+                            <option value="Y">Ano(s)</option>
+                            <option value="M">Mês(es)</option>
+                            <option value="W">Semana(s)</option>
+                            <option value="D">Dia(s)</option>
+                            <option value="H">Menos de 24 Horas</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
