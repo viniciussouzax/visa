@@ -44,8 +44,11 @@ app.whenReady().then(() => {
     mainWindow.setMenuBarVisibility(false);
 
     // ============================================================
-    // AUTO-UPDATE — checks GitHub Releases for new versions
+    // AUTO-UPDATE — smart checker with 5min cooldown
     // ============================================================
+    const UPDATE_COOLDOWN = 5 * 60 * 1000; // 5 minutes
+    let lastUpdateCheck = 0;
+
     if (app.isPackaged) {
         const { autoUpdater } = require('electron-updater');
         autoUpdater.autoDownload = true;
@@ -76,16 +79,22 @@ app.whenReady().then(() => {
             console.log('Auto-update error:', err.message);
         });
 
-        // Check on startup
-        autoUpdater.checkForUpdatesAndNotify().catch(() => { });
-
-        // Expose for queue cycle checks
-        global.checkForUpdates = () => {
+        global.smartCheckForUpdates = () => {
+            const now = Date.now();
+            if (now - lastUpdateCheck < UPDATE_COOLDOWN) return;
+            lastUpdateCheck = now;
+            console.log('[Update] Checking for updates...');
             autoUpdater.checkForUpdatesAndNotify().catch(() => { });
         };
+
+        // Check on startup
+        global.smartCheckForUpdates();
     } else {
-        global.checkForUpdates = () => { }; // no-op in dev
+        global.smartCheckForUpdates = () => { }; // no-op in dev
     }
+
+    // Expose software version globally for error logs
+    global.softwareVersion = require('./package.json').version;
 });
 
 app.on('window-all-closed', () => {

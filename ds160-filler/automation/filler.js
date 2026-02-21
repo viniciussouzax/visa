@@ -212,7 +212,12 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
 
     } catch (e) {
         console.error('[Filler] Error:', e);
-        return { success: false, error: e.message, stack: e.stack };
+        // Try to extract field name from error message (e.g. "Timeout filling #ctl00_field")
+        let field = null;
+        const selectorMatch = e.message?.match(/#([\w_]+)/);
+        if (selectorMatch) field = selectorMatch[1];
+        const currentPage = visited.length > 0 ? visited[visited.length - 1] : 'Unknown';
+        return { success: false, error: e.message, stack: e.stack, field: field, page: currentPage };
     } finally {
         if (browser) await browser.close().catch(() => { });
     }

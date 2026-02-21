@@ -536,6 +536,7 @@
                     <div class="nav-item active" data-view="dashboard">📊 Dashboard</div>
                     <div class="nav-item" data-view="applicants">👤 Solicitantes</div>
                     <div class="nav-item" data-view="queue">📋 Fila</div>
+                    <div class="nav-item" data-view="logs">🔍 Logs</div>
                     <div class="nav-item" data-view="config">⚙️ Configurações</div>
                 </div>
                 <div style="padding: 8px 12px;">
@@ -638,6 +639,25 @@
                         <div class="config-card">
                             <h3>📋 ID da Organização</h3>
                             <div class="copy-link" id="org-id-display">—</div>
+                        </div>
+                    </div>
+
+                    <!-- Logs View -->
+                    <div class="view" id="view-logs">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Solicitante</th>
+                                        <th>Página</th>
+                                        <th>Erro</th>
+                                        <th>Tentativa</th>
+                                        <th>Versão</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logs-list"></tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -747,6 +767,7 @@
                 if (item.dataset.view === 'dashboard') loadDashboard();
                 if (item.dataset.view === 'applicants') loadApplicants();
                 if (item.dataset.view === 'queue') loadQueue();
+                if (item.dataset.view === 'logs') loadLogs();
             };
         });
 
@@ -755,6 +776,7 @@
             if (activeView === 'dashboard') loadDashboard();
             if (activeView === 'applicants') loadApplicants();
             if (activeView === 'queue') loadQueue();
+            if (activeView === 'logs') loadLogs();
             toast('Dados atualizados', 'success');
         };
 
@@ -825,6 +847,33 @@
             </td>
         </tr>
     `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Fila vazia</td></tr>';
+        }
+
+        // ============================================================
+        // ERROR LOGS
+        // ============================================================
+        async function loadLogs() {
+            const { data } = await sb.from('error_logs')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            $('logs-list').innerHTML = (data || []).map((l, i) => `
+        <tr style="cursor:pointer" onclick="document.getElementById('stack-${i}').style.display = document.getElementById('stack-${i}').style.display === 'none' ? 'table-row' : 'none'">
+            <td style="font-size:11px;white-space:nowrap">${new Date(l.created_at).toLocaleString('pt-BR')}</td>
+            <td>${l.applicant_name || '—'}</td>
+            <td><span class="badge badge-queued">${l.page_name || '—'}</span></td>
+            <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis">${l.error_message || '—'}</td>
+            <td>${l.retry_number || '—'}</td>
+            <td style="font-size:11px;color:#888">${l.software_version || '—'}</td>
+        </tr>
+        <tr id="stack-${i}" style="display:none">
+            <td colspan="6" style="background:#0f172a;padding:12px">
+                ${l.field_name ? '<strong style="color:#e94560">Campo:</strong> ' + l.field_name + '<br><br>' : ''}
+                <pre style="font-size:11px;color:#94a3b8;white-space:pre-wrap;margin:0;max-height:200px;overflow-y:auto">${l.error_stack || 'Sem stack trace'}</pre>
+            </td>
+        </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Nenhum erro registrado 🎉</td></tr>';
         }
 
         // ============================================================

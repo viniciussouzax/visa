@@ -128,6 +128,12 @@ window.api.onStatus((status) => {
     } else if (status.type === 'checking') {
         setStatus('running', 'Verificando fila...');
         hideTimer();
+    } else if (status.type === 'retrying') {
+        setStatus('running', `Retentativa ${status.retryNumber}/${3}...`);
+        log(`🔄 ${status.applicantName} — tentativa ${status.retryNumber}, aguardando ${Math.round(status.delay / 60)}min`);
+    } else if (status.type === 'paused') {
+        setStatus('error', 'Pausado — muitos erros');
+        log(`⚠️ ${status.message}`);
     }
 });
 
