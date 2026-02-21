@@ -1822,51 +1822,121 @@
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
 
-    <!-- ===== PAGE 11: PrevSpouse ===== -->
-    <div class="page" id="pg-PrevSpouse">
-        <h2>11. Ex-Cônjuge</h2>
+    <!-- ===== PAGE 11: DeceasedSpouse ===== -->
+    <div class="page" id="pg-DeceasedSpouse">
+        <h2>11. Informações sobre Família: Cônjuge Falecido (Family Information: Deceased Spouse)</h2>
+
         <div class="section">
-            <h3>Casamento(s) Anterior(es)</h3>
-            <div class="fg"><label>Nº de casamentos anteriores *</label><input type="text"
-                    id="tbxNumberOfPreviousSpouses" placeholder="Ex: 1" style="max-width:80px"></div>
-            <div class="fg"><label>Sobrenome do ex-cônjuge *</label><input type="text" id="tbxPREV_SPOUSE_SURNAME"
-                    placeholder="Sobrenome do ex-cônjuge">
+            <div class="fg"><label>Sobrenome (Surname) *</label>
+                <input type="text" id="tbxDECEASED_SPOUSE_SURNAME" maxlength="33"
+                    placeholder="Sobrenome do cônjuge falecido">
             </div>
-            <div class="fg"><label>Nome do ex-cônjuge *</label><input type="text" id="tbxPREV_SPOUSE_GIVEN_NAME"
-                    placeholder="Nome do ex-cônjuge"></div>
-            <div class="fg"><label>Data de Nascimento *</label>
-                <div class="date-row"><select id="ddlPREV_SPOUSE_DOBDay" class="sel-day"></select><select
-                        id="ddlPREV_SPOUSE_DOBMonth" class="sel-month"></select><input type="text"
-                        id="tbxPREV_SPOUSE_DOBYear" maxlength="4" placeholder="AAAA"></div>
+            <div class="fg"><label>Nome (Given Name) *</label>
+                <input type="text" id="tbxDECEASED_SPOUSE_GIVEN_NAME" maxlength="33"
+                    placeholder="Nome do cônjuge falecido">
             </div>
-            <div class="fg"><label>Nacionalidade *</label><select id="ddlPREV_SPOUSE_NATL" class="sel-country"></select>
+            <div class="fg"><label>Data de Nascimento (Date of Birth) *</label>
+                <div class="date-row"><select id="ddlDECEASED_SPOUSE_DOBDay" class="sel-day"></select><select
+                        id="ddlDECEASED_SPOUSE_DOBMonth" class="sel-month"></select><input type="text"
+                        id="tbxDECEASED_SPOUSE_DOBYear" maxlength="4" placeholder="AAAA"></div>
+                <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
             </div>
-            <div class="fg"><label>Cidade de Nascimento</label><input type="text" id="tbxPREV_SPOUSE_CITY"
-                    placeholder="Cidade natal do ex-cônjuge"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        data-target="tbxPREV_SPOUSE_CITY"> Desc.</label>
+            <div class="fg"><label>País/Região de Origem (Nacionalidade) (Country/Region of Origin (Nationality))
+                    *</label>
+                <select id="ddlDECEASED_SPOUSE_NATL" class="sel-country"></select>
             </div>
-            <div class="fg"><label>País de Nascimento *</label><select id="ddlPREV_SPOUSE_CNTRY"
-                    class="sel-country"></select></div>
-            <div class="fg"><label>Data do Casamento *</label>
-                <div class="date-row"><select id="ddlDOM_DTEDay" class="sel-day"></select><select id="ddlDOM_DTEMonth"
-                        class="sel-month"></select><input type="text" id="tbxDOM_DTEYear" maxlength="4"
-                        placeholder="AAAA"></div>
+
+            <p style="color:#666;font-size:13px;margin:16px 0 10px"><strong>Local de Nascimento do Cônjuge Falecido
+                    (Deceased Spouse's Place of Birth)</strong></p>
+            <div class="fg"><label>Cidade (City)</label>
+                <input type="text" id="tbxDECEASED_SPOUSE_POB_CITY" maxlength="20" placeholder="Cidade natal">
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexDECEASED_SPOUSE_POB_CITY_NA"
+                        data-target="tbxDECEASED_SPOUSE_POB_CITY"> Não sei (Do Not Know)</label>
             </div>
-            <div class="fg"><label>Data do Fim do Casamento *</label>
-                <div class="date-row"><select id="ddlDOME_DTEDay" class="sel-day"></select><select id="ddlDOME_DTEMonth"
-                        class="sel-month"></select><input type="text" id="tbxDOME_DTEYear" maxlength="4"
-                        placeholder="AAAA"></div>
+            <div class="fg"><label>País/Região (Country/Region) *</label>
+                <select id="ddlDECEASED_SPOUSE_POB_CNTRY" class="sel-country"></select>
             </div>
-            <div class="fg"><label>Como terminou? *</label><select id="ddlHOW_MARRIAGE_ENDED">
-                    <option value="">-</option>
-                    <option value="D">DIVORCIADO(A)</option>
-                    <option value="W">VIÚVO(A)</option>
-                    <option value="A">ANULADO</option>
-                    <option value="O">OUTRO</option>
-                </select></div>
-            <div class="fg"><label>País onde terminou *</label><select id="ddlCNTRY_MARRIAGE_TERMINATED"
-                    class="sel-country"></select></div>
         </div>
+
+        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
+                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
+    </div>
+
+    <!-- ===== PAGE 12: PrevSpouse ===== -->
+    <div class="page" id="pg-PrevSpouse">
+        <h2>12. Informações sobre Família: Ex-Cônjuge (Family Information: Former Spouse)</h2>
+
+        <div class="section">
+            <div class="fg"><label>Número de Ex-Cônjuges (Number of Former Spouses) *</label>
+                <input type="text" id="tbxNumberOfPreviousSpouses" maxlength="2" placeholder="Ex: 1"
+                    style="max-width:80px">
+            </div>
+
+            <p style="color:#666;font-size:13px;margin:16px 0 10px"><strong>Informações do Ex-Cônjuge (Former Spouse
+                    Information)</strong></p>
+
+            <div class="as" data-list="dlPrevSpouse">
+                <div class="entry" data-idx="0">
+                    <div class="fg"><label>Sobrenomes (Surnames) *</label>
+                        <input type="text" id="dlPrevSpouse_ctl00_tbxPREV_SPOUSE_SURNAME" maxlength="33"
+                            placeholder="Sobrenome do ex-cônjuge">
+                    </div>
+                    <div class="fg"><label>Nomes (Given Names) *</label>
+                        <input type="text" id="dlPrevSpouse_ctl00_tbxPREV_SPOUSE_GIVEN_NAME" maxlength="33"
+                            placeholder="Nome do ex-cônjuge">
+                    </div>
+                    <div class="fg"><label>Data de Nascimento (Date of Birth) *</label>
+                        <div class="date-row"><select id="dlPrevSpouse_ctl00_ddlPREV_SPOUSE_DOBDay"
+                                class="sel-day"></select><select id="dlPrevSpouse_ctl00_ddlPREV_SPOUSE_DOBMonth"
+                                class="sel-month"></select><input type="text"
+                                id="dlPrevSpouse_ctl00_tbxPREV_SPOUSE_DOBYear" maxlength="4" placeholder="AAAA"></div>
+                        <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
+                    </div>
+                    <div class="fg"><label>País/Região de Origem (Nacionalidade) (Country/Region of Origin
+                            (Nationality)) *</label>
+                        <select id="dlPrevSpouse_ctl00_ddlPREV_SPOUSE_NATL" class="sel-country"></select>
+                    </div>
+
+                    <p style="color:#666;font-size:13px;margin:12px 0 8px"><strong>Local de Nascimento do Ex-Cônjuge
+                            (Former Spouse's Place of Birth)</strong></p>
+                    <div class="fg"><label>Cidade (City)</label>
+                        <input type="text" id="dlPrevSpouse_ctl00_tbxPREV_SPOUSE_CITY" maxlength="20"
+                            placeholder="Cidade natal do ex-cônjuge">
+                        <label class="na-lbl"><input type="checkbox" class="na-cb"
+                                data-target="dlPrevSpouse_ctl00_tbxPREV_SPOUSE_CITY"> Não sei (Do Not Know)</label>
+                    </div>
+                    <div class="fg"><label>País/Região (Country/Region) *</label>
+                        <select id="dlPrevSpouse_ctl00_ddlPREV_SPOUSE_CNTRY" class="sel-country"></select>
+                    </div>
+
+                    <div class="fg"><label>Data do Casamento (Date of Marriage) *</label>
+                        <div class="date-row"><select id="dlPrevSpouse_ctl00_ddlDOM_DTEDay"
+                                class="sel-day"></select><select id="dlPrevSpouse_ctl00_ddlDOM_DTEMonth"
+                                class="sel-month"></select><input type="text" id="dlPrevSpouse_ctl00_tbxDOM_DTEYear"
+                                maxlength="4" placeholder="AAAA"></div>
+                        <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
+                    </div>
+                    <div class="fg"><label>Data do Fim do Casamento (Date Marriage Ended) *</label>
+                        <div class="date-row"><select id="dlPrevSpouse_ctl00_ddlDOME_DTEDay"
+                                class="sel-day"></select><select id="dlPrevSpouse_ctl00_ddlDOME_DTEMonth"
+                                class="sel-month"></select><input type="text" id="dlPrevSpouse_ctl00_tbxDOME_DTEYear"
+                                maxlength="4" placeholder="AAAA"></div>
+                        <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
+                    </div>
+                    <div class="fg"><label>Como o Casamento Terminou (How the Marriage Ended) *</label>
+                        <textarea id="dlPrevSpouse_ctl00_tbxHOW_MARRIAGE_ENDED" rows="3" maxlength="200"
+                            placeholder="Explique como o casamento terminou"></textarea>
+                    </div>
+                    <div class="fg"><label>País/Região onde o Casamento foi Encerrado (Country/Region Marriage was
+                            Terminated) *</label>
+                        <select id="dlPrevSpouse_ctl00_ddlCNTRY_MARRIAGE_TERMINATED" class="sel-country"></select>
+                    </div>
+                </div>
+                <button type="button" class="btn-add" onclick="addEntry('dlPrevSpouse')">+ Adicionar Outro (Add
+                    Another)</button>
+            </div>
+        </div>
+
         <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
@@ -2836,7 +2906,7 @@
 
         // ===== PAGES & NAVIGATION =====
         const PAGES = ['Start', 'Personal1', 'Personal2', 'Travel', 'TravelCompanions', 'PreviousUSTravel',
-            'AddressPhone', 'Passport', 'USContact', 'Family1', 'Family2', 'PrevSpouse',
+            'AddressPhone', 'Passport', 'USContact', 'Family1', 'Family2', 'DeceasedSpouse', 'PrevSpouse',
             'WorkEducation1', 'WorkEducation2', 'WorkEducation3',
             'Security1', 'Security2', 'Security3', 'Security4', 'Security5'];
         let currentPage = 0;
@@ -3092,22 +3162,29 @@
         }
 
         // ===== CONDITIONAL PAGE VISIBILITY =====
+        // Married (M), Common Law Marriage (C), Civil Union/Domestic Partnership (P), Legally Separated (L) → Spouse page
+        // Widowed (W) → Deceased Spouse page
+        // Divorced (D) → Former Spouse (PrevSpouse) page
+        // Single (S) → Nothing
+        // Other (O) → Just explain input on Personal1
         function updatePageVisibility() {
             const ms = document.getElementById('ddlAPP_MARITAL_STATUS').value;
-            const hasSpouse = ['M', 'C', 'P', 'W', 'D', 'L'].includes(ms);
-            const hasPrevSpouse = ['D', 'W', 'L'].includes(ms);
+            const hasSpouse = ['M', 'C', 'P', 'L'].includes(ms);
+            const hasDeceasedSpouse = ms === 'W';
+            const hasPrevSpouse = ms === 'D';
 
             document.getElementById('pg-Family2').style.display = hasSpouse ? '' : 'none';
+            document.getElementById('pg-DeceasedSpouse').style.display = hasDeceasedSpouse ? '' : 'none';
             document.getElementById('pg-PrevSpouse').style.display = hasPrevSpouse ? '' : 'none';
 
             // Update nav tabs
             const navBtns = document.querySelectorAll('#nav button');
             const f2Idx = PAGES.indexOf('Family2');
+            const dsIdx = PAGES.indexOf('DeceasedSpouse');
             const psIdx = PAGES.indexOf('PrevSpouse');
-            if (navBtns[f2Idx]) navBtns[f2Idx].classList.toggle('hidden-tab', !hasSpouse);
-            if (navBtns[psIdx]) navBtns[psIdx].classList.toggle('hidden-tab', !hasPrevSpouse);
-            if (navBtns[f2Idx]) navBtns[f2Idx].style.display = hasSpouse ? '' : 'none';
-            if (navBtns[psIdx]) navBtns[psIdx].style.display = hasPrevSpouse ? '' : 'none';
+            if (navBtns[f2Idx]) { navBtns[f2Idx].classList.toggle('hidden-tab', !hasSpouse); navBtns[f2Idx].style.display = hasSpouse ? '' : 'none'; }
+            if (navBtns[dsIdx]) { navBtns[dsIdx].classList.toggle('hidden-tab', !hasDeceasedSpouse); navBtns[dsIdx].style.display = hasDeceasedSpouse ? '' : 'none'; }
+            if (navBtns[psIdx]) { navBtns[psIdx].classList.toggle('hidden-tab', !hasPrevSpouse); navBtns[psIdx].style.display = hasPrevSpouse ? '' : 'none'; }
 
             // Other Marital Status textarea branch (matches official DS-160 tbxOtherMaritalStatus)
             const brOther = document.getElementById('br-otherMarital');
@@ -3794,8 +3871,9 @@
         setupNACheckboxes();
         setupRadioBranches();
 
-        // Initially hide Family2 and PrevSpouse
+        // Initially hide Family2, DeceasedSpouse and PrevSpouse
         document.getElementById('pg-Family2').style.display = 'none';
+        document.getElementById('pg-DeceasedSpouse').style.display = 'none';
         document.getElementById('pg-PrevSpouse').style.display = 'none';
         updatePageVisibility();
 
