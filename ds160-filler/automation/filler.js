@@ -369,6 +369,7 @@ async function autoFillPass(page, fieldMap) {
     const fields = await discoverFields(page);
     const visible = fields.filter(f => f.visible && f.id);
     let postbackNeeded = false, filled = 0;
+    const unmatched = [];
 
     for (const field of visible) {
         if (!field.id) continue;
@@ -376,7 +377,12 @@ async function autoFillPass(page, fieldMap) {
         if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
 
         const match = fieldMap.find(m => m.pattern.test(field.id));
-        if (!match) continue;
+        if (!match) {
+            if (field.id.includes('LOS') || field.id.includes('ARRIVAL') || field.id.includes('DEPARTURE') || field.id.includes('DTE')) {
+                unmatched.push(field.id + '(' + field.type + ')');
+            }
+            continue;
+        }
         const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
 
         try {
@@ -431,6 +437,9 @@ async function autoFillPass(page, fieldMap) {
         if (postbackNeeded) break;
     }
 
+    if (unmatched.length > 0) {
+        console.warn('[Filler] Unmatched date/stay fields:', unmatched);
+    }
     if (postbackNeeded) {
         await waitForPostback(page);
         return true;
@@ -510,15 +519,16 @@ function normalizeProfile(data) {
         nationality: g(p2, 'nationality', 'nationality') || 'BRAZIL',
         nationalId: g(p2, 'nationalId', 'national_id'),
         purposeOfTrip: g(trav, 'purposeOfTrip', 'purpose_of_trip') || 'B1/B2',
-        hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.has_specific_plans === 'Y',
+        // Force hasSpecificPlans=true when arrival data exists (DS-160 hides fields behind postback otherwise)
+        hasSpecificPlans: (trav.hasSpecificPlans === 'Y' || trav.has_specific_plans === 'Y') || !!(trav.arrivalDate || trav.arrival_date),
         travel: {
             arrivalDate: trav.arrivalDate || trav.arrival_date,
             departureDate: trav.departureDate || trav.departure_date,
             lengthOfStay: {
-                value: trav.lengthOfStay || trav.length_of_stay || '30',
-                unit: trav.lengthOfStayUnit || trav.length_of_stay_unit || 'D'
+                value: (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.value : trav.lengthOfStay) || trav.length_of_stay || '30',
+                unit: (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.unit : trav.lengthOfStayUnit) || trav.length_of_stay_unit || 'D'
             },
-            usAddress: trav.usAddress || trav.us_address || {}
+            usAddress: trav.usAddress || trav.us_address || { street1: 'N/A', street2: '', city: 'N/A', state: 'FL', zip: '00000' }
         },
         payingForTrip: trav.whoIsPaying || trav.who_is_paying || 'S',
         homeAddress: addr.homeAddress || addr.home_address || {},
