@@ -202,17 +202,25 @@ export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
   }
 
   // Arrival date & length of stay — ALWAYS required by DS-160
+  // IDs differ between specific plans (ARRIVAL_US_DTE, APP_LOS) and no specific plans (TRAVEL_DTE, TRAVEL_LOS)
   if (t.arrivalDate) {
     map.push(
       { pattern: /ddlARRIVAL_US_DTEDay$/i, value: t.arrivalDate.day, type: "select" },
       { pattern: /ddlARRIVAL_US_DTEMonth$/i, value: t.arrivalDate.month, type: "select" },
       { pattern: /tbxARRIVAL_US_DTEYear$/i, value: t.arrivalDate.year, type: "text" },
+      // Alt IDs when no specific plans
+      { pattern: /ddlTRAVEL_DTEDay$/i, value: t.arrivalDate.day, type: "select" },
+      { pattern: /ddlTRAVEL_DTEMonth$/i, value: t.arrivalDate.month, type: "select" },
+      { pattern: /tbxTRAVEL_DTEYear$/i, value: t.arrivalDate.year, type: "text" },
     );
   }
   if (t.lengthOfStay) {
     map.push(
       { pattern: /tbxAPP_LOS_AMT$/i, value: t.lengthOfStay.value, type: "text" },
       { pattern: /ddlAPP_LOS_CD$/i, value: t.lengthOfStay.unit, type: "select" },
+      // Alt IDs when no specific plans
+      { pattern: /tbxTRAVEL_LOS$/i, value: t.lengthOfStay.value, type: "text" },
+      { pattern: /ddlTRAVEL_LOS_CD$/i, value: t.lengthOfStay.unit, type: "select" },
     );
   }
   if (t.departureDate) {
