@@ -2801,14 +2801,7 @@
             if (sec) sec.style.display = NO_EMPLOYER.includes(occ) ? 'none' : '';
         }
 
-        // ===== PAYER BRANCH =====
-        function updatePayerBranch() {
-            const val = document.getElementById('ddlWhoIsPaying').value;
-            const brP = document.getElementById('br-payerPerson');
-            const brC = document.getElementById('br-payerCompany');
-            if (brP) brP.classList.toggle('open', val === 'O');
-            if (brC) brC.classList.toggle('open', ['C', 'P', 'H'].includes(val));
-        }
+
 
         // ===== SPOUSE ADDRESS BRANCH =====
         function updateSpouseAddrBranch() {
