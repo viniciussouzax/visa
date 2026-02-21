@@ -548,7 +548,22 @@ function normalizeProfile(data) {
             issuanceDate: ppt.issuanceDate || ppt.issuance_date,
             expirationDate: ppt.expirationDate || ppt.expiration_date,
         },
-        usContact: data.usContact || data.us_contact || {},
+        usContact: (() => {
+            const uc = data.usContact || data.us_contact || {};
+            const ucAddr = uc.address || {};
+            return {
+                surname: uc.surname || '',
+                givenName: uc.givenName || uc.given_name || '',
+                organization: uc.organization || '',
+                relationship: uc.relationship || 'O',
+                street1: uc.street1 || ucAddr.street1 || '',
+                city: uc.city || ucAddr.city || '',
+                state: uc.state || ucAddr.state || '',
+                zip: uc.zip || ucAddr.zip || '',
+                phone: uc.phone || '',
+                email: uc.email || '',
+            };
+        })(),
         father: fam1.father || {},
         mother: fam1.mother || {},
         spouse: fam2 || {},
