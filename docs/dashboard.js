@@ -633,25 +633,27 @@ if (addAssessorBtn) {
         addAssessorBtn.textContent = 'Adicionando...';
 
         try {
-            // Create user via signUp (separate client to not lose master session)
-            const tempClient = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
-            const { data: authData, error: authError } = await tempClient.auth.signUp({
-                email,
-                password: pass,
-                options: { data: { full_name: name } }
+            // Create user via Edge Function (admin API, no rate limit)
+            const { data: { session } } = await sb.auth.getSession();
+            const res = await fetch(SB_URL + '/functions/v1/create-user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + session.access_token,
+                },
+                body: JSON.stringify({
+                    email,
+                    password: pass,
+                    full_name: name,
+                    company_id: companyId,
+                }),
             });
 
-            if (authError) { toast('Erro ao criar usuário: ' + authError.message, 'error'); return; }
-            if (!authData?.user?.id) { toast('Erro: usuário não foi criado', 'error'); return; }
-
-            // Link to company in members table
-            const { error: memberError } = await sb.from('members').insert({
-                user_id: authData.user.id,
-                company_id: companyId,
-                role: 'assessor'
-            });
-
-            if (memberError) { toast('Usuário criado mas erro ao vincular: ' + memberError.message, 'error'); return; }
+            const result = await res.json();
+            if (!res.ok) {
+                toast('Erro: ' + (result.error || 'Falha ao criar assessor'), 'error');
+                return;
+            }
 
             $('assessor-name').value = '';
             $('assessor-email').value = '';
