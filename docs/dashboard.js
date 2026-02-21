@@ -708,7 +708,7 @@ $('btn-refresh').onclick = () => {
 // ORG ID (Config)
 // ============================================================
 async function loadOrgId() {
-    const { data } = await sb.from('company_members').select('company_id').eq('user_id', currentUser.id).single();
+    const { data } = await sb.from('members').select('company_id').eq('user_id', currentUser.id).single();
     if (data) {
         $('org-id-display').textContent = 'Org: ' + data.company_id.substring(0, 8) + '...';
         $('org-id-display').onclick = () => {
