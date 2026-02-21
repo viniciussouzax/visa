@@ -77,8 +77,6 @@ async function setupApp() {
     if (isMaster) $('nav-master').classList.remove('hidden');
 
     const formUrl = location.href.replace('index.html', 'ds160-clone.html');
-    $('form-link').textContent = formUrl;
-    $('form-link').onclick = () => { navigator.clipboard.writeText(formUrl); toast('Link copiado!', 'success'); };
 
     loadPipeline();
 }
@@ -538,7 +536,7 @@ $('btn-refresh').onclick = () => {
 async function loadOrgId() {
     const { data } = await sb.from('company_members').select('company_id').eq('user_id', currentUser.id).single();
     if (data) {
-        $('org-id-display').textContent = data.company_id;
+        $('org-id-display').textContent = 'Org: ' + data.company_id.substring(0, 8) + '...';
         $('org-id-display').onclick = () => {
             navigator.clipboard.writeText(data.company_id);
             toast('ID copiado!', 'success');

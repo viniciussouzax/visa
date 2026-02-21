@@ -996,7 +996,6 @@
                 <div class="sidebar-brand">⚡ DS-160 IA</div>
                 <div class="sidebar-nav">
                     <div class="nav-item active" data-view="pipeline">📊 Pipeline</div>
-                    <div class="nav-item" data-view="config">⚙️ Configurações</div>
                     <div class="nav-separator"></div>
                     <div class="nav-item hidden" id="nav-master" data-view="master">🏢 Painel Master</div>
                 </div>
@@ -1007,6 +1006,8 @@
                 <div class="sidebar-footer">
                     <div id="user-email">—</div>
                     <div style="font-size:10px;margin-top:2px;color:var(--text-muted)" id="user-role-display"></div>
+                    <div style="font-size:9px;margin-top:4px;color:var(--text-muted);cursor:pointer" id="org-id-display"
+                        title="Clique para copiar"></div>
                     <button id="btn-logout">Sair</button>
                 </div>
             </div>
@@ -1080,20 +1081,6 @@
                             style="margin-bottom:16px;padding:8px 16px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;cursor:pointer">←
                             Voltar ao Pipeline</button>
                         <div id="applicant-detail-content"></div>
-                    </div>
-
-                    <!-- Config View -->
-                    <div class="view" id="view-config">
-                        <div class="config-card">
-                            <h3>🔗 Link do Formulário Público</h3>
-                            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">Envie este link para
-                                seus clientes:</p>
-                            <div class="copy-link" id="form-link" title="Clique para copiar">—</div>
-                        </div>
-                        <div class="config-card">
-                            <h3>📋 ID da Organização</h3>
-                            <div class="copy-link" id="org-id-display">—</div>
-                        </div>
                     </div>
 
                     <!-- Master View -->
