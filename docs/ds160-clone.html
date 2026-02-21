@@ -2311,11 +2311,76 @@
             });
             window.scrollTo(0, 0);
         }
+        let savedApplicantId = null;
+        let savedApplicationId = null;
+
         function nextPage() {
+            // Intercept leaving Personal1 (index 1) to save applicant + application
+            if (currentPage === 1 && !savedApplicantId) {
+                saveOnPersonal1Exit();
+            }
             for (let i = currentPage + 1; i < PAGES.length; i++) {
                 if (isPageVisible(i)) { showPage(i); return; }
             }
         }
+
+        async function saveOnPersonal1Exit() {
+            const surname = (document.getElementById('tbxAPP_SURNAME')?.value || '').trim().toUpperCase();
+            const givenName = (document.getElementById('tbxAPP_GIVEN_NAME')?.value || '').trim().toUpperCase();
+            const fullName = (surname + ' ' + givenName).trim();
+            if (!fullName) return; // no data to save
+
+            const mode = document.querySelector('input[name="rblFormMode"]:checked')?.value || 'solo';
+            const location = document.querySelector('.sel-location')?.value || 'SPL';
+
+            try {
+                let primaryApplicantId = null;
+
+                // If group mode, find primary applicant
+                if (mode === 'group') {
+                    const groupEmail = document.getElementById('txtGroupEmail')?.value?.trim();
+                    if (groupEmail) {
+                        const allResults = await sbGet(`applicants?primary_applicant_id=is.null&select=id,full_name,data&limit=50`);
+                        const primary = allResults?.find(a => {
+                            const e = a.data?.addressPhone?.email || '';
+                            return e.toLowerCase() === groupEmail.toLowerCase();
+                        });
+                        if (primary) primaryApplicantId = primary.id;
+                    }
+                }
+
+                // Create Applicant
+                const applicantPayload = {
+                    full_name: fullName,
+                    data: {
+                        personal1: {
+                            surname, givenName,
+                            fullNameNative: document.getElementById('tbxAPP_FULL_NAME_NATIVE')?.value || '',
+                        }
+                    },
+                };
+                if (primaryApplicantId) applicantPayload.primary_applicant_id = primaryApplicantId;
+
+                const applicants = await sbFetch('applicants', 'POST', applicantPayload);
+                if (!applicants || !applicants[0]?.id) return;
+                savedApplicantId = applicants[0].id;
+
+                // Create Application
+                const securityAnswer = Math.random().toString(36).slice(2, 8).toUpperCase();
+                const applications = await sbFetch('applications', 'POST', {
+                    applicant_id: savedApplicantId,
+                    status: 'pending',
+                    security_answer: securityAnswer,
+                    form_data: { ds160_city: location },
+                });
+                savedApplicationId = applications?.[0]?.id || null;
+
+                console.log('[DS-160] Applicant salvo:', savedApplicantId, '| Application:', savedApplicationId);
+            } catch (e) {
+                console.error('[DS-160] Erro ao salvar na Personal1:', e);
+            }
+        }
+
         function prevPage() {
             for (let i = currentPage - 1; i >= 0; i--) {
                 if (isPageVisible(i)) { showPage(i); return; }
@@ -2972,29 +3037,46 @@
                     statusEl.textContent = '\u23f3 Principal encontrado: ' + primary.full_name + '. Salvando...';
                 }
 
-                // 1. Create Applicant
-                const applicantPayload = {
-                    full_name: fullName,
-                    passport_number: passportNumber || null,
-                    data: data,
-                };
-                if (primaryApplicantId) {
-                    applicantPayload.primary_applicant_id = primaryApplicantId;
+                // 1. Applicant - update if already created on Personal1, else create
+                let applicantId;
+                if (savedApplicantId) {
+                    // Update existing applicant with complete data
+                    await sbFetch(`applicants?id=eq.${savedApplicantId}`, 'PATCH', {
+                        full_name: fullName,
+                        passport_number: passportNumber || null,
+                        data: data,
+                    });
+                    applicantId = savedApplicantId;
+                } else {
+                    const applicantPayload = {
+                        full_name: fullName,
+                        passport_number: passportNumber || null,
+                        data: data,
+                    };
+                    if (primaryApplicantId) applicantPayload.primary_applicant_id = primaryApplicantId;
+                    const applicants = await sbFetch('applicants', 'POST', applicantPayload);
+                    if (!applicants || !applicants[0]?.id) throw new Error('Falha ao criar solicitante');
+                    applicantId = applicants[0].id;
                 }
 
-                const applicants = await sbFetch('applicants', 'POST', applicantPayload);
-                if (!applicants || !applicants[0]?.id) throw new Error('Falha ao criar solicitante');
-                const applicantId = applicants[0].id;
-
-                // 2. Create Application
-                const securityAnswer = Math.random().toString(36).slice(2, 8).toUpperCase();
-                const applications = await sbFetch('applications', 'POST', {
-                    applicant_id: applicantId,
-                    status: 'pending',
-                    security_answer: securityAnswer,
-                    form_data: { ds160_city: location },
-                });
-                const appId = applications?.[0]?.id || '?';
+                // 2. Application - update if already created, else create
+                let appId;
+                if (savedApplicationId) {
+                    appId = savedApplicationId;
+                    // Update form_data with complete location
+                    await sbFetch(`applications?id=eq.${savedApplicationId}`, 'PATCH', {
+                        form_data: { ds160_city: location },
+                    });
+                } else {
+                    const securityAnswer = Math.random().toString(36).slice(2, 8).toUpperCase();
+                    const applications = await sbFetch('applications', 'POST', {
+                        applicant_id: applicantId,
+                        status: 'pending',
+                        security_answer: securityAnswer,
+                        form_data: { ds160_city: location },
+                    });
+                    appId = applications?.[0]?.id || '?';
+                }
 
                 const modeLabel = mode === 'solo' ? '🧑 Solicitante Principal' : '👨‍👩‍👧 Dependente' + groupInfo;
 
