@@ -2610,6 +2610,14 @@
                     });
                 });
             });
+            // Re-init radio branch listeners in new entry
+            entry.querySelectorAll('input[type=radio][data-branch]').forEach(r => {
+                r.addEventListener('change', () => {
+                    const branchName = r.dataset.branch;
+                    const br = entry.querySelector('#br-' + branchName) || document.getElementById('br-' + branchName);
+                    if (br) br.classList.toggle('open', r.value === 'Y');
+                });
+            });
         }
 
         function removeEntry(btn) {
