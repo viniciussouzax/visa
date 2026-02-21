@@ -1119,17 +1119,14 @@
 
                         <!-- Sub: Agencies List -->
                         <div class="master-sub active" id="master-sub-agencies">
-                            <div class="config-card" style="margin-bottom:16px">
-                                <h3>➕ Nova Agência</h3>
-                                <div style="display:flex;gap:12px;margin-top:12px">
-                                    <input type="text" id="new-agency-name" placeholder="Nome da Empresa"
-                                        style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
-                                    <button class="btn-sm btn-primary-sm" id="btn-create-agency"
-                                        style="padding:10px 20px">Criar</button>
-                                </div>
+                            <div
+                                style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                                <h3 style="font-size:16px;font-weight:700">🏢 Agências Cadastradas</h3>
+                                <button class="btn-sm btn-primary-sm"
+                                    onclick="document.getElementById('modal-create-agency').classList.remove('hidden')"
+                                    style="padding:8px 18px;font-size:13px">+ Nova Agência</button>
                             </div>
-                            <div class="config-card">
-                                <h3>🏢 Agências Cadastradas</h3>
+                            <div class="config-card" style="padding:0;overflow:hidden">
                                 <div id="agencies-list"></div>
                             </div>
                         </div>
@@ -1196,6 +1193,55 @@
             <div class="modal-actions">
                 <button style="background:var(--surface-hover);color:var(--text)"
                     onclick="document.getElementById('info-modal').classList.add('hidden')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Create Agency -->
+    <div class="modal-overlay hidden" id="modal-create-agency">
+        <div class="modal">
+            <h2>Nova Agência</h2>
+            <div style="margin:16px 0">
+                <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Nome da
+                    Empresa</label>
+                <input type="text" id="new-agency-name" placeholder="Ex: Agência XYZ"
+                    style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box">
+            </div>
+            <div class="modal-actions">
+                <button style="background:var(--surface-hover);color:var(--text)"
+                    onclick="document.getElementById('modal-create-agency').classList.add('hidden')">Cancelar</button>
+                <button id="btn-create-agency" style="background:var(--accent);color:#fff">Criar Agência</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Assessor -->
+    <div class="modal-overlay hidden" id="modal-add-assessor">
+        <div class="modal">
+            <h2>Adicionar Assessor</h2>
+            <div style="margin:16px 0;display:grid;gap:12px">
+                <div>
+                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Nome</label>
+                    <input type="text" id="assessor-name" placeholder="Nome completo"
+                        style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Email</label>
+                    <input type="email" id="assessor-email" placeholder="email@exemplo.com"
+                        style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Senha
+                        Provisória</label>
+                    <input type="password" id="assessor-password" placeholder="Mínimo 6 caracteres"
+                        style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box">
+                </div>
+                <input type="hidden" id="assessor-company-id">
+            </div>
+            <div class="modal-actions">
+                <button style="background:var(--surface-hover);color:var(--text)"
+                    onclick="document.getElementById('modal-add-assessor').classList.add('hidden')">Cancelar</button>
+                <button id="btn-add-assessor" style="background:var(--accent);color:#fff">Adicionar</button>
             </div>
         </div>
     </div>

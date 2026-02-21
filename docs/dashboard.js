@@ -542,7 +542,10 @@ async function openAgencyDetail(companyId) {
         </div>
     </div>
 
-    <h3 style="font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px;font-weight:600">Assessores (${memberDetails.length})</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600">Assessores (${memberDetails.length})</h3>
+        <button onclick="openAddAssessorModal('${companyId}')" style="font-size:12px;padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600">+ Adicionar Assessor</button>
+    </div>
     <div style="display:grid;gap:10px">`;
 
     if (memberDetails.length === 0) {
@@ -574,6 +577,7 @@ async function createAgency() {
     const { error } = await sb.from('companies').insert({ name, active: true });
     if (error) { toast('Erro: ' + error.message, 'error'); return; }
     $('new-agency-name').value = '';
+    $('modal-create-agency').classList.add('hidden');
     toast('Agência criada!', 'success');
     loadAgencies();
 }
@@ -581,12 +585,58 @@ async function createAgency() {
 async function toggleCompany(id, active) {
     await sb.from('companies').update({ active }).eq('id', id);
     loadAgencies();
-    // If viewing this agency detail, reload it
     openAgencyDetail(id);
 }
 
 const createAgBtn = $('btn-create-agency');
 if (createAgBtn) createAgBtn.onclick = createAgency;
+
+// Add Assessor
+const addAssessorBtn = $('btn-add-assessor');
+if (addAssessorBtn) {
+    addAssessorBtn.onclick = async () => {
+        const name = $('assessor-name').value.trim();
+        const email = $('assessor-email').value.trim();
+        const pass = $('assessor-password').value;
+        const companyId = $('assessor-company-id').value;
+
+        if (!name || !email || !pass) { toast('Preencha todos os campos', 'error'); return; }
+        if (pass.length < 6) { toast('Senha deve ter ao menos 6 caracteres', 'error'); return; }
+
+        // Create user via admin invite (signup)
+        const { data: authData, error: authError } = await sb.auth.signUp({
+            email,
+            password: pass,
+            options: { data: { full_name: name } }
+        });
+
+        if (authError) { toast('Erro ao criar usuário: ' + authError.message, 'error'); return; }
+
+        // Link to company
+        if (authData?.user) {
+            await sb.from('company_members').insert({
+                user_id: authData.user.id,
+                company_id: companyId,
+                role: 'member'
+            });
+        }
+
+        $('assessor-name').value = '';
+        $('assessor-email').value = '';
+        $('assessor-password').value = '';
+        $('modal-add-assessor').classList.add('hidden');
+        toast('Assessor adicionado!', 'success');
+        openAgencyDetail(companyId);
+    };
+}
+
+function openAddAssessorModal(companyId) {
+    $('assessor-company-id').value = companyId;
+    $('assessor-name').value = '';
+    $('assessor-email').value = '';
+    $('assessor-password').value = '';
+    $('modal-add-assessor').classList.remove('hidden');
+}
 
 // ============================================================
 // COPY FORM LINK
