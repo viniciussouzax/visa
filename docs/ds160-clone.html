@@ -2509,8 +2509,8 @@
             const v = document.getElementById('ddlWhoIsPaying')?.value || '';
             const person = document.getElementById('br-payerPerson');
             const company = document.getElementById('br-payerCompany');
-            if (person) person.style.display = (v === 'OTH') ? '' : 'none';
-            if (company) company.style.display = (v === 'COM') ? '' : 'none';
+            if (person) person.classList.toggle('open', v === 'OTH');
+            if (company) company.classList.toggle('open', v === 'COM');
         }
         updatePayerBranch();
 
