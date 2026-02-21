@@ -519,8 +519,7 @@ function normalizeProfile(data) {
         nationality: g(p2, 'nationality', 'nationality') || 'BRAZIL',
         nationalId: g(p2, 'nationalId', 'national_id'),
         purposeOfTrip: g(trav, 'purposeOfTrip', 'purpose_of_trip') || 'B1/B2',
-        // Force hasSpecificPlans=true when arrival data exists (DS-160 hides fields behind postback otherwise)
-        hasSpecificPlans: (trav.hasSpecificPlans === 'Y' || trav.has_specific_plans === 'Y') || !!(trav.arrivalDate || trav.arrival_date),
+        hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.hasSpecificPlans === true || trav.has_specific_plans === 'Y',
         travel: {
             arrivalDate: trav.arrivalDate || trav.arrival_date,
             departureDate: trav.departureDate || trav.departure_date,
