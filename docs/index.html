@@ -471,9 +471,9 @@
         /* Stats cards */
         .stats {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .stat-card {
@@ -497,20 +497,41 @@
             border-radius: 12px 0 0 12px;
         }
 
-        .stat-card:nth-child(1)::before {
+        .pipeline-card {
+            cursor: pointer;
+        }
+
+        .pipeline-card[data-filter="all"]::before {
             background: var(--accent);
         }
 
-        .stat-card:nth-child(2)::before {
-            background: var(--warning);
+        .pipeline-card[data-filter="collecting"]::before {
+            background: #3b82f6;
         }
 
-        .stat-card:nth-child(3)::before {
-            background: var(--success);
+        .pipeline-card[data-filter="analysis"]::before {
+            background: #f59e0b;
         }
 
-        .stat-card:nth-child(4)::before {
-            background: var(--error);
+        .pipeline-card[data-filter="review"]::before {
+            background: #f97316;
+        }
+
+        .pipeline-card[data-filter="queued"]::before {
+            background: #8b5cf6;
+        }
+
+        .pipeline-card[data-filter="completed"]::before {
+            background: #22c55e;
+        }
+
+        .pipeline-card.active {
+            border-color: rgba(233, 69, 96, .4);
+            box-shadow: 0 0 20px rgba(233, 69, 96, .1);
+        }
+
+        .pipeline-card.active::before {
+            width: 5px;
         }
 
         .stat-card:hover {
@@ -933,7 +954,7 @@
             }
 
             .stats {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(3, 1fr);
             }
 
             .split-layout {
@@ -974,8 +995,7 @@
             <div class="sidebar">
                 <div class="sidebar-brand">⚡ DS-160 IA</div>
                 <div class="sidebar-nav">
-                    <div class="nav-item active" data-view="dashboard">📊 Dashboard</div>
-                    <div class="nav-item" data-view="applicants">👤 Solicitantes</div>
+                    <div class="nav-item active" data-view="pipeline">📊 Pipeline</div>
                     <div class="nav-item" data-view="config">⚙️ Configurações</div>
                     <div class="nav-separator"></div>
                     <div class="nav-item hidden" id="nav-master" data-view="master">🏢 Painel Master</div>
@@ -994,96 +1014,73 @@
             <!-- Main -->
             <div class="main">
                 <div class="topbar">
-                    <h2 id="page-title">Dashboard</h2>
+                    <h2 id="page-title">📊 Pipeline</h2>
                     <div class="topbar-actions">
                         <button class="btn-sm btn-queue" id="btn-refresh" style="padding:8px 16px">↻ Atualizar</button>
                     </div>
                 </div>
                 <div class="content">
 
-                    <!-- Dashboard View -->
-                    <div class="view active" id="view-dashboard">
-                        <div class="stats">
-                            <div class="stat-card">
-                                <div class="label">Total</div>
-                                <div class="value" id="stat-total">0</div>
+                    <!-- Pipeline View -->
+                    <div class="view active" id="view-pipeline">
+                        <div class="stats" id="pipeline-cards">
+                            <div class="stat-card pipeline-card active" data-filter="all">
+                                <div class="label">Todos</div>
+                                <div class="value" id="stat-all">0</div>
                             </div>
-                            <div class="stat-card">
-                                <div class="label">Na Fila</div>
-                                <div class="value warning" id="stat-queued">0</div>
+                            <div class="stat-card pipeline-card" data-filter="collecting">
+                                <div class="label">📝 Coleta</div>
+                                <div class="value" id="stat-collecting">0</div>
                             </div>
-                            <div class="stat-card">
-                                <div class="label">Preenchidos</div>
-                                <div class="value success" id="stat-filled">0</div>
+                            <div class="stat-card pipeline-card" data-filter="analysis">
+                                <div class="label">🔍 Análise</div>
+                                <div class="value" id="stat-analysis">0</div>
                             </div>
-                            <div class="stat-card">
-                                <div class="label">Erros</div>
-                                <div class="value accent" id="stat-errors">0</div>
+                            <div class="stat-card pipeline-card" data-filter="review">
+                                <div class="label">↩️ Revisão</div>
+                                <div class="value" id="stat-review">0</div>
                             </div>
+                            <div class="stat-card pipeline-card" data-filter="queued">
+                                <div class="label">📋 Fila</div>
+                                <div class="value" id="stat-queued">0</div>
+                            </div>
+                            <div class="stat-card pipeline-card" data-filter="completed">
+                                <div class="label">✅ Concluído</div>
+                                <div class="value" id="stat-completed">0</div>
+                            </div>
+                        </div>
+                        <div class="search-bar">
+                            <input type="text" id="search-applicants"
+                                placeholder="🔍 Buscar por nome, passaporte ou email...">
                         </div>
                         <div class="table-container">
                             <table>
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
-                                        <th>Status</th>
-                                        <th>App ID</th>
+                                        <th>Etapa</th>
+                                        <th>Progresso</th>
                                         <th>Atualizado</th>
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody id="dashboard-list"></tbody>
+                                <tbody id="pipeline-list"></tbody>
                             </table>
                         </div>
-                    </div>
-
-                    <!-- Applicants View -->
-                    <div class="view" id="view-applicants">
-                        <div class="search-bar">
-                            <input type="text" id="search-applicants"
-                                placeholder="🔍 Buscar por nome, passaporte ou email...">
-                        </div>
-                        <div class="split-layout" id="applicants-layout">
-                            <div>
-                                <div class="table-container">
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>Nome</th>
-                                                <th>Passaporte</th>
-                                                <th>Criado em</th>
-                                                <th>Ações</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="applicants-list"></tbody>
-                                    </table>
-                                </div>
-                                <div class="pagination">
-                                    <button id="app-prev" disabled>← Anterior</button>
-                                    <span id="app-page-info">Página 1</span>
-                                    <button id="app-next">Próxima →</button>
-                                </div>
-                            </div>
-                            <div class="detail-panel" id="detail-panel" style="display:none">
-                                <h3 id="detail-name">Detalhes</h3>
-                                <div class="detail-section" id="detail-info"></div>
-                                <div class="detail-section">
-                                    <h4>Aplicações DS-160</h4>
-                                    <div id="detail-applications"></div>
-                                </div>
-                                <div class="detail-section" id="detail-dependents-section" style="display:none">
-                                    <h4>Dependentes</h4>
-                                    <div id="detail-dependents"></div>
-                                </div>
-                                <div class="detail-actions">
-                                    <button class="btn-sm btn-view" id="btn-view-full">👁 Ver Dados</button>
-                                    <button class="btn-sm btn-danger" id="btn-delete-applicant">🗑 Excluir</button>
-                                </div>
-                            </div>
+                        <div class="pagination">
+                            <button id="app-prev" disabled>← Anterior</button>
+                            <span id="app-page-info">Página 1</span>
+                            <button id="app-next">Próxima →</button>
                         </div>
                     </div>
 
-
+                    <!-- Applicant Detail View (full page) -->
+                    <div class="view" id="view-applicant-detail">
+                        <button class="btn-sm" id="btn-back-pipeline"
+                            style="margin-bottom:16px;padding:8px 16px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;cursor:pointer">←
+                            Voltar ao Pipeline</button>
+                        <div id="applicant-detail-content"></div>
+                    </div>
 
                     <!-- Config View -->
                     <div class="view" id="view-config">
@@ -1105,63 +1102,38 @@
                             <div class="config-card" style="flex:2;margin:0">
                                 <h3>➕ Nova Agência</h3>
                                 <div style="display:flex;gap:12px;margin-top:12px">
-                                    <input type="text" id="new-org-name" placeholder="Nome da Empresa"
+                                    <input type="text" id="new-agency-name" placeholder="Nome da Empresa"
                                         style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
-                                    <input type="text" id="new-org-cnpj" placeholder="CNPJ"
-                                        style="width:180px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
-                                    <button class="btn-sm btn-primary-sm" id="btn-create-org"
-                                        style="padding:10px 16px;white-space:nowrap">+ Criar</button>
+                                    <button class="btn-sm btn-primary-sm" id="btn-create-agency"
+                                        style="padding:10px 20px">Criar</button>
                                 </div>
                             </div>
                             <div class="config-card" style="flex:1;margin:0">
                                 <h3>🔑 CapMonster API Key</h3>
-                                <div style="display:flex;gap:10px;margin-top:12px">
-                                    <input type="password" id="capmonster-key" placeholder="Sua Client Key"
+                                <div style="display:flex;gap:8px;margin-top:12px">
+                                    <input type="password" id="capmonster-key" placeholder="API Key..."
                                         style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
                                     <button class="btn-sm btn-primary-sm" id="btn-save-capmonster"
-                                        style="padding:10px 16px">💾 Salvar</button>
+                                        style="padding:10px 16px">Salvar</button>
                                 </div>
                             </div>
                         </div>
-                        <div class="master-grid">
-                            <div class="master-card">
-                                <div class="master-card-header">Organizações</div>
-                                <div class="master-card-body" id="master-orgs-list"></div>
-                            </div>
-                            <div class="master-card">
-                                <div class="master-card-header">Equipe da Agência</div>
-                                <div class="master-card-body" id="master-staff-list">
-                                    <div style="padding:30px;text-align:center;color:var(--text-muted);font-size:13px">
-                                        Selecione uma agência</div>
-                                </div>
-                                <div id="invite-form-container" style="display:none;border-top:1px solid var(--border)">
-                                    <div class="master-form">
-                                        <h4 style="font-size:13px;color:var(--text-muted)">Novo Membro</h4>
-                                        <input type="text" id="invite-name" placeholder="Nome">
-                                        <input type="email" id="invite-email" placeholder="Email">
-                                        <input type="password" id="invite-pass" placeholder="Senha Provisória">
-                                        <button class="btn-sm btn-primary-sm" id="btn-invite"
-                                            style="padding:10px">Adicionar Membro</button>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="config-card">
+                            <h3>🏢 Agências</h3>
+                            <div id="agencies-list"></div>
                         </div>
-                        <!-- Logs (Master only) -->
                         <div style="margin-top:24px">
                             <div class="config-card" style="margin-bottom:0">
-                                <h3>🔍 Logs de Erros (Todos os preenchimentos)</h3>
+                                <h3>🔍 Logs de Erros</h3>
                             </div>
                             <div class="table-container" style="border-top:none;border-radius:0 0 12px 12px">
                                 <table>
                                     <thead>
                                         <tr>
                                             <th>Data</th>
-                                            <th>Solicitante</th>
+                                            <th>Causa</th>
                                             <th>Página</th>
                                             <th>Erro</th>
-                                            <th>Causa</th>
-                                            <th>Tentativa</th>
-                                            <th>Versão</th>
                                         </tr>
                                     </thead>
                                     <tbody id="logs-list"></tbody>
@@ -1174,6 +1146,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- Info Modal -->
     <div class="modal-overlay hidden" id="info-modal">
