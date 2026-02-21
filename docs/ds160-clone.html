@@ -727,43 +727,64 @@
         </div>
         <div class="section">
             <h3>Planos de Viagem</h3>
-            <div class="fg"><label>Você já possui planos específicos de viagem? *</label><span class="rg"><label><input
-                            type="radio" name="rblSpecificTravel" value="Y" data-branch="rblSpecificTravel">
+            <div class="fg"><label>Você possui planos específicos de viagem? (Have you made specific travel plans?)
+                    *</label><span class="rg"><label><input type="radio" name="rblSpecificTravel" value="Y"
+                            data-branch="rblSpecificTravel">
                         Sim</label><label><input type="radio" name="rblSpecificTravel" value="N"
                             data-branch="rblSpecificTravel">
                         Não</label></span></div>
+
+            <!-- === SIM: Itinerário completo === -->
             <div class="br" id="br-rblSpecificTravel">
-                <div class="fg"><label>Data de Chegada *</label>
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça o itinerário completo da sua viagem aos
+                    EUA:</p>
+                <p style="color:#888;font-size:12px;margin-bottom:10px;font-style:italic">Se não tiver certeza das datas
+                    de chegada ou partida, forneça uma estimativa.</p>
+                <div class="fg"><label>Data de Chegada nos EUA (Date of Arrival in U.S.) *</label>
                     <div class="date-row"><select id="ddlARRIVAL_US_DTEDay" class="sel-day"></select><select
                             id="ddlARRIVAL_US_DTEMonth" class="sel-month"></select><input type="text"
                             id="tbxARRIVAL_US_DTEYear" maxlength="4" placeholder="AAAA"></div>
+                    <small style="color:#888">Formato: DD-MMM-AAAA</small>
                 </div>
-                <div class="fg"><label>Número do Voo de Chegada</label><input type="text" id="tbxArriveFlight"
-                        placeholder="Ex: AA1234">
-                    <small style="color:#888">Se souber.</small>
-                </div>
-                <div class="fg"><label>Cidade de Chegada nos EUA</label><input type="text" id="tbxArriveCity"
+                <div class="fg"><label>Voo de Chegada (Arrival Flight) — se souber</label><input type="text"
+                        id="tbxArriveFlight" placeholder="Ex: AA1234"></div>
+                <div class="fg"><label>Cidade de Chegada (Arrival City)</label><input type="text" id="tbxArriveCity"
                         placeholder="Ex: NEW YORK"></div>
-                <div class="fg"><label>Data de Partida *</label>
+                <div class="fg"><label>Data de Partida dos EUA (Date of Departure from U.S.) *</label>
                     <div class="date-row"><select id="ddlDEPARTURE_US_DTEDay" class="sel-day"></select><select
                             id="ddlDEPARTURE_US_DTEMonth" class="sel-month"></select><input type="text"
                             id="tbxDEPARTURE_US_DTEYear" maxlength="4" placeholder="AAAA"></div>
+                    <small style="color:#888">Formato: DD-MMM-AAAA</small>
                 </div>
-                <div class="fg"><label>Número do Voo de Partida</label><input type="text" id="tbxDepartFlight"
-                        placeholder="Ex: AA5678"></div>
-                <div class="fg"><label>Cidade de Partida dos EUA</label><input type="text" id="tbxDepartCity"
+                <div class="fg"><label>Voo de Partida (Departure Flight) — se souber</label><input type="text"
+                        id="tbxDepartFlight" placeholder="Ex: AA5678"></div>
+                <div class="fg"><label>Cidade de Partida (Departure City)</label><input type="text" id="tbxDepartCity"
                         placeholder="Ex: MIAMI"></div>
-                <div class="fg"><label>Endereço ou Local que Pretende Visitar</label><input type="text"
-                        id="dtlTravelLoc_ctl00_tbxSPECTRAVEL_LOCATION" placeholder="Local a ser visitado"></div>
+
+                <p style="color:#666;font-size:13px;margin:15px 0 10px">Informe os locais que pretende visitar nos EUA:
+                </p>
+                <div class="as" data-list="dtlTravelLoc">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Local (Location)</label><input type="text"
+                                id="dtlTravelLoc_ctl00_tbxSPECTRAVEL_LOCATION" placeholder="Local a ser visitado"></div>
+                    </div><button type="button" class="btn-add" onclick="addEntry('dtlTravelLoc')">+ Adicionar
+                        Outro</button>
+                </div>
             </div>
+
+            <!-- === NÃO: Datas estimadas === -->
             <div class="br" id="br-rblSpecificTravel-N">
-                <div class="fg"><label>Data Prevista de Chegada</label>
+                <p style="color:#888;font-size:12px;margin-bottom:10px;font-style:italic">Se não tiver certeza dos seus
+                    planos de viagem, forneça uma estimativa.</p>
+                <div class="fg"><label>Data Prevista de Chegada (Intended Date of Arrival) *</label>
                     <div class="date-row"><select id="ddlARRIVAL_US_NSDTEDay" class="sel-day"></select><select
                             id="ddlARRIVAL_US_NSDTEMonth" class="sel-month"></select><input type="text"
                             id="tbxARRIVAL_US_NSDTEYear" maxlength="4" placeholder="AAAA"></div>
+                    <small style="color:#888">Formato: DD-MMM-AAAA</small>
                 </div>
-                <div class="fg"><label>Tempo Estimado de Permanência nos EUA</label><input type="text" id="tbxAPP_LOS"
-                        placeholder="Quantidade" style="max-width:80px"><select id="ddlAPP_LOS_CD">
+                <div class="fg"><label>Tempo Estimado de Permanência nos EUA (Intended Length of Stay in U.S.)
+                        *</label><input type="text" id="tbxAPP_LOS" placeholder="Quantidade"
+                        style="max-width:80px"><select id="ddlAPP_LOS_CD">
                         <option value="">- Período -</option>
                         <option value="Y">Ano(s)</option>
                         <option value="M">Mês(es)</option>
@@ -772,15 +793,22 @@
                         <option value="H">Menos de 24 Horas</option>
                     </select></div>
             </div>
-            <div class="fg"><label>Endereço onde ficará nos EUA - Linha 1 *</label><input type="text"
+        </div>
+
+        <!-- === Endereço onde ficará nos EUA (compartilhado Sim/Não) === -->
+        <div class="section">
+            <h3>Endereço Onde Ficará nos EUA (Address Where You Will Stay in the U.S.)</h3>
+            <div class="fg"><label>Endereço - Linha 1 (Street Address Line 1) *</label><input type="text"
                     id="tbxStreetAddress1" maxlength="40" placeholder="Ex: 123 MAIN STREET"></div>
-            <div class="fg"><label>Endereço nos EUA - Linha 2</label><input type="text" id="tbxStreetAddress2"
-                    placeholder="Apartamento, suíte, andar" maxlength="40"></div>
-            <div class="fg"><label>Cidade nos EUA *</label><input type="text" id="tbxCity" maxlength="20"
+            <div class="fg"><label>Endereço - Linha 2 (Street Address Line 2) <em>*Opcional</em></label><input
+                    type="text" id="tbxStreetAddress2" placeholder="Apartamento, suíte, andar" maxlength="40"></div>
+            <div class="fg"><label>Cidade (City) *</label><input type="text" id="tbxCity" maxlength="20"
                     placeholder="Ex: NEW YORK"></div>
-            <div class="fg"><label>Estado nos EUA *</label><select id="ddlTravelState" class="sel-state"></select></div>
-            <div class="fg"><label>CEP (ZIP Code) *</label><input type="text" id="tbZIPCode" maxlength="10"
-                    placeholder="Ex: 10001"></div>
+            <div class="fg"><label>Estado (State) *</label><select id="ddlTravelState" class="sel-state"></select></div>
+            <div class="fg"><label>CEP (ZIP Code) — se souber</label><input type="text" id="tbZIPCode" maxlength="10"
+                    placeholder="Ex: 12345 ou 12345-1234">
+                <small style="color:#888">Ex: 12345 ou 12345-1234</small>
+            </div>
         </div>
         <div class="section">
             <h3>Quem Pagará pela Viagem</h3>
