@@ -185,12 +185,6 @@ export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
   if (a.hasSpecificPlans) {
     map.push(
       { pattern: /rblSpecificTravel_0$/i, value: "", type: "click" },
-      { pattern: /tbxStreetAddress1$/i, value: t.usAddress.street1, type: "text" },
-      { pattern: /tbxStreetAddress2$/i, value: t.usAddress.street2 || "", type: "text" },
-      { pattern: /tbxCity$/i, value: t.usAddress.city, type: "text" },
-      { pattern: /ddlTravelState$/i, value: t.usAddress.state, type: "select" },
-      { pattern: /tbxZIPCode$/i, value: t.usAddress.zip, type: "text" },
-      { pattern: /tbZIPCode$/i, value: t.usAddress.zip, type: "text" },
       { pattern: /tbxSPECTRAVEL_LOCATION$/i, value: t.location || t.usAddress.city, type: "text" },
     );
     if (t.arrivalFlight) map.push({ pattern: /tbxArriveFlight$/i, value: t.arrivalFlight, type: "text" });
@@ -199,6 +193,18 @@ export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
     if (t.departureCity) map.push({ pattern: /tbxDepartCity$/i, value: t.departureCity, type: "text" });
   } else {
     map.push({ pattern: /rblSpecificTravel_1$/i, value: "", type: "click" });
+  }
+
+  // US Address — ALWAYS required by DS-160 on Travel page
+  if (t.usAddress) {
+    map.push(
+      { pattern: /tbxStreetAddress1$/i, value: t.usAddress.street1 || "", type: "text" },
+      { pattern: /tbxStreetAddress2$/i, value: t.usAddress.street2 || "", type: "text" },
+      { pattern: /tbxCity$/i, value: t.usAddress.city || "", type: "text" },
+      { pattern: /ddlTravelState$/i, value: t.usAddress.state || "", type: "select" },
+      { pattern: /tbxZIPCode$/i, value: t.usAddress.zip || "", type: "text" },
+      { pattern: /tbZIPCode$/i, value: t.usAddress.zip || "", type: "text" },
+    );
   }
 
   // Arrival date & length of stay — ALWAYS required by DS-160

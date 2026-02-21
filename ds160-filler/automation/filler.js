@@ -32,7 +32,7 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
     // Build field map from applicant data
     const profile = normalizeProfile(applicant.data);
     const fieldMap = buildDynamicFieldMap(profile);
-    console.log(`[Filler] Profile: ${applicant.full_name} | Fields: ${fieldMap.length}`);
+    console.log(`[Filler] Profile: ${applicant.full_name} | Fields: ${fieldMap.length} | hasSpecificPlans: ${profile.hasSpecificPlans}`);
 
     let browser, page;
     const visited = []; // Declared outside try so catch can access it
