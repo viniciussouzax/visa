@@ -220,7 +220,7 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
         }
 
         console.log(`[Filler] Done: ${visited.join(' -> ')}`);
-        return { success: true, applicationId: application.application_id };
+        return { success: true, applicationId: application.application_id, browser };
 
     } catch (e) {
         console.error('[Filler] Error:', e);
@@ -243,10 +243,9 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
             cause = 'field_error';
         }
 
-        return { success: false, error: e.message, stack: e.stack, field, page: currentPage, cause };
-    } finally {
-        if (browser) await browser.close().catch(() => { });
+        return { success: false, error: e.message, stack: e.stack, field, page: currentPage, cause, browser, activePage: page };
     }
+    // NOTE: browser is NOT closed here — caller (queue.js) decides when to close
 }
 
 // ====================================================================
@@ -531,8 +530,16 @@ function normalizeProfile(data) {
         },
         payingForTrip: trav.whoIsPaying || trav.who_is_paying || 'S',
         homeAddress: addr.homeAddress || addr.home_address || {},
+        mailingAddressSame: addr.mailingAddressSame !== false && addr.mailing_address_same !== false,
+        mailingAddress: addr.mailingAddress || addr.mailing_address || null,
         phone: g(addr, 'phone', 'phone'),
+        mobilePhone: addr.mobilePhone || addr.mobile_phone || null,
+        businessPhone: addr.businessPhone || addr.business_phone || null,
         email: g(addr, 'email', 'email'),
+        additionalPhones: addr.additionalPhones === 'Y' || addr.additional_phones === 'Y' || false,
+        additionalEmails: addr.additionalEmails === 'Y' || addr.additional_emails === 'Y' || false,
+        additionalWebsites: false,
+        socialMedia: addr.socialMedia || addr.social_media || [],
         passport: {
             type: g(ppt, 'type', 'type') || 'R',
             number: g(ppt, 'number', 'number'),

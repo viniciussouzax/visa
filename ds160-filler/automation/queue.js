@@ -135,7 +135,8 @@ class QueueRunner {
         });
 
         if (result.success) {
-            // ✅ Success — reset counters
+            // ✅ Success — close browser, reset counters
+            if (result.browser) await result.browser.close().catch(() => { });
             await this._markDone(app.id, result.applicationId, lastPage);
             this.emit({ type: 'done', applicantName: applicant.full_name });
             this.consecutiveErrors = 0;
@@ -151,7 +152,8 @@ class QueueRunner {
         this.consecutiveErrors++;
 
         if (currentRetry >= MAX_RETRIES) {
-            // Max retries reached — mark needs_attention
+            // Max retries reached — close browser, mark needs_attention
+            if (result.browser) await result.browser.close().catch(() => { });
             await this._markNeedsAttention(app.id, result.error);
             this.emit({
                 type: 'error',
