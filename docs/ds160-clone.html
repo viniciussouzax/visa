@@ -2253,126 +2253,201 @@
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
 
-    <!-- ===== PAGE 14: WorkEducation3 ===== -->
+    <!-- ===== PAGE 15: WorkEducation3 ===== -->
     <div class="page" id="pg-WorkEducation3">
-        <h2>14. Informações Adicionais</h2>
+        <h2>15. Informações Adicionais sobre Trabalho/Educação/Treinamento (Additional Work/Education/Training
+            Information)</h2>
+
         <div class="section">
-            <h3>Idiomas</h3>
+            <p style="color:#c00;font-size:13px;margin-bottom:14px"><strong>NOTA:</strong> Forneça as seguintes
+                informações relacionadas a trabalho, educação ou treinamento. Forneça informações completas e precisas
+                para todas as perguntas que exijam explicação. (NOTE: Provide the following work, education, or training
+                related information. Provide complete and accurate information to all questions that require an
+                explanation.)</p>
+
+            <!-- === Clan/Tribe === -->
+            <div class="fg"><label><strong>P:</strong> Você pertence a algum clã ou tribo? (Do you belong to a clan or
+                    tribe?) *</label>
+                <br><strong>R:</strong> <span class="rg"><label><input type="radio" name="rblCLAN_TRIBE_IND" value="Y"
+                            data-branch="rblCLAN_TRIBE_IND"> Sim (Yes)</label><label><input type="radio"
+                            name="rblCLAN_TRIBE_IND" value="N" data-branch="rblCLAN_TRIBE_IND"> Não (No)</label></span>
+            </div>
+            <div class="br" id="br-rblCLAN_TRIBE_IND">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações (Provide the
+                    following information):</p>
+                <div class="fg"><label>Nome do Clã ou Tribo (Clan or Tribe Name) *</label>
+                    <input type="text" id="tbxCLAN_TRIBE_NAME" maxlength="40" placeholder="Nome do clã ou tribo">
+                </div>
+            </div>
+        </div>
+
+        <!-- === Languages === -->
+        <div class="section">
+            <p style="color:#666;font-size:13px;margin-bottom:10px"><strong>Forneça uma Lista de Idiomas que Você Fala
+                    (Provide a List of Languages You Speak)</strong></p>
             <div class="as" data-list="dtlLANGUAGES">
                 <div class="entry" data-idx="0">
-                    <div class="fg"><label>Idioma *</label><input type="text" id="dtlLANGUAGES_ctl00_tbxLANGUAGE_NAME"
-                            placeholder="Ex: Português">
+                    <div class="fg"><label>Nome do Idioma (Language Name) *</label>
+                        <input type="text" id="dtlLANGUAGES_ctl00_tbxLANGUAGE_NAME" maxlength="40"
+                            placeholder="Ex: PORTUGUES">
                     </div>
-                </div><button type="button" class="btn-add" onclick="addEntry('dtlLANGUAGES')">+ Adicionar
-                    Idioma</button>
+                </div>
+                <button type="button" class="btn-add" onclick="addEntry('dtlLANGUAGES')">+ Adicionar Outro (Add
+                    Another)</button>
             </div>
         </div>
+
+        <!-- === Countries Visited === -->
         <div class="section">
-            <h3>Clã/Tribo</h3>
-            <div class="fg"><label>Pertence a clã/tribo? *</label><span class="rg"><label><input type="radio"
-                            name="rblCLAN_TRIBE_IND" value="Y" data-branch="rblCLAN_TRIBE_IND"> Sim</label><label><input
-                            type="radio" name="rblCLAN_TRIBE_IND" value="N" data-branch="rblCLAN_TRIBE_IND">
-                        Não</label></span></div>
-            <div class="br" id="br-rblCLAN_TRIBE_IND">
-                <div class="fg"><label>Nome</label><input type="text" id="tbxCLAN_TRIBE_NAME"
-                        placeholder="Nome do clã ou tribo"></div>
+            <div class="fg"><label><strong>P:</strong> Você viajou para algum país/região nos últimos cinco anos? (Have
+                    you traveled to any countries/regions within the last five years?) *</label>
+                <br><strong>R:</strong> <span class="rg"><label><input type="radio" name="rblCOUNTRIES_VISITED_IND"
+                            value="Y" data-branch="rblCOUNTRIES_VISITED_IND"> Sim (Yes)</label><label><input
+                            type="radio" name="rblCOUNTRIES_VISITED_IND" value="N"
+                            data-branch="rblCOUNTRIES_VISITED_IND"> Não (No)</label></span>
             </div>
-        </div>
-        <div class="section">
-            <h3>Países Visitados</h3>
-            <div class="fg"><label>Visitou outros países? *</label><span class="rg"><label><input type="radio"
-                            name="rblCOUNTRIES_VISITED_IND" value="Y" data-branch="rblCOUNTRIES_VISITED_IND">
-                        Sim</label><label><input type="radio" name="rblCOUNTRIES_VISITED_IND" value="N"
-                            data-branch="rblCOUNTRIES_VISITED_IND"> Não</label></span></div>
             <div class="br" id="br-rblCOUNTRIES_VISITED_IND">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça uma Lista de Países/Regiões Visitados
+                    (Provide a List of Countries/Regions Visited)</p>
                 <div class="as" data-list="dtlCountriesVisited">
                     <div class="entry" data-idx="0">
-                        <div class="fg"><label>País</label><select id="dtlCountriesVisited_ctl00_ddlCOUNTRIES_VISITED"
-                                class="sel-country"></select></div>
-                    </div><button type="button" class="btn-add" onclick="addEntry('dtlCountriesVisited')">+
-                        Adicionar</button>
+                        <div class="fg"><label>País/Região (Country/Region) *</label>
+                            <select id="dtlCountriesVisited_ctl00_ddlCOUNTRIES_VISITED" class="sel-country"></select>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-add" onclick="addEntry('dtlCountriesVisited')">+ Adicionar Outro
+                        (Add Another)</button>
                 </div>
             </div>
         </div>
+
+        <!-- === Organizations === -->
         <div class="section">
-            <h3>Organizações</h3>
-            <div class="fg"><label>Membro de organizações? *</label><span class="rg"><label><input type="radio"
-                            name="rblORGANIZATION_IND" value="Y" data-branch="rblORGANIZATION_IND">
-                        Sim</label><label><input type="radio" name="rblORGANIZATION_IND" value="N"
-                            data-branch="rblORGANIZATION_IND"> Não</label></span></div>
+            <div class="fg"><label><strong>P:</strong> Você já pertenceu, contribuiu ou trabalhou para alguma
+                    organização profissional, social ou de caridade? (Have you belonged to, contributed to, or worked
+                    for any professional, social, or charitable organization?) *</label>
+                <br><strong>R:</strong> <span class="rg"><label><input type="radio" name="rblORGANIZATION_IND" value="Y"
+                            data-branch="rblORGANIZATION_IND"> Sim (Yes)</label><label><input type="radio"
+                            name="rblORGANIZATION_IND" value="N" data-branch="rblORGANIZATION_IND"> Não
+                        (No)</label></span>
+            </div>
             <div class="br" id="br-rblORGANIZATION_IND">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça uma Lista de Organizações (Provide a
+                    List of Organizations)</p>
                 <div class="as" data-list="dtlORGANIZATIONS">
                     <div class="entry" data-idx="0">
-                        <div class="fg"><label>Nome da Organização</label><input type="text"
-                                id="dtlORGANIZATIONS_ctl00_tbxORGANIZATION_NAME" placeholder="Nome da organização">
+                        <div class="fg"><label>Nome da Organização (Organization Name) *</label>
+                            <input type="text" id="dtlORGANIZATIONS_ctl00_tbxORGANIZATION_NAME" maxlength="40"
+                                placeholder="Nome da organização">
                         </div>
-                    </div><button type="button" class="btn-add" onclick="addEntry('dtlORGANIZATIONS')">+
-                        Adicionar</button>
+                    </div>
+                    <button type="button" class="btn-add" onclick="addEntry('dtlORGANIZATIONS')">+ Adicionar Outro (Add
+                        Another)</button>
                 </div>
             </div>
         </div>
+
+        <!-- === Specialized Skills === -->
         <div class="section">
-            <h3>Habilidades Especializadas</h3>
-            <div class="fg"><label>Possui habilidades especializadas? *</label><span class="rg"><label><input
-                            type="radio" name="rblSPECIALIZED_SKILLS_IND" value="Y"
-                            data-branch="rblSPECIALIZED_SKILLS_IND"> Sim</label><label><input type="radio"
-                            name="rblSPECIALIZED_SKILLS_IND" value="N" data-branch="rblSPECIALIZED_SKILLS_IND">
-                        Não</label></span></div>
+            <div class="fg"><label><strong>P:</strong> Você possui alguma habilidade ou treinamento especializado, como
+                    armas de fogo, explosivos, experiência nuclear, biológica ou química? (Do you have any specialized
+                    skills or training, such as firearms, explosives, nuclear, biological, or chemical experience?)
+                    *</label>
+                <br><strong>R:</strong> <span class="rg"><label><input type="radio" name="rblSPECIALIZED_SKILLS_IND"
+                            value="Y" data-branch="rblSPECIALIZED_SKILLS_IND"> Sim (Yes)</label><label><input
+                            type="radio" name="rblSPECIALIZED_SKILLS_IND" value="N"
+                            data-branch="rblSPECIALIZED_SKILLS_IND"> Não (No)</label></span>
+            </div>
             <div class="br" id="br-rblSPECIALIZED_SKILLS_IND">
-                <div class="fg"><label>Descrição</label><textarea id="tbxSPECIALIZED_SKILLS_EXPL"
-                        placeholder="Descreva suas habilidades especializadas"></textarea></div>
+                <div class="fg"><label>Explique (Explain) *</label>
+                    <textarea id="tbxSPECIALIZED_SKILLS_EXPL" rows="3" maxlength="500"
+                        placeholder="Descreva suas habilidades especializadas"></textarea>
+                </div>
             </div>
         </div>
+
+        <!-- === Military Service === -->
         <div class="section">
-            <h3>Serviço Militar</h3>
-            <div class="fg"><label>Serviu nas forças armadas? *</label><span class="rg"><label><input type="radio"
-                            name="rblMILITARY_SERVICE_IND" value="Y" data-branch="rblMILITARY_SERVICE_IND">
-                        Sim</label><label><input type="radio" name="rblMILITARY_SERVICE_IND" value="N"
-                            data-branch="rblMILITARY_SERVICE_IND"> Não</label></span></div>
+            <div class="fg"><label><strong>P:</strong> Você já serviu nas forças armadas? (Have you ever served in the
+                    military?) *</label>
+                <br><strong>R:</strong> <span class="rg"><label><input type="radio" name="rblMILITARY_SERVICE_IND"
+                            value="Y" data-branch="rblMILITARY_SERVICE_IND"> Sim (Yes)</label><label><input type="radio"
+                            name="rblMILITARY_SERVICE_IND" value="N" data-branch="rblMILITARY_SERVICE_IND"> Não
+                        (No)</label></span>
+            </div>
             <div class="br" id="br-rblMILITARY_SERVICE_IND">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações (Provide the
+                    following information):</p>
                 <div class="as" data-list="dtlMILITARY_SERVICE">
                     <div class="entry" data-idx="0">
-                        <div class="fg"><label>País</label><select id="dtlMILITARY_SERVICE_ctl00_ddlMILITARY_SVC_CNTRY"
-                                class="sel-country"></select></div>
-                        <div class="fg"><label>Ramo</label><input type="text"
-                                id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_BRANCH" placeholder="Ramo militar"></div>
-                        <div class="fg"><label>Patente</label><input type="text"
-                                id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_RANK" placeholder="Patente/Posto"></div>
-                        <div class="fg"><label>Especialidade</label><input type="text"
-                                id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_SPECIALTY" placeholder="Especialidade">
+                        <div class="fg"><label>Nome do País/Região (Name of Country/Region) *</label>
+                            <select id="dtlMILITARY_SERVICE_ctl00_ddlMILITARY_SVC_CNTRY" class="sel-country"></select>
+                            <details style="margin-top:4px;font-size:12px;color:#555">
+                                <summary style="cursor:pointer;color:#1a73e8;font-weight:500">ℹ️ Ajuda: Nome do
+                                    País/Região (Help: Name of Country/Region)</summary>
+                                <p style="margin:6px 0 0;line-height:1.6">Por favor, selecione o nome atual do
+                                    país/região onde você prestou serviço militar.<br>
+                                    <em>(Please select the current name of the country/region where you performed
+                                        military service.)</em>
+                                </p>
+                            </details>
                         </div>
-                        <div class="fg"><label>De</label>
+                        <div class="fg"><label>Ramo de Serviço (Branch of Service) *</label>
+                            <input type="text" id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_BRANCH" maxlength="40"
+                                placeholder="Ex: Exército, Marinha, Aeronáutica...">
+                        </div>
+                        <div class="fg"><label>Patente/Posto (Rank/Position) *</label>
+                            <input type="text" id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_RANK" maxlength="40"
+                                placeholder="Patente/Posto">
+                        </div>
+                        <div class="fg"><label>Especialidade Militar (Military Specialty) *</label>
+                            <input type="text" id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_SPECIALTY" maxlength="40"
+                                placeholder="Especialidade">
+                        </div>
+                        <div class="fg"><label>Data de Início do Serviço (Date of Service From) *</label>
                             <div class="date-row"><select id="dtlMILITARY_SERVICE_ctl00_ddlMILITARY_SVC_FROMDay"
                                     class="sel-day"></select><select
                                     id="dtlMILITARY_SERVICE_ctl00_ddlMILITARY_SVC_FROMMonth"
                                     class="sel-month"></select><input type="text"
                                     id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_FROMYear" maxlength="4"
                                     placeholder="AAAA"></div>
+                            <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
                         </div>
-                        <div class="fg"><label>Até</label>
+                        <div class="fg"><label>Data de Término do Serviço (Date of Service To) *</label>
                             <div class="date-row"><select id="dtlMILITARY_SERVICE_ctl00_ddlMILITARY_SVC_TODay"
                                     class="sel-day"></select><select
                                     id="dtlMILITARY_SERVICE_ctl00_ddlMILITARY_SVC_TOMonth"
                                     class="sel-month"></select><input type="text"
                                     id="dtlMILITARY_SERVICE_ctl00_tbxMILITARY_SVC_TOYear" maxlength="4"
                                     placeholder="AAAA"></div>
+                            <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
                         </div>
-                    </div><button type="button" class="btn-add" onclick="addEntry('dtlMILITARY_SERVICE')">+
-                        Adicionar</button>
+                    </div>
+                    <button type="button" class="btn-add" onclick="addEntry('dtlMILITARY_SERVICE')">+ Adicionar Outro
+                        (Add Another)</button>
                 </div>
             </div>
         </div>
+
+        <!-- === Insurgent Organization === -->
         <div class="section">
-            <h3>Organização Insurgente</h3>
-            <div class="fg"><label>Membro de org. insurgente? *</label><span class="rg"><label><input type="radio"
-                            name="rblINSURGENT_ORG_IND" value="Y" data-branch="rblINSURGENT_ORG_IND">
-                        Sim</label><label><input type="radio" name="rblINSURGENT_ORG_IND" value="N"
-                            data-branch="rblINSURGENT_ORG_IND"> Não</label></span></div>
+            <div class="fg"><label><strong>P:</strong> Você já serviu, foi membro ou esteve envolvido com uma unidade
+                    paramilitar, unidade de vigilantes, grupo rebelde, grupo guerrilheiro ou organização insurgente?
+                    (Have you ever served in, been a member of, or been involved with a paramilitary unit, vigilante
+                    unit, rebel group, guerrilla group, or insurgent organization?) *</label>
+                <br><strong>R:</strong> <span class="rg"><label><input type="radio" name="rblINSURGENT_ORG_IND"
+                            value="Y" data-branch="rblINSURGENT_ORG_IND"> Sim (Yes)</label><label><input type="radio"
+                            name="rblINSURGENT_ORG_IND" value="N" data-branch="rblINSURGENT_ORG_IND"> Não
+                        (No)</label></span>
+            </div>
             <div class="br" id="br-rblINSURGENT_ORG_IND">
-                <div class="fg"><label>Explicação</label><textarea id="tbxINSURGENT_ORG_EXPL"
-                        placeholder="Descreva a organização"></textarea></div>
+                <div class="fg"><label>Explique (Explain) *</label>
+                    <textarea id="tbxINSURGENT_ORG_EXPL" rows="3" maxlength="500"
+                        placeholder="Descreva a organização"></textarea>
+                </div>
             </div>
         </div>
+
         <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
