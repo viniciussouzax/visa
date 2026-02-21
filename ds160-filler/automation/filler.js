@@ -377,9 +377,7 @@ async function autoFillPass(page, fieldMap) {
 
         const match = fieldMap.find(m => m.pattern.test(field.id));
         if (!match) {
-            // Log all unmatched fields with their short ID (last part after last _)
-            const shortId = field.id.split('_').slice(-2).join('_');
-            unmatched.push(shortId + '(' + field.type + ')');
+            unmatched.push(field.id + '(' + field.type + ')');
             continue;
         }
         const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
