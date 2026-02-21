@@ -1399,73 +1399,114 @@
 
     <!-- ===== PAGE 7: Passport ===== -->
     <div class="page" id="pg-Passport">
-        <h2>7. Passaporte</h2>
+        <h2>7. Informações do Passaporte (Passport Information)</h2>
+
+        <!-- === Passport Info === -->
         <div class="section">
-            <h3>Informações do Passaporte</h3>
-            <div class="fg"><label>Tipo *</label><select id="ddlPPT_TYPE">
-                    <option value="">-</option>
-                    <option value="R">REGULAR</option>
-                    <option value="O">OFICIAL</option>
-                    <option value="D">DIPLOMÁTICO</option>
+            <h3>Informações do Passaporte/Documento de Viagem (Passport/Travel Document Information)</h3>
+
+            <div class="fg"><label>Tipo de Passaporte/Documento de Viagem (Passport/Travel Document Type) *</label>
+                <select id="ddlPPT_TYPE" onchange="updatePptTypeBranch()">
+                    <option value="">- SELECIONE - / - SELECT ONE -</option>
+                    <option value="R">REGULAR / Normal</option>
+                    <option value="O">OFFICIAL / Oficial</option>
+                    <option value="D">DIPLOMATIC / Diplomático</option>
+                    <option value="T">OTHER / Outro</option>
                     <option value="L">LAISSEZ-PASSER</option>
-                    <option value="T">OUTRO</option>
-                </select></div>
+                </select>
+            </div>
             <div class="br" id="br-pptOther">
-                <div class="fg"><label>Explicação</label><textarea id="tbxPptOtherExpl"
-                        placeholder="Explique o tipo de documento"></textarea></div>
+                <div class="fg"><label>Explique (Explain)</label>
+                    <textarea id="tbxPptOtherExpl" placeholder="Explique o tipo de documento" rows="3"></textarea>
+                </div>
             </div>
-            <div class="fg"><label>Número do Passaporte *</label><input type="text" id="tbxPPT_NUM" maxlength="12"
-                    required placeholder="Ex: FX123456"></div>
-            <div class="fg"><label>Número do Livro</label><input type="text" id="tbxPPT_BOOK_NUM" maxlength="10"
-                    placeholder="Número do livro"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbexPPT_BOOK_NUM_NA" data-target="tbxPPT_BOOK_NUM"> N/A</label></div>
-            <div class="fg"><label>País Emissor *</label><select id="ddlPPT_ISSUED_CNTRY" class="sel-country"></select>
+
+            <div class="fg"><label>Número do Passaporte/Documento de Viagem (Passport/Travel Document Number) *</label>
+                <input type="text" id="tbxPPT_NUM" maxlength="12" required placeholder="Ex: FX123456">
             </div>
-            <div class="fg"><label>Cidade de Emissão *</label><input type="text" id="tbxPPT_ISSUED_IN_CITY"
-                    maxlength="20" required placeholder="Ex: BRASILIA"></div>
-            <div class="fg"><label>Estado de Emissão</label><input type="text" id="tbxPPT_ISSUED_IN_STATE"
-                    maxlength="20" placeholder="Ex: DF"></div>
-            <div class="fg"><label>País de Emissão *</label><select id="ddlPPT_ISSUED_IN_CNTRY"
-                    class="sel-country"></select></div>
-            <div class="fg"><label>Data de Emissão *</label>
+
+            <div class="fg"><label>Número do Livro do Passaporte (Passport Book Number)</label>
+                <input type="text" id="tbxPPT_BOOK_NUM" maxlength="10" placeholder="Número do livro">
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexPPT_BOOK_NUM_NA"
+                        data-target="tbxPPT_BOOK_NUM"> Não se Aplica (Does Not Apply)</label>
+            </div>
+
+            <div class="fg"><label>País/Autoridade que Emitiu o Passaporte/Documento de Viagem (Country/Authority that
+                    Issued Passport/Travel Document) *</label>
+                <select id="ddlPPT_ISSUED_CNTRY" class="sel-country"></select>
+            </div>
+
+            <p style="color:#666;font-size:13px;margin:16px 0 10px"><strong>Onde o Passaporte/Documento de Viagem foi
+                    Emitido? (Where was the Passport/Travel Document Issued?)</strong></p>
+
+            <div class="fg"><label>Cidade (City) *</label>
+                <input type="text" id="tbxPPT_ISSUED_IN_CITY" maxlength="20" required placeholder="Ex: BRASILIA">
+            </div>
+            <div class="fg"><label>Estado/Província (State/Province) <em>*Se constar no passaporte / *If shown on
+                        passport</em></label>
+                <input type="text" id="tbxPPT_ISSUED_IN_STATE" maxlength="20" placeholder="Ex: DF">
+            </div>
+            <div class="fg"><label>País/Região (Country/Region) *</label>
+                <select id="ddlPPT_ISSUED_IN_CNTRY" class="sel-country"></select>
+            </div>
+
+            <div class="fg"><label>Data de Emissão (Issuance Date) *</label>
                 <div class="date-row"><select id="ddlPPT_ISSUED_DTEDay" class="sel-day"></select><select
                         id="ddlPPT_ISSUED_DTEMonth" class="sel-month"></select><input type="text" id="tbxPPT_ISSUEDYear"
                         maxlength="4" placeholder="AAAA"></div>
+                <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
             </div>
-            <div class="fg"><label>Data de Validade *</label>
+
+            <div class="fg"><label>Data de Validade (Expiration Date) *</label>
                 <div class="date-row"><select id="ddlPPT_EXPIRE_DTEDay" class="sel-day"></select><select
                         id="ddlPPT_EXPIRE_DTEMonth" class="sel-month"></select><input type="text" id="tbxPPT_EXPIREYear"
-                        maxlength="4" placeholder="AAAA"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                            id="cbxPPT_EXPIRE_NA" data-target="tbxPPT_EXPIREYear"> Sem Expiração</label></div><label
-                    class="na-lbl"><input type="checkbox" class="na-cb"
-                        data-target="ddlPPT_EXPIRE_DTEDay,ddlPPT_EXPIRE_DTEMonth,tbxPPT_EXPIREYear"> Sem
-                    Validade</label>
+                        maxlength="4" placeholder="AAAA">
+                    <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxPPT_EXPIRE_NA"
+                            data-target="ddlPPT_EXPIRE_DTEDay,ddlPPT_EXPIRE_DTEMonth,tbxPPT_EXPIREYear"> Sem Validade
+                        (No Expiration)</label>
+                </div>
+                <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
             </div>
         </div>
+
+        <!-- === Lost/Stolen Passport === -->
         <div class="section">
-            <h3>Passaporte Perdido</h3>
-            <div class="fg"><label>Passaporte perdido/roubado? *</label><span class="rg"><label><input type="radio"
-                            name="rblLOST_PPT_IND" value="Y" data-branch="rblLOST_PPT_IND"> Sim</label><label><input
-                            type="radio" name="rblLOST_PPT_IND" value="N" data-branch="rblLOST_PPT_IND">
-                        Não</label></span></div>
+            <h3>Passaporte Perdido/Roubado (Lost/Stolen Passport)</h3>
+            <div class="fg"><label>Você já perdeu um passaporte ou teve um roubado? (Have you ever lost a passport or
+                    had one stolen?) *</label>
+                <span class="rg"><label><input type="radio" name="rblLOST_PPT_IND" value="Y"
+                            data-branch="rblLOST_PPT_IND"> Sim</label><label><input type="radio" name="rblLOST_PPT_IND"
+                            value="N" data-branch="rblLOST_PPT_IND">
+                        Não</label></span>
+            </div>
             <div class="br" id="br-rblLOST_PPT_IND">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações (Provide the
+                    following information)</p>
                 <div class="as" data-list="dtlLostPPT">
                     <div class="entry" data-idx="0">
-                        <div class="fg"><label>Número</label><input type="text" id="dtlLostPPT_ctl00_tbxLOST_PPT_NUM"
-                                placeholder="Nº do passaporte perdido/roubado"><label class="na-lbl"><input
-                                    type="checkbox" class="na-cb" id="dtlLostPPT_ctl00_cbxLOST_PPT_NUM_UNKN_IND"
-                                    data-target="dtlLostPPT_ctl00_tbxLOST_PPT_NUM"> Não Sabe</label><label
-                                class="na-lbl"><input type="checkbox" class="na-cb"
-                                    data-target="dtlLostPPT_ctl00_tbxLOST_PPT_NUM"> Desconhecido</label>
+                        <div class="fg"><label>Número do Passaporte/Documento de Viagem (Passport/Travel Document
+                                Number)</label>
+                            <input type="text" id="dtlLostPPT_ctl00_tbxLOST_PPT_NUM"
+                                placeholder="Nº do passaporte perdido/roubado" maxlength="12">
+                            <label class="na-lbl"><input type="checkbox" class="na-cb"
+                                    id="dtlLostPPT_ctl00_cbxLOST_PPT_NUM_UNKN_IND"
+                                    data-target="dtlLostPPT_ctl00_tbxLOST_PPT_NUM"> Não sei (Do Not Know)</label>
                         </div>
-                        <div class="fg"><label>País</label><select id="dtlLostPPT_ctl00_ddlLOST_PPT_NATL"
-                                class="sel-country"></select></div>
-                        <div class="fg"><label>Explicação</label><textarea id="dtlLostPPT_ctl00_tbxLOST_PPT_EXPL"
-                                placeholder="Descreva as circunstâncias"></textarea></div>
-                    </div><button type="button" class="btn-add" onclick="addEntry('dtlLostPPT')">+ Adicionar</button>
+                        <div class="fg"><label>País/Autoridade que Emitiu o Passaporte/Documento de Viagem
+                                (Country/Authority that Issued Passport/Travel Document)</label>
+                            <select id="dtlLostPPT_ctl00_ddlLOST_PPT_NATL" class="sel-country"></select>
+                        </div>
+                        <div class="fg"><label>Explique (Explain)</label>
+                            <textarea id="dtlLostPPT_ctl00_tbxLOST_PPT_EXPL" placeholder="Descreva as circunstâncias"
+                                rows="4"></textarea>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-add" onclick="addEntry('dtlLostPPT')">+ Adicionar Outro (Add
+                        Another)</button>
                 </div>
             </div>
         </div>
+
         <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
