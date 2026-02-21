@@ -144,3 +144,19 @@ function log(msg) {
     const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     el.textContent = `[${time}] ${msg}\n` + el.textContent;
 }
+
+// ============================================================
+// AUTO-UPDATE NOTIFICATIONS
+// ============================================================
+window.api.onUpdate((status) => {
+    if (status.type === 'available') {
+        log(`🔄 Atualização v${status.version} encontrada, baixando...`);
+    } else if (status.type === 'progress') {
+        // Only log at 25%, 50%, 75%, 100%
+        if (status.percent % 25 === 0) {
+            log(`⬇ Baixando atualização: ${status.percent}%`);
+        }
+    } else if (status.type === 'downloaded') {
+        log(`✅ v${status.version} pronta! Será instalada ao fechar o app.`);
+    }
+});

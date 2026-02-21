@@ -6,5 +6,6 @@ contextBridge.exposeInMainWorld('api', {
     logout: () => ipcRenderer.invoke('logout'),
     fetchQueue: () => ipcRenderer.invoke('fetch-queue'),
     refreshQueue: () => ipcRenderer.invoke('refresh-queue'),
-    onStatus: (callback) => ipcRenderer.on('automation-status', (_, status) => callback(status))
+    onStatus: (callback) => ipcRenderer.on('automation-status', (_, status) => callback(status)),
+    onUpdate: (callback) => ipcRenderer.on('update-status', (_, status) => callback(status))
 });

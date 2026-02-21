@@ -42,6 +42,44 @@ app.whenReady().then(() => {
     });
     mainWindow.loadFile('renderer/index.html');
     mainWindow.setMenuBarVisibility(false);
+
+    // ============================================================
+    // AUTO-UPDATE — checks GitHub Releases for new versions
+    // ============================================================
+    if (app.isPackaged) {
+        const { autoUpdater } = require('electron-updater');
+        autoUpdater.autoDownload = true;
+        autoUpdater.autoInstallOnAppQuit = true;
+
+        autoUpdater.on('update-available', (info) => {
+            mainWindow?.webContents.send('update-status', {
+                type: 'available',
+                version: info.version
+            });
+        });
+
+        autoUpdater.on('download-progress', (progress) => {
+            mainWindow?.webContents.send('update-status', {
+                type: 'progress',
+                percent: Math.round(progress.percent)
+            });
+        });
+
+        autoUpdater.on('update-downloaded', (info) => {
+            mainWindow?.webContents.send('update-status', {
+                type: 'downloaded',
+                version: info.version
+            });
+            // Install on next quit
+        });
+
+        autoUpdater.on('error', (err) => {
+            console.log('Auto-update error:', err.message);
+        });
+
+        // Check for updates silently
+        autoUpdater.checkForUpdatesAndNotify().catch(() => { });
+    }
 });
 
 app.on('window-all-closed', () => {
