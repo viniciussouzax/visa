@@ -12,21 +12,25 @@ const $ = id => document.getElementById(id);
 // ============================================================
 let currentUser = null;
 let isMaster = false;
-let currentFilter = 'all';
+let currentFilter = 'new';
 let currentPage = 1;
 let searchQuery = '';
 const PAGE_SIZE = 15;
 
+// Archived view state
+let archivedPage = 1;
+let archivedSearch = '';
+
 const STAGES = {
-    collecting: { label: '📝 Coleta', color: '#3b82f6' },
-    analysis: { label: '🔍 Análise', color: '#f59e0b' },
-    review: { label: '↩️ Revisão', color: '#f97316' },
-    queued: { label: '📋 Fila', color: '#8b5cf6' },
-    completed: { label: '✅ Concluído', color: '#22c55e' },
+    new: { label: '📥 Novos', color: '#3b82f6' },
+    review: { label: '🔍 Revisão', color: '#f59e0b' },
+    todo: { label: '📋 A Fazer', color: '#8b5cf6' },
+    filling: { label: '⚙️ Fazendo', color: '#f97316' },
+    done: { label: '✅ Feito', color: '#22c55e' },
     archived: { label: '📦 Arquivado', color: '#64748b' }
 };
 
-const STAGE_ORDER = ['collecting', 'analysis', 'review', 'queued', 'completed', 'archived'];
+const STAGE_ORDER = ['new', 'review', 'todo', 'filling', 'done', 'archived'];
 
 // ============================================================
 // TOAST
@@ -97,6 +101,7 @@ document.querySelectorAll('.nav-item[data-view]').forEach(item => {
         showView(item.dataset.view);
         $('page-title').textContent = item.textContent.trim();
         if (item.dataset.view === 'pipeline') loadPipeline();
+        if (item.dataset.view === 'archived') loadArchived();
         if (item.dataset.view === 'master') {
             showMasterSub('agencies');
             loadAgencies();
@@ -141,9 +146,8 @@ async function loadPipeline() {
         .select('id, pipeline_status')
         .is('primary_applicant_id', null);
 
-    const counts = { all: 0, collecting: 0, analysis: 0, review: 0, queued: 0, completed: 0, archived: 0 };
+    const counts = { new: 0, review: 0, todo: 0, filling: 0, done: 0 };
     (allApplicants || []).forEach(a => {
-        if (a.pipeline_status !== 'archived') counts.all++;
         if (counts[a.pipeline_status] !== undefined) counts[a.pipeline_status]++;
     });
 
@@ -161,13 +165,8 @@ async function loadPipelineList() {
 
     let query = sb.from('applicants')
         .select('id, full_name, data, passport_number, pipeline_status, updated_at')
-        .is('primary_applicant_id', null);
-
-    if (currentFilter !== 'all') {
-        query = query.eq('pipeline_status', currentFilter);
-    } else {
-        query = query.not('pipeline_status', 'eq', 'archived');
-    }
+        .is('primary_applicant_id', null)
+        .eq('pipeline_status', currentFilter);
 
     if (searchQuery) {
         query = query.or(`full_name.ilike.%${searchQuery}%,passport_number.ilike.%${searchQuery}%`);
@@ -195,12 +194,12 @@ async function loadPipelineList() {
     tbody.innerHTML = (applicants || []).map(a => {
         const deps = dependentsMap[a.id] || [];
         const totalProcesses = 1 + deps.length;
-        const completedProcesses = (a.pipeline_status === 'completed' ? 1 : 0) +
-            deps.filter(d => d.pipeline_status === 'completed').length;
-        const progressColor = completedProcesses === totalProcesses && totalProcesses > 0
-            ? '#22c55e' : (completedProcesses > 0 ? '#f59e0b' : 'var(--text-muted)');
+        const doneProcesses = (a.pipeline_status === 'done' ? 1 : 0) +
+            deps.filter(d => d.pipeline_status === 'done').length;
+        const progressColor = doneProcesses === totalProcesses && totalProcesses > 0
+            ? '#22c55e' : (doneProcesses > 0 ? '#f59e0b' : 'var(--text-muted)');
 
-        const stage = STAGES[a.pipeline_status] || STAGES.collecting;
+        const stage = STAGES[a.pipeline_status] || STAGES.new;
         const email = a.data?.personal?.email || a.data?.contact?.email || '';
         const updated = a.updated_at ? new Date(a.updated_at).toLocaleDateString('pt-BR') : '—';
 
@@ -211,7 +210,7 @@ async function loadPipelineList() {
             </td>
             <td><span class="badge" style="background:${stage.color}22;color:${stage.color}">${stage.label}</span></td>
             <td>
-                <span style="font-weight:700;font-size:15px;color:${progressColor}">${completedProcesses}/${totalProcesses}</span>
+                <span style="font-weight:700;font-size:15px;color:${progressColor}">${doneProcesses}/${totalProcesses}</span>
             </td>
             <td style="font-size:12px;color:var(--text-muted)">${updated}</td>
             <td>
@@ -225,6 +224,50 @@ async function loadPipelineList() {
     $('app-prev').disabled = currentPage <= 1;
     $('app-next').disabled = !hasMore;
     $('app-page-info').textContent = `Página ${currentPage}`;
+}
+
+// ============================================================
+// ARCHIVED VIEW
+// ============================================================
+async function loadArchived() {
+    const from = (archivedPage - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    let query = sb.from('applicants')
+        .select('id, full_name, data, passport_number, pipeline_status, updated_at')
+        .is('primary_applicant_id', null)
+        .eq('pipeline_status', 'archived');
+
+    if (archivedSearch) {
+        query = query.or(`full_name.ilike.%${archivedSearch}%,passport_number.ilike.%${archivedSearch}%`);
+    }
+
+    query = query.order('updated_at', { ascending: false }).range(from, to);
+    const { data: applicants, error } = await query;
+    if (error) { toast('Erro: ' + error.message, 'error'); return; }
+
+    const tbody = $('archived-list');
+    tbody.innerHTML = (applicants || []).map(a => {
+        const email = a.data?.personal?.email || a.data?.contact?.email || '';
+        const updated = a.updated_at ? new Date(a.updated_at).toLocaleDateString('pt-BR') : '—';
+        return `<tr style="cursor:pointer" onclick="openApplicantDetail('${a.id}')">
+            <td>
+                <div style="font-weight:600">${a.full_name}</div>
+                ${email ? `<div style="font-size:11px;color:var(--text-muted)">${email}</div>` : ''}
+            </td>
+            <td style="font-size:12px;color:var(--text-muted)">${a.passport_number || '—'}</td>
+            <td style="font-size:12px;color:var(--text-muted)">${updated}</td>
+            <td>
+                <button class="btn-sm btn-view" onclick="event.stopPropagation();viewApplicantJson('${a.id}')" title="Ver JSON">👁</button>
+                <button class="btn-sm btn-queue" onclick="event.stopPropagation();movePipeline('${a.id}','new','${a.id}')" title="Restaurar">↩️</button>
+            </td>
+        </tr>`;
+    }).join('') || '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhum solicitante arquivado</td></tr>';
+
+    const hasMore = (applicants || []).length === PAGE_SIZE;
+    $('arch-prev').disabled = archivedPage <= 1;
+    $('arch-next').disabled = !hasMore;
+    $('arch-page-info').textContent = `Página ${archivedPage}`;
 }
 
 // ============================================================
@@ -256,6 +299,24 @@ $('search-applicants').addEventListener('input', e => {
 $('app-prev').onclick = () => { if (currentPage > 1) { currentPage--; loadPipelineList(); } };
 $('app-next').onclick = () => { currentPage++; loadPipelineList(); };
 
+// Archived search + pagination
+let archSearchTimeout;
+const archSearch = $('search-archived');
+if (archSearch) {
+    archSearch.addEventListener('input', e => {
+        clearTimeout(archSearchTimeout);
+        archSearchTimeout = setTimeout(() => {
+            archivedSearch = e.target.value.trim();
+            archivedPage = 1;
+            loadArchived();
+        }, 300);
+    });
+}
+const archPrev = $('arch-prev');
+const archNext = $('arch-next');
+if (archPrev) archPrev.onclick = () => { if (archivedPage > 1) { archivedPage--; loadArchived(); } };
+if (archNext) archNext.onclick = () => { archivedPage++; loadArchived(); };
+
 // ============================================================
 // APPLICANT DETAIL — FULL PAGE
 // ============================================================
@@ -278,14 +339,14 @@ async function openApplicantDetail(id) {
 
     // All processes
     const allProcesses = [applicant, ...(deps || [])];
-    const completedCount = allProcesses.filter(p => p.pipeline_status === 'completed').length;
+    const doneCount = allProcesses.filter(p => p.pipeline_status === 'done').length;
     const totalCount = allProcesses.length;
-    const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    const progressPercent = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
     // Build header
     const email = applicant.data?.personal?.email || applicant.data?.contact?.email || '—';
     const phone = applicant.data?.contact?.phone || applicant.data?.personal?.phone || '—';
-    const stage = STAGES[applicant.pipeline_status] || STAGES.collecting;
+    const stage = STAGES[applicant.pipeline_status] || STAGES.new;
 
     let html = `
     <!-- Header card -->
@@ -302,12 +363,12 @@ async function openApplicantDetail(id) {
             <div style="display:flex;align-items:center;gap:16px">
                 <!-- Progress circle -->
                 <div style="text-align:center">
-                    <div style="font-size:28px;font-weight:800;color:${completedCount === totalCount ? '#22c55e' : '#f59e0b'}">${completedCount}/${totalCount}</div>
+                    <div style="font-size:28px;font-weight:800;color:${doneCount === totalCount ? '#22c55e' : '#f59e0b'}">${doneCount}/${totalCount}</div>
                     <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">concluídos</div>
                 </div>
                 <!-- Progress bar -->
                 <div style="width:120px;height:8px;background:var(--border);border-radius:4px;overflow:hidden">
-                    <div style="width:${progressPercent}%;height:100%;background:${completedCount === totalCount ? '#22c55e' : '#f59e0b'};border-radius:4px;transition:width .3s"></div>
+                    <div style="width:${progressPercent}%;height:100%;background:${doneCount === totalCount ? '#22c55e' : '#f59e0b'};border-radius:4px;transition:width .3s"></div>
                 </div>
             </div>
         </div>
@@ -335,15 +396,15 @@ async function openApplicantDetail(id) {
     // Render each process card
     allProcesses.forEach(p => {
         const isPrimary = !p.primary_applicant_id;
-        const pStage = STAGES[p.pipeline_status] || STAGES.collecting;
+        const pStage = STAGES[p.pipeline_status] || STAGES.new;
         const pApps = appsMap[p.id] || [];
         const appId = pApps.length > 0 ? (pApps[0].application_id || 'Sem ID') : 'Sem aplicação';
         const fillStatus = pApps.length > 0 ? pApps[0].fill_status : '—';
         const pEmail = p.data?.personal?.email || p.data?.contact?.email || '—';
-        const isCompleted = p.pipeline_status === 'completed';
+        const isDone = p.pipeline_status === 'done';
 
         html += `
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;border-left:4px solid ${pStage.color};transition:all .15s;${isCompleted ? 'opacity:.85' : ''}">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;border-left:4px solid ${pStage.color};transition:all .15s;${isDone ? 'opacity:.85' : ''}">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
                 <div style="display:flex;align-items:center;gap:10px">
                     <span style="font-size:20px">${isPrimary ? '👤' : '👥'}</span>

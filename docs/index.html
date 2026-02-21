@@ -471,7 +471,7 @@
         /* Stats cards */
         .stats {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 12px;
             margin-bottom: 20px;
         }
@@ -501,27 +501,23 @@
             cursor: pointer;
         }
 
-        .pipeline-card[data-filter="all"]::before {
-            background: var(--accent);
-        }
-
-        .pipeline-card[data-filter="collecting"]::before {
+        .pipeline-card[data-filter="new"]::before {
             background: #3b82f6;
         }
 
-        .pipeline-card[data-filter="analysis"]::before {
+        .pipeline-card[data-filter="review"]::before {
             background: #f59e0b;
         }
 
-        .pipeline-card[data-filter="review"]::before {
-            background: #f97316;
-        }
-
-        .pipeline-card[data-filter="queued"]::before {
+        .pipeline-card[data-filter="todo"]::before {
             background: #8b5cf6;
         }
 
-        .pipeline-card[data-filter="completed"]::before {
+        .pipeline-card[data-filter="filling"]::before {
+            background: #f97316;
+        }
+
+        .pipeline-card[data-filter="done"]::before {
             background: #22c55e;
         }
 
@@ -1014,6 +1010,7 @@
                 <div class="sidebar-brand">⚡ DS-160 IA</div>
                 <div class="sidebar-nav">
                     <div class="nav-item active" data-view="pipeline">📊 Pipeline</div>
+                    <div class="nav-item" data-view="archived">📦 Arquivados</div>
                     <div class="nav-separator"></div>
                     <div class="nav-item hidden" id="nav-master" data-view="master">🏢 Painel Master</div>
                 </div>
@@ -1043,29 +1040,25 @@
                     <!-- Pipeline View -->
                     <div class="view active" id="view-pipeline">
                         <div class="stats" id="pipeline-cards">
-                            <div class="stat-card pipeline-card active" data-filter="all">
-                                <div class="label">Todos</div>
-                                <div class="value" id="stat-all">0</div>
-                            </div>
-                            <div class="stat-card pipeline-card" data-filter="collecting">
-                                <div class="label">📝 Coleta</div>
-                                <div class="value" id="stat-collecting">0</div>
-                            </div>
-                            <div class="stat-card pipeline-card" data-filter="analysis">
-                                <div class="label">🔍 Análise</div>
-                                <div class="value" id="stat-analysis">0</div>
+                            <div class="stat-card pipeline-card active" data-filter="new">
+                                <div class="label">📥 Novos</div>
+                                <div class="value" id="stat-new">0</div>
                             </div>
                             <div class="stat-card pipeline-card" data-filter="review">
-                                <div class="label">↩️ Revisão</div>
+                                <div class="label">🔍 Revisão</div>
                                 <div class="value" id="stat-review">0</div>
                             </div>
-                            <div class="stat-card pipeline-card" data-filter="queued">
-                                <div class="label">📋 Fila</div>
-                                <div class="value" id="stat-queued">0</div>
+                            <div class="stat-card pipeline-card" data-filter="todo">
+                                <div class="label">📋 A Fazer</div>
+                                <div class="value" id="stat-todo">0</div>
                             </div>
-                            <div class="stat-card pipeline-card" data-filter="completed">
-                                <div class="label">✅ Concluído</div>
-                                <div class="value" id="stat-completed">0</div>
+                            <div class="stat-card pipeline-card" data-filter="filling">
+                                <div class="label">⚙️ Fazendo</div>
+                                <div class="value" id="stat-filling">0</div>
+                            </div>
+                            <div class="stat-card pipeline-card" data-filter="done">
+                                <div class="label">✅ Feito</div>
+                                <div class="value" id="stat-done">0</div>
                             </div>
                         </div>
                         <div class="search-bar">
@@ -1099,6 +1092,37 @@
                             style="margin-bottom:16px;padding:8px 16px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;cursor:pointer">←
                             Voltar ao Pipeline</button>
                         <div id="applicant-detail-content"></div>
+                    </div>
+
+                    <!-- Archived View -->
+                    <div class="view" id="view-archived">
+                        <div style="margin-bottom:20px">
+                            <h3 style="font-size:18px;font-weight:700;margin-bottom:12px">📦 Solicitantes Arquivados
+                            </h3>
+                            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Solicitantes que já
+                                foram concluídos e arquivados pelo assessor.</p>
+                        </div>
+                        <div class="search-bar">
+                            <input type="text" id="search-archived" placeholder="🔍 Buscar por nome ou passaporte...">
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Passaporte</th>
+                                        <th>Arquivado em</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="archived-list"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination">
+                            <button id="arch-prev" disabled>← Anterior</button>
+                            <span id="arch-page-info">Página 1</span>
+                            <button id="arch-next">Próxima →</button>
+                        </div>
                     </div>
 
                     <!-- Master View -->
