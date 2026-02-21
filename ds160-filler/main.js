@@ -70,15 +70,21 @@ app.whenReady().then(() => {
                 type: 'downloaded',
                 version: info.version
             });
-            // Install on next quit
         });
 
         autoUpdater.on('error', (err) => {
             console.log('Auto-update error:', err.message);
         });
 
-        // Check for updates silently
+        // Check on startup
         autoUpdater.checkForUpdatesAndNotify().catch(() => { });
+
+        // Expose for queue cycle checks
+        global.checkForUpdates = () => {
+            autoUpdater.checkForUpdatesAndNotify().catch(() => { });
+        };
+    } else {
+        global.checkForUpdates = () => { }; // no-op in dev
     }
 });
 

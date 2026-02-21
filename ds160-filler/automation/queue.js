@@ -47,6 +47,9 @@ class QueueRunner {
     async _loop() {
         while (this.running) {
             try {
+                // 0. Check for software updates before processing
+                if (global.checkForUpdates) global.checkForUpdates();
+
                 // 1. Fetch config (captcha keys)
                 const config = await this._getConfig();
 
