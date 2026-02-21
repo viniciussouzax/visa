@@ -712,19 +712,19 @@
     <!-- ===== PAGE 3: Travel ===== -->
     <div class="page" id="pg-Travel">
         <h2>3. Informações de Viagem</h2>
-        <div class="section">
+        <div class="section section-disabled">
             <h3>Propósito da Viagem</h3>
-            <p style="color:#666;font-size:13px;margin-bottom:10px">Selecione a categoria e o tipo específico de visto
-                que você está solicitando.</p>
-            <div class="fg"><label>Categoria do Visto *</label><select id="dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip"
-                    class="sel-purpose"></select></div>
-            <div class="br" id="br-visaSubtype">
-                <div class="fg"><label>Tipo Específico de Visto *</label><select
-                        id="dlPrincipalAppTravel_ctl00_ddlOtherPurpose" class="sel-visa-subtype"></select></div>
+            <p style="color:#888;font-size:13px;margin-bottom:10px">Valor padrão para visto de turismo/negócios. Não
+                editável.</p>
+            <div class="fg"><label>Propósito da Viagem aos EUA (Purpose of Trip to the U.S.)</label>
+                <select id="dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip" disabled>
+                    <option value="B" selected>TEMP. BUSINESS OR PLEASURE VISITOR (B)</option>
+                </select>
             </div>
-            <div class="br" id="br-visaClass">
-                <div class="fg"><label>Classe de Visto *</label><select id="dlPrincipalAppTravel_ctl00_ddlVisaClass"
-                        class="sel-visa-class"></select></div>
+            <div class="fg"><label>Especifique (Specify)</label>
+                <select id="dlPrincipalAppTravel_ctl00_ddlOtherPurpose" disabled>
+                    <option value="B1/B2" selected>BUSINESS/PERSONAL (B1/B2) — Negócios ou Turismo</option>
+                </select>
             </div>
         </div>
         <div class="section">
