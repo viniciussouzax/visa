@@ -952,41 +952,67 @@
 
     <!-- ===== PAGE 4: TravelCompanions ===== -->
     <div class="page" id="pg-TravelCompanions">
-        <h2>4. Acompanhantes de Viagem</h2>
+        <h2>4. Informações sobre Acompanhantes de Viagem (Travel Companions Information)</h2>
         <div class="section">
-            <h3>Acompanhantes</h3>
-            <div class="fg"><label>Viajando com outras pessoas? *</label><span class="rg"><label><input type="radio"
-                            name="rblOtherPersonsTravelingWithYou" value="Y"
+            <h3>Pessoas Viajando com Você (Persons Traveling with You)</h3>
+            <div class="fg"><label>Há outras pessoas viajando com você? (Are there other persons traveling with you?)
+                    *</label>
+                <span class="rg"><label><input type="radio" name="rblOtherPersonsTravelingWithYou" value="Y"
                             data-branch="rblOtherPersonsTravelingWithYou"> Sim</label><label><input type="radio"
                             name="rblOtherPersonsTravelingWithYou" value="N"
-                            data-branch="rblOtherPersonsTravelingWithYou"> Não</label></span></div>
+                            data-branch="rblOtherPersonsTravelingWithYou"> Não</label></span>
+            </div>
             <div class="br" id="br-rblOtherPersonsTravelingWithYou">
-                <div class="fg"><label>Parte de um grupo? *</label><span class="rg"><label><input type="radio"
-                                name="rblGroupTravel" value="Y" data-branch="rblGroupTravel"> Sim</label><label><input
-                                type="radio" name="rblGroupTravel" value="N" data-branch="rblGroupTravel">
-                            Não</label></span></div>
-                <div class="br" id="br-rblGroupTravel">
-                    <div class="fg"><label>Nome do Grupo</label><input type="text" id="tbxGroupName"
-                            placeholder="Nome do grupo"></div>
+                <div class="fg"><label>Você está viajando como parte de um grupo ou organização? (Are you traveling as
+                        part of a group or organization?) *</label>
+                    <span class="rg"><label><input type="radio" name="rblGroupTravel" value="Y"
+                                data-branch="rblGroupTravel" onchange="updateGroupBranch()"> Sim</label><label><input
+                                type="radio" name="rblGroupTravel" value="N" data-branch="rblGroupTravel"
+                                onchange="updateGroupBranch()">
+                            Não</label></span>
                 </div>
-                <div class="as" data-list="dlTravelCompanions">
-                    <div class="entry" data-idx="0">
-                        <div class="fg"><label>Sobrenome</label><input type="text"
-                                id="dlTravelCompanions_ctl00_tbxTC_SURNAME" placeholder="Sobrenome do acompanhante">
+
+                <!-- === Grupo: Sim → Nome do Grupo === -->
+                <div class="br" id="br-groupYes">
+                    <p style="color:#666;font-size:13px;margin-bottom:10px">Informe o nome do grupo com o qual você está
+                        viajando (Enter the name of the group you are traveling with)</p>
+                    <div class="fg"><label>Nome do Grupo (Group Name)</label>
+                        <input type="text" id="tbxGroupName" placeholder="Nome do grupo ou organização" maxlength="60">
+                    </div>
+                </div>
+
+                <!-- === Grupo: Não → Lista de Pessoas === -->
+                <div class="br" id="br-groupNo">
+                    <p style="color:#666;font-size:13px;margin-bottom:10px">Informe a(s) pessoa(s) viajando com você
+                        (Enter person(s) traveling with you)</p>
+                    <div class="as" data-list="dlTravelCompanions">
+                        <div class="entry" data-idx="0">
+                            <div class="fg"><label>Sobrenome da Pessoa Viajando com Você (Surnames of Person Traveling
+                                    With You)</label>
+                                <input type="text" id="dlTravelCompanions_ctl00_tbxTC_SURNAME"
+                                    placeholder="Ex: FERNANDEZ GARCIA" maxlength="33">
+                            </div>
+                            <div class="fg"><label>Nome da Pessoa Viajando com Você (Given Names of Person Traveling
+                                    With You)</label>
+                                <input type="text" id="dlTravelCompanions_ctl00_tbxTC_GIVEN_NAME"
+                                    placeholder="Ex: JUAN MIGUEL" maxlength="33">
+                            </div>
+                            <div class="fg"><label>Relacionamento com a Pessoa (Relationship with Person)</label>
+                                <select id="dlTravelCompanions_ctl00_ddlTCRelationship">
+                                    <option value="">- Selecione -</option>
+                                    <option value="P">Pais (Parent)</option>
+                                    <option value="C">Filho(a) (Child)</option>
+                                    <option value="F">Amigo (Friend)</option>
+                                    <option value="B">Sócio (Business Associate)</option>
+                                    <option value="X">Outro (Other)</option>
+                                    <option value="R">Outro Parente (Other Relative)</option>
+                                    <option value="S">Cônjuge (Spouse)</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="fg"><label>Nome</label><input type="text"
-                                id="dlTravelCompanions_ctl00_tbxTC_GIVEN_NAME" placeholder="Nome do acompanhante"></div>
-                        <div class="fg"><label>Relação</label><select id="dlTravelCompanions_ctl00_ddlTCRelationship">
-                                <option value="">-</option>
-                                <option value="S">CÔNJUGE</option>
-                                <option value="C">FILHO(A)</option>
-                                <option value="B">COLEGA DE TRABALHO</option>
-                                <option value="O">OUTRO PARENTE</option>
-                                <option value="F">AMIGO(A)</option>
-                                <option value="X">OUTRO</option>
-                            </select></div>
-                    </div><button type="button" class="btn-add" onclick="addEntry('dlTravelCompanions')">+
-                        Adicionar</button>
+                        <button type="button" class="btn-add" onclick="addEntry('dlTravelCompanions')">+ Adicionar Outro
+                            (Add Another)</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2513,6 +2539,17 @@
             if (company) company.classList.toggle('open', v === 'COM');
         }
         updatePayerBranch();
+
+        // ===== GROUP TRAVEL BRANCH CONTROL =====
+        function updateGroupBranch() {
+            const checked = document.querySelector('input[name="rblGroupTravel"]:checked');
+            const v = checked ? checked.value : '';
+            const groupYes = document.getElementById('br-groupYes');
+            const groupNo = document.getElementById('br-groupNo');
+            if (groupYes) groupYes.classList.toggle('open', v === 'Y');
+            if (groupNo) groupNo.classList.toggle('open', v === 'N');
+        }
+        updateGroupBranch();
 
         // ===== PAGES & NAVIGATION =====
         const PAGES = ['Start', 'Personal1', 'Personal2', 'Travel', 'TravelCompanions', 'PreviousUSTravel',
