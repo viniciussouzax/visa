@@ -3388,6 +3388,21 @@
         // Divorced (D) → Former Spouse (PrevSpouse) page
         // Single (S) → Nothing
         // Other (O) → Just explain input on Personal1
+        // Calculate applicant age from DOB fields
+        function getApplicantAge() {
+            const monthMap = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
+            const day = parseInt(document.getElementById('ddlDOBDay')?.value);
+            const monthStr = document.getElementById('ddlDOBMonth')?.value;
+            const year = parseInt(document.getElementById('tbxDOBYear')?.value);
+            if (!day || !monthStr || !year || monthMap[monthStr] === undefined) return null;
+            const dob = new Date(year, monthMap[monthStr], day);
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+            return age;
+        }
+
         function updatePageVisibility() {
             const ms = document.getElementById('ddlAPP_MARITAL_STATUS').value;
             const hasSpouse = ['M', 'C', 'P', 'L'].includes(ms);
@@ -3398,14 +3413,27 @@
             document.getElementById('pg-DeceasedSpouse').style.display = hasDeceasedSpouse ? '' : 'none';
             document.getElementById('pg-PrevSpouse').style.display = hasPrevSpouse ? '' : 'none';
 
+            // Work/Education pages hidden for applicants under 14
+            const age = getApplicantAge();
+            const isUnder14 = age !== null && age < 14;
+            document.getElementById('pg-WorkEducation1').style.display = isUnder14 ? 'none' : '';
+            document.getElementById('pg-WorkEducation2').style.display = isUnder14 ? 'none' : '';
+            document.getElementById('pg-WorkEducation3').style.display = isUnder14 ? 'none' : '';
+
             // Update nav tabs
             const navBtns = document.querySelectorAll('#nav button');
             const f2Idx = PAGES.indexOf('Family2');
             const dsIdx = PAGES.indexOf('DeceasedSpouse');
             const psIdx = PAGES.indexOf('PrevSpouse');
+            const we1Idx = PAGES.indexOf('WorkEducation1');
+            const we2Idx = PAGES.indexOf('WorkEducation2');
+            const we3Idx = PAGES.indexOf('WorkEducation3');
             if (navBtns[f2Idx]) { navBtns[f2Idx].classList.toggle('hidden-tab', !hasSpouse); navBtns[f2Idx].style.display = hasSpouse ? '' : 'none'; }
             if (navBtns[dsIdx]) { navBtns[dsIdx].classList.toggle('hidden-tab', !hasDeceasedSpouse); navBtns[dsIdx].style.display = hasDeceasedSpouse ? '' : 'none'; }
             if (navBtns[psIdx]) { navBtns[psIdx].classList.toggle('hidden-tab', !hasPrevSpouse); navBtns[psIdx].style.display = hasPrevSpouse ? '' : 'none'; }
+            if (navBtns[we1Idx]) { navBtns[we1Idx].classList.toggle('hidden-tab', isUnder14); navBtns[we1Idx].style.display = isUnder14 ? 'none' : ''; }
+            if (navBtns[we2Idx]) { navBtns[we2Idx].classList.toggle('hidden-tab', isUnder14); navBtns[we2Idx].style.display = isUnder14 ? 'none' : ''; }
+            if (navBtns[we3Idx]) { navBtns[we3Idx].classList.toggle('hidden-tab', isUnder14); navBtns[we3Idx].style.display = isUnder14 ? 'none' : ''; }
 
             // Other Marital Status textarea branch (matches official DS-160 tbxOtherMaritalStatus)
             const brOther = document.getElementById('br-otherMarital');
@@ -4120,6 +4148,10 @@
 
         // Event listeners for conditional branches
         document.getElementById('ddlAPP_MARITAL_STATUS').addEventListener('change', updatePageVisibility);
+        // DOB fields → recalculate age → hide/show Work/Education pages
+        document.getElementById('ddlDOBDay').addEventListener('change', updatePageVisibility);
+        document.getElementById('ddlDOBMonth').addEventListener('change', updatePageVisibility);
+        document.getElementById('tbxDOBYear').addEventListener('input', updatePageVisibility);
         document.getElementById('ddlWhoIsPaying').addEventListener('change', updatePayerBranch);
         document.getElementById('ddlSpouseAddressType').addEventListener('change', updateSpouseAddrBranch);
         document.getElementById('ddlPPT_TYPE').addEventListener('change', updatePptTypeBranch);
