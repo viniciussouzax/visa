@@ -166,11 +166,13 @@ ipcMain.handle('refresh-queue', async () => {
 function startAutomation() {
     try {
         const { QueueRunner } = require('./automation/queue');
+        console.log('[Main] Starting automation...');
         automationRunner = new QueueRunner(global.supabaseClient, null);
         automationRunner.start((status) => {
             mainWindow?.webContents.send('automation-status', status);
         });
+        console.log('[Main] Automation started successfully');
     } catch (e) {
-        console.error('Failed to start automation:', e);
+        console.error('[Main] Failed to start automation:', e);
     }
 }

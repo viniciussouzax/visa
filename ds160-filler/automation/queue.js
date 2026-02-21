@@ -35,11 +35,17 @@ class QueueRunner {
 
     triggerNow() {
         // Called when user clicks "Verificar fila agora"
+        console.log('[Queue] triggerNow() called');
         if (global.smartCheckForUpdates) global.smartCheckForUpdates();
         this._skipWait = true;
         if (this._countdownTimer) {
             clearInterval(this._countdownTimer);
             this._countdownTimer = null;
+        }
+        // Resolve the pending wait promise so the loop continues
+        if (this._resolveWait) {
+            this._resolveWait();
+            this._resolveWait = null;
         }
     }
 
@@ -56,6 +62,8 @@ class QueueRunner {
                 // Smart update check before each cycle
                 if (global.smartCheckForUpdates) global.smartCheckForUpdates();
 
+                console.log('[Queue] Checking for items...');
+
                 // 1. Fetch config
                 const config = await this._getConfig();
 
@@ -63,10 +71,13 @@ class QueueRunner {
                 const app = await this._claimNext();
 
                 if (!app) {
+                    console.log('[Queue] Queue empty, waiting', POLL_INTERVAL, 'seconds');
                     this.emit({ type: 'queue-empty', nextCheck: POLL_INTERVAL });
                     await this._waitWithCountdown(POLL_INTERVAL);
                     continue;
                 }
+
+                console.log('[Queue] Found item:', app.id, '- claiming...');
 
                 // 3. Fetch applicant data
                 const applicant = await this._getApplicant(app.applicant_id);
@@ -134,7 +145,7 @@ class QueueRunner {
         // ❌ Error — log it
         console.error(`[Queue] Error on ${applicant.full_name} (attempt ${currentRetry}):`, result.error);
 
-        await this._logError(app, applicant.full_name, result.error, result.stack, lastPage, result.field);
+        await this._logError(app, applicant, result.error, result.stack, lastPage, result.field, result.cause);
         await this._updateRetry(app.id, currentRetry, lastPage, result.error);
 
         this.consecutiveErrors++;
@@ -180,6 +191,7 @@ class QueueRunner {
         return new Promise(resolve => {
             this._countdown = seconds;
             this._skipWait = false;
+            this._resolveWait = resolve; // Store so triggerNow() can resolve
 
             this._countdownTimer = setInterval(() => {
                 if (!this.running || this._skipWait) {
@@ -330,20 +342,23 @@ class QueueRunner {
     // ==============================================================
     // ERROR LOGGING (to Supabase for developer monitoring)
     // ==============================================================
-    async _logError(app, applicantName, errorMessage, errorStack, pageName, fieldName) {
+    async _logError(app, applicant, errorMessage, errorStack, pageName, fieldName, errorCause) {
         try {
             await this.supabase
                 .from('error_logs')
                 .insert({
                     worker_id: this.workerId,
                     application_id: app?.id || null,
-                    applicant_name: applicantName || null,
+                    applicant_name: (typeof applicant === 'string') ? applicant : (applicant?.full_name || null),
                     error_message: errorMessage,
                     error_stack: errorStack || null,
                     page_name: pageName || null,
                     retry_number: app?.retry_count ? (app.retry_count + 1) : 1,
                     software_version: global.softwareVersion || 'dev',
-                    field_name: fieldName || null
+                    field_name: fieldName || null,
+                    error_cause: errorCause || 'unknown',
+                    user_id: (typeof applicant === 'object') ? (applicant?.user_id || null) : null,
+                    company_id: (typeof applicant === 'object') ? (applicant?.company_id || null) : null
                 });
         } catch (e) {
             console.warn('Failed to log error to Supabase:', e.message);

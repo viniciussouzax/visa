@@ -35,6 +35,8 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
     console.log(`[Filler] Profile: ${applicant.full_name} | Fields: ${fieldMap.length}`);
 
     let browser, page;
+    const visited = []; // Declared outside try so catch can access it
+
     try {
         // Launch Playwright's OWN Chromium (not user's Chrome!)
         browser = await chromium.launch({
@@ -151,7 +153,6 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
         // ============================================================
         let pageCount = 0;
         const MAX_PAGES = 30;
-        const visited = [];
         let lastUrl = '';
         let stuckCount = 0;
 
@@ -212,12 +213,26 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
 
     } catch (e) {
         console.error('[Filler] Error:', e);
-        // Try to extract field name from error message (e.g. "Timeout filling #ctl00_field")
+        // Extract field name
         let field = null;
         const selectorMatch = e.message?.match(/#([\w_]+)/);
         if (selectorMatch) field = selectorMatch[1];
         const currentPage = visited.length > 0 ? visited[visited.length - 1] : 'Unknown';
-        return { success: false, error: e.message, stack: e.stack, field: field, page: currentPage };
+
+        // Classify error cause
+        let cause = 'unknown';
+        const msg = (e.message || '').toLowerCase();
+        if (msg.includes('browser has been closed') || msg.includes('target closed') || msg.includes('context or browser')) {
+            cause = 'browser_closed';
+        } else if (msg.includes('net::err_') || msg.includes('network') || msg.includes('econnrefused') || msg.includes('enotfound')) {
+            cause = 'network_error';
+        } else if (msg.includes('timeout') || msg.includes('waiting for')) {
+            cause = 'timeout';
+        } else if (field) {
+            cause = 'field_error';
+        }
+
+        return { success: false, error: e.message, stack: e.stack, field, page: currentPage, cause };
     } finally {
         if (browser) await browser.close().catch(() => { });
     }

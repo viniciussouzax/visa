@@ -652,6 +652,7 @@
                                         <th>Solicitante</th>
                                         <th>Página</th>
                                         <th>Erro</th>
+                                        <th>Causa</th>
                                         <th>Tentativa</th>
                                         <th>Versão</th>
                                     </tr>
@@ -858,22 +859,38 @@
                 .order('created_at', { ascending: false })
                 .limit(50);
 
+            const causeLabels = {
+                browser_closed: '🔴 Browser fechado',
+                network_error: '🌐 Internet',
+                timeout: '⏱ Timeout',
+                field_error: '📝 Campo',
+                unknown: '❓ Desconhecido'
+            };
+            const causeBg = {
+                browser_closed: '#7f1d1d',
+                network_error: '#713f12',
+                timeout: '#1e3a5f',
+                field_error: '#4a1d7a',
+                unknown: '#334155'
+            };
+
             $('logs-list').innerHTML = (data || []).map((l, i) => `
         <tr style="cursor:pointer" onclick="document.getElementById('stack-${i}').style.display = document.getElementById('stack-${i}').style.display === 'none' ? 'table-row' : 'none'">
             <td style="font-size:11px;white-space:nowrap">${new Date(l.created_at).toLocaleString('pt-BR')}</td>
             <td>${l.applicant_name || '—'}</td>
             <td><span class="badge badge-queued">${l.page_name || '—'}</span></td>
-            <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis">${l.error_message || '—'}</td>
+            <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis">${l.error_message || '—'}</td>
+            <td><span style="background:${causeBg[l.error_cause] || causeBg.unknown};padding:2px 8px;border-radius:6px;font-size:11px">${causeLabels[l.error_cause] || causeLabels.unknown}</span></td>
             <td>${l.retry_number || '—'}</td>
             <td style="font-size:11px;color:#888">${l.software_version || '—'}</td>
         </tr>
         <tr id="stack-${i}" style="display:none">
-            <td colspan="6" style="background:#0f172a;padding:12px">
+            <td colspan="7" style="background:#0f172a;padding:12px">
                 ${l.field_name ? '<strong style="color:#e94560">Campo:</strong> ' + l.field_name + '<br><br>' : ''}
                 <pre style="font-size:11px;color:#94a3b8;white-space:pre-wrap;margin:0;max-height:200px;overflow-y:auto">${l.error_stack || 'Sem stack trace'}</pre>
             </td>
         </tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Nenhum erro registrado 🎉</td></tr>';
+    `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Nenhum erro registrado 🎉</td></tr>';
         }
 
         // ============================================================
