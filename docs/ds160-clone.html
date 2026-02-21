@@ -417,6 +417,59 @@
         .section-disabled span {
             color: #777 !important;
         }
+
+        /* Validação de campos */
+        .fg.has-error input,
+        .fg.has-error select,
+        .fg.has-error textarea {
+            border-color: #e53935 !important;
+            box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.15);
+        }
+
+        .fg.has-error>label:first-child {
+            color: #e53935;
+        }
+
+        .validation-msg {
+            color: #e53935;
+            font-size: 12px;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .validation-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #e53935;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: fadeInOut 4s ease forwards;
+        }
+
+        @keyframes fadeInOut {
+            0% {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            10% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -2383,6 +2436,8 @@
         let savedApplicationId = null;
 
         function nextPage() {
+            // Validate current page before advancing
+            if (!validateCurrentPage()) return;
             // Intercept leaving Personal1 (index 1) to save applicant + application
             if (currentPage === 1 && !savedApplicantId) {
                 saveOnPersonal1Exit();
@@ -2390,6 +2445,151 @@
             for (let i = currentPage + 1; i < PAGES.length; i++) {
                 if (isPageVisible(i)) { showPage(i); return; }
             }
+        }
+
+        // ===== VALIDATION =====
+        function showToast(msg) {
+            const existing = document.querySelector('.validation-toast');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.className = 'validation-toast';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function clearErrors(page) {
+            page.querySelectorAll('.fg.has-error').forEach(fg => fg.classList.remove('has-error'));
+            page.querySelectorAll('.validation-msg').forEach(m => m.remove());
+        }
+
+        function markError(el, msg) {
+            const fg = el.closest('.fg');
+            if (fg && !fg.classList.contains('has-error')) {
+                fg.classList.add('has-error');
+                const span = document.createElement('span');
+                span.className = 'validation-msg';
+                span.textContent = msg;
+                fg.appendChild(span);
+            }
+        }
+
+        function val(id) { return (document.getElementById(id)?.value || '').trim(); }
+        function radioChecked(name) { return document.querySelector(`input[name="${name}"]:checked`)?.value; }
+
+        function validateCurrentPage() {
+            const page = PAGES[currentPage];
+            if (!page) return true;
+            clearErrors(page);
+            const pageId = page.id;
+            let errors = 0;
+
+            function reqInput(id, msg) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                // Skip disabled or hidden fields
+                if (el.disabled || el.closest('.br:not(.open)') || el.closest('.section-disabled')) return;
+                if (!el.value || !el.value.trim()) { markError(el, msg); errors++; }
+            }
+            function reqSelect(id, msg) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (el.disabled || el.closest('.br:not(.open)') || el.closest('.section-disabled')) return;
+                if (!el.value) { markError(el, msg); errors++; }
+            }
+            function reqRadio(name, msg) {
+                const checked = document.querySelector(`input[name="${name}"]:checked`);
+                if (!checked) {
+                    const first = document.querySelector(`input[name="${name}"]`);
+                    if (first && !first.disabled && !first.closest('.section-disabled')) {
+                        markError(first, msg); errors++;
+                    }
+                }
+            }
+
+            // ===== Start =====
+            if (pageId === 'pg-Start') {
+                reqSelect('ddlLocation', 'Selecione a Embaixada / Consulado');
+                const mode = radioChecked('rblFormMode');
+                if (mode === 'group') {
+                    reqInput('txtGroupEmail', 'Informe o email do solicitante principal');
+                }
+            }
+
+            // ===== Personal 1 =====
+            if (pageId === 'pg-Personal1') {
+                reqInput('tbxAPP_SURNAME', 'Sobrenome é obrigatório');
+                reqInput('tbxAPP_GIVEN_NAME', 'Nome é obrigatório');
+                reqRadio('rblOtherNames', 'Selecione Sim ou Não');
+                reqSelect('ddlAPP_GENDER', 'Selecione o sexo');
+                reqSelect('ddlAPP_MARITAL_STATUS', 'Selecione o estado civil');
+                reqSelect('ddlDOBDay', 'Selecione o dia');
+                reqSelect('ddlDOBMonth', 'Selecione o mês');
+                reqInput('tbxDOBYear', 'Informe o ano de nascimento');
+                reqInput('tbxAPP_POB_CITY', 'Informe a cidade de nascimento');
+                reqSelect('ddlAPP_POB_CNTRY', 'Selecione o país de nascimento');
+                // Validate year format
+                const year = val('tbxDOBYear');
+                if (year && (year.length !== 4 || isNaN(year))) {
+                    markError(document.getElementById('tbxDOBYear'), 'Ano deve ter 4 dígitos'); errors++;
+                }
+                // If other names = Y, validate at least one entry
+                if (radioChecked('rblOtherNames') === 'Y') {
+                    const entries = page.querySelectorAll('#br-rblOtherNames .entry');
+                    entries.forEach(entry => {
+                        const sn = entry.querySelector('[id*="tbxSURNAME"]');
+                        const gn = entry.querySelector('[id*="tbxGIVEN_NAME"]');
+                        if (sn && !sn.value.trim()) { markError(sn, 'Informe o outro sobrenome'); errors++; }
+                        if (gn && !gn.value.trim()) { markError(gn, 'Informe o outro nome'); errors++; }
+                    });
+                }
+                // Marital status = O -> explain required
+                if (val('ddlAPP_MARITAL_STATUS') === 'O') {
+                    reqInput('tbxOtherMaritalStatus', 'Explique o estado civil');
+                }
+            }
+
+            // ===== Personal 2 =====
+            if (pageId === 'pg-Personal2') {
+                reqSelect('ddlAPP_NATL', 'Selecione a nacionalidade');
+                reqRadio('rblAPP_OTH_NATL_IND', 'Selecione Sim ou Não');
+                reqRadio('rblPermResOtherCntryInd', 'Selecione Sim ou Não');
+                // National ID: required unless N/A checked
+                const nidNA = document.getElementById('cbexAPP_NATIONAL_ID_NA');
+                if (!nidNA?.checked) {
+                    reqInput('tbxAPP_NATIONAL_ID', 'Informe o CPF ou marque Não se Aplica');
+                }
+                // If other nationality = Y, validate entries
+                if (radioChecked('rblAPP_OTH_NATL_IND') === 'Y') {
+                    const entries = page.querySelectorAll('#br-rblAPP_OTH_NATL_IND .entry');
+                    entries.forEach(entry => {
+                        const dd = entry.querySelector('[id*="ddlOTHER_NATL"]');
+                        if (dd && !dd.value) { markError(dd, 'Selecione a outra nacionalidade'); errors++; }
+                        const pptRadio = entry.querySelector('[name*="rblOTHER_PPT_IND"]:checked');
+                        if (!pptRadio) {
+                            const first = entry.querySelector('[name*="rblOTHER_PPT_IND"]');
+                            if (first) { markError(first, 'Informe se possui passaporte'); errors++; }
+                        }
+                    });
+                }
+                // If permanent resident = Y, validate entries
+                if (radioChecked('rblPermResOtherCntryInd') === 'Y') {
+                    const entries = page.querySelectorAll('#br-rblPermResOtherCntryInd .entry');
+                    entries.forEach(entry => {
+                        const dd = entry.querySelector('[id*="ddlOthPermResCntry"]');
+                        if (dd && !dd.value) { markError(dd, 'Selecione o país'); errors++; }
+                    });
+                }
+            }
+
+            if (errors > 0) {
+                showToast(`⚠ ${errors} campo(s) obrigatório(s) não preenchido(s)`);
+                // Scroll to first error
+                const firstErr = page.querySelector('.fg.has-error');
+                if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return false;
+            }
+            return true;
         }
 
         async function saveOnPersonal1Exit() {
