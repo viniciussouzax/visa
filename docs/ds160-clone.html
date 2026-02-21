@@ -816,27 +816,42 @@
                     placeholder="Ex: 12345 ou 12345-1234"></div>
         </div>
         <div class="section">
-            <h3>Quem Pagará pela Viagem</h3>
-            <div class="fg"><label>Quem pagará pela sua viagem? *</label><select id="ddlWhoIsPaying">
+            <h3>Quem Pagará pela Viagem (Person/Entity Paying for Your Trip)</h3>
+            <div class="fg"><label>Pessoa/Entidade que Pagará pela Viagem *</label>
+                <select id="ddlWhoIsPaying" onchange="updatePayerBranch()">
                     <option value="">- Selecione -</option>
-                    <option value="S">Eu Mesmo(a) (Self)</option>
-                    <option value="O">Outra Pessoa (Other Person)</option>
-                    <option value="C">Outra Empresa/Organização (Other Company)</option>
-                    <option value="P">Meu Empregador Atual (Present Employer)</option>
-                    <option value="H">Peticionário nos EUA (U.S. Petitioner)</option>
-                </select></div>
+                    <option value="SELF">O Próprio (Self)</option>
+                    <option value="USP">Peticionário nos Estados Unidos (U.S. Petitioner)</option>
+                    <option value="OTH">Outra Pessoa (Other Person)</option>
+                    <option value="COM">Outra Companhia/Organização (Other Company/Organization)</option>
+                    <option value="EMP">Present Employer</option>
+                    <option value="USE">Employer in the U.S.</option>
+                </select>
+            </div>
+
+            <!-- === Outra Pessoa === -->
             <div class="br" id="br-payerPerson">
-                <div class="fg"><label>Sobrenome do Pagador</label><input type="text" id="tbxPayerSurname"
-                        maxlength="33" placeholder="Sobrenome da pessoa que pagará"></div>
-                <div class="fg"><label>Nome do Pagador</label><input type="text" id="tbxPayerGivenName" maxlength="33"
-                        placeholder="Nome da pessoa que pagará"></div>
-                <div class="fg"><label>Telefone do Pagador</label><input type="text" id="tbxPayerPhone" maxlength="20"
-                        placeholder="Ex: 011-5511999998888"></div>
-                <div class="fg"><label>Email do Pagador</label><input type="text" id="tbxPAYER_EMAIL_ADDR"
-                        placeholder="email@exemplo.com"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                            id="cbxDNAPAYER_EMAIL_ADDR_NA" data-target="tbxPAYER_EMAIL_ADDR">
-                        Não se Aplica</label></div>
-                <div class="fg"><label>Relação com o Pagador</label><select id="ddlPayerRelationship">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações:</p>
+                <div class="fg"><label>Sobrenome da Pessoa que Pagará (Surnames of Person Paying for Trip)</label>
+                    <input type="text" id="tbxPayerSurname" maxlength="33" placeholder="Ex: FERNANDEZ GARCIA">
+                </div>
+                <div class="fg"><label>Nome da Pessoa que Pagará (Given Names of Person Paying for Trip)</label>
+                    <input type="text" id="tbxPayerGivenName" maxlength="33" placeholder="Ex: JUAN MIGUEL">
+                </div>
+                <div class="fg"><label>Telefone (Telephone Number)</label>
+                    <input type="text" id="tbxPayerPhone" maxlength="20" placeholder="Ex: 011-5511999998888">
+                </div>
+                <div class="fg"><label>Email (Email Address)</label>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="tbxPAYER_EMAIL_ADDR" placeholder="email@exemplo.com"
+                            style="flex:1;min-width:200px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+                        <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPAYER_EMAIL_ADDR_NA"
+                                data-target="tbxPAYER_EMAIL_ADDR"> Não se Aplica</label>
+                    </div>
+                    <small style="color:#888">Ex: emailaddress@example.com</small>
+                </div>
+                <div class="fg"><label>Relação com Você (Relationship to You)</label>
+                    <select id="ddlPayerRelationship">
                         <option value="">- Selecione -</option>
                         <option value="C">Filho(a) (Child)</option>
                         <option value="P">Pai / Mãe (Parent)</option>
@@ -844,44 +859,91 @@
                         <option value="R">Outro Parente (Other Relative)</option>
                         <option value="F">Amigo(a) (Friend)</option>
                         <option value="O">Outro (Other)</option>
-                    </select></div>
-                <div class="fg"><label>O pagador reside no mesmo endereço que você?</label><span
-                        class="rg"><label><input type="radio" name="rblPayerAddrSameAsInd" value="Y">
-                            Sim</label><label><input type="radio" name="rblPayerAddrSameAsInd" value="N"
-                                data-branch="payerAddr"> Não</label></span></div>
+                    </select>
+                </div>
+                <div class="fg"><label>O endereço da pessoa que pagará pela viagem é o mesmo que o seu endereço
+                        residencial ou de correspondência?</label>
+                    <span class="rg"><label><input type="radio" name="rblPayerAddrSameAsInd" value="Y"
+                                data-branch="payerAddr"> Sim</label>
+                        <label><input type="radio" name="rblPayerAddrSameAsInd" value="N" data-branch="payerAddr">
+                            Não</label></span>
+                </div>
                 <div class="br" id="br-payerAddr">
-                    <div class="fg"><label>Rua 1</label><input type="text" id="tbxPayerStreetAddress1"
-                            placeholder="Endereço linha 1"></div>
-                    <div class="fg"><label>Rua 2</label><input type="text" id="tbxPayerStreetAddress2"
-                            placeholder="Complemento"></div>
-                    <div class="fg"><label>Cidade</label><input type="text" id="tbxPayerCity" placeholder="Cidade">
+                    <p style="color:#666;font-size:13px;margin-bottom:10px">Endereço da Pessoa que Pagará (Address of
+                        Person Paying)</p>
+                    <div class="fg"><label>Endereço - Linha 1 (Street Address Line 1)</label>
+                        <input type="text" id="tbxPayerStreetAddress1" placeholder="Endereço linha 1" maxlength="40">
                     </div>
-                    <div class="fg"><label>Estado</label><input type="text" id="tbxPayerStateProvince"
-                            placeholder="Estado/Província"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                                id="cbxDNAPayerStateProvince" data-target="tbxPayerStateProvince"> N/A</label></div>
-                    <div class="fg"><label>CEP</label><input type="text" id="tbxPayerPostalZIPCode"
-                            placeholder="CEP"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                                id="cbxDNAPayerPostalZIPCode" data-target="tbxPayerPostalZIPCode"> N/A</label></div>
-                    <div class="fg"><label>País</label><select id="ddlPayerCountry" class="sel-country"></select></div>
+                    <div class="fg"><label>Endereço - Linha 2 (Street Address Line 2) <em>*Opcional</em></label>
+                        <input type="text" id="tbxPayerStreetAddress2" placeholder="Complemento" maxlength="40">
+                    </div>
+                    <div class="fg"><label>Cidade (City)</label>
+                        <input type="text" id="tbxPayerCity" placeholder="Cidade">
+                    </div>
+                    <div class="fg"><label>Estado / Província (State/Province)</label>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                            <input type="text" id="tbxPayerStateProvince" placeholder="Estado/Província"
+                                style="flex:1;min-width:180px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+                            <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPayerStateProvince"
+                                    data-target="tbxPayerStateProvince"> Não se Aplica</label>
+                        </div>
+                    </div>
+                    <div class="fg"><label>CEP (Postal Zone/ZIP Code)</label>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                            <input type="text" id="tbxPayerPostalZIPCode" placeholder="CEP"
+                                style="flex:1;min-width:180px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+                            <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPayerPostalZIPCode"
+                                    data-target="tbxPayerPostalZIPCode"> Não se Aplica</label>
+                        </div>
+                    </div>
+                    <div class="fg"><label>País / Região (Country/Region)</label>
+                        <select id="ddlPayerCountry" class="sel-country"></select>
+                    </div>
                 </div>
             </div>
+
+            <!-- === Empresa / Organização === -->
             <div class="br" id="br-payerCompany">
-                <div class="fg"><label>Nome da Empresa / Organização</label><input type="text" id="tbxPayingCompany"
-                        placeholder="Nome da empresa ou organização"></div>
-                <div class="fg"><label>Telefone da Empresa</label><input type="text" id="tbxPayerPhoneC"
-                        placeholder="Telefone da empresa"></div>
-                <div class="fg"><label>Sua Relação com a Empresa</label><input type="text" id="tbxCompanyRelation"
-                        placeholder="Ex: Funcionário, Cliente"></div>
-                <div class="fg"><label>Rua 1</label><input type="text" id="tbxPayerStreetAddress1C"
-                        placeholder="Endereço da empresa"></div>
-                <div class="fg"><label>Rua 2</label><input type="text" id="tbxPayerStreetAddress2C"
-                        placeholder="Complemento"></div>
-                <div class="fg"><label>Cidade</label><input type="text" id="tbxPayerCityC" placeholder="Cidade"></div>
-                <div class="fg"><label>Estado</label><input type="text" id="tbxPayerStateProvinceC"
-                        placeholder="Estado/Província"></div>
-                <div class="fg"><label>CEP</label><input type="text" id="tbxPayerPostalZIPCodeC" placeholder="CEP">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações:</p>
+                <div class="fg"><label>Nome da Empresa / Organização (Company/Organization Name)</label>
+                    <input type="text" id="tbxPayingCompany" placeholder="Nome da empresa ou organização">
                 </div>
-                <div class="fg"><label>País</label><select id="ddlPayerCountryC" class="sel-country"></select></div>
+                <div class="fg"><label>Telefone da Empresa (Telephone Number)</label>
+                    <input type="text" id="tbxPayerPhoneC" placeholder="Telefone da empresa">
+                </div>
+                <div class="fg"><label>Sua Relação com a Empresa (Relationship to You)</label>
+                    <input type="text" id="tbxCompanyRelation" placeholder="Ex: Funcionário, Cliente">
+                </div>
+                <p style="color:#666;font-size:13px;margin:10px 0">Endereço da Empresa (Address of Company/Organization
+                    Paying)</p>
+                <div class="fg"><label>Endereço - Linha 1 (Street Address Line 1)</label>
+                    <input type="text" id="tbxPayerStreetAddress1C" placeholder="Endereço da empresa" maxlength="40">
+                </div>
+                <div class="fg"><label>Endereço - Linha 2 (Street Address Line 2) <em>*Opcional</em></label>
+                    <input type="text" id="tbxPayerStreetAddress2C" placeholder="Complemento" maxlength="40">
+                </div>
+                <div class="fg"><label>Cidade (City)</label>
+                    <input type="text" id="tbxPayerCityC" placeholder="Cidade">
+                </div>
+                <div class="fg"><label>Estado / Província (State/Province)</label>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="tbxPayerStateProvinceC" placeholder="Estado/Província"
+                            style="flex:1;min-width:180px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+                        <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPayerStateProvinceC"
+                                data-target="tbxPayerStateProvinceC"> Não se Aplica</label>
+                    </div>
+                </div>
+                <div class="fg"><label>CEP (Postal Zone/ZIP Code)</label>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="tbxPayerPostalZIPCodeC" placeholder="CEP"
+                            style="flex:1;min-width:180px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+                        <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPayerPostalZIPCodeC"
+                                data-target="tbxPayerPostalZIPCodeC"> Não se Aplica</label>
+                    </div>
+                </div>
+                <div class="fg"><label>País / Região (Country/Region)</label>
+                    <select id="ddlPayerCountryC" class="sel-country"></select>
+                </div>
             </div>
         </div>
         <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
@@ -2441,6 +2503,16 @@
             { v: 'HRE', t: 'ZIMBABWE, HARARE' }
         ];
         document.querySelectorAll('.sel-location').forEach(el => populateSelect(el, LOCATIONS));
+
+        // ===== PAYER BRANCH CONTROL =====
+        function updatePayerBranch() {
+            const v = document.getElementById('ddlWhoIsPaying')?.value || '';
+            const person = document.getElementById('br-payerPerson');
+            const company = document.getElementById('br-payerCompany');
+            if (person) person.style.display = (v === 'OTH') ? '' : 'none';
+            if (company) company.style.display = (v === 'COM') ? '' : 'none';
+        }
+        updatePayerBranch();
 
         // ===== PAGES & NAVIGATION =====
         const PAGES = ['Start', 'Personal1', 'Personal2', 'Travel', 'TravelCompanions', 'PreviousUSTravel',
