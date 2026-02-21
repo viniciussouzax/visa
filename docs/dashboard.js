@@ -534,6 +534,7 @@ async function openAgencyDetail(companyId) {
             <div>
                 <h2 style="font-size:22px;font-weight:700;margin-bottom:4px">${company.name}</h2>
                 <div style="font-size:11px;color:var(--text-muted)">ID: ${company.id}</div>
+                ${company.cnpj ? `<div style="font-size:12px;color:var(--text-muted);margin-top:4px">CNPJ: ${company.cnpj}</div>` : ''}
             </div>
             <button onclick="toggleCompany('${company.id}', ${!company.active})" 
                 style="font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;background:${company.active !== false ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)'};color:${company.active !== false ? '#22c55e' : '#ef4444'};border:1px solid ${company.active !== false ? '#22c55e44' : '#ef444444'}">
@@ -573,12 +574,16 @@ async function openAgencyDetail(companyId) {
 
 async function createAgency() {
     const name = $('new-agency-name').value.trim();
+    const cnpj = $('new-agency-cnpj').value.trim();
+    const active = $('new-agency-active').checked;
     if (!name) { toast('Informe o nome', 'error'); return; }
-    const { error } = await sb.from('companies').insert({ name, active: true });
+    const { error } = await sb.from('companies').insert({ name, cnpj: cnpj || null, active });
     if (error) { toast('Erro: ' + error.message, 'error'); return; }
     $('new-agency-name').value = '';
+    $('new-agency-cnpj').value = '';
+    $('new-agency-active').checked = true;
     $('modal-create-agency').classList.add('hidden');
-    toast('Agência criada!', 'success');
+    toast('Organização criada!', 'success');
     loadAgencies();
 }
 

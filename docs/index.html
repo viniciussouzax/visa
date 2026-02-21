@@ -1108,7 +1108,7 @@
                             style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
                             <button class="master-tab active" data-master-tab="agencies"
                                 style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">🏢
-                                Agências</button>
+                                Organizações</button>
                             <button class="master-tab" data-master-tab="integrations"
                                 style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">🔌
                                 Integrações</button>
@@ -1121,10 +1121,10 @@
                         <div class="master-sub active" id="master-sub-agencies">
                             <div
                                 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-                                <h3 style="font-size:16px;font-weight:700">🏢 Agências Cadastradas</h3>
+                                <h3 style="font-size:16px;font-weight:700">🏢 Organizações Cadastradas</h3>
                                 <button class="btn-sm btn-primary-sm"
                                     onclick="document.getElementById('modal-create-agency').classList.remove('hidden')"
-                                    style="padding:8px 18px;font-size:13px">+ Nova Agência</button>
+                                    style="padding:8px 18px;font-size:13px">+ Nova Organização</button>
                             </div>
                             <div class="config-card" style="padding:0;overflow:hidden">
                                 <div id="agencies-list"></div>
@@ -1200,20 +1200,34 @@
     <!-- Modal: Create Agency -->
     <div class="modal-overlay hidden" id="modal-create-agency">
         <div class="modal">
-            <h2>Nova Agência</h2>
-            <div style="margin:16px 0">
-                <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Nome da
-                    Empresa</label>
-                <input type="text" id="new-agency-name" placeholder="Ex: Agência XYZ"
-                    style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box">
+            <h2>Nova Organização</h2>
+            <div style="margin:16px 0;display:grid;gap:12px">
+                <div>
+                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Nome da
+                        Empresa</label>
+                    <input type="text" id="new-agency-name" placeholder="Ex: Assessoria XYZ"
+                        style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">CNPJ</label>
+                    <input type="text" id="new-agency-cnpj" placeholder="00.000.000/0000-00"
+                        style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box">
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 0">
+                    <label style="font-size:12px;color:var(--text-muted)">Status inicial:</label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+                        <input type="checkbox" id="new-agency-active" checked style="accent-color:var(--accent)"> Ativa
+                    </label>
+                </div>
             </div>
             <div class="modal-actions">
                 <button style="background:var(--surface-hover);color:var(--text)"
                     onclick="document.getElementById('modal-create-agency').classList.add('hidden')">Cancelar</button>
-                <button id="btn-create-agency" style="background:var(--accent);color:#fff">Criar Agência</button>
+                <button id="btn-create-agency" style="background:var(--accent);color:#fff">Criar Organização</button>
             </div>
         </div>
     </div>
+
 
     <!-- Modal: Add Assessor -->
     <div class="modal-overlay hidden" id="modal-add-assessor">
