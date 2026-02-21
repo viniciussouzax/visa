@@ -2,7 +2,7 @@
 // Features: countdown timer, immediate refresh, error logging to Supabase
 const { fillApplication } = require('./filler');
 
-const POLL_INTERVAL = 30; // seconds between checks
+const POLL_INTERVAL = 1800; // 30 minutes between checks
 
 class QueueRunner {
     constructor(supabase, captchaMode) {
@@ -121,10 +121,14 @@ class QueueRunner {
                 }
 
                 this._countdown--;
+                const mins = Math.floor(this._countdown / 60);
+                const secs = this._countdown % 60;
+                const display = mins > 0 ? `${mins}m${secs.toString().padStart(2, '0')}s` : `${secs}s`;
                 this.emit({
                     type: 'waiting',
                     countdown: this._countdown,
-                    message: `Próxima verificação em ${this._countdown}s`
+                    display: display,
+                    message: `Próxima verificação em ${display}`
                 });
 
                 if (this._countdown <= 0) {

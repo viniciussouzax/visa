@@ -1,7 +1,29 @@
-// Renderer logic for DS-160 Filler UI
+// Renderer logic for DS-160 Filler UI — Simplified
 const $ = id => document.getElementById(id);
 
-let isRunning = false;
+// ============================================================
+// AUTO-LOGIN: Try saved session on load
+// ============================================================
+(async () => {
+    const session = await window.api.getSavedSession();
+    if (session && session.email && session.password) {
+        $('email').value = session.email;
+        $('password').value = session.password;
+        $('remember').checked = true;
+        // Auto-login
+        $('btn-login').textContent = 'Conectando...';
+        $('btn-login').disabled = true;
+        const result = await window.api.login(session.email, session.password);
+        if (result.success) {
+            showMain(result.user);
+            return;
+        }
+        // Session expired, show login
+        $('btn-login').textContent = 'Entrar';
+        $('btn-login').disabled = false;
+        $('login-error').textContent = 'Sessão expirada. Faça login novamente.';
+    }
+})();
 
 // ============================================================
 // LOGIN
@@ -16,10 +38,7 @@ $('btn-login').addEventListener('click', async () => {
     const result = await window.api.login(email, password);
 
     if (result.success) {
-        $('login-section').style.display = 'none';
-        $('main-section').style.display = 'flex';
-        log(`✅ Logado como ${result.user}`);
-        refreshQueue();
+        showMain(result.user);
     } else {
         $('login-error').textContent = result.error;
         $('btn-login').disabled = false;
@@ -27,68 +46,58 @@ $('btn-login').addEventListener('click', async () => {
     }
 });
 
-// Enter key on password
 $('password').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-login').click(); });
 
+function showMain(userEmail) {
+    $('login-section').style.display = 'none';
+    $('main-section').style.display = 'flex';
+    $('user-email').textContent = userEmail;
+    log('✅ Conectado — automação ativa');
+    refreshQueue();
+}
+
 // ============================================================
-// QUEUE & AUTOMATION
+// LOGOUT
+// ============================================================
+$('btn-logout').addEventListener('click', async () => {
+    await window.api.logout();
+    $('main-section').style.display = 'none';
+    $('login-section').style.display = 'flex';
+    $('email').value = '';
+    $('password').value = '';
+    $('login-error').textContent = '';
+    $('btn-login').disabled = false;
+    $('btn-login').textContent = 'Entrar';
+    $('log').textContent = '';
+});
+
+// ============================================================
+// REFRESH
 // ============================================================
 $('btn-refresh').addEventListener('click', async () => {
-    if (isRunning) {
-        // Trigger immediate check + process
-        await window.api.refreshQueue();
-        log('⚡ Verificação imediata solicitada');
-        hideTimer();
-    } else {
-        refreshQueue();
-    }
-});
-
-$('btn-start').addEventListener('click', async () => {
-    const result = await window.api.startAutomation();
-    if (result.success) {
-        isRunning = true;
-        $('btn-start').style.display = 'none';
-        $('btn-stop').style.display = 'block';
-        setStatus('running', 'Processando fila...');
-        log('▶ Automação iniciada');
-    } else {
-        log('❌ Erro: ' + result.error);
-    }
-});
-
-$('btn-stop').addEventListener('click', async () => {
-    await window.api.stopAutomation();
-    isRunning = false;
-    $('btn-start').style.display = 'none'; // show btn-row
-    document.querySelector('.btn-row').style.display = 'flex';
-    $('btn-stop').style.display = 'none';
-    setStatus('stopped', 'Parado');
+    await window.api.refreshQueue();
+    log('⚡ Verificação imediata');
     hideTimer();
-    log('⏹ Automação parada');
+    refreshQueue();
 });
 
 async function refreshQueue() {
     const result = await window.api.fetchQueue();
     if (result.success) {
         $('queue-count').textContent = `${result.queue.length} pendentes`;
-        log(`↻ Fila atualizada: ${result.queue.length} itens`);
-    } else {
-        log('❌ Erro ao buscar fila: ' + result.error);
     }
 }
 
 // ============================================================
 // TIMER
 // ============================================================
-function showTimer(seconds) {
+function showTimer(display) {
     $('timer-row').style.display = 'flex';
-    $('timer-text').textContent = `${seconds}s`;
+    $('timer-text').textContent = typeof display === 'number' ? `${display}s` : display;
 }
 
 function hideTimer() {
     $('timer-row').style.display = 'none';
-    $('timer-text').textContent = '—';
 }
 
 // ============================================================
@@ -106,17 +115,16 @@ window.api.onStatus((status) => {
         log(`✅ ${status.applicantName} concluído`);
         refreshQueue();
     } else if (status.type === 'error') {
-        log(`❌ Erro: ${status.applicantName} — ${status.error}`);
-    } else if (status.type === 'idle') {
-        setStatus('idle', 'Aguardando fila...');
+        log(`❌ ${status.applicantName} — ${status.error}`);
+    } else if (status.type === 'queue-empty') {
+        setStatus('idle', 'Aguardando novos itens');
+        $('queue-count').textContent = '0 pendentes';
         $('current-task').textContent = '—';
         $('current-page').textContent = '—';
-    } else if (status.type === 'queue-empty') {
-        setStatus('idle', 'Fila vazia — aguardando');
-        $('queue-count').textContent = '0 pendentes';
         if (status.nextCheck) showTimer(status.nextCheck);
     } else if (status.type === 'waiting') {
-        showTimer(status.countdown);
+        const display = status.display || `${status.countdown}s`;
+        showTimer(display);
     } else if (status.type === 'checking') {
         setStatus('running', 'Verificando fila...');
         hideTimer();

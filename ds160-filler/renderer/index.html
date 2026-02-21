@@ -36,7 +36,7 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
 
         /* Login Section */
@@ -50,6 +50,7 @@
             display: none;
             flex-direction: column;
             gap: 14px;
+            flex: 1;
         }
 
         label {
@@ -75,6 +76,18 @@
             border-color: #e94560;
         }
 
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            accent-color: #e94560;
+        }
+
         button {
             padding: 10px 20px;
             border-radius: 8px;
@@ -83,7 +96,6 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
@@ -97,15 +109,14 @@
             box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
         }
 
-        .btn-secondary {
+        .btn-refresh {
             background: #16213e;
             color: #e94560;
             border: 1px solid #e94560;
         }
 
-        .btn-danger {
-            background: #c0392b;
-            color: white;
+        .btn-refresh:hover {
+            background: #1e293b;
         }
 
         /* Status */
@@ -121,6 +132,10 @@
             justify-content: space-between;
             margin-bottom: 8px;
             font-size: 13px;
+        }
+
+        .status-row:last-child {
+            margin-bottom: 0;
         }
 
         .status-label {
@@ -145,36 +160,36 @@
 
         .dot-yellow {
             background: #f39c12;
-        }
-
-        .dot-red {
-            background: #e74c3c;
+            animation: pulse-dot 1.5s infinite;
         }
 
         .dot-gray {
             background: #666;
         }
 
-        /* Captcha toggle */
-        .captcha-toggle {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            background: #16213e;
-            padding: 10px 14px;
+        .dot-red {
+            background: #e74c3c;
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        .timer-badge {
+            background: rgba(233, 69, 96, 0.15);
+            color: #e94560;
+            padding: 2px 8px;
             border-radius: 10px;
-            border: 1px solid #333;
-        }
-
-        .captcha-toggle label {
-            color: #eee;
-            margin: 0;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        .captcha-toggle input[type="radio"] {
-            accent-color: #e94560;
+            font-size: 12px;
+            font-weight: 600;
         }
 
         .error {
@@ -187,40 +202,53 @@
             font-size: 11px;
             color: #666;
             margin-top: auto;
-            max-height: 80px;
+            max-height: 100px;
             overflow-y: auto;
             font-family: monospace;
+            line-height: 1.5;
         }
 
-        .timer-badge {
-            background: rgba(233, 69, 96, 0.15);
-            color: #e94560;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 12px;
+        /* Footer / Support */
+        .footer {
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 11px;
+            color: #555;
+            border-top: 1px solid #222;
+        }
+
+        .footer a {
+            color: #25d366;
+            text-decoration: none;
             font-weight: 600;
-            animation: pulse-badge 1s ease-in-out infinite;
         }
 
-        @keyframes pulse-badge {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.6;
-            }
+        .footer a:hover {
+            text-decoration: underline;
         }
 
-        .btn-row {
+        .user-bar {
             display: flex;
-            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
         }
 
-        .btn-row button {
-            flex: 1;
+        .user-bar span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 200px;
+        }
+
+        .btn-logout {
+            background: none;
+            border: none;
+            color: #e94560;
+            font-size: 11px;
+            cursor: pointer;
+            padding: 4px 8px;
         }
     </style>
 </head>
@@ -239,20 +267,29 @@
                 <label>Senha</label>
                 <input type="password" id="password" placeholder="••••••••">
             </div>
+            <div class="checkbox-row">
+                <input type="checkbox" id="remember" checked>
+                <label for="remember" style="color:#ccc;margin:0;cursor:pointer">Lembrar meu login</label>
+            </div>
             <button class="btn-primary" id="btn-login">Entrar</button>
             <p class="error" id="login-error"></p>
         </div>
 
         <!-- MAIN -->
         <div id="main-section">
+            <div class="user-bar">
+                <span id="user-email">—</span>
+                <button class="btn-logout" id="btn-logout">Sair</button>
+            </div>
+
             <div class="status-card">
                 <div class="status-row">
                     <span class="status-label">Status</span>
-                    <span class="status-value" id="status-text"><span class="dot dot-gray"></span>Parado</span>
+                    <span class="status-value" id="status-text"><span class="dot dot-green"></span>Ativo</span>
                 </div>
                 <div class="status-row">
                     <span class="status-label">Fila</span>
-                    <span class="status-value" id="queue-count">0 pendentes</span>
+                    <span class="status-value" id="queue-count">—</span>
                 </div>
                 <div class="status-row">
                     <span class="status-label">Atual</span>
@@ -263,19 +300,19 @@
                     <span class="status-value" id="current-page">—</span>
                 </div>
                 <div class="status-row" id="timer-row" style="display:none;">
-                    <span class="status-label">⏱ Próxima</span>
+                    <span class="status-label">⏱ Próxima verificação</span>
                     <span class="timer-badge" id="timer-text">—</span>
                 </div>
             </div>
 
-            <div class="btn-row">
-                <button class="btn-primary" id="btn-start">▶ Iniciar</button>
-                <button class="btn-secondary" id="btn-refresh">↻ Atualizar</button>
-            </div>
-            <button class="btn-danger" id="btn-stop" style="display:none">⏹ Parar Automação</button>
+            <button class="btn-refresh" id="btn-refresh">↻ Verificar fila agora</button>
 
             <div class="log" id="log"></div>
         </div>
+    </div>
+
+    <div class="footer">
+        Suporte: <a href="https://wa.me/5511988945503" id="whatsapp-link">WhatsApp +55 11 98894-5503</a>
     </div>
 
     <script src="renderer.js"></script>
