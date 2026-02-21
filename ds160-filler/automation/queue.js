@@ -95,7 +95,7 @@ class QueueRunner {
                 }
             }
 
-            if (this.running) await sleep(3000);
+            if (this.running) await sleep(5000); // 5s before next item
         }
     }
 

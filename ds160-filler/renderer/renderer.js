@@ -72,13 +72,25 @@ $('btn-logout').addEventListener('click', async () => {
 });
 
 // ============================================================
-// REFRESH
+// REFRESH (debounce: 1 click per 5s)
 // ============================================================
+let refreshCooldown = false;
 $('btn-refresh').addEventListener('click', async () => {
+    if (refreshCooldown) return;
+    refreshCooldown = true;
+    $('btn-refresh').disabled = true;
+    $('btn-refresh').style.opacity = '0.5';
+
     await window.api.refreshQueue();
     log('⚡ Verificação imediata');
     hideTimer();
     refreshQueue();
+
+    setTimeout(() => {
+        refreshCooldown = false;
+        $('btn-refresh').disabled = false;
+        $('btn-refresh').style.opacity = '1';
+    }, 5000);
 });
 
 async function refreshQueue() {
