@@ -1741,55 +1741,83 @@
 
     <!-- ===== PAGE 10: Family2 ===== -->
     <div class="page" id="pg-Family2">
-        <h2>10. Cônjuge</h2>
+        <h2>10. Informações sobre Família: Cônjuge (Family Information: Spouse)</h2>
+
         <div class="section">
-            <h3>Informações do Cônjuge</h3>
-            <div class="fg"><label>Sobrenome *</label><input type="text" id="tbxSpouseSurname" maxlength="33"
-                    placeholder="Sobrenome do cônjuge"></div>
-            <div class="fg"><label>Nome *</label><input type="text" id="tbxSpouseGivenName" maxlength="33"
-                    placeholder="Nome do cônjuge"></div>
-            <div class="fg"><label>Data de Nascimento *</label>
+            <p style="color:#c00;font-size:13px;margin-bottom:14px"><strong>NOTA:</strong> Insira as informações do
+                cônjuge atual. (NOTE: Enter current spouse information.)</p>
+
+            <h3>Nome Completo do Cônjuge (inclua nome de solteira) (Spouse's Full Name (include Maiden Name))</h3>
+            <div class="fg"><label>Sobrenomes do Cônjuge (Spouse's Surnames) *</label>
+                <input type="text" id="tbxSpouseSurname" maxlength="33" placeholder="Sobrenome do cônjuge">
+            </div>
+            <div class="fg"><label>Nomes do Cônjuge (Spouse's Given Names) *</label>
+                <input type="text" id="tbxSpouseGivenName" maxlength="33" placeholder="Nome do cônjuge">
+            </div>
+            <div class="fg"><label>Data de Nascimento do Cônjuge (Spouse's Date of Birth) *</label>
                 <div class="date-row"><select id="ddlSpouseDOBDay" class="sel-day"></select><select
                         id="ddlSpouseDOBMonth" class="sel-month"></select><input type="text" id="tbxSpouseDOBYear"
                         maxlength="4" placeholder="AAAA"></div>
+                <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
             </div>
-            <div class="fg"><label>Nacionalidade *</label><select id="ddlSpouseNatDropDownList"
-                    class="sel-country"></select></div>
-            <div class="fg"><label>Cidade de Nascimento</label><input type="text" id="tbxSpousePOBCity"
-                    placeholder="Cidade natal do cônjuge"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbexSPOUSE_POB_CITY_NA" data-target="tbxSpousePOBCity"> N/A</label><label
-                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxSpousePOBCity"> Desc.</label>
+            <div class="fg"><label>País/Região de Origem do Cônjuge (Nacionalidade) (Spouse's Country/Region of Origin
+                    (Nationality)) *</label>
+                <select id="ddlSpouseNatDropDownList" class="sel-country"></select>
             </div>
-            <div class="fg"><label>País de Nascimento *</label><select id="ddlSpousePOBCountry"
-                    class="sel-country"></select></div>
-            <div class="fg"><label>Endereço do Cônjuge *</label><select id="ddlSpouseAddressType">
-                    <option value="">-</option>
-                    <option value="H">Same as Home Address</option>
-                    <option value="M">Same as Mailing Address</option>
-                    <option value="U">Same as U.S. Contact Address</option>
-                    <option value="D">Do Not Know</option>
-                    <option value="O">Other (Specify Address)</option>
-                </select></div>
-            <div class="br" id="br-spouseAddr">
-                <div class="fg"><label>Rua 1</label><input type="text" id="tbxSPOUSE_ADDR_LN1"
-                        placeholder="Endereço do cônjuge"></div>
-                <div class="fg"><label>Rua 2</label><input type="text" id="tbxSPOUSE_ADDR_LN2"
-                        placeholder="Complemento"></div>
-                <div class="fg"><label>Cidade</label><input type="text" id="tbxSPOUSE_ADDR_CITY" placeholder="Cidade">
-                </div>
-                <div class="fg"><label>Estado</label><input type="text" id="tbxSPOUSE_ADDR_STATE"
-                        placeholder="Estado/Província"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                            id="cbexSPOUSE_ADDR_STATE_NA" data-target="tbxSPOUSE_ADDR_STATE"> N/A</label><label
-                        class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxSPOUSE_ADDR_STATE">
-                        N/A</label></div>
-                <div class="fg"><label>CEP</label><input type="text" id="tbxSPOUSE_ADDR_POSTAL_CD"
-                        placeholder="CEP"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                            id="cbexSPOUSE_ADDR_POSTAL_CD_NA" data-target="tbxSPOUSE_ADDR_POSTAL_CD"> N/A</label><label
-                        class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxSPOUSE_ADDR_POSTAL_CD">
-                        N/A</label></div>
-                <div class="fg"><label>País</label><select id="ddlSPOUSE_ADDR_CNTRY" class="sel-country"></select></div>
+
+            <p style="color:#666;font-size:13px;margin:16px 0 10px"><strong>Local de Nascimento do Cônjuge (Spouse's
+                    Place of Birth)</strong></p>
+            <div class="fg"><label>Cidade (City)</label>
+                <input type="text" id="tbxSpousePOBCity" maxlength="20" placeholder="Cidade natal do cônjuge">
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexSPOUSE_POB_CITY_NA"
+                        data-target="tbxSpousePOBCity"> Não sei (Do Not Know)</label>
+            </div>
+            <div class="fg"><label>País/Região (Country/Region) *</label>
+                <select id="ddlSpousePOBCountry" class="sel-country"></select>
             </div>
         </div>
+
+        <!-- === Spouse's Address === -->
+        <div class="section">
+            <h3>Endereço do Cônjuge (Spouse's Address)</h3>
+            <div class="fg"><label>Endereço do Cônjuge (Spouse's Address) *</label>
+                <select id="ddlSpouseAddressType">
+                    <option value="">- SELECIONE - / - SELECT ONE -</option>
+                    <option value="H">SAME AS HOME ADDRESS / Mesmo que o Endereço Residencial</option>
+                    <option value="M">SAME AS MAILING ADDRESS / Mesmo que o Endereço de Correspondência</option>
+                    <option value="U">SAME AS U.S. CONTACT ADDRESS / Mesmo que o Endereço do Contato nos EUA</option>
+                    <option value="D">DO NOT KNOW / Não Conhecido</option>
+                    <option value="O">OTHER (SPECIFY ADDRESS) / Outro (Especifique o Endereço)</option>
+                </select>
+            </div>
+            <div class="br" id="br-spouseAddr">
+                <div class="fg"><label>Endereço Linha 1 (Street Address (Line 1)) *</label>
+                    <input type="text" id="tbxSPOUSE_ADDR_LN1" maxlength="40" placeholder="Endereço do cônjuge">
+                    <span style="font-size:11px;color:#999">(caixas postais não são permitidas / postal box numbers are
+                        not allowed)</span>
+                </div>
+                <div class="fg"><label>Endereço Linha 2 (Street Address (Line 2))</label>
+                    <input type="text" id="tbxSPOUSE_ADDR_LN2" maxlength="40" placeholder="Complemento">
+                </div>
+                <div class="fg"><label>Cidade (City) *</label>
+                    <input type="text" id="tbxSPOUSE_ADDR_CITY" maxlength="20" placeholder="Cidade">
+                </div>
+                <div class="fg"><label>Estado/Província (State/Province)</label>
+                    <input type="text" id="tbxSPOUSE_ADDR_STATE" maxlength="20" placeholder="Estado/Província">
+                    <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexSPOUSE_ADDR_STATE_NA"
+                            data-target="tbxSPOUSE_ADDR_STATE"> Não se Aplica (Does Not Apply)</label>
+                </div>
+                <div class="fg"><label>CEP (Postal Zone/ZIP Code)</label>
+                    <input type="text" id="tbxSPOUSE_ADDR_POSTAL_CD" maxlength="10" placeholder="CEP">
+                    <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexSPOUSE_ADDR_POSTAL_CD_NA"
+                            data-target="tbxSPOUSE_ADDR_POSTAL_CD"> Não se Aplica (Does Not Apply)</label>
+                </div>
+                <div class="fg"><label>País/Região (Country/Region) *</label>
+                    <select id="ddlSPOUSE_ADDR_CNTRY" class="sel-country"></select>
+                </div>
+            </div>
+        </div>
+
         <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
