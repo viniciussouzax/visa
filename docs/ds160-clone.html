@@ -1593,108 +1593,148 @@
 
     <!-- ===== PAGE 9: Family1 ===== -->
     <div class="page" id="pg-Family1">
-        <h2>9. Família - Pais</h2>
+        <h2>9. Informações sobre Família: Parentes (Family Information: Relatives)</h2>
+
+        <!-- === Father === -->
         <div class="section">
-            <h3>Pai</h3>
-            <div class="fg"><label>Sobrenome do Pai *</label><input type="text" id="tbxFATHER_SURNAME" maxlength="33"
-                    required placeholder="Sobrenome do pai"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbxFATHER_SURNAME_UNK_IND" data-target="tbxFATHER_SURNAME"> Não Sabe</label><label
-                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxFATHER_SURNAME"> Desc.</label>
+            <h3>Nome Completo e Data de Nascimento do Pai (Father's Full Name and Date of Birth)</h3>
+            <div class="fg"><label>Sobrenomes (Surnames) *</label>
+                <input type="text" id="tbxFATHER_SURNAME" maxlength="33" required placeholder="Ex: Hernandez Garcia">
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxFATHER_SURNAME_UNK_IND"
+                        data-target="tbxFATHER_SURNAME"> Não sei (Do Not Know)</label>
             </div>
-            <div class="fg"><label>Nome do Pai *</label><input type="text" id="tbxFATHER_GIVEN_NAME" maxlength="33"
-                    required placeholder="Nome do pai"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbxFATHER_GIVEN_NAME_UNK_IND" data-target="tbxFATHER_GIVEN_NAME"> Não Sabe</label><label
-                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxFATHER_GIVEN_NAME">
-                    Desc.</label></div>
-            <div class="fg"><label>Data de Nascimento</label>
+            <div class="fg"><label>Nomes (Given Names) *</label>
+                <input type="text" id="tbxFATHER_GIVEN_NAME" maxlength="33" required placeholder="Ex: Juan Miguel">
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxFATHER_GIVEN_NAME_UNK_IND"
+                        data-target="tbxFATHER_GIVEN_NAME"> Não sei (Do Not Know)</label>
+            </div>
+            <div class="fg"><label>Data de Nascimento (Date of Birth)</label>
                 <div class="date-row"><select id="ddlFathersDOBDay" class="sel-day"></select><select
                         id="ddlFathersDOBMonth" class="sel-month"></select><input type="text" id="tbxFathersDOBYear"
-                        maxlength="4" placeholder="AAAA"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                            id="cbxFATHER_DOB_UNK_IND" data-target="tbxFathersDOBYear"> Não Sabe</label></div><label
-                    class="na-lbl"><input type="checkbox" class="na-cb"
-                        data-target="ddlFathersDOBDay,ddlFathersDOBMonth,tbxFathersDOBYear"> Desc.</label>
+                        maxlength="4" placeholder="AAAA">
+                    <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxFATHER_DOB_UNK_IND"
+                            data-target="ddlFathersDOBDay,ddlFathersDOBMonth,tbxFathersDOBYear"> Não sei (Do Not
+                        Know)</label>
+                </div>
+                <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
             </div>
-            <div class="fg"><label>Pai mora nos EUA? *</label><span class="rg"><label><input type="radio"
-                            name="rblFATHER_LIVE_IN_US_IND" value="Y" data-branch="rblFATHER_LIVE_IN_US_IND">
-                        Sim</label><label><input type="radio" name="rblFATHER_LIVE_IN_US_IND" value="N"
-                            data-branch="rblFATHER_LIVE_IN_US_IND"> Não</label></span></div>
+            <div class="fg"><label>Seu pai está nos EUA? (Is your father in the U.S.?) *</label>
+                <span class="rg"><label><input type="radio" name="rblFATHER_LIVE_IN_US_IND" value="Y"
+                            data-branch="rblFATHER_LIVE_IN_US_IND"> Sim</label><label><input type="radio"
+                            name="rblFATHER_LIVE_IN_US_IND" value="N" data-branch="rblFATHER_LIVE_IN_US_IND">
+                        Não</label></span>
+            </div>
             <div class="br" id="br-rblFATHER_LIVE_IN_US_IND">
-                <div class="fg"><label>Status nos EUA</label><select id="ddlFATHER_US_STATUS">
-                        <option value="">-</option>
-                        <option value="S">CIDADÃO AMERICANO</option>
-                        <option value="C">U.S. LEGAL PERMANENT RESIDENT</option>
-                        <option value="P">NÃO-IMIGRANTE</option>
-                        <option value="O">OTHER/I DON'T KNOW</option>
-                    </select></div>
-            </div>
-        </div>
-        <div class="section">
-            <h3>Mãe</h3>
-            <div class="fg"><label>Sobrenome da Mãe *</label><input type="text" id="tbxMOTHER_SURNAME" maxlength="33"
-                    required placeholder="Sobrenome da mãe"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbxMOTHER_SURNAME_UNK_IND" data-target="tbxMOTHER_SURNAME"> Não Sabe</label><label
-                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxMOTHER_SURNAME"> Desc.</label>
-            </div>
-            <div class="fg"><label>Nome da Mãe *</label><input type="text" id="tbxMOTHER_GIVEN_NAME" maxlength="33"
-                    required placeholder="Nome da mãe"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbxMOTHER_GIVEN_NAME_UNK_IND" data-target="tbxMOTHER_GIVEN_NAME"> Não Sabe</label><label
-                    class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxMOTHER_GIVEN_NAME">
-                    Desc.</label></div>
-            <div class="fg"><label>Data de Nascimento</label>
-                <div class="date-row"><select id="ddlMothersDOBDay" class="sel-day"></select><select
-                        id="ddlMothersDOBMonth" class="sel-month"></select><input type="text" id="tbxMothersDOBYear"
-                        maxlength="4" placeholder="AAAA"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                            id="cbxMOTHER_DOB_UNK_IND" data-target="tbxMothersDOBYear"> Não Sabe</label></div><label
-                    class="na-lbl"><input type="checkbox" class="na-cb"
-                        data-target="ddlMothersDOBDay,ddlMothersDOBMonth,tbxMothersDOBYear"> Desc.</label>
-            </div>
-            <div class="fg"><label>Mãe mora nos EUA? *</label><span class="rg"><label><input type="radio"
-                            name="rblMOTHER_LIVE_IN_US_IND" value="Y" data-branch="rblMOTHER_LIVE_IN_US_IND">
-                        Sim</label><label><input type="radio" name="rblMOTHER_LIVE_IN_US_IND" value="N"
-                            data-branch="rblMOTHER_LIVE_IN_US_IND"> Não</label></span></div>
-            <div class="br" id="br-rblMOTHER_LIVE_IN_US_IND">
-                <div class="fg"><label>Status nos EUA</label><select id="ddlMOTHER_US_STATUS">
-                        <option value="">-</option>
-                        <option value="S">CIDADÃO AMERICANO</option>
-                        <option value="C">U.S. LEGAL PERMANENT RESIDENT</option>
-                        <option value="P">NÃO-IMIGRANTE</option>
-                        <option value="O">OTHER/I DON'T KNOW</option>
-                    </select></div>
-            </div>
-        </div>
-        <div class="section">
-            <h3>Parentes nos EUA</h3>
-            <div class="fg"><label>Parentes imediatos nos EUA? *</label><span class="rg"><label><input type="radio"
-                            name="rblUS_IMMED_RELATIVE_IND" value="Y" data-branch="rblUS_IMMED_RELATIVE_IND">
-                        Sim</label><label><input type="radio" name="rblUS_IMMED_RELATIVE_IND" value="N"
-                            data-branch="rblUS_IMMED_RELATIVE_IND"> Não</label></span></div>
-            <div class="br" id="br-rblUS_IMMED_RELATIVE_IND">
-                <div class="as" data-list="dlUSRelatives">
-                    <div class="entry" data-idx="0">
-                        <div class="fg"><label>Sobrenome</label><input type="text"
-                                id="dlUSRelatives_ctl00_tbxUS_REL_SURNAME" placeholder="Sobrenome do parente nos EUA">
-                        </div>
-                        <div class="fg"><label>Nome</label><input type="text"
-                                id="dlUSRelatives_ctl00_tbxUS_REL_GIVEN_NAME" placeholder="Nome do parente nos EUA">
-                        </div>
-                        <div class="fg"><label>Parentesco</label><select id="dlUSRelatives_ctl00_ddlUS_REL_TYPE">
-                                <option value="">-</option>
-                                <option value="S">CÔNJUGE</option>
-                                <option value="F">FIANCÉ/FIANCÉE</option>
-                                <option value="C">FILHO(A)</option>
-                                <option value="B">IRMÃO/IRMÃ</option>
-                            </select></div>
-                        <div class="fg"><label>Status</label><select id="dlUSRelatives_ctl00_ddlUS_REL_STATUS">
-                                <option value="">-</option>
-                                <option value="S">CIDADÃO AMERICANO</option>
-                                <option value="C">U.S. LEGAL PERMANENT RESIDENT</option>
-                                <option value="P">NÃO-IMIGRANTE</option>
-                                <option value="O">OTHER/I DON'T KNOW</option>
-                            </select></div>
-                    </div><button type="button" class="btn-add" onclick="addEntry('dlUSRelatives')">+ Adicionar</button>
+                <div class="fg"><label>Status do Pai (Father's Status) *</label>
+                    <select id="ddlFATHER_US_STATUS">
+                        <option value="">- SELECIONE - / - SELECT ONE -</option>
+                        <option value="S">U.S. CITIZEN / Cidadão Americano</option>
+                        <option value="C">U.S. LEGAL PERMANENT RESIDENT (LPR) / Residente Permanente Legal</option>
+                        <option value="P">NONIMMIGRANT / Não-Imigrante</option>
+                        <option value="O">OTHER/I DON'T KNOW / Outro/Eu Não Sei</option>
+                    </select>
                 </div>
             </div>
         </div>
+
+        <!-- === Mother === -->
+        <div class="section">
+            <h3>Nome Completo e Data de Nascimento da Mãe (Mother's Full Name and Date of Birth)</h3>
+            <div class="fg"><label>Sobrenomes (Surnames) *</label>
+                <input type="text" id="tbxMOTHER_SURNAME" maxlength="33" required placeholder="Ex: Hernandez Garcia">
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxMOTHER_SURNAME_UNK_IND"
+                        data-target="tbxMOTHER_SURNAME"> Não sei (Do Not Know)</label>
+            </div>
+            <div class="fg"><label>Nomes (Given Names) *</label>
+                <input type="text" id="tbxMOTHER_GIVEN_NAME" maxlength="33" required placeholder="Ex: Juanita Miguel">
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxMOTHER_GIVEN_NAME_UNK_IND"
+                        data-target="tbxMOTHER_GIVEN_NAME"> Não sei (Do Not Know)</label>
+            </div>
+            <div class="fg"><label>Data de Nascimento (Date of Birth)</label>
+                <div class="date-row"><select id="ddlMothersDOBDay" class="sel-day"></select><select
+                        id="ddlMothersDOBMonth" class="sel-month"></select><input type="text" id="tbxMothersDOBYear"
+                        maxlength="4" placeholder="AAAA">
+                    <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxMOTHER_DOB_UNK_IND"
+                            data-target="ddlMothersDOBDay,ddlMothersDOBMonth,tbxMothersDOBYear"> Não sei (Do Not
+                        Know)</label>
+                </div>
+                <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
+            </div>
+            <div class="fg"><label>Sua mãe está nos EUA? (Is your mother in the U.S.?) *</label>
+                <span class="rg"><label><input type="radio" name="rblMOTHER_LIVE_IN_US_IND" value="Y"
+                            data-branch="rblMOTHER_LIVE_IN_US_IND"> Sim</label><label><input type="radio"
+                            name="rblMOTHER_LIVE_IN_US_IND" value="N" data-branch="rblMOTHER_LIVE_IN_US_IND">
+                        Não</label></span>
+            </div>
+            <div class="br" id="br-rblMOTHER_LIVE_IN_US_IND">
+                <div class="fg"><label>Status da Mãe (Mother's Status) *</label>
+                    <select id="ddlMOTHER_US_STATUS">
+                        <option value="">- SELECIONE - / - SELECT ONE -</option>
+                        <option value="S">U.S. CITIZEN / Cidadão Americano</option>
+                        <option value="C">U.S. LEGAL PERMANENT RESIDENT (LPR) / Residente Permanente Legal</option>
+                        <option value="P">NONIMMIGRANT / Não-Imigrante</option>
+                        <option value="O">OTHER/I DON'T KNOW / Outro/Eu Não Sei</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- === Immediate Relatives === -->
+        <div class="section">
+            <h3>Parentes Imediatos nos EUA (Immediate Relatives in the U.S.)</h3>
+            <div class="fg"><label>Você tem algum parente imediato, exceto pais, nos Estados Unidos? (Do you have any
+                    immediate relatives, not including parents, in the United States?) *</label>
+                <span class="rg"><label><input type="radio" name="rblUS_IMMED_RELATIVE_IND" value="Y"
+                            data-branch="rblUS_IMMED_RELATIVE_IND"> Sim</label><label><input type="radio"
+                            name="rblUS_IMMED_RELATIVE_IND" value="N" data-branch="rblUS_IMMED_RELATIVE_IND">
+                        Não</label></span>
+            </div>
+            <div class="br" id="br-rblUS_IMMED_RELATIVE_IND">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações (Provide the
+                    following information)</p>
+                <div class="as" data-list="dlUSRelatives">
+                    <div class="entry" data-idx="0">
+                        <div class="fg"><label>Sobrenomes (Surnames)</label>
+                            <input type="text" id="dlUSRelatives_ctl00_tbxUS_REL_SURNAME" maxlength="33"
+                                placeholder="Sobrenome do parente nos EUA">
+                        </div>
+                        <div class="fg"><label>Nomes (Given Names)</label>
+                            <input type="text" id="dlUSRelatives_ctl00_tbxUS_REL_GIVEN_NAME" maxlength="33"
+                                placeholder="Nome do parente nos EUA">
+                        </div>
+                        <div class="fg"><label>Relação com Você (Relationship to You) *</label>
+                            <select id="dlUSRelatives_ctl00_ddlUS_REL_TYPE">
+                                <option value="">- SELECIONE - / - SELECT ONE -</option>
+                                <option value="S">SPOUSE / Cônjuge</option>
+                                <option value="F">FIANCE/FIANCEE / Noivo(a)</option>
+                                <option value="C">CHILD / Filho(a)</option>
+                                <option value="B">SIBLING / Irmão/Irmã</option>
+                            </select>
+                        </div>
+                        <div class="fg"><label>Status do Parente (Relative's Status) *</label>
+                            <select id="dlUSRelatives_ctl00_ddlUS_REL_STATUS">
+                                <option value="">- SELECIONE - / - SELECT ONE -</option>
+                                <option value="S">U.S. CITIZEN / Cidadão Americano</option>
+                                <option value="C">U.S. LEGAL PERMANENT RESIDENT (LPR) / Residente Permanente Legal
+                                </option>
+                                <option value="P">NONIMMIGRANT / Não-Imigrante</option>
+                                <option value="O">OTHER/I DON'T KNOW / Outro/Eu Não Sei</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-add" onclick="addEntry('dlUSRelatives')">+ Adicionar Outro (Add
+                        Another)</button>
+                </div>
+            </div>
+
+            <!-- Other Relatives (shown when immediate = No) -->
+            <div class="fg" style="margin-top:16px"><label>Você tem algum outro parente nos Estados Unidos? (Do you have
+                    any other relatives in the United States?) *</label>
+                <span class="rg"><label><input type="radio" name="rblUS_OTHER_RELATIVE_IND" value="Y"> Sim</label>
+                    <label><input type="radio" name="rblUS_OTHER_RELATIVE_IND" value="N"> Não</label></span>
+            </div>
+        </div>
+
         <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
