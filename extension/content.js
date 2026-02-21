@@ -169,6 +169,7 @@ class FormFiller {
         if (file.includes("complete_uscontact")) return "USContact";
         if (file.includes("complete_family1")) return "Family1";
         if (file.includes("complete_family2")) return "Family2";
+        if (file.includes("complete_family3") || node === "DeceasedSpouse") return "DeceasedSpouse";
         if (file.includes("complete_family4") || node === "PrevSpouse") return "PrevSpouse";
         if (file.includes("complete_workeducation1")) return "WorkEducation1";
         if (file.includes("complete_workeducation2")) return "WorkEducation2";
@@ -848,13 +849,18 @@ class FormFiller {
                 { pattern: /tbxPREV_EMPL_ADDR_POSTAL_CD$/i, value: prev.postalCode || "", type: "text" },
                 { pattern: /dtlPrevEmpl.*DropDownList2$/i, value: prev.country, type: "select-label" },
                 { pattern: /tbEmployerPhone$/i, value: ph(prev.phone), type: "text" },
-                { pattern: /tbJobTitle$/i, value: prev.jobTitle, type: "text" },
-                { pattern: /cbxSupervisorSurname_NA$/i, value: "", type: "checkbox-check" },
-                { pattern: /cbxSupervisorGivenName_NA$/i, value: "", type: "checkbox-check" },
-                { pattern: /dtlPrevEmpl.*ddlEmpDateFromDay$/i, value: "1", type: "select" },
+                { pattern: /tbJobTitle$/i, value: prev.jobTitle, type: "text" });
+            if (prev.supervisorSurname) {
+                m.push({ pattern: /tbSupervisorSurname$/i, value: prev.supervisorSurname, type: "text" });
+            } else { m.push({ pattern: /cbxSupervisorSurname_NA$/i, value: "", type: "checkbox-check" }); }
+            if (prev.supervisorGivenName) {
+                m.push({ pattern: /tbSupervisorGivenName$/i, value: prev.supervisorGivenName, type: "text" });
+            } else { m.push({ pattern: /cbxSupervisorGivenName_NA$/i, value: "", type: "checkbox-check" }); }
+            m.push(
+                { pattern: /dtlPrevEmpl.*ddlEmpDateFromDay$/i, value: prev.startDate?.day || "1", type: "select" },
                 { pattern: /dtlPrevEmpl.*ddlEmpDateFromMonth$/i, value: prev.startDate?.month, type: "select" },
                 { pattern: /dtlPrevEmpl.*tbxEmpDateFromYear$/i, value: prev.startDate?.year, type: "text" },
-                { pattern: /dtlPrevEmpl.*ddlEmpDateToDay$/i, value: "1", type: "select" },
+                { pattern: /dtlPrevEmpl.*ddlEmpDateToDay$/i, value: prev.endDate?.day || "1", type: "select" },
                 { pattern: /dtlPrevEmpl.*ddlEmpDateToMonth$/i, value: prev.endDate?.month, type: "select" },
                 { pattern: /dtlPrevEmpl.*tbxEmpDateToYear$/i, value: prev.endDate?.year, type: "text" },
                 { pattern: /dtlPrevEmpl.*tbDescribeDuties$/i, value: prev.duties || 'GENERAL DUTIES', type: "text" });
@@ -863,17 +869,17 @@ class FormFiller {
         if (a.hasEducation && edu) {
             m.push({ pattern: /rblOtherEduc_0$/i, value: "", type: "click" },
                 { pattern: /tbxSchoolName$/i, value: edu.name, type: "text" },
-                { pattern: /tbxSchoolAddr1$/i, value: edu.street1, type: "text" },
+                { pattern: /tbxSchoolAddr1$/i, value: edu.street1 || "", type: "text" },
                 { pattern: /tbxSchoolAddr2$/i, value: edu.street2 || "", type: "text" },
                 { pattern: /tbxSchoolCity$/i, value: edu.city, type: "text" },
                 { pattern: /tbxEDUC_INST_ADDR_STATE$/i, value: edu.state || "", type: "text" },
                 { pattern: /tbxEDUC_INST_POSTAL_CD$/i, value: edu.postalCode || "", type: "text" },
                 { pattern: /ddlSchoolCountry$/i, value: edu.country, type: "select-label" },
                 { pattern: /tbxSchoolCourseOfStudy$/i, value: edu.courseOfStudy, type: "text" },
-                { pattern: /dtlPrevEduc.*ddlSchoolFromDay$/i, value: "1", type: "select" },
+                { pattern: /dtlPrevEduc.*ddlSchoolFromDay$/i, value: edu.startDate?.day || "1", type: "select" },
                 { pattern: /dtlPrevEduc.*ddlSchoolFromMonth$/i, value: edu.startDate?.month, type: "select" },
                 { pattern: /dtlPrevEduc.*tbxSchoolFromYear$/i, value: edu.startDate?.year, type: "text" },
-                { pattern: /dtlPrevEduc.*ddlSchoolToDay$/i, value: "1", type: "select" },
+                { pattern: /dtlPrevEduc.*ddlSchoolToDay$/i, value: edu.endDate?.day || "1", type: "select" },
                 { pattern: /dtlPrevEduc.*ddlSchoolToMonth$/i, value: edu.endDate?.month, type: "select" },
                 { pattern: /dtlPrevEduc.*tbxSchoolToYear$/i, value: edu.endDate?.year, type: "text" });
         } else { m.push({ pattern: /rblOtherEduc_1$/i, value: "", type: "click" }); }
@@ -1036,8 +1042,9 @@ class FormFiller {
             usContact: d.usContact ? { ...d.usContact, ...(d.usContact.address || {}) } : {},
             // Family
             father: fam1.father, mother: fam1.mother,
-            spouse: fam2.spouse,
-            relativesInUS: fam1.relativesInUS === 'Y', immediateRelative: fam1.immediateRelative,
+            spouse: fam2.spouse || (fam2.surname ? fam2 : null),
+            relativesInUS: (fam1.immediateRelativesInUS || fam1.relativesInUS) === 'Y',
+            immediateRelative: fam1.immediateRelative || fam1.relatives?.[0],
             otherRelativesInUS: fam1.otherRelativesInUS === 'Y',
             previousSpouse: d.prevSpouse || d.previousSpouse,
             // Work/Education
@@ -1052,9 +1059,11 @@ class FormFiller {
             clanTribe: we3.clanTribe === 'Y', clanTribeName: we3.clanTribeName,
             countriesVisited: we3.countriesVisited === 'Y',
             countriesVisitedList: we3.countriesVisitedList,
-            organizationMember: we3.organizationMember === 'Y', organizationName: we3.organizationName,
+            organizationMember: we3.organizationMember === 'Y',
+            organizationName: Array.isArray(we3.organizations) ? we3.organizations[0] : we3.organizationName,
             specializedSkills: we3.specializedSkills === 'Y', specializedSkillsExplanation: we3.specializedSkillsExplanation,
-            militaryService: we3.militaryService === 'Y', military: we3.military,
+            militaryService: we3.militaryService === 'Y',
+            military: Array.isArray(we3.military) ? we3.military[0] : we3.military,
             insurgentOrg: we3.insurgentOrg === 'Y', insurgentOrgExplanation: we3.insurgentOrgExplanation,
             // Location
             location: d.location,
