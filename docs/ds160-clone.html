@@ -1941,45 +1941,83 @@
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
 
-    <!-- ===== PAGE 12: WorkEducation1 ===== -->
+    <!-- ===== PAGE 13: WorkEducation1 ===== -->
     <div class="page" id="pg-WorkEducation1">
-        <h2>12. Trabalho Atual</h2>
+        <h2>13. Informações sobre Trabalho/Educação/Treinamento Atual (Present Work/Education/Training Information)</h2>
+
         <div class="section">
-            <h3>Ocupação</h3>
-            <div class="fg"><label>Ocupação Principal *</label><select id="ddlPresentOccupation"
-                    class="sel-occupation"></select></div>
+            <p style="color:#c00;font-size:13px;margin-bottom:14px"><strong>NOTA:</strong> Forneça as informações a
+                seguir sobre seu emprego ou educação atual. (NOTE: Provide the following information concerning your
+                current employment or education.)</p>
+
+            <div class="fg"><label>Ocupação Principal (Primary Occupation) *</label>
+                <select id="ddlPresentOccupation" class="sel-occupation"></select>
+            </div>
+
+            <!-- Specify Other (shown when occupation = O) -->
+            <div class="br" id="br-specifyOther">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações (Provide the
+                    following information):</p>
+                <div class="fg"><label>Especifique Outro (Specify Other) *</label>
+                    <textarea id="tbxOtherOccupation" rows="3" maxlength="200"
+                        placeholder="Especifique sua ocupação"></textarea>
+                </div>
+            </div>
         </div>
+
+        <!-- Employer/School section (hidden for RETIRED and HOMEMAKER) -->
         <div class="section" id="sec-employer">
-            <h3>Empregador / Escola</h3>
-            <div class="fg"><label>Nome *</label><input type="text" id="tbxEmpSchName" maxlength="40"
-                    placeholder="Nome do empregador/escola"></div>
-            <div class="fg"><label>Endereço - Rua 1 *</label><input type="text" id="tbxEmpSchAddr1" maxlength="40"
-                    placeholder="Endereço linha 1"></div>
-            <div class="fg"><label>Endereço - Rua 2</label><input type="text" id="tbxEmpSchAddr2"
-                    placeholder="Complemento"></div>
-            <div class="fg"><label>Cidade *</label><input type="text" id="tbxEmpSchCity" maxlength="20"
-                    placeholder="Cidade"></div>
-            <div class="fg"><label>Estado</label><input type="text" id="tbxWORK_EDUC_ADDR_STATE"
-                    placeholder="Estado/Província"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbxWORK_EDUC_ADDR_STATE_NA" data-target="tbxWORK_EDUC_ADDR_STATE"> N/A</label></div>
-            <div class="fg"><label>CEP</label><input type="text" id="tbxWORK_EDUC_ADDR_POSTAL_CD"
-                    placeholder="CEP"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbxWORK_EDUC_ADDR_POSTAL_CD_NA" data-target="tbxWORK_EDUC_ADDR_POSTAL_CD"> N/A</label></div>
-            <div class="fg"><label>País *</label><select id="ddlEmpSchCountry" class="sel-country"></select></div>
-            <div class="fg"><label>Telefone *</label><input type="text" id="tbxWORK_EDUC_TEL"
-                    placeholder="Telefone do empregador/escola"></div>
-            <div class="fg"><label>Data de Início *</label>
+            <div class="fg"><label>Nome do Empregador ou Escola Atual (Present Employer or School Name) *</label>
+                <input type="text" id="tbxEmpSchName" maxlength="40" placeholder="Nome do empregador/escola">
+            </div>
+
+            <p style="color:#666;font-size:13px;margin:12px 0 8px"><strong>Endereço do empregador ou escola atual
+                    (Present employer or school address):</strong></p>
+
+            <div class="fg"><label>Endereço Linha 1 (Street Address (Line 1)) *</label>
+                <input type="text" id="tbxEmpSchAddr1" maxlength="40" placeholder="Endereço linha 1">
+            </div>
+            <div class="fg"><label>Endereço Linha 2 (Street Address (Line 2)) <em>*Opcional</em></label>
+                <input type="text" id="tbxEmpSchAddr2" maxlength="40" placeholder="Complemento">
+            </div>
+            <div class="fg"><label>Cidade (City) *</label>
+                <input type="text" id="tbxEmpSchCity" maxlength="20" placeholder="Cidade">
+            </div>
+            <div class="fg"><label>Estado/Província (State/Province)</label>
+                <input type="text" id="tbxWORK_EDUC_ADDR_STATE" maxlength="20" placeholder="Estado/Província">
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxWORK_EDUC_ADDR_STATE_NA"
+                        data-target="tbxWORK_EDUC_ADDR_STATE"> Não se Aplica (Does Not Apply)</label>
+            </div>
+            <div class="fg"><label>CEP (Postal Zone/ZIP Code)</label>
+                <input type="text" id="tbxWORK_EDUC_ADDR_POSTAL_CD" maxlength="10" placeholder="CEP">
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxWORK_EDUC_ADDR_POSTAL_CD_NA"
+                        data-target="tbxWORK_EDUC_ADDR_POSTAL_CD"> Não se Aplica (Does Not Apply)</label>
+            </div>
+            <div class="fg"><label>Telefone (Phone Number) *</label>
+                <input type="text" id="tbxWORK_EDUC_TEL" maxlength="20" placeholder="Telefone do empregador/escola">
+            </div>
+            <div class="fg"><label>País/Região (Country/Region) *</label>
+                <select id="ddlEmpSchCountry" class="sel-country"></select>
+            </div>
+
+            <div class="fg"><label>Data de Início (Start Date) *</label>
                 <div class="date-row"><select id="ddlEmpDateFromDay" class="sel-day"></select><select
                         id="ddlEmpDateFromMonth" class="sel-month"></select><input type="text" id="tbxEmpDateFromYear"
                         maxlength="4" placeholder="AAAA"></div>
+                <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
             </div>
-            <div class="fg"><label>Salário Mensal</label><input type="text" id="tbxCURR_MONTHLY_SALARY" maxlength="15"
-                    placeholder="Ex: 5000"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbxCURR_MONTHLY_SALARY_NA" data-target="tbxCURR_MONTHLY_SALARY">
-                    N/A</label></div>
-            <div class="fg"><label>Descrição das Funções *</label><textarea id="tbxDescribeDuties"
-                    placeholder="Descreva suas funções"></textarea></div>
+            <div class="fg"><label>Renda Mensal em Moeda Local (se empregado) (Monthly Income in Local Currency (if
+                    employed))</label>
+                <input type="text" id="tbxCURR_MONTHLY_SALARY" maxlength="15" placeholder="Ex: 5000">
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxCURR_MONTHLY_SALARY_NA"
+                        data-target="tbxCURR_MONTHLY_SALARY"> Não se Aplica (Does Not Apply)</label>
+            </div>
+            <div class="fg"><label>Descreva brevemente suas funções (Briefly describe your duties) *</label>
+                <textarea id="tbxDescribeDuties" rows="4" maxlength="500"
+                    placeholder="Descreva suas funções"></textarea>
+            </div>
         </div>
+
         <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
@@ -2618,29 +2656,29 @@
             { v: 'WEIBO', t: 'WEIBO' }, { v: 'WHATSAPP', t: 'WHATSAPP' }, { v: 'YOUTUBE', t: 'YOUTUBE' }, { v: 'NONE', t: 'NONE' }
         ];
         const OCCUPATIONS = [
-            { v: '', t: '- Selecione a Ocupação -' },
-            { v: 'A', t: 'AGRICULTURA (AGRICULTURE)' },
-            { v: 'AP', t: 'ARTISTA / PERFORMER (ARTIST/PERFORMER)' },
-            { v: 'B', t: 'NEGÓCIOS (BUSINESS)' },
-            { v: 'CM', t: 'COMUNICAÇÃO / MÍDIA (COMMUNICATIONS/MEDIA)' },
-            { v: 'CS', t: 'CIÊNCIA DA COMPUTAÇÃO (COMPUTER SCIENCE)' },
-            { v: 'C', t: 'CULINÁRIA / SERVIÇOS DE ALIMENTAÇÃO (CULINARY/FOOD SERVICES)' },
-            { v: 'ED', t: 'EDUCAÇÃO (EDUCATION)' },
-            { v: 'EN', t: 'ENGENHARIA (ENGINEERING)' },
-            { v: 'G', t: 'GOVERNO (GOVERNMENT)' },
-            { v: 'H', t: 'DONA(O) DE CASA (HOMEMAKER)' },
-            { v: 'L', t: 'PROFISSÃO JURÍDICA (LEGAL PROFESSION)' },
-            { v: 'MD', t: 'MÉDICO / SAÚDE (MEDICAL/HEALTH)' },
-            { v: 'ML', t: 'MILITAR (MILITARY)' },
-            { v: 'N', t: 'DESEMPREGADO(A) (NOT EMPLOYED)' },
-            { v: 'O', t: 'OUTRA (OTHER)' },
-            { v: 'RE', t: 'RELIGIOSO(A) (RELIGIOUS)' },
-            { v: 'RS', t: 'PESQUISA / CIÊNCIA (RESEARCH/SCIENCE)' },
-            { v: 'RT', t: 'APOSENTADO(A) (RETIRED)' },
-            { v: 'SC', t: 'SERVIÇOS SOCIAIS (SOCIAL SERVICES)' },
-            { v: 'SM', t: 'MÍDIAS SOCIAIS (SOCIAL MEDIA)' },
-            { v: 'ST', t: 'ESTUDANTE (STUDENT)' },
-            { v: 'T', t: 'CIÊNCIAS FÍSICAS / MATEMÁTICA (PHYSICAL SCIENCES/MATHEMATICS)' }
+            { v: '', t: '- SELECIONE - / - SELECT ONE -' },
+            { v: 'A', t: 'AGRICULTURE / Agricultura' },
+            { v: 'AP', t: 'ARTIST/PERFORMER / Artista/Intérprete' },
+            { v: 'B', t: 'BUSINESS / Negócios' },
+            { v: 'CM', t: 'COMMUNICATIONS / Comunicação' },
+            { v: 'CS', t: 'COMPUTER SCIENCE / Ciência da Computação' },
+            { v: 'C', t: 'CULINARY/FOOD SERVICES / Culinária/Serviços Gastronômico' },
+            { v: 'ED', t: 'EDUCATION / Educação' },
+            { v: 'EN', t: 'ENGINEERING / Engenharia' },
+            { v: 'G', t: 'GOVERNMENT / Governo' },
+            { v: 'H', t: 'HOMEMAKER / Prendas Domésticas' },
+            { v: 'L', t: 'LEGAL PROFESSION / Profissão Legal' },
+            { v: 'MD', t: 'MEDICAL/HEALTH / Médico/Saúde' },
+            { v: 'ML', t: 'MILITARY / Militar' },
+            { v: 'NS', t: 'NATURAL SCIENCE / Ciência Natural' },
+            { v: 'N', t: 'NOT EMPLOYED / Desempregado' },
+            { v: 'T', t: 'PHYSICAL SCIENCES / Ciências Físicas' },
+            { v: 'RE', t: 'RELIGIOUS VOCATION / Vocação Religiosa' },
+            { v: 'RS', t: 'RESEARCH / Pesquisa' },
+            { v: 'RT', t: 'RETIRED / Aposentado' },
+            { v: 'SC', t: 'SOCIAL SCIENCE / Ciência Social' },
+            { v: 'ST', t: 'STUDENT / Estudante' },
+            { v: 'O', t: 'OTHER / Outro' }
         ];
         const PURPOSES = [
             { v: '', t: '- Selecione a Categoria -' },
@@ -2725,7 +2763,7 @@
                 { v: 'K4', t: 'K-4 - FILHO DE K-3' }
             ]
         };
-        const NO_EMPLOYER = ['H', 'N', 'RT', 'ST']; // occupations that hide employer section
+        const NO_EMPLOYER = ['H', 'RT']; // RETIRED and HOMEMAKER hide entire employer section
 
         // ===== POPULATE SELECTS =====
         function populateSelect(el, items) {
@@ -3195,7 +3233,11 @@
         function updateEmployerVisibility() {
             const occ = document.getElementById('ddlPresentOccupation').value;
             const sec = document.getElementById('sec-employer');
+            const brOther = document.getElementById('br-specifyOther');
+            // RETIRED and HOMEMAKER: hide everything
             if (sec) sec.style.display = NO_EMPLOYER.includes(occ) ? 'none' : '';
+            // OTHER: show Specify Other textarea
+            if (brOther) brOther.classList.toggle('open', occ === 'O');
         }
 
 
