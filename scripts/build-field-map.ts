@@ -724,11 +724,33 @@ export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
     map.push(
       { pattern: /rblOtherEduc_0$/i, value: "", type: "click" },
       { pattern: /tbxSchoolName$/i, value: edu.name, type: "text" },
-      { pattern: /tbxSchoolAddr1$/i, value: edu.street1, type: "text" },
+    );
+    // Street address — use NA checkbox if empty
+    if (edu.street1 && edu.street1 !== 'N/A') {
+      map.push({ pattern: /tbxSchoolAddr1$/i, value: edu.street1, type: "text" });
+    } else {
+      map.push({ pattern: /cbxSchoolAddr1_NA$/i, value: "", type: "checkbox-check" });
+      map.push({ pattern: /cbexSchoolAddr1_NA$/i, value: "", type: "checkbox-check" });
+    }
+    map.push(
       { pattern: /tbxSchoolAddr2$/i, value: "", type: "text" },
       { pattern: /tbxSchoolCity$/i, value: edu.city, type: "text" },
-      { pattern: /tbxEDUC_INST_ADDR_STATE$/i, value: edu.state || "", type: "text" },
-      { pattern: /tbxEDUC_INST_POSTAL_CD$/i, value: edu.postalCode || "", type: "text" },
+    );
+    // State — use NA checkbox if empty
+    if (edu.state) {
+      map.push({ pattern: /tbxEDUC_INST_ADDR_STATE$/i, value: edu.state, type: "text" });
+    } else {
+      map.push({ pattern: /cbxEDUC_INST_ADDR_STATE_NA$/i, value: "", type: "checkbox-check" });
+      map.push({ pattern: /cbexEDUC_INST_ADDR_STATE_NA$/i, value: "", type: "checkbox-check" });
+    }
+    // Postal code — use NA checkbox if empty
+    if (edu.postalCode) {
+      map.push({ pattern: /tbxEDUC_INST_POSTAL_CD$/i, value: edu.postalCode, type: "text" });
+    } else {
+      map.push({ pattern: /cbxEDUC_INST_POSTAL_CD_NA$/i, value: "", type: "checkbox-check" });
+      map.push({ pattern: /cbexEDUC_INST_POSTAL_CD_NA$/i, value: "", type: "checkbox-check" });
+    }
+    map.push(
       { pattern: /ddlSchoolCountry$/i, value: edu.country, type: "select-label" },
       { pattern: /tbxSchoolCourseOfStudy$/i, value: edu.courseOfStudy, type: "text" },
       { pattern: /dtlPrevEduc.*ddlSchoolFromDay$/i, value: "1", type: "select" },
