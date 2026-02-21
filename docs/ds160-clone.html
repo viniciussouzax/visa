@@ -449,38 +449,49 @@
         <h2>1. Informações Pessoais</h2>
         <div class="section">
             <h3>Nome</h3>
-            <div class="fg"><label>Sobrenome (Surname) *</label><input type="text" id="tbxAPP_SURNAME" maxlength="33"
-                    required placeholder="Ex: SILVA"></div>
-            <div class="fg"><label>Nome (Given Name) *</label><input type="text" id="tbxAPP_GIVEN_NAME" maxlength="33"
-                    required placeholder="Ex: JOAO"></div>
-            <div class="fg"><label>Nome Completo (Nativo)</label><input type="text" id="tbxAPP_FULL_NAME_NATIVE"
-                    maxlength="100" placeholder="Nome completo em caracteres nativos"><label class="na-lbl"><input
-                        type="checkbox" class="na-cb" id="cbexAPP_FULL_NAME_NATIVE_NA"
+            <div class="fg"><label>Sobrenome(s) *</label><input type="text" id="tbxAPP_SURNAME" maxlength="33" required
+                    placeholder="Ex: FERNANDEZ GARCIA">
+                <small style="color:#888">Insira todos os sobrenomes conforme consta no passaporte.</small>
+            </div>
+            <div class="fg"><label>Nome(s) *</label><input type="text" id="tbxAPP_GIVEN_NAME" maxlength="33" required
+                    placeholder="Ex: JUAN MIGUEL">
+                <small style="color:#888">Se o passaporte não tiver nome, insira "FNU".</small>
+            </div>
+            <div class="fg"><label>Nome Completo no Alfabeto Nativo</label><input type="text"
+                    id="tbxAPP_FULL_NAME_NATIVE" maxlength="100" placeholder="Ex: MARCOS SILVA"><label
+                    class="na-lbl"><input type="checkbox" class="na-cb" id="cbexAPP_FULL_NAME_NATIVE_NA"
                         data-target="tbxAPP_FULL_NAME_NATIVE">
-                    N/A</label></div>
+                    Não se Aplica</label></div>
         </div>
         <div class="section">
             <h3>Outros Nomes</h3>
-            <div class="fg"><label>Já usou outros nomes? *</label><span class="rg"><label><input type="radio"
-                            name="rblOtherNames" value="Y" data-branch="rblOtherNames"> Sim</label><label><input
-                            type="radio" name="rblOtherNames" value="N" data-branch="rblOtherNames"> Não</label></span>
+            <p style="color:#666;font-size:13px;margin-bottom:10px">Inclui nome de solteiro(a), nome religioso, nome
+                profissional, apelido ou qualquer outro nome pelo qual você é ou foi conhecido(a).</p>
+            <div class="fg"><label>Já usou outros nomes (solteiro(a), religioso, profissional, apelido, etc.)?
+                    *</label><span class="rg"><label><input type="radio" name="rblOtherNames" value="Y"
+                            data-branch="rblOtherNames"> Sim</label><label><input type="radio" name="rblOtherNames"
+                            value="N" data-branch="rblOtherNames"> Não</label></span>
             </div>
             <div class="br" id="br-rblOtherNames">
                 <div class="as" data-list="DListAlias">
                     <div class="entry" data-idx="0">
                         <div class="fg"><label>Outro Sobrenome</label><input type="text"
-                                id="DListAlias_ctl00_tbxSURNAME" placeholder="Outro sobrenome"></div>
+                                id="DListAlias_ctl00_tbxSURNAME" placeholder="Ex: SANTOS"></div>
                         <div class="fg"><label>Outro Nome</label><input type="text" id="DListAlias_ctl00_tbxGIVEN_NAME"
-                                placeholder="Outro nome">
+                                placeholder="Ex: MARIA">
                         </div>
-                    </div><button type="button" class="btn-add" onclick="addEntry('DListAlias')">+ Adicionar</button>
+                    </div><button type="button" class="btn-add" onclick="addEntry('DListAlias')">+ Adicionar Outro
+                        Nome</button>
                 </div>
             </div>
         </div>
         <div class="section">
             <h3>Telecode</h3>
-            <div class="fg"><label>Telecode? *</label><span class="rg"><label><input type="radio"
-                            name="rblTelecodeQuestion" value="Y" data-branch="rblTelecodeQuestion" disabled>
+            <p style="color:#666;font-size:13px;margin-bottom:10px">Telecodes são códigos numéricos de 4 dígitos que
+                representam caracteres em nomes com alfabeto não-romano.</p>
+            <div class="fg"><label>Possui um telecode que represente seu nome? *</label><span class="rg"><label><input
+                            type="radio" name="rblTelecodeQuestion" value="Y" data-branch="rblTelecodeQuestion"
+                            disabled>
                         Sim</label><label><input type="radio" name="rblTelecodeQuestion" value="N"
                             data-branch="rblTelecodeQuestion" checked disabled> Não</label></span>
                 <span style="font-size:11px;color:#888;margin-left:8px">(sempre Não)</span>
@@ -494,39 +505,44 @@
         </div>
         <div class="section">
             <h3>Dados Pessoais</h3>
-            <div class="fg"><label>Sexo (Sex) *</label><select id="ddlAPP_GENDER">
+            <div class="fg"><label>Sexo *</label><select id="ddlAPP_GENDER">
                     <option value="">- Selecione -</option>
-                    <option value="M">MASCULINO (MALE)</option>
-                    <option value="F">FEMININO (FEMALE)</option>
+                    <option value="M">Masculino (MALE)</option>
+                    <option value="F">Feminino (FEMALE)</option>
                 </select></div>
-            <div class="fg"><label>Estado Civil (Marital Status) *</label><select id="ddlAPP_MARITAL_STATUS">
+            <div class="fg"><label>Estado Civil *</label><select id="ddlAPP_MARITAL_STATUS">
                     <option value="">- Selecione -</option>
-                    <option value="M">CASADO(A) (MARRIED)</option>
-                    <option value="C">UNIÃO ESTÁVEL (COMMON LAW MARRIAGE)</option>
-                    <option value="P">UNIÃO CIVIL / PARCERIA DOMÉSTICA (CIVIL UNION)</option>
-                    <option value="S">SOLTEIRO(A) (SINGLE)</option>
-                    <option value="W">VIÚVO(A) (WIDOWED)</option>
-                    <option value="D">DIVORCIADO(A) (DIVORCED)</option>
-                    <option value="L">SEPARADO(A) LEGALMENTE (LEGALLY SEPARATED)</option>
-                    <option value="O">OUTRO (OTHER)</option>
+                    <option value="M">Casado(a) (Married)</option>
+                    <option value="C">União de Facto (Common Law Marriage)</option>
+                    <option value="P">União Civil / Parceria Doméstica (Civil Union)</option>
+                    <option value="S">Solteiro(a) (Single)</option>
+                    <option value="W">Viúvo(a) (Widowed)</option>
+                    <option value="D">Divorciado(a) (Divorced)</option>
+                    <option value="L">Legalmente Separado(a) (Legally Separated)</option>
+                    <option value="O">Outro (Other)</option>
                 </select></div>
             <div class="br" id="br-otherMarital">
-                <div class="fg"><label>Explique o Estado Civil (Explain) *</label><textarea id="tbxOtherMaritalStatus"
-                        rows="3" placeholder="Descreva seu estado civil"></textarea></div>
+                <div class="fg"><label>Explique o Estado Civil *</label><textarea id="tbxOtherMaritalStatus" rows="3"
+                        placeholder="Descreva seu estado civil"></textarea></div>
             </div>
+            <h3>Data e Local de Nascimento</h3>
             <div class="fg"><label>Data de Nascimento *</label>
                 <div class="date-row"><select id="ddlDOBDay" class="sel-day"></select><select id="ddlDOBMonth"
                         class="sel-month"></select><input type="text" id="tbxDOBYear" maxlength="4" placeholder="AAAA">
                 </div>
+                <small style="color:#888">Formato: DD-MMM-AAAA. Se dia ou mês desconhecido, insira conforme consta no
+                    passaporte.</small>
             </div>
             <div class="fg"><label>Cidade de Nascimento *</label><input type="text" id="tbxAPP_POB_CITY"
                     placeholder="Ex: SAO PAULO"></div>
-            <div class="fg"><label>Estado de Nascimento</label><input type="text" id="tbxAPP_POB_ST_PROVINCE"
-                    placeholder="Ex: SAO PAULO"><label class="na-lbl"><input type="checkbox" class="na-cb"
+            <div class="fg"><label>Estado / Província</label><input type="text" id="tbxAPP_POB_ST_PROVINCE"
+                    placeholder="Ex: SP"><label class="na-lbl"><input type="checkbox" class="na-cb"
                         id="cbexAPP_POB_ST_PROVINCE_NA" data-target="tbxAPP_POB_ST_PROVINCE">
-                    N/A</label></div>
-            <div class="fg"><label>País de Nascimento *</label><select id="ddlAPP_POB_CNTRY"
-                    class="sel-country"></select></div>
+                    Não se Aplica</label></div>
+            <div class="fg"><label>País / Região de Nascimento *</label><select id="ddlAPP_POB_CNTRY"
+                    class="sel-country"></select>
+                <small style="color:#888">Selecione o nome atualmente usado para o local onde você nasceu.</small>
+            </div>
         </div>
         <div class="page-btns"><span></span><button class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
