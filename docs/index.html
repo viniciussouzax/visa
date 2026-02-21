@@ -539,6 +539,24 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
         }
 
+        /* Master Tabs */
+        .master-tab.active {
+            color: var(--accent) !important;
+            border-bottom-color: var(--accent) !important;
+        }
+
+        .master-tab:hover {
+            color: var(--text) !important;
+        }
+
+        .master-sub {
+            display: none;
+        }
+
+        .master-sub.active {
+            display: block;
+        }
+
         .stat-card .label {
             font-size: 11px;
             color: var(--text-muted);
@@ -1085,8 +1103,23 @@
 
                     <!-- Master View -->
                     <div class="view" id="view-master">
-                        <div style="display:flex;gap:16px;margin-bottom:20px">
-                            <div class="config-card" style="flex:2;margin:0">
+                        <!-- Master Tabs -->
+                        <div
+                            style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
+                            <button class="master-tab active" data-master-tab="agencies"
+                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">🏢
+                                Agências</button>
+                            <button class="master-tab" data-master-tab="integrations"
+                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">🔌
+                                Integrações</button>
+                            <button class="master-tab" data-master-tab="logs"
+                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">📋
+                                Logs</button>
+                        </div>
+
+                        <!-- Sub: Agencies List -->
+                        <div class="master-sub active" id="master-sub-agencies">
+                            <div class="config-card" style="margin-bottom:16px">
                                 <h3>➕ Nova Agência</h3>
                                 <div style="display:flex;gap:12px;margin-top:12px">
                                     <input type="text" id="new-agency-name" placeholder="Nome da Empresa"
@@ -1095,23 +1128,42 @@
                                         style="padding:10px 20px">Criar</button>
                                 </div>
                             </div>
-                            <div class="config-card" style="flex:1;margin:0">
-                                <h3>🔑 CapMonster API Key</h3>
-                                <div style="display:flex;gap:8px;margin-top:12px">
-                                    <input type="password" id="capmonster-key" placeholder="API Key..."
+                            <div class="config-card">
+                                <h3>🏢 Agências Cadastradas</h3>
+                                <div id="agencies-list"></div>
+                            </div>
+                        </div>
+
+                        <!-- Sub: Agency Detail -->
+                        <div class="master-sub" id="master-sub-agency-detail">
+                            <button class="btn-sm" id="btn-back-agencies"
+                                style="margin-bottom:16px;padding:8px 16px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;cursor:pointer">←
+                                Voltar às Agências</button>
+                            <div id="agency-detail-content"></div>
+                        </div>
+
+                        <!-- Sub: Integrations -->
+                        <div class="master-sub" id="master-sub-integrations">
+                            <div class="config-card">
+                                <h3>🔑 CapMonster Cloud</h3>
+                                <p style="color:var(--text-muted);font-size:12px;margin-bottom:12px">API Key para
+                                    resolução automática de captchas durante o preenchimento DS-160.</p>
+                                <div style="display:flex;gap:8px">
+                                    <input type="password" id="capmonster-key"
+                                        placeholder="Sua Client Key do CapMonster..."
                                         style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
                                     <button class="btn-sm btn-primary-sm" id="btn-save-capmonster"
-                                        style="padding:10px 16px">Salvar</button>
+                                        style="padding:10px 16px">💾 Salvar</button>
                                 </div>
                             </div>
                         </div>
-                        <div class="config-card">
-                            <h3>🏢 Agências</h3>
-                            <div id="agencies-list"></div>
-                        </div>
-                        <div style="margin-top:24px">
+
+                        <!-- Sub: Logs -->
+                        <div class="master-sub" id="master-sub-logs">
                             <div class="config-card" style="margin-bottom:0">
                                 <h3>🔍 Logs de Erros</h3>
+                                <p style="color:var(--text-muted);font-size:12px">Últimos 50 erros registrados durante
+                                    preenchimentos automáticos.</p>
                             </div>
                             <div class="table-container" style="border-top:none;border-radius:0 0 12px 12px">
                                 <table>
@@ -1128,6 +1180,7 @@
                             </div>
                         </div>
                     </div>
+
 
                 </div>
             </div>

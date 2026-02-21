@@ -97,7 +97,12 @@ document.querySelectorAll('.nav-item[data-view]').forEach(item => {
         showView(item.dataset.view);
         $('page-title').textContent = item.textContent.trim();
         if (item.dataset.view === 'pipeline') loadPipeline();
-        if (item.dataset.view === 'master') { loadAgencies(); loadCapmonsterKey(); loadLogs(); }
+        if (item.dataset.view === 'master') {
+            showMasterSub('agencies');
+            loadAgencies();
+            loadCapmonsterKey();
+            loadLogs();
+        }
     });
 });
 
@@ -105,6 +110,27 @@ document.querySelectorAll('.nav-item[data-view]').forEach(item => {
 $('btn-back-pipeline').onclick = () => {
     showView('pipeline');
     $('page-title').textContent = '📊 Pipeline';
+};
+
+// Master Tabs
+function showMasterSub(tabName) {
+    document.querySelectorAll('.master-sub').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.master-tab').forEach(t => t.classList.remove('active'));
+    const sub = document.getElementById('master-sub-' + tabName);
+    if (sub) sub.classList.add('active');
+    const tab = document.querySelector(`.master-tab[data-master-tab="${tabName}"]`);
+    if (tab) tab.classList.add('active');
+}
+
+document.querySelectorAll('.master-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        showMasterSub(tab.dataset.masterTab);
+    });
+});
+
+// Back from agency detail
+$('btn-back-agencies').onclick = () => {
+    showMasterSub('agencies');
 };
 
 // ============================================================
@@ -470,16 +496,76 @@ if (saveCapBtn) {
 async function loadAgencies() {
     const { data } = await sb.from('companies').select('*').order('name');
     $('agencies-list').innerHTML = (data || []).map(c => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)">
+        <div onclick="openAgencyDetail('${c.id}')" style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">
             <div>
-                <div style="font-weight:600;font-size:13px">${c.name}</div>
-                <div style="font-size:11px;color:var(--text-muted)">${c.id}</div>
+                <div style="font-weight:600;font-size:14px">${c.name}</div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${c.id}</div>
             </div>
-            <button class="btn-sm" onclick="toggleCompany('${c.id}', ${!c.active})" 
-                style="font-size:11px;padding:4px 10px;background:${c.active ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)'};color:${c.active ? '#22c55e' : '#ef4444'};border:1px solid ${c.active ? '#22c55e44' : '#ef444444'};border-radius:6px;cursor:pointer">
-                ${c.active !== false ? '✓ Ativa' : '✗ Inativa'}
+            <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:11px;padding:4px 10px;border-radius:6px;background:${c.active !== false ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)'};color:${c.active !== false ? '#22c55e' : '#ef4444'}">
+                    ${c.active !== false ? '✓ Ativa' : '✗ Inativa'}
+                </span>
+                <span style="color:var(--text-muted);font-size:14px">→</span>
+            </div>
+        </div>`).join('') || '<div style="padding:30px;text-align:center;color:var(--text-muted)">Nenhuma agência cadastrada</div>';
+}
+
+async function openAgencyDetail(companyId) {
+    const { data: company } = await sb.from('companies').select('*').eq('id', companyId).single();
+    if (!company) return;
+
+    // Fetch members
+    const { data: members } = await sb.from('company_members').select('*').eq('company_id', companyId);
+
+    // Fetch user emails for members
+    let memberDetails = [];
+    for (const m of (members || [])) {
+        const { data: profile } = await sb.from('profiles').select('email, full_name').eq('id', m.user_id).single();
+        memberDetails.push({
+            ...m,
+            email: profile?.email || m.user_id,
+            name: profile?.full_name || 'Assessor'
+        });
+    }
+
+    let html = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+                <h2 style="font-size:22px;font-weight:700;margin-bottom:4px">${company.name}</h2>
+                <div style="font-size:11px;color:var(--text-muted)">ID: ${company.id}</div>
+            </div>
+            <button onclick="toggleCompany('${company.id}', ${!company.active})" 
+                style="font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;background:${company.active !== false ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)'};color:${company.active !== false ? '#22c55e' : '#ef4444'};border:1px solid ${company.active !== false ? '#22c55e44' : '#ef444444'}">
+                ${company.active !== false ? '✓ Agência Ativa' : '✗ Agência Inativa'}
             </button>
-        </div>`).join('') || '<div style="padding:20px;text-align:center;color:var(--text-muted)">Nenhuma agência</div>';
+        </div>
+    </div>
+
+    <h3 style="font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px;font-weight:600">Assessores (${memberDetails.length})</h3>
+    <div style="display:grid;gap:10px">`;
+
+    if (memberDetails.length === 0) {
+        html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:30px;text-align:center;color:var(--text-muted)">Nenhum assessor vinculado</div>';
+    } else {
+        memberDetails.forEach(m => {
+            html += `
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <div style="width:38px;height:38px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;font-weight:700">${(m.name || 'A')[0].toUpperCase()}</div>
+                    <div>
+                        <div style="font-weight:600;font-size:14px">${m.name}</div>
+                        <div style="font-size:11px;color:var(--text-muted)">${m.email}</div>
+                    </div>
+                </div>
+                <span style="font-size:10px;padding:4px 10px;border-radius:6px;background:rgba(139,92,246,.15);color:#8b5cf6;font-weight:600;text-transform:uppercase">${m.role || 'membro'}</span>
+            </div>`;
+        });
+    }
+
+    html += '</div>';
+    $('agency-detail-content').innerHTML = html;
+    showMasterSub('agency-detail');
 }
 
 async function createAgency() {
@@ -495,6 +581,8 @@ async function createAgency() {
 async function toggleCompany(id, active) {
     await sb.from('companies').update({ active }).eq('id', id);
     loadAgencies();
+    // If viewing this agency detail, reload it
+    openAgencyDetail(id);
 }
 
 const createAgBtn = $('btn-create-agency');
