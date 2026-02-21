@@ -575,10 +575,10 @@ function normalizeProfile(data) {
         hasEducation: we2.hasEducation === 'Y' || we2.has_education === 'Y',
         education: (we2.education || []).map(e => ({
             name: e.name || '',
-            street1: e.street1 || 'N/A',
+            street1: e.street1 || (e.city ? e.city + ' CAMPUS' : 'N/A'),
             city: e.city || '',
-            state: e.state || '',
-            postalCode: e.postalCode || e.postal_code || '',
+            state: e.state || e.city || '',
+            postalCode: e.postalCode || e.postal_code || (addr.homeAddress || addr.home_address || {}).postalCode || '00000-000',
             country: e.country || 'BRAZIL',
             courseOfStudy: e.courseOfStudy || e.course_of_study || e.course || '',
             startDate: e.startDate || e.start_date || { month: '', year: '' },
