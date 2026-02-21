@@ -582,7 +582,7 @@
                     <option value="M">Masculino (MALE)</option>
                     <option value="F">Feminino (FEMALE)</option>
                 </select></div>
-            <div class="fg"><label>Estado Civil *</label><select id="ddlAPP_MARITAL_STATUS">
+            <div class="fg"><label>Estado Civil (Marital Status) *</label><select id="ddlAPP_MARITAL_STATUS">
                     <option value="">- Selecione -</option>
                     <option value="M">Casado(a) (Married)</option>
                     <option value="C">União de Facto (Common Law Marriage)</option>
@@ -592,7 +592,27 @@
                     <option value="D">Divorciado(a) (Divorced)</option>
                     <option value="L">Legalmente Separado(a) (Legally Separated)</option>
                     <option value="O">Outro (Other)</option>
-                </select></div>
+                </select>
+                <details style="margin-top:6px;font-size:12px;color:#555">
+                    <summary style="cursor:pointer;color:#1a73e8;font-weight:500">ℹ️ Diferença entre os status</summary>
+                    <ul style="margin:6px 0 0 16px;line-height:1.7">
+                        <li><strong>Married (Casado)</strong> — Casamento formal reconhecido legalmente (civil ou
+                            religioso com efeito civil).</li>
+                        <li><strong>Common Law Marriage (União de Facto)</strong> — União estável reconhecida sem
+                            casamento formal, baseada em convivência por determinado tempo (depende do país).</li>
+                        <li><strong>Civil Union / Domestic Partnership (União Civil)</strong> — Registro legal de união
+                            alternativo ao casamento, comum para casais que querem direitos legais sem casar
+                            formalmente.</li>
+                        <li><strong>Single (Solteiro)</strong> — Nunca casou nem tem união legal reconhecida.</li>
+                        <li><strong>Widowed (Viúvo)</strong> — Era casado, mas o cônjuge faleceu.</li>
+                        <li><strong>Divorced (Divorciado)</strong> — Foi casado e o casamento terminou oficialmente por
+                            divórcio.</li>
+                        <li><strong>Legally Separated (Legalmente Separado)</strong> — Ainda casado no papel, mas
+                            separado por decisão legal (não houve divórcio final).</li>
+                        <li><strong>Other (Outro)</strong> — Qualquer situação que não se encaixa nas anteriores.</li>
+                    </ul>
+                </details>
+            </div>
             <div class="br" id="br-otherMarital">
                 <div class="fg"><label>Explique o Estado Civil *</label><textarea id="tbxOtherMaritalStatus" rows="3"
                         placeholder="Descreva seu estado civil"></textarea></div>
