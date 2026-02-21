@@ -4096,6 +4096,22 @@
         setupNACheckboxes();
         setupRadioBranches();
 
+        // Auto-select "No" for ALL Security & Background questions (always No)
+        const securityRadios = [
+            'rblDisease', 'rblDisorder', 'rblDruguser',
+            'rblArrested', 'rblControlledSubstances', 'rblProstitution', 'rblMoneyLaundering',
+            'rblHumanTrafficking', 'rblAssistedSevereTrafficking', 'rblHumanTraffickingRelated',
+            'rblIllegalActivity', 'rblTerroristActivity', 'rblTerroristSupport', 'rblTerroristOrg', 'rblTerroristRel',
+            'rblGenocide', 'rblTorture', 'rblExViolence', 'rblChildSoldier', 'rblReligiousFreedom',
+            'rblPopulationControls', 'rblTransplant',
+            'rblRemovalHearing', 'rblImmigrationFraud', 'rblFailToAttend', 'rblVisaViolation', 'rblDeport',
+            'rblChildCustody', 'rblVotingViolation', 'rblRenounceExp', 'rblAttWoReimb'
+        ];
+        securityRadios.forEach(name => {
+            const noRadio = document.querySelector(`input[name="${name}"][value="N"]`);
+            if (noRadio) noRadio.checked = true;
+        });
+
         // Initially hide Family2, DeceasedSpouse and PrevSpouse
         document.getElementById('pg-Family2').style.display = 'none';
         document.getElementById('pg-DeceasedSpouse').style.display = 'none';
