@@ -582,7 +582,7 @@
                                     <tr>
                                         <th>Nome</th>
                                         <th>Status</th>
-                                        <th>Prioridade</th>
+                                        <th>App ID</th>
                                         <th>Atualizado</th>
                                         <th>Ações</th>
                                     </tr>
@@ -776,11 +776,14 @@
         <tr>
             <td><strong>${a.applicants?.full_name || '—'}</strong></td>
             <td><span class="badge badge-${a.fill_status || 'draft'}">${a.fill_status || 'draft'}</span></td>
-            <td>${a.fill_priority || 3}</td>
+            <td style="font-size:11px;font-family:monospace;max-width:120px;overflow:hidden;text-overflow:ellipsis">${a.application_id || '—'}</td>
             <td>${new Date(a.created_at).toLocaleDateString('pt-BR')}</td>
-            <td>
+            <td style="display:flex;gap:4px;flex-wrap:wrap">
                 ${a.fill_status === 'draft' ? `<button class="btn-sm btn-queue" onclick="addToQueue('${a.id}')">📋 Fila</button>` : ''}
                 ${a.fill_status === 'error' ? `<button class="btn-sm btn-queue" onclick="addToQueue('${a.id}')">🔄 Refazer</button>` : ''}
+                ${a.fill_status === 'filled' && a.application_id ? `<button class="btn-sm" style="background:#334155;color:#e94560;border:1px solid #e94560" onclick="clearAppId('${a.id}')">🗑 Limpar ID</button>` : ''}
+                ${a.fill_status === 'filled' ? `<button class="btn-sm btn-queue" onclick="addToQueue('${a.id}')">🔄 Refazer</button>` : ''}
+                ${a.fill_status === 'queued' || a.fill_status === 'filling' ? `<button class="btn-sm" style="background:#334155;color:#ef4444;border:1px solid #ef4444" onclick="removeFromQueue('${a.id}')">✖ Remover</button>` : ''}
             </td>
         </tr>
     `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Nenhuma aplicação encontrada</td></tr>';
@@ -817,7 +820,9 @@
             <td>${a.fill_priority || 3}</td>
             <td>${a.fill_queued_at ? new Date(a.fill_queued_at).toLocaleString('pt-BR') : '—'}</td>
             <td><span class="badge badge-${a.fill_status}">${a.fill_status}</span></td>
-            <td style="font-size:12px;color:var(--text-muted)">${a.fill_worker_id || '—'}</td>
+            <td>
+                <button class="btn-sm" style="background:#334155;color:#ef4444;border:1px solid #ef4444" onclick="removeFromQueue('${a.id}')">✖ Remover</button>
+            </td>
         </tr>
     `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Fila vazia</td></tr>';
         }
@@ -830,12 +835,49 @@
                 fill_status: 'queued',
                 fill_priority: 3,
                 fill_queued_at: new Date().toISOString(),
-                fill_error: null
+                fill_error: null,
+                fill_started_at: null,
+                fill_finished_at: null,
+                fill_worker_id: null
             }).eq('id', appId);
 
             if (error) { toast('Erro: ' + error.message, 'error'); return; }
             toast('Adicionado à fila!', 'success');
             loadDashboard();
+            loadQueue();
+        }
+
+        async function clearAppId(appId) {
+            if (!confirm('Tem certeza que deseja limpar o Application ID? Isso permitirá refazer o preenchimento.')) return;
+            const { error } = await sb.from('applications').update({
+                application_id: null,
+                fill_status: 'draft',
+                fill_error: null,
+                fill_started_at: null,
+                fill_finished_at: null,
+                fill_worker_id: null
+            }).eq('id', appId);
+
+            if (error) { toast('Erro: ' + error.message, 'error'); return; }
+            toast('Application ID limpo! Pode reenviar para a fila.', 'success');
+            loadDashboard();
+        }
+
+        async function removeFromQueue(appId) {
+            if (!confirm('Remover esta aplicação da fila?')) return;
+            const { error } = await sb.from('applications').update({
+                fill_status: 'draft',
+                fill_queued_at: null,
+                fill_started_at: null,
+                fill_finished_at: null,
+                fill_worker_id: null,
+                fill_error: null
+            }).eq('id', appId);
+
+            if (error) { toast('Erro: ' + error.message, 'error'); return; }
+            toast('Removido da fila!', 'success');
+            loadDashboard();
+            loadQueue();
         }
 
         function viewApplicant(id) {
