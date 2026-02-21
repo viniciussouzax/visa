@@ -2042,122 +2042,210 @@
                 class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
     </div>
 
-    <!-- ===== PAGE 13: WorkEducation2 ===== -->
+    <!-- ===== PAGE 14: WorkEducation2 ===== -->
     <div class="page" id="pg-WorkEducation2">
-        <h2>13. Trabalho e Educação Anteriores</h2>
+        <h2>14. Informações sobre Trabalho/Educação/Treinamento Anteriores (Previous Work/Education/Training
+            Information)</h2>
+
         <div class="section">
-            <h3>Empregos Anteriores</h3>
-            <div class="fg"><label>Já trabalhou antes? *</label><span class="rg"><label><input type="radio"
-                            name="rblPreviouslyEmployed" value="Y" data-branch="rblPreviouslyEmployed">
-                        Sim</label><label><input type="radio" name="rblPreviouslyEmployed" value="N"
-                            data-branch="rblPreviouslyEmployed"> Não</label></span></div>
+            <p style="color:#c00;font-size:13px;margin-bottom:14px"><strong>NOTA:</strong> Forneça as informações sobre
+                seus empregos nos últimos cinco anos, se aplicável. (NOTE: Provide your employment information for the
+                last five years that you were employed, if applicable.)</p>
+
+            <!-- === Previous Employment === -->
+            <div class="fg"><label><strong>P:</strong> Você já trabalhou antes? (Were you previously employed?)
+                    *</label>
+                <br><strong>R:</strong> <span class="rg"><label><input type="radio" name="rblPreviouslyEmployed"
+                            value="Y" data-branch="rblPreviouslyEmployed">
+                        Sim (Yes)</label><label><input type="radio" name="rblPreviouslyEmployed" value="N"
+                            data-branch="rblPreviouslyEmployed"> Não (No)</label></span>
+            </div>
             <div class="br" id="br-rblPreviouslyEmployed">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Informações do Empregador/Emprego
+                    (Employer/Employment Information):</p>
                 <div class="as" data-list="dtlPrevEmpl">
                     <div class="entry" data-idx="0">
-                        <div class="fg"><label>Empregador</label><input type="text"
-                                id="dtlPrevEmpl_ctl00_tbEmployerName" placeholder="Nome do empregador"></div>
-                        <div class="fg"><label>Rua 1</label><input type="text"
-                                id="dtlPrevEmpl_ctl00_tbEmployerStreetAddress1" placeholder="Endereço"></div>
-                        <div class="fg"><label>Rua 2</label><input type="text"
-                                id="dtlPrevEmpl_ctl00_tbEmployerStreetAddress2" placeholder="Complemento"></div>
-                        <div class="fg"><label>Cidade</label><input type="text" id="dtlPrevEmpl_ctl00_tbEmployerCity"
+                        <div class="fg"><label>Nome do Empregador (Employer Name) *</label>
+                            <input type="text" id="dtlPrevEmpl_ctl00_tbEmployerName" maxlength="40"
+                                placeholder="Nome do empregador">
+                        </div>
+                        <div class="fg"><label>Endereço do Empregador Linha 1 (Employer Street Address (Line 1))
+                                *</label>
+                            <input type="text" id="dtlPrevEmpl_ctl00_tbEmployerStreetAddress1" maxlength="40"
+                                placeholder="Endereço">
+                        </div>
+                        <div class="fg"><label>Endereço do Empregador Linha 2 (Employer Street Address (Line 2))
+                                <em>*Opcional</em></label>
+                            <input type="text" id="dtlPrevEmpl_ctl00_tbEmployerStreetAddress2" maxlength="40"
+                                placeholder="Complemento">
+                        </div>
+                        <div class="fg"><label>Cidade (City) *</label>
+                            <input type="text" id="dtlPrevEmpl_ctl00_tbEmployerCity" maxlength="20"
                                 placeholder="Cidade">
                         </div>
-                        <div class="fg"><label>Estado</label><input type="text"
-                                id="dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_STATE" placeholder="Estado/Província"><label
-                                class="na-lbl"><input type="checkbox" class="na-cb"
+                        <div class="fg"><label>Estado/Província (State/Province)</label>
+                            <input type="text" id="dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_STATE" maxlength="20"
+                                placeholder="Estado/Província">
+                            <label class="na-lbl"><input type="checkbox" class="na-cb"
                                     id="dtlPrevEmpl_ctl00_cbxPREV_EMPL_ADDR_STATE_NA"
-                                    data-target="dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_STATE"> N/A</label></div>
-                        <div class="fg"><label>CEP</label><input type="text"
-                                id="dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_POSTAL_CD" placeholder="CEP"><label
-                                class="na-lbl"><input type="checkbox" class="na-cb"
+                                    data-target="dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_STATE"> Não se Aplica (Does Not
+                                Apply)</label>
+                        </div>
+                        <div class="fg"><label>CEP (Postal Zone/ZIP Code)</label>
+                            <input type="text" id="dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_POSTAL_CD" maxlength="10"
+                                placeholder="CEP">
+                            <label class="na-lbl"><input type="checkbox" class="na-cb"
                                     id="dtlPrevEmpl_ctl00_cbxPREV_EMPL_ADDR_POSTAL_CD_NA"
-                                    data-target="dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_POSTAL_CD"> N/A</label></div>
-                        <div class="fg"><label>País</label><select id="dtlPrevEmpl_ctl00_DropDownList2"
-                                class="sel-country"></select></div>
-                        <div class="fg"><label>Telefone</label><input type="text" id="dtlPrevEmpl_ctl00_tbEmployerPhone"
-                                placeholder="Telefone"></div>
-                        <div class="fg"><label>Cargo</label><input type="text" id="dtlPrevEmpl_ctl00_tbJobTitle"
-                                placeholder="Cargo/Título"></div>
-                        <div class="fg"><label>Supervisor Sobrenome</label><input type="text"
-                                id="dtlPrevEmpl_ctl00_tbSupervisorSurname" placeholder="Sobrenome do supervisor"><label
-                                class="na-lbl"><input type="checkbox" class="na-cb"
+                                    data-target="dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_POSTAL_CD"> Não se Aplica (Does Not
+                                Apply)</label>
+                        </div>
+                        <div class="fg"><label>País/Região (Country/Region) *</label>
+                            <select id="dtlPrevEmpl_ctl00_DropDownList2" class="sel-country"></select>
+                        </div>
+                        <div class="fg"><label>Número de Telefone (Telephone Number) *</label>
+                            <input type="text" id="dtlPrevEmpl_ctl00_tbEmployerPhone" maxlength="20"
+                                placeholder="Telefone">
+                        </div>
+                        <div class="fg"><label>Cargo (Job Title) *</label>
+                            <input type="text" id="dtlPrevEmpl_ctl00_tbJobTitle" maxlength="40"
+                                placeholder="Cargo/Título">
+                        </div>
+                        <div class="fg"><label>Sobrenome do Supervisor (Supervisor's Surname)</label>
+                            <input type="text" id="dtlPrevEmpl_ctl00_tbSupervisorSurname" maxlength="33"
+                                placeholder="Sobrenome do supervisor">
+                            <label class="na-lbl"><input type="checkbox" class="na-cb"
                                     id="dtlPrevEmpl_ctl00_cbxSupervisorSurname_NA"
-                                    data-target="dtlPrevEmpl_ctl00_tbSupervisorSurname"> N/A</label></div>
-                        <div class="fg"><label>Supervisor Nome</label><input type="text"
-                                id="dtlPrevEmpl_ctl00_tbSupervisorGivenName" placeholder="Nome do supervisor"><label
-                                class="na-lbl"><input type="checkbox" class="na-cb"
+                                    data-target="dtlPrevEmpl_ctl00_tbSupervisorSurname"> Não sei (Do Not Know)</label>
+                        </div>
+                        <div class="fg"><label>Nomes do Supervisor (Supervisor's Given Names)</label>
+                            <input type="text" id="dtlPrevEmpl_ctl00_tbSupervisorGivenName" maxlength="33"
+                                placeholder="Nome do supervisor">
+                            <label class="na-lbl"><input type="checkbox" class="na-cb"
                                     id="dtlPrevEmpl_ctl00_cbxSupervisorGivenName_NA"
-                                    data-target="dtlPrevEmpl_ctl00_tbSupervisorGivenName"> N/A</label></div>
-                        <div class="fg"><label>De</label>
+                                    data-target="dtlPrevEmpl_ctl00_tbSupervisorGivenName"> Não sei (Do Not Know)</label>
+                        </div>
+                        <div class="fg"><label>Data de Início do Emprego (Employment Date From) *</label>
                             <div class="date-row"><select id="dtlPrevEmpl_ctl00_ddlEmpDateFromDay"
                                     class="sel-day"></select><select id="dtlPrevEmpl_ctl00_ddlEmpDateFromMonth"
                                     class="sel-month"></select><input type="text"
                                     id="dtlPrevEmpl_ctl00_tbxEmpDateFromYear" maxlength="4" placeholder="AAAA">
                             </div>
+                            <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
                         </div>
-                        <div class="fg"><label>Até</label>
+                        <div class="fg"><label>Data de Término do Emprego (Employment Date To) *</label>
                             <div class="date-row"><select id="dtlPrevEmpl_ctl00_ddlEmpDateToDay"
                                     class="sel-day"></select><select id="dtlPrevEmpl_ctl00_ddlEmpDateToMonth"
                                     class="sel-month"></select><input type="text"
                                     id="dtlPrevEmpl_ctl00_tbxEmpDateToYear" maxlength="4" placeholder="AAAA">
                             </div>
+                            <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
                         </div>
-                        <div class="fg"><label>Funções</label><textarea id="dtlPrevEmpl_ctl00_tbDescribeDuties"
-                                placeholder="Descreva suas funções"></textarea></div>
-                    </div><button type="button" class="btn-add" onclick="addEntry('dtlPrevEmpl')">+ Adicionar</button>
+                        <div class="fg"><label>Descreva brevemente suas funções (Briefly describe your duties) *</label>
+                            <textarea id="dtlPrevEmpl_ctl00_tbDescribeDuties" rows="3" maxlength="500"
+                                placeholder="Descreva suas funções"></textarea>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-add" onclick="addEntry('dtlPrevEmpl')">+ Adicionar Outro (Add
+                        Another)</button>
                 </div>
             </div>
         </div>
+
+        <!-- === Education === -->
         <div class="section">
-            <h3>Educação</h3>
-            <div class="fg"><label>Frequentou outra escola? *</label><span class="rg"><label><input type="radio"
-                            name="rblOtherEduc" value="Y" data-branch="rblOtherEduc"> Sim</label><label><input
-                            type="radio" name="rblOtherEduc" value="N" data-branch="rblOtherEduc"> Não</label></span>
+            <div class="fg"><label><strong>P:</strong> Você já frequentou alguma instituição educacional de nível
+                    secundário ou superior? (Have you attended any educational institutions at a secondary level or
+                    above?) *</label>
+                <details style="margin:6px 0;font-size:12px;color:#555">
+                    <summary style="cursor:pointer;color:#1a73e8;font-weight:500">ℹ️ Ajuda: Nível de Educação (Help:
+                        Level of Education)</summary>
+                    <p style="margin:6px 0 0;line-height:1.6">Você deve responder <strong>Sim</strong> a esta pergunta
+                        se já frequentou, por qualquer período de tempo, uma escola secundária (ou equivalente em seu
+                        país), faculdade, universidade, pós-graduação, programa de doutorado, ou programa
+                        vocacional.<br>
+                        <em>(You must answer Yes to this question if you have ever attended, for any length of time, a
+                            high school/secondary school (or its equivalent in your country) or college, university,
+                            graduate school, a doctoral program, or a vocational program.)</em>
+                    </p>
+                </details>
+                <br><strong>R:</strong> <span class="rg"><label><input type="radio" name="rblOtherEduc" value="Y"
+                            data-branch="rblOtherEduc"> Sim (Yes)</label><label><input type="radio" name="rblOtherEduc"
+                            value="N" data-branch="rblOtherEduc"> Não (No)</label></span>
             </div>
             <div class="br" id="br-rblOtherEduc">
+                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações sobre a(s)
+                    instituição(ões) educacional(is) que frequentou. (Provide the following information on the
+                    educational institution(s) you have attended.)</p>
                 <div class="as" data-list="dtlPrevEduc">
                     <div class="entry" data-idx="0">
-                        <div class="fg"><label>Escola/Universidade</label><input type="text"
-                                id="dtlPrevEduc_ctl00_tbxSchoolName" placeholder="Nome da escola/universidade"></div>
-                        <div class="fg"><label>Rua 1</label><input type="text" id="dtlPrevEduc_ctl00_tbxSchoolAddr1"
+                        <div class="fg"><label>Nome da Instituição (Name of Institution) *</label>
+                            <input type="text" id="dtlPrevEduc_ctl00_tbxSchoolName" maxlength="40"
+                                placeholder="Nome da escola/universidade">
+                        </div>
+                        <div class="fg"><label>Endereço Linha 1 (Street Address (Line 1)) *</label>
+                            <input type="text" id="dtlPrevEduc_ctl00_tbxSchoolAddr1" maxlength="40"
                                 placeholder="Endereço">
                         </div>
-                        <div class="fg"><label>Rua 2</label><input type="text" id="dtlPrevEduc_ctl00_tbxSchoolAddr2"
+                        <div class="fg"><label>Endereço Linha 2 (Street Address (Line 2)) <em>*Opcional</em></label>
+                            <input type="text" id="dtlPrevEduc_ctl00_tbxSchoolAddr2" maxlength="40"
                                 placeholder="Complemento">
                         </div>
-                        <div class="fg"><label>Cidade</label><input type="text" id="dtlPrevEduc_ctl00_tbxSchoolCity"
-                                placeholder="Cidade">
+                        <div class="fg"><label>Cidade (City) *</label>
+                            <input type="text" id="dtlPrevEduc_ctl00_tbxSchoolCity" maxlength="20" placeholder="Cidade">
                         </div>
-                        <div class="fg"><label>Estado</label><input type="text"
-                                id="dtlPrevEduc_ctl00_tbxEDUC_INST_ADDR_STATE" placeholder="Estado/Província"><label
-                                class="na-lbl"><input type="checkbox" class="na-cb"
+                        <div class="fg"><label>Estado/Província (State/Province)</label>
+                            <input type="text" id="dtlPrevEduc_ctl00_tbxEDUC_INST_ADDR_STATE" maxlength="20"
+                                placeholder="Estado/Província">
+                            <label class="na-lbl"><input type="checkbox" class="na-cb"
                                     id="dtlPrevEduc_ctl00_cbxEDUC_INST_ADDR_STATE_NA"
-                                    data-target="dtlPrevEduc_ctl00_tbxEDUC_INST_ADDR_STATE"> N/A</label></div>
-                        <div class="fg"><label>CEP</label><input type="text"
-                                id="dtlPrevEduc_ctl00_tbxEDUC_INST_POSTAL_CD" placeholder="CEP"><label
-                                class="na-lbl"><input type="checkbox" class="na-cb"
+                                    data-target="dtlPrevEduc_ctl00_tbxEDUC_INST_ADDR_STATE"> Não se Aplica (Does Not
+                                Apply)</label>
+                        </div>
+                        <div class="fg"><label>CEP (Postal Zone/ZIP Code)</label>
+                            <input type="text" id="dtlPrevEduc_ctl00_tbxEDUC_INST_POSTAL_CD" maxlength="10"
+                                placeholder="CEP">
+                            <label class="na-lbl"><input type="checkbox" class="na-cb"
                                     id="dtlPrevEduc_ctl00_cbxEDUC_INST_POSTAL_CD_NA"
-                                    data-target="dtlPrevEduc_ctl00_tbxEDUC_INST_POSTAL_CD"> N/A</label></div>
-                        <div class="fg"><label>País</label><select id="dtlPrevEduc_ctl00_ddlSchoolCountry"
-                                class="sel-country"></select></div>
-                        <div class="fg"><label>Curso</label><input type="text"
-                                id="dtlPrevEduc_ctl00_tbxSchoolCourseOfStudy" placeholder="Curso/Área de estudo"></div>
-                        <div class="fg"><label>De</label>
+                                    data-target="dtlPrevEduc_ctl00_tbxEDUC_INST_POSTAL_CD"> Não se Aplica (Does Not
+                                Apply)</label>
+                        </div>
+                        <div class="fg"><label>País/Região (Country/Region) *</label>
+                            <select id="dtlPrevEduc_ctl00_ddlSchoolCountry" class="sel-country"></select>
+                        </div>
+                        <div class="fg"><label>Curso / Área de Estudo (Course of Study) *</label>
+                            <input type="text" id="dtlPrevEduc_ctl00_tbxSchoolCourseOfStudy" maxlength="40"
+                                placeholder="Ex: Acadêmico, Direito, Engenharia...">
+                            <details style="margin-top:4px;font-size:12px;color:#555">
+                                <summary style="cursor:pointer;color:#1a73e8;font-weight:500">ℹ️ Ajuda: Curso de Estudo
+                                    (Help: Course of Study)</summary>
+                                <p style="margin:6px 0 0;line-height:1.6">Para ensino fundamental/médio, indique
+                                    <strong>"Acadêmico"</strong> ou <strong>"Vocacional"</strong>. Para todos os outros
+                                    níveis educacionais, indique sua área principal ou concentração.<br>
+                                    <em>(For middle school/junior high or high school course of study please indicate
+                                        "Academic" or "Vocational." For all other educational levels please indicate
+                                        your major or concentration.)</em>
+                                </p>
+                            </details>
+                        </div>
+                        <div class="fg"><label>Data de Início da Frequência (Date of Attendance From) *</label>
                             <div class="date-row"><select id="dtlPrevEduc_ctl00_ddlSchoolFromDay"
                                     class="sel-day"></select><select id="dtlPrevEduc_ctl00_ddlSchoolFromMonth"
                                     class="sel-month"></select><input type="text"
                                     id="dtlPrevEduc_ctl00_tbxSchoolFromYear" maxlength="4" placeholder="AAAA">
                             </div>
+                            <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
                         </div>
-                        <div class="fg"><label>Até</label>
+                        <div class="fg"><label>Data de Término da Frequência (Date of Attendance To) *</label>
                             <div class="date-row"><select id="dtlPrevEduc_ctl00_ddlSchoolToDay"
                                     class="sel-day"></select><select id="dtlPrevEduc_ctl00_ddlSchoolToMonth"
                                     class="sel-month"></select><input type="text" id="dtlPrevEduc_ctl00_tbxSchoolToYear"
                                     maxlength="4" placeholder="AAAA">
                             </div>
+                            <span style="font-size:11px;color:#999">(Formato: DD-MMM-AAAA / Format: DD-MMM-YYYY)</span>
                         </div>
-                    </div><button type="button" class="btn-add" onclick="addEntry('dtlPrevEduc')">+ Adicionar</button>
+                    </div>
+                    <button type="button" class="btn-add" onclick="addEntry('dtlPrevEduc')">+ Adicionar Outro (Add
+                        Another)</button>
                 </div>
             </div>
         </div>
