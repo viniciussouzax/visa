@@ -4245,6 +4245,10 @@
             document.getElementById('acc-wrapper').style.display = 'block';
             document.getElementById('acc-user-email').textContent = 'Carregando...';
 
+            // Hide dev/debug elements in iframe mode
+            document.querySelector('.btn-json')?.remove();
+            document.getElementById('jsonModal')?.remove();
+
             try {
                 const res = await sbFetch(`applicants?id=eq.${applicantId}&select=*`, 'GET');
                 const applicants = await res.json();
