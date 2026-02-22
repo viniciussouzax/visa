@@ -586,9 +586,15 @@
     <!-- Accordion (hidden until email resolved) -->
     <div id="acc-wrapper" style="display:none">
         <header class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
-            <div class="max-w-2xl mx-auto px-4 py-3">
-                <h1 class="text-base font-bold text-slate-800">DS-160 Formulario de Visto Online</h1>
-                <p class="text-xs text-slate-400" id="acc-user-email"></p>
+            <div class="max-w-2xl mx-auto px-4 py-3"
+                style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                    <h1 class="text-base font-bold text-slate-800">DS-160 Formulario de Visto Online</h1>
+                    <p class="text-xs text-slate-400" id="acc-user-email"></p>
+                </div>
+                <button onclick="backToGate()"
+                    style="background:none;border:1px solid #e2e8f0;border-radius:8px;padding:6px 14px;font-size:13px;color:#64748b;cursor:pointer;white-space:nowrap">←
+                    Meus Processos</button>
             </div>
         </header>
         <div class="max-w-2xl mx-auto px-4 pt-4 pb-8" id="acc-container"></div>
@@ -4071,6 +4077,13 @@
             } finally {
                 btn.disabled = false;
             }
+        }
+
+        function backToGate() {
+            document.getElementById('acc-wrapper').style.display = 'none';
+            document.getElementById('email-gate').style.display = 'flex';
+            // Re-search to refresh results
+            if (gateEmail) gateSearch();
         }
 
         function startFormWithEmail(email, existingApplicant, linkToPrimaryId) {
