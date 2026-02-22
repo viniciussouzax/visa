@@ -2728,7 +2728,7 @@
             <div class="modal-btns">
                 <button style="background:#003366;color:#fff" onclick="copyJSON()">Copiar</button>
                 <button style="background:#2e7d32;color:#fff" onclick="downloadJSON()">Download</button>
-                <button id="btnSaveSupabase" style="background:#6366f1;color:#fff" onclick="saveToSupabase()">💾 Salvar
+                <button id="btnSaveSupabase" style="background:#6366f1;color:#fff" onclick="saveToSupabase()">Salvar
                     no Supabase</button>
                 <button style="background:#e0e0e0;color:#333" onclick="closeModal()">Fechar</button>
             </div>
@@ -3274,7 +3274,7 @@
             }
 
             if (errors > 0) {
-                showToast(`⚠ ${errors} campo(s) obrigatório(s) não preenchido(s)`);
+                showToast(`${errors} campo(s) obrigatório(s) não preenchido(s)`);
                 // Scroll to first error
                 const firstErr = page.querySelector('.fg.has-error');
                 if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });

@@ -23,12 +23,12 @@ let archivedPage = 1;
 let archivedSearch = '';
 
 const STAGES = {
-    new: { label: '📥 Novos', color: '#3b82f6' },
-    review: { label: '🔍 Revisão', color: '#f59e0b' },
-    todo: { label: '📋 A Fazer', color: '#8b5cf6' },
-    filling: { label: '⚙️ Fazendo', color: '#f97316' },
-    done: { label: '✅ Feito', color: '#22c55e' },
-    archived: { label: '📦 Arquivado', color: '#64748b' }
+    new: { label: 'Novos', color: '#3b82f6' },
+    review: { label: 'Revisao', color: '#f59e0b' },
+    todo: { label: 'A Fazer', color: '#8b5cf6' },
+    filling: { label: 'Fazendo', color: '#f97316' },
+    done: { label: 'Feito', color: '#22c55e' },
+    archived: { label: 'Arquivado', color: '#64748b' }
 };
 
 const STAGE_ORDER = ['new', 'review', 'todo', 'filling', 'done', 'archived'];
@@ -122,7 +122,7 @@ document.querySelectorAll('.nav-item[data-view]').forEach(item => {
 // Back button from detail view
 $('btn-back-pipeline').onclick = () => {
     showView('pipeline');
-    $('page-title').textContent = '📊 Pipeline';
+    $('page-title').textContent = 'Pipeline';
 };
 
 // Master Tabs
@@ -228,8 +228,8 @@ async function loadPipelineList() {
             </td>
             <td style="font-size:12px;color:var(--text-muted)">${updated}</td>
             <td>
-                <button class="btn-sm btn-view" onclick="event.stopPropagation();viewApplicantJson('${a.id}')" title="Ver JSON">👁</button>
-                <button class="btn-sm btn-danger" onclick="event.stopPropagation();deleteApplicant('${a.id}','${a.full_name.replace(/'/g, "\\'")}')" title="Excluir">🗑</button>
+                <button class="btn-sm btn-view" onclick="event.stopPropagation();viewApplicantJson('${a.id}')" title="Ver JSON">Ver</button>
+                <button class="btn-sm btn-danger" onclick="event.stopPropagation();deleteApplicant('${a.id}','${a.full_name.replace(/'/g, "\\'")}')" title="Excluir">Excluir</button>
             </td>
         </tr>`;
     }).join('') || '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhum solicitante nesta etapa</td></tr>';
@@ -275,8 +275,8 @@ async function loadArchived() {
             <td style="font-size:12px;color:var(--text-muted)">${a.passport_number || '—'}</td>
             <td style="font-size:12px;color:var(--text-muted)">${updated}</td>
             <td>
-                <button class="btn-sm btn-view" onclick="event.stopPropagation();viewApplicantJson('${a.id}')" title="Ver JSON">👁</button>
-                <button class="btn-sm btn-queue" onclick="event.stopPropagation();movePipeline('${a.id}','new','${a.id}')" title="Restaurar">↩️</button>
+                <button class="btn-sm btn-view" onclick="event.stopPropagation();viewApplicantJson('${a.id}')" title="Ver JSON">Ver</button>
+                <button class="btn-sm btn-queue" onclick="event.stopPropagation();movePipeline('${a.id}','new','${a.id}')" title="Restaurar">Restaurar</button>
             </td>
         </tr>`;
     }).join('') || '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhum solicitante arquivado</td></tr>';
@@ -372,9 +372,9 @@ async function openApplicantDetail(id) {
             <div>
                 <h2 style="font-size:22px;font-weight:700;margin-bottom:4px">${applicant.full_name}</h2>
                 <div style="font-size:13px;color:var(--text-muted);display:flex;gap:16px;flex-wrap:wrap">
-                    <span>📧 ${email}</span>
-                    <span>📱 ${phone}</span>
-                    <span>🛂 ${applicant.passport_number || 'Sem passaporte'}</span>
+                    <span>${email}</span>
+                    <span>${phone}</span>
+                    <span>${applicant.passport_number || 'Sem passaporte'}</span>
                 </div>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
@@ -401,8 +401,8 @@ async function openApplicantDetail(id) {
         </div>
         <!-- Actions -->
         <div style="margin-top:12px;display:flex;gap:8px">
-            <button onclick="viewApplicantJson('${id}')" style="font-size:12px;padding:6px 14px;background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);border-radius:6px;cursor:pointer">👁 Ver JSON</button>
-            <button onclick="deleteApplicant('${id}','${applicant.full_name.replace(/'/g, "\\'")}')" style="font-size:12px;padding:6px 14px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:6px;cursor:pointer">🗑 Excluir Todos</button>
+            <button onclick="viewApplicantJson('${id}')" style="font-size:12px;padding:6px 14px;background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);border-radius:6px;cursor:pointer">Ver JSON</button>
+            <button onclick="deleteApplicant('${id}','${applicant.full_name.replace(/'/g, "\\'")}')" style="font-size:12px;padding:6px 14px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:6px;cursor:pointer">Excluir Todos</button>
         </div>
     </div>
 
@@ -424,7 +424,7 @@ async function openApplicantDetail(id) {
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;border-left:4px solid ${pStage.color};transition:all .15s;${isDone ? 'opacity:.85' : ''}">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
                 <div style="display:flex;align-items:center;gap:10px">
-                    <span style="font-size:20px">${isPrimary ? '👤' : '👥'}</span>
+                    <span style="font-size:20px">${isPrimary ? '' : ''}</span>
                     <div>
                         <div style="font-weight:700;font-size:15px">${p.full_name}</div>
                         <div style="font-size:11px;color:var(--text-muted)">${isPrimary ? 'Solicitante Principal' : 'Dependente'} · ${pEmail}</div>
@@ -433,9 +433,9 @@ async function openApplicantDetail(id) {
                 <span class="badge" style="background:${pStage.color}22;color:${pStage.color};font-size:11px;padding:5px 14px">${pStage.label}</span>
             </div>
             <div style="display:flex;gap:20px;font-size:12px;color:var(--text-muted);margin-bottom:12px">
-                <span>📋 App ID: <strong style="color:var(--text)">${appId}</strong></span>
-                <span>📝 Fill: <strong style="color:var(--text)">${fillStatus}</strong></span>
-                <span>🛂 Passaporte: <strong style="color:var(--text)">${p.passport_number || '—'}</strong></span>
+                <span>App ID: <strong style="color:var(--text)">${appId}</strong></span>
+                <span>Fill: <strong style="color:var(--text)">${fillStatus}</strong></span>
+                <span>Passaporte: <strong style="color:var(--text)">${p.passport_number || '—'}</strong></span>
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
                 ${STAGE_ORDER.filter(s => s !== p.pipeline_status).map(s =>
@@ -445,7 +445,7 @@ async function openApplicantDetail(id) {
                         onmouseout="this.style.background='${STAGES[s].color}15'">${STAGES[s].label}</button>`
         ).join('')}
                 <button onclick="viewApplicantJson('${p.id}')" 
-                    style="font-size:10px;padding:4px 10px;background:rgba(59,130,246,.1);color:#3b82f6;border:1px solid rgba(59,130,246,.2);border-radius:5px;cursor:pointer">👁 JSON</button>
+                    style="font-size:10px;padding:4px 10px;background:rgba(59,130,246,.1);color:#3b82f6;border:1px solid rgba(59,130,246,.2);border-radius:5px;cursor:pointer">JSON</button>
             </div>
         </div>`;
     });
@@ -527,7 +527,7 @@ async function deleteApplicant(id, name) {
     if (error) { toast('Erro: ' + error.message, 'error'); return; }
     toast('Excluído com sucesso', 'success');
     showView('pipeline');
-    $('page-title').textContent = '📊 Pipeline';
+    $('page-title').textContent = 'Pipeline';
     loadPipeline();
 }
 
@@ -536,7 +536,7 @@ async function deleteApplicant(id, name) {
 // ============================================================
 async function loadLogs() {
     const { data } = await sb.from('error_logs').select('*').order('created_at', { ascending: false }).limit(50);
-    const causeLabels = { browser_closed: '🔴 Browser fechado', network_error: '🌐 Internet', timeout: '⏱ Timeout', field_error: '📝 Campo', unknown: '❓ Desconhecido' };
+    const causeLabels = { browser_closed: 'Browser fechado', network_error: 'Internet', timeout: 'Timeout', field_error: 'Campo', unknown: 'Desconhecido' };
     const causeBg = { browser_closed: '#7f1d1d', network_error: '#713f12', timeout: '#1e3a5f', field_error: '#4a1d7a', unknown: '#334155' };
 
     $('logs-list').innerHTML = (data || []).map((l, i) => `
@@ -616,7 +616,7 @@ async function openAgencyDetail(companyId) {
                 ${company.active !== false ? '✓ Agência Ativa' : '✗ Agência Inativa'}
             </button>
             ${memberDetails.length === 0 ? `<button onclick="deleteCompany('${company.id}', '${company.name.replace(/'/g, "\\'")}')"
-                style="font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid #ef444444;margin-left:8px">🗑 Excluir</button>` : ''}
+                style="font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid #ef444444;margin-left:8px">Excluir</button>` : ''}
         </div>
     </div>
 
@@ -764,8 +764,8 @@ if (copyBtn) {
         const base = location.href.replace(/dashboard\.html.*$/, '');
         const url = userCompanyShortId ? `${base}${userCompanyShortId}` : `${base}ds160`;
         navigator.clipboard.writeText(url);
-        copyBtn.textContent = '✅ Copiado!';
-        setTimeout(() => { copyBtn.textContent = '📋 Copiar link do formulário'; }, 2000);
+        copyBtn.textContent = 'Copiado!';
+        setTimeout(() => { copyBtn.textContent = 'Copiar link do formulário'; }, 2000);
     };
 }
 

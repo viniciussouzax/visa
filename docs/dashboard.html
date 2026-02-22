@@ -483,39 +483,8 @@
             transition: transform .2s, box-shadow .2s;
         }
 
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: var(--text-muted);
-            border-radius: 12px 0 0 12px;
-        }
-
         .pipeline-card {
             cursor: pointer;
-        }
-
-        .pipeline-card[data-filter="new"]::before {
-            background: #3b82f6;
-        }
-
-        .pipeline-card[data-filter="review"]::before {
-            background: #f59e0b;
-        }
-
-        .pipeline-card[data-filter="todo"]::before {
-            background: #8b5cf6;
-        }
-
-        .pipeline-card[data-filter="filling"]::before {
-            background: #f97316;
-        }
-
-        .pipeline-card[data-filter="done"]::before {
-            background: #22c55e;
         }
 
         .pipeline-card.active {
@@ -984,7 +953,7 @@
     <!-- AUTH SCREEN -->
     <div id="auth-screen">
         <div class="auth-card">
-            <h1>⚡ DS-160 IA</h1>
+            <h1>DS-160 IA</h1>
             <p>Painel de gestão de vistos</p>
             <div class="form-group">
                 <label>Email</label>
@@ -1004,15 +973,15 @@
         <div class="app-layout">
             <!-- Sidebar -->
             <div class="sidebar">
-                <div class="sidebar-brand">⚡ DS-160 IA</div>
+                <div class="sidebar-brand">DS-160 IA</div>
                 <div class="sidebar-nav">
-                    <div class="nav-item active" data-view="pipeline">📊 Pipeline</div>
-                    <div class="nav-item" data-view="archived">📦 Arquivados</div>
+                    <div class="nav-item active" data-view="pipeline">Pipeline</div>
+                    <div class="nav-item" data-view="archived">Arquivados</div>
                     <div class="nav-separator"></div>
-                    <div class="nav-item hidden" id="nav-master" data-view="master">🏢 Painel Master</div>
+                    <div class="nav-item hidden" id="nav-master" data-view="master">Painel Master</div>
                 </div>
                 <div style="padding: 8px 12px;">
-                    <button class="btn-copy-link" id="btn-copy-form" title="Copiar link do formulário">📋 Copiar link do
+                    <button class="btn-copy-link" id="btn-copy-form" title="Copiar link do formulário">Copiar link do
                         formulário</button>
                 </div>
                 <div class="sidebar-footer">
@@ -1027,9 +996,9 @@
             <!-- Main -->
             <div class="main">
                 <div class="topbar">
-                    <h2 id="page-title">📊 Pipeline</h2>
+                    <h2 id="page-title">Pipeline</h2>
                     <div class="topbar-actions">
-                        <button class="btn-sm btn-queue" id="btn-refresh" style="padding:8px 16px">↻ Atualizar</button>
+                        <button class="btn-sm btn-queue" id="btn-refresh" style="padding:8px 16px">Atualizar</button>
                     </div>
                 </div>
                 <div class="content">
@@ -1038,29 +1007,29 @@
                     <div class="view active" id="view-pipeline">
                         <div class="stats" id="pipeline-cards">
                             <div class="stat-card pipeline-card active" data-filter="new">
-                                <div class="label">📥 Novos</div>
+                                <div class="label">NOVOS</div>
                                 <div class="value" id="stat-new">0</div>
                             </div>
                             <div class="stat-card pipeline-card" data-filter="review">
-                                <div class="label">🔍 Revisão</div>
+                                <div class="label">REVISÃO</div>
                                 <div class="value" id="stat-review">0</div>
                             </div>
                             <div class="stat-card pipeline-card" data-filter="todo">
-                                <div class="label">📋 A Fazer</div>
+                                <div class="label">A FAZER</div>
                                 <div class="value" id="stat-todo">0</div>
                             </div>
                             <div class="stat-card pipeline-card" data-filter="filling">
-                                <div class="label">⚙️ Fazendo</div>
+                                <div class="label">FAZENDO</div>
                                 <div class="value" id="stat-filling">0</div>
                             </div>
                             <div class="stat-card pipeline-card" data-filter="done">
-                                <div class="label">✅ Feito</div>
+                                <div class="label">FEITO</div>
                                 <div class="value" id="stat-done">0</div>
                             </div>
                         </div>
                         <div class="search-bar">
                             <input type="text" id="search-applicants"
-                                placeholder="🔍 Buscar por nome, passaporte ou email...">
+                                placeholder="Buscar por nome, passaporte ou email...">
                         </div>
                         <div class="table-container">
                             <table>
@@ -1094,13 +1063,13 @@
                     <!-- Archived View -->
                     <div class="view" id="view-archived">
                         <div style="margin-bottom:20px">
-                            <h3 style="font-size:18px;font-weight:700;margin-bottom:12px">📦 Solicitantes Arquivados
+                            <h3 style="font-size:18px;font-weight:700;margin-bottom:12px">Solicitantes Arquivados
                             </h3>
                             <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Solicitantes que já
                                 foram concluídos e arquivados pelo assessor.</p>
                         </div>
                         <div class="search-bar">
-                            <input type="text" id="search-archived" placeholder="🔍 Buscar por nome ou passaporte...">
+                            <input type="text" id="search-archived" placeholder="Buscar por nome ou passaporte...">
                         </div>
                         <div class="table-container">
                             <table>
@@ -1128,13 +1097,13 @@
                         <div
                             style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
                             <button class="master-tab active" data-master-tab="agencies"
-                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">🏢
+                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">
                                 Organizações</button>
                             <button class="master-tab" data-master-tab="integrations"
-                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">🔌
+                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">
                                 Integrações</button>
                             <button class="master-tab" data-master-tab="logs"
-                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">📋
+                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">
                                 Logs</button>
                         </div>
 
@@ -1142,7 +1111,7 @@
                         <div class="master-sub active" id="master-sub-agencies">
                             <div
                                 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-                                <h3 style="font-size:16px;font-weight:700">🏢 Organizações Cadastradas</h3>
+                                <h3 style="font-size:16px;font-weight:700">Organizações Cadastradas</h3>
                                 <button class="btn-sm btn-primary-sm"
                                     onclick="document.getElementById('modal-create-agency').classList.remove('hidden')"
                                     style="padding:8px 18px;font-size:13px">+ Nova Organização</button>
@@ -1163,7 +1132,7 @@
                         <!-- Sub: Integrations -->
                         <div class="master-sub" id="master-sub-integrations">
                             <div class="config-card">
-                                <h3>🔑 CapMonster Cloud</h3>
+                                <h3>CapMonster Cloud</h3>
                                 <p style="color:var(--text-muted);font-size:12px;margin-bottom:12px">API Key para
                                     resolução automática de captchas durante o preenchimento DS-160.</p>
                                 <div style="display:flex;gap:8px">
@@ -1171,7 +1140,7 @@
                                         placeholder="Sua Client Key do CapMonster..."
                                         style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
                                     <button class="btn-sm btn-primary-sm" id="btn-save-capmonster"
-                                        style="padding:10px 16px">💾 Salvar</button>
+                                        style="padding:10px 16px">Salvar</button>
                                 </div>
                             </div>
                         </div>
@@ -1179,7 +1148,7 @@
                         <!-- Sub: Logs -->
                         <div class="master-sub" id="master-sub-logs">
                             <div class="config-card" style="margin-bottom:0">
-                                <h3>🔍 Logs de Erros</h3>
+                                <h3>Logs de Erros</h3>
                                 <p style="color:var(--text-muted);font-size:12px">Últimos 50 erros registrados durante
                                     preenchimentos automáticos.</p>
                             </div>
