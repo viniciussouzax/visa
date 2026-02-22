@@ -182,12 +182,18 @@
             -webkit-appearance: none;
             width: 20px;
             height: 20px;
+            min-width: 20px;
+            min-height: 20px;
+            max-width: 20px;
+            max-height: 20px;
+            padding: 0;
             border: 2px solid #cbd5e1;
             border-radius: 50%;
             cursor: pointer;
             transition: all .2s;
             position: relative;
             flex-shrink: 0;
+            box-sizing: border-box;
         }
 
         .fg input[type="radio"]:checked {
