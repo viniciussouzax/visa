@@ -1272,21 +1272,21 @@
         </div>
     </div>
 
-    <!-- Modal: View Process (Accordion) -->
+    <!-- Modal: View Process (Form iframe) -->
     <div id="process-modal"
-        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:20px">
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;padding:12px">
         <div
-            style="background:var(--surface);border-radius:16px;max-width:680px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+            style="background:var(--surface);border-radius:12px;width:100%;max-width:900px;height:95vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden">
             <div
-                style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+                style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
                 <div>
-                    <h3 id="process-modal-name" style="font-size:16px;font-weight:700;color:var(--text)"></h3>
-                    <div id="process-modal-sub" style="font-size:12px;color:var(--text-muted);margin-top:2px"></div>
+                    <h3 id="process-modal-name" style="font-size:15px;font-weight:700;color:var(--text);margin:0"></h3>
+                    <div id="process-modal-sub" style="font-size:11px;color:var(--text-muted);margin-top:1px"></div>
                 </div>
                 <button onclick="closeProcessModal()"
-                    style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);padding:4px 8px">&times;</button>
+                    style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted);padding:4px 8px;line-height:1">&times;</button>
             </div>
-            <div id="process-modal-body" style="padding:20px 24px;overflow-y:auto;flex:1"></div>
+            <iframe id="process-modal-iframe" style="flex:1;border:none;width:100%" src="about:blank"></iframe>
         </div>
     </div>
 

@@ -425,117 +425,25 @@ async function openApplicantDetail(id) {
 }
 
 // ============================================================
-// PROCESS MODAL (ACCORDION)
+// PROCESS MODAL (IFRAME - same form as user)
 // ============================================================
-const FORM_SECTIONS = [
-    {
-        key: 'personal1', label: 'Dados Pessoais', fields: {
-            surname: 'Sobrenome', givenName: 'Nome', fullNameNative: 'Nome Completo (nativo)',
-            gender: 'Gênero', maritalStatus: 'Estado Civil', dobDay: 'Dia Nasc.', dobMonth: 'Mês Nasc.', dobYear: 'Ano Nasc.',
-            pobCity: 'Cidade Nasc.', pobCountry: 'País Nasc.', otherNames: 'Outros Nomes'
-        }
-    },
-    {
-        key: 'personal2', label: 'Informações Pessoais Adicionais', fields: {
-            nationality: 'Nacionalidade', nationalId: 'Identidade Nacional', otherNationality: 'Outra Nacionalidade', permResident: 'Residente Permanente'
-        }
-    },
-    {
-        key: 'travel', label: 'Informações de Viagem', fields: {
-            purpose: 'Propósito', purposeSpec: 'Especificação', visaClass: 'Classe do Visto'
-        }
-    },
-    {
-        key: 'addressPhone', label: 'Endereço e Contato', fields: {
-            addr1: 'Endereço 1', addr2: 'Endereço 2', city: 'Cidade', state: 'Estado', postalCode: 'CEP',
-            country: 'País', phone: 'Telefone', mobilePhone: 'Celular', workPhone: 'Tel. Comercial', email: 'E-mail'
-        }
-    },
-    {
-        key: 'passport', label: 'Passaporte', fields: {
-            number: 'Número', type: 'Tipo', country: 'País', bookNumber: 'Número do Livro',
-            issueDay: 'Dia Emissão', issueMonth: 'Mês Emissão', issueYear: 'Ano Emissão',
-            expireDay: 'Dia Validade', expireMonth: 'Mês Validade', expireYear: 'Ano Validade'
-        }
-    },
-    {
-        key: 'usContact', label: 'Contato nos EUA', fields: {
-            surname: 'Sobrenome', givenName: 'Nome', organization: 'Organização',
-            addr1: 'Endereço', city: 'Cidade', state: 'Estado', postalCode: 'CEP', phone: 'Telefone', email: 'E-mail'
-        }
-    },
-    {
-        key: 'family', label: 'Família', fields: {
-            fatherSurname: 'Sobrenome do Pai', fatherGivenName: 'Nome do Pai', fatherInUS: 'Pai nos EUA',
-            motherSurname: 'Sobrenome da Mãe', motherGivenName: 'Nome da Mãe', motherInUS: 'Mãe nos EUA'
-        }
-    },
-    {
-        key: 'spouse', label: 'Cônjuge', fields: {
-            surname: 'Sobrenome', givenName: 'Nome', dob: 'Data Nasc.', nationality: 'Nacionalidade'
-        }
-    },
-    {
-        key: 'workEducation', label: 'Trabalho e Educação', fields: {
-            occupation: 'Ocupação', employerName: 'Empregador', duties: 'Funções',
-            addr1: 'Endereço', city: 'Cidade', state: 'Estado', phone: 'Telefone', monthlyIncome: 'Renda Mensal'
-        }
-    },
-    { key: 'security', label: 'Segurança', fields: {} }
-];
-
 async function openProcessModal(applicantId) {
-    const { data: applicant } = await sb.from('applicants').select('*').eq('id', applicantId).single();
+    const { data: applicant } = await sb.from('applicants').select('full_name, pipeline_status').eq('id', applicantId).single();
     if (!applicant) return;
 
-    const data = applicant.data || {};
     const stage = STAGES[applicant.pipeline_status] || STAGES.new;
-
     $('process-modal-name').textContent = applicant.full_name;
     $('process-modal-sub').innerHTML = `<span style="background:${stage.color}18;color:${stage.color};padding:2px 10px;border-radius:4px;font-size:11px;font-weight:600">${stage.label}</span>`;
 
-    let html = '';
-    FORM_SECTIONS.forEach((sec, idx) => {
-        const sectionData = data[sec.key];
-        const hasData = sectionData && Object.keys(sectionData).length > 0;
-        const fieldCount = hasData ? Object.keys(sectionData).filter(k => sectionData[k] && String(sectionData[k]).trim()).length : 0;
-
-        html += `<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden">
-            <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.chevron').style.transform=this.nextElementSibling.style.display==='none'?'':'rotate(90deg)'" 
-                style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left">
-                <span style="font-size:13px;font-weight:600;color:var(--text)">${sec.label}</span>
-                <div style="display:flex;align-items:center;gap:8px">
-                    <span style="font-size:10px;color:${hasData ? '#22c55e' : 'var(--text-muted)'};background:${hasData ? 'rgba(34,197,94,.1)' : 'var(--bg)'};padding:2px 8px;border-radius:4px">${hasData ? fieldCount + ' campos' : 'Vazio'}</span>
-                    <span class="chevron" style="color:var(--text-muted);font-size:12px;transition:transform .2s">▶</span>
-                </div>
-            </button>
-            <div style="display:none;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg)">`;
-
-        if (hasData) {
-            const fields = Object.keys(sec.fields).length > 0 ? sec.fields : null;
-            Object.entries(sectionData).forEach(([key, val]) => {
-                if (!val || !String(val).trim()) return;
-                const label = fields ? (fields[key] || key) : key;
-                const displayVal = typeof val === 'object' ? JSON.stringify(val) : String(val);
-                html += `<div style="display:flex;gap:8px;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border)">
-                    <span style="color:var(--text-muted);min-width:120px;flex-shrink:0">${label}</span>
-                    <span style="color:var(--text);font-weight:500;word-break:break-word">${displayVal}</span>
-                </div>`;
-            });
-        } else {
-            html += '<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Nenhum dado preenchido</div>';
-        }
-
-        html += '</div></div>';
-    });
-
-    $('process-modal-body').innerHTML = html;
+    $('process-modal-iframe').src = `ds160/index.html?id=${applicantId}`;
     $('process-modal').style.display = 'flex';
 }
 
 function closeProcessModal() {
     $('process-modal').style.display = 'none';
+    $('process-modal-iframe').src = 'about:blank';
 }
+
 
 // ============================================================
 // MOVE PIPELINE STATUS
