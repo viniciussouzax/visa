@@ -390,12 +390,13 @@ async function openApplicantDetail(id) {
         </div>
         <!-- Actions row -->
         <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:8px">
                 <span style="font-size:11px;color:var(--text-muted);font-weight:600">MOVER TODOS:</span>
-                ${STAGE_ORDER.map(s =>
-                `<button onclick="moveAllPipeline('${id}','${s}')" 
-                    style="font-size:11px;padding:4px 10px;background:${STAGES[s].color}12;color:${STAGES[s].color};border:1px solid ${STAGES[s].color}25;border-radius:5px;cursor:pointer;font-weight:500">${STAGES[s].label}</button>`
-            ).join('')}
+                <select onchange="if(this.value){moveAllPipeline('${id}',this.value);this.value=''}" 
+                    style="font-size:12px;padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;outline:none">
+                    <option value="">Selecionar etapa...</option>
+                    ${STAGE_ORDER.map(s => `<option value="${s}">${STAGES[s].label}</option>`).join('')}
+                </select>
             </div>
             <div style="display:flex;gap:6px">
                 <button onclick="viewApplicantJson('${id}')" style="font-size:11px;padding:5px 12px;background:rgba(59,130,246,.08);color:#3b82f6;border:1px solid rgba(59,130,246,.2);border-radius:5px;cursor:pointer">Ver JSON</button>
@@ -418,18 +419,18 @@ async function openApplicantDetail(id) {
 
         html += `
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;border-left:3px solid ${pStage.color};${isDone ? 'opacity:.7' : ''}">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
                 <div>
                     <div style="font-weight:700;font-size:14px">${p.full_name}</div>
                     <div style="font-size:11px;color:var(--text-muted)">${roleLabel}${pPassport ? ' · ' + pPassport : ''}</div>
                 </div>
-                <span class="badge" style="background:${pStage.color}18;color:${pStage.color};font-size:10px;padding:4px 12px">${pStage.label}</span>
-            </div>
-            <div style="display:flex;gap:5px;flex-wrap:wrap">
-                ${STAGE_ORDER.filter(s => s !== p.pipeline_status).map(s =>
-            `<button onclick="movePipeline('${p.id}','${s}','${id}')" 
-                        style="font-size:10px;padding:3px 9px;background:${STAGES[s].color}10;color:${STAGES[s].color};border:1px solid ${STAGES[s].color}22;border-radius:4px;cursor:pointer">${STAGES[s].label}</button>`
+                <select onchange="if(this.value){movePipeline('${p.id}',this.value,'${id}')}" 
+                    style="font-size:11px;padding:5px 10px;background:${pStage.color}10;color:${pStage.color};border:1px solid ${pStage.color}30;border-radius:5px;cursor:pointer;outline:none;font-weight:600">
+                    <option value="">${pStage.label}</option>
+                    ${STAGE_ORDER.filter(s => s !== p.pipeline_status).map(s =>
+            `<option value="${s}">${STAGES[s].label}</option>`
         ).join('')}
+                </select>
             </div>
         </div>`;
     });
