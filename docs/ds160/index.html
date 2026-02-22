@@ -2913,7 +2913,9 @@
 
         function isPageVisible(i) {
             const pg = document.getElementById('pg-' + PAGES[i]);
-            return pg && pg.style.display !== 'none';
+            const vis = pg && pg.style.display !== 'none';
+            console.log('[NAV] isPageVisible(' + i + '/' + PAGES[i] + ') style.display="' + (pg?.style.display) + '" → ' + vis);
+            return vis;
         }
         function showPage(i) {
             if (!isPageVisible(i)) return;
@@ -2944,15 +2946,18 @@
         }
 
         function nextPage() {
+            console.log('[NAV] nextPage() called, currentPage=' + currentPage + '/' + PAGES[currentPage]);
             // Validate current page before advancing
-            if (!validateCurrentPage()) return;
+            if (!validateCurrentPage()) { console.log('[NAV] validation FAILED'); return; }
+            console.log('[NAV] validation passed, searching from page ' + (currentPage + 1));
             // Intercept leaving Personal1 (index 1) to save applicant + application
             if (currentPage === 1 && !savedApplicantId) {
                 saveOnPersonal1Exit();
             }
             for (let i = currentPage + 1; i < PAGES.length; i++) {
-                if (isPageVisible(i)) { showPage(i); return; }
+                if (isPageVisible(i)) { console.log('[NAV] → navigating to page ' + i + '/' + PAGES[i]); showPage(i); return; }
             }
+            console.log('[NAV] no next visible page found!');
         }
 
         // ===== VALIDATION =====
