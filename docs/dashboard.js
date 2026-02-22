@@ -360,92 +360,76 @@ async function openApplicantDetail(id) {
     const totalCount = allProcesses.length;
     const progressPercent = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
-    // Build header
-    const email = applicant.data?.personal?.email || applicant.data?.contact?.email || '—';
-    const phone = applicant.data?.contact?.phone || applicant.data?.personal?.phone || '—';
-    const stage = STAGES[applicant.pipeline_status] || STAGES.new;
+    // Build header — compact, no redundancy
+    const email = applicant.data?.addressPhone?.email || applicant.data?.personal?.email || '';
+    const phone = applicant.data?.addressPhone?.phone || applicant.data?.contact?.phone || '';
+    const passport = applicant.passport_number || '';
+
+    // Info items — only show if they have values
+    const infoItems = [email, phone, passport].filter(Boolean);
 
     let html = `
     <!-- Header card -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
             <div>
-                <h2 style="font-size:22px;font-weight:700;margin-bottom:4px">${applicant.full_name}</h2>
-                <div style="font-size:13px;color:var(--text-muted);display:flex;gap:16px;flex-wrap:wrap">
-                    <span>${email}</span>
-                    <span>${phone}</span>
-                    <span>${applicant.passport_number || 'Sem passaporte'}</span>
-                </div>
+                <h2 style="font-size:20px;font-weight:700;margin-bottom:2px">${applicant.full_name}</h2>
+                ${infoItems.length > 0
+            ? `<div style="font-size:13px;color:var(--text-muted)">${infoItems.join(' · ')}</div>`
+            : ''}
             </div>
             <div style="display:flex;align-items:center;gap:16px">
-                <!-- Progress circle -->
-                <div style="text-align:center">
-                    <div style="font-size:28px;font-weight:800;color:${doneCount === totalCount ? '#22c55e' : '#f59e0b'}">${doneCount}/${totalCount}</div>
+                <div style="text-align:right">
+                    <div style="font-size:24px;font-weight:800;color:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : 'var(--text-muted)'}">${doneCount}/${totalCount}</div>
                     <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">concluídos</div>
                 </div>
-                <!-- Progress bar -->
-                <div style="width:120px;height:8px;background:var(--border);border-radius:4px;overflow:hidden">
-                    <div style="width:${progressPercent}%;height:100%;background:${doneCount === totalCount ? '#22c55e' : '#f59e0b'};border-radius:4px;transition:width .3s"></div>
+                <div style="width:80px;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+                    <div style="width:${progressPercent}%;height:100%;background:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : '#3b82f6'};border-radius:3px;transition:width .3s"></div>
                 </div>
             </div>
         </div>
-        <!-- Move all actions -->
-        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span style="font-size:11px;color:var(--text-muted);font-weight:600">MOVER TODOS:</span>
-            ${STAGE_ORDER.map(s =>
-        `<button onclick="moveAllPipeline('${id}','${s}')" 
-                    style="font-size:11px;padding:5px 12px;background:${STAGES[s].color}15;color:${STAGES[s].color};border:1px solid ${STAGES[s].color}33;border-radius:6px;cursor:pointer;font-weight:600;transition:all .15s"
-                    onmouseover="this.style.background='${STAGES[s].color}30'" 
-                    onmouseout="this.style.background='${STAGES[s].color}15'">${STAGES[s].label}</button>`
-    ).join('')}
-        </div>
-        <!-- Actions -->
-        <div style="margin-top:12px;display:flex;gap:8px">
-            <button onclick="viewApplicantJson('${id}')" style="font-size:12px;padding:6px 14px;background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);border-radius:6px;cursor:pointer">Ver JSON</button>
-            <button onclick="deleteApplicant('${id}','${applicant.full_name.replace(/'/g, "\\'")}')" style="font-size:12px;padding:6px 14px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:6px;cursor:pointer">Excluir Todos</button>
+        <!-- Actions row -->
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span style="font-size:11px;color:var(--text-muted);font-weight:600">MOVER TODOS:</span>
+                ${STAGE_ORDER.map(s =>
+                `<button onclick="moveAllPipeline('${id}','${s}')" 
+                    style="font-size:11px;padding:4px 10px;background:${STAGES[s].color}12;color:${STAGES[s].color};border:1px solid ${STAGES[s].color}25;border-radius:5px;cursor:pointer;font-weight:500">${STAGES[s].label}</button>`
+            ).join('')}
+            </div>
+            <div style="display:flex;gap:6px">
+                <button onclick="viewApplicantJson('${id}')" style="font-size:11px;padding:5px 12px;background:rgba(59,130,246,.08);color:#3b82f6;border:1px solid rgba(59,130,246,.2);border-radius:5px;cursor:pointer">Ver JSON</button>
+                <button onclick="deleteApplicant('${id}','${applicant.full_name.replace(/'/g, "\\'")}')" style="font-size:11px;padding:5px 12px;background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:5px;cursor:pointer">Excluir</button>
+            </div>
         </div>
     </div>
 
     <!-- Processes list -->
-    <h3 style="font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px;font-weight:600">Processos (${totalCount})</h3>
-    <div style="display:grid;gap:12px">`;
+    <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600">Processos (${totalCount})</h3>
+    <div style="display:grid;gap:10px">`;
 
-    // Render each process card
+    // Render each process card — compact
     allProcesses.forEach(p => {
         const isPrimary = !p.primary_applicant_id;
         const pStage = STAGES[p.pipeline_status] || STAGES.new;
-        const pApps = appsMap[p.id] || [];
-        const appId = pApps.length > 0 ? (pApps[0].application_id || 'Sem ID') : 'Sem aplicação';
-        const fillStatus = pApps.length > 0 ? pApps[0].fill_status : '—';
-        const pEmail = p.data?.personal?.email || p.data?.contact?.email || '—';
+        const pPassport = p.passport_number || '';
         const isDone = p.pipeline_status === 'done';
+        const roleLabel = isPrimary ? 'Principal' : 'Dependente';
 
         html += `
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;border-left:4px solid ${pStage.color};transition:all .15s;${isDone ? 'opacity:.85' : ''}">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                <div style="display:flex;align-items:center;gap:10px">
-                    <span style="font-size:20px">${isPrimary ? '' : ''}</span>
-                    <div>
-                        <div style="font-weight:700;font-size:15px">${p.full_name}</div>
-                        <div style="font-size:11px;color:var(--text-muted)">${isPrimary ? 'Solicitante Principal' : 'Dependente'} · ${pEmail}</div>
-                    </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;border-left:3px solid ${pStage.color};${isDone ? 'opacity:.7' : ''}">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <div>
+                    <div style="font-weight:700;font-size:14px">${p.full_name}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">${roleLabel}${pPassport ? ' · ' + pPassport : ''}</div>
                 </div>
-                <span class="badge" style="background:${pStage.color}22;color:${pStage.color};font-size:11px;padding:5px 14px">${pStage.label}</span>
+                <span class="badge" style="background:${pStage.color}18;color:${pStage.color};font-size:10px;padding:4px 12px">${pStage.label}</span>
             </div>
-            <div style="display:flex;gap:20px;font-size:12px;color:var(--text-muted);margin-bottom:12px">
-                <span>App ID: <strong style="color:var(--text)">${appId}</strong></span>
-                <span>Fill: <strong style="color:var(--text)">${fillStatus}</strong></span>
-                <span>Passaporte: <strong style="color:var(--text)">${p.passport_number || '—'}</strong></span>
-            </div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
                 ${STAGE_ORDER.filter(s => s !== p.pipeline_status).map(s =>
             `<button onclick="movePipeline('${p.id}','${s}','${id}')" 
-                        style="font-size:10px;padding:4px 10px;background:${STAGES[s].color}15;color:${STAGES[s].color};border:1px solid ${STAGES[s].color}33;border-radius:5px;cursor:pointer;transition:all .15s"
-                        onmouseover="this.style.background='${STAGES[s].color}30'" 
-                        onmouseout="this.style.background='${STAGES[s].color}15'">${STAGES[s].label}</button>`
+                        style="font-size:10px;padding:3px 9px;background:${STAGES[s].color}10;color:${STAGES[s].color};border:1px solid ${STAGES[s].color}22;border-radius:4px;cursor:pointer">${STAGES[s].label}</button>`
         ).join('')}
-                <button onclick="viewApplicantJson('${p.id}')" 
-                    style="font-size:10px;padding:4px 10px;background:rgba(59,130,246,.1);color:#3b82f6;border:1px solid rgba(59,130,246,.2);border-radius:5px;cursor:pointer">JSON</button>
             </div>
         </div>`;
     });
