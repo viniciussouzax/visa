@@ -412,19 +412,19 @@ function buildDynamicFieldMap(a) {
   );
 
   // Mailing address
-  if (a.mailingAddressSame) {
+  if (addr.isMailingSameAsHome) {
     map.push({ pattern: /rblMailingAddrSame_0$/i, value: "", type: "click" });
-    map.push({ pattern: /rblMailingAddr_0$/i, value: "", type: "click" });
-  } else if (a.mailingAddress) {
+    // Note: rblMailingAddr_0 is often just part of the generic Yes/No question sets, 
+    // we use "rblMailingAddrSame_0" exactly to answer Yes.
+  } else if (addr.isMailingSameAsHome === false) {
     map.push(
       { pattern: /rblMailingAddrSame_1$/i, value: "", type: "click" },
-      { pattern: /rblMailingAddr_1$/i, value: "", type: "click" },
-      { pattern: /tbxMAILING_ADDR_LN1$/i, value: a.mailingAddress.street1, type: "text" },
-      { pattern: /tbxMAILING_ADDR_LN2$/i, value: a.mailingAddress.street2 || "", type: "text" },
-      { pattern: /tbxMAILING_ADDR_CITY$/i, value: a.mailingAddress.city, type: "text" },
-      { pattern: /tbxMAILING_ADDR_STATE$/i, value: a.mailingAddress.state, type: "text" },
-      { pattern: /tbxMAILING_ADDR_POSTAL_CD$/i, value: a.mailingAddress.postalCode, type: "text" },
-      { pattern: /ddlMailCountry$/i, value: a.mailingAddress.country, type: "select-label" },
+      { pattern: /tbxMAILING_ADDR_LN1$/i, value: a.mailingAddress?.street1 || "", type: "text" },
+      { pattern: /tbxMAILING_ADDR_LN2$/i, value: a.mailingAddress?.street2 || "", type: "text" },
+      { pattern: /tbxMAILING_ADDR_CITY$/i, value: a.mailingAddress?.city || "", type: "text" },
+      { pattern: /tbxMAILING_ADDR_STATE$/i, value: a.mailingAddress?.state || "", type: "text" },
+      { pattern: /tbxMAILING_ADDR_POSTAL_CD$/i, value: a.mailingAddress?.postalCode || "", type: "text" },
+      { pattern: /ddlMailCountry$/i, value: a.mailingAddress?.country || "", type: "select-label" },
     );
   }
 
@@ -459,15 +459,20 @@ function buildDynamicFieldMap(a) {
     map.push({ pattern: /rblAddEmail_1$/i, value: "", type: "click" });
   }
 
-  map.push({ pattern: /rblAddSite_1$/i, value: "", type: "click" });
-
-  // Social Media
-  if (a.socialMedia.length > 0) {
+  // Se a.socialMedia for array de objetos (novo padrão) acessa [0].platform, senão se for boolean falso tenta fallback
+  if (a.socialMedia && a.socialMedia.length > 0) {
+    const primarySocial = a.socialMedia[0];
     map.push(
-      { pattern: /ddlSocialMedia$/i, value: a.socialMedia[0].platform, type: "select-search" },
-      { pattern: /tbxSocialMediaIdent$/i, value: a.socialMedia[0].handle, type: "text" },
+      { pattern: /rblAddSite_0$/i, value: "", type: "click" },
+      { pattern: /ddlSocialMedia$/i, value: primarySocial.platform, type: "select-search" },
+      { pattern: /tbxSocialMediaIdent$/i, value: primarySocial.handle, type: "text" },
     );
+  } else {
+    // DS-160 mandates saying "None" if there are no social medias
+    map.push({ pattern: /rblAddSite_1$/i, value: "", type: "click" });
+    map.push({ pattern: /cbexSOCIAL_MEDIA_PLATFORM_NA$/i, value: "", type: "checkbox-check" });
   }
+
   if (a.additionalSocialMedia && a.additionalSocialMediaAccounts?.length) {
     map.push(
       { pattern: /rblAddSocial_0$/i, value: "", type: "click" },
@@ -475,6 +480,7 @@ function buildDynamicFieldMap(a) {
       { pattern: /dtlAddSocial_ctl00_tbxAddSocialHand$/i, value: a.additionalSocialMediaAccounts[0].handle, type: "text" },
     );
   } else {
+    // If we already answered Yes to the primary social media but don't have secondary ones
     map.push({ pattern: /rblAddSocial_1$/i, value: "", type: "click" });
   }
 

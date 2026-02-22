@@ -142,7 +142,7 @@ ipcMain.handle('fetch-queue', async () => {
         const { data, error } = await global.supabaseClient
             .from('applications')
             .select('id, applicant_id, fill_status, applicants(full_name)')
-            .in('fill_status', ['queued', 'filling'])
+            .in('fill_status', ['queued', 'failed_soft', 'filling'])
             .order('fill_priority', { ascending: true });
 
         if (error) return { success: false, error: error.message };
