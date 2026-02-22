@@ -2714,27 +2714,13 @@
             </div>
         </div>
         <div class="page-btns" style="flex-direction:column;gap:12px;align-items:center">
-            <button class="btn btn-json" onclick="generateJSON()">Gerar JSON</button>
+
             <div style="display:flex;gap:12px;width:100%;justify-content:space-between"><button class="btn btn-back"
                     onclick="prevPage()">← Voltar</button><span></span></div>
         </div>
     </div>
 
-    <!-- JSON Modal -->
-    <div class="modal-overlay" id="jsonModal">
-        <div class="modal">
-            <h2>JSON Gerado - DS-160</h2>
-            <textarea id="jsonOutput" readonly></textarea>
-            <div class="modal-btns">
-                <button style="background:#003366;color:#fff" onclick="copyJSON()">Copiar</button>
-                <button style="background:#2e7d32;color:#fff" onclick="downloadJSON()">Download</button>
-                <button id="btnSaveSupabase" style="background:#6366f1;color:#fff" onclick="saveToSupabase()">Salvar
-                    no Supabase</button>
-                <button style="background:#e0e0e0;color:#333" onclick="closeModal()">Fechar</button>
-            </div>
-            <div id="supabaseStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
-        </div>
-    </div>
+
 
     <script>
         // ============================================================
@@ -3956,33 +3942,10 @@
                 return v;
             }, 2);
 
-            document.getElementById('jsonOutput').value = clean;
-            document.getElementById('jsonModal').classList.add('open');
+            return data;
         }
 
-        function copyJSON() {
-            const ta = document.getElementById('jsonOutput');
-            ta.select();
-            navigator.clipboard.writeText(ta.value).then(() => {
-                alert('JSON copiado!');
-            }).catch(() => {
-                document.execCommand('copy');
-                alert('JSON copiado!');
-            });
-        }
 
-        function downloadJSON() {
-            const blob = new Blob([document.getElementById('jsonOutput').value], { type: 'application/json' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'ds160-data.json';
-            a.click();
-            URL.revokeObjectURL(a.href);
-        }
-
-        function closeModal() {
-            document.getElementById('jsonModal').classList.remove('open');
-        }
 
         // ===== SUPABASE INTEGRATION =====
         const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
@@ -4245,9 +4208,9 @@
             document.getElementById('acc-wrapper').style.display = 'block';
             document.getElementById('acc-user-email').textContent = 'Carregando...';
 
-            // Hide dev/debug elements in iframe mode
-            document.querySelector('.btn-json')?.remove();
-            document.getElementById('jsonModal')?.remove();
+
+            // Hide Start page (mode selection) in iframe mode — handled by email gate
+            document.getElementById('pg-Start')?.remove();
 
             try {
                 const res = await sbFetch(`applicants?id=eq.${applicantId}&select=*`, 'GET');
@@ -4282,21 +4245,10 @@
         });
 
         async function saveToSupabase() {
-            const statusEl = document.getElementById('supabaseStatus');
-            const btn = document.getElementById('btnSaveSupabase');
-            const jsonStr = document.getElementById('jsonOutput').value;
-            if (!jsonStr || jsonStr.length < 10) {
-                statusEl.textContent = '\u274c Gere o JSON primeiro!';
-                statusEl.style.color = '#c62828';
-                return;
-            }
-
-            btn.disabled = true;
-            statusEl.textContent = '\u23f3 Salvando...';
-            statusEl.style.color = '#666';
-
             try {
-                const data = JSON.parse(jsonStr);
+                const data = generateJSON();
+                if (!data) throw new Error('Dados do formulário vazios');
+
                 const mode = document.querySelector('input[name="rblFormMode"]:checked')?.value || 'solo';
 
                 // Extract key fields
@@ -4317,7 +4269,7 @@
                     const groupEmail = document.getElementById('txtGroupEmail')?.value?.trim();
                     if (!groupEmail) throw new Error('Informe o email do solicitante principal');
 
-                    statusEl.textContent = '\u23f3 Buscando solicitante principal...';
+                    console.log('[DS-160] Buscando solicitante principal...');
 
                     // Search applicant whose data contains this email
                     const results = await sbGet(
@@ -4339,7 +4291,7 @@
 
                     primaryApplicantId = primary.id;
                     groupInfo = ' (Grupo de ' + primary.full_name + ')';
-                    statusEl.textContent = '\u23f3 Principal encontrado: ' + primary.full_name + '. Salvando...';
+                    console.log('[DS-160] Principal encontrado:', primary.full_name);
                 }
 
                 // 1. Applicant - update if already created on Personal1, else create
@@ -4384,21 +4336,11 @@
                     appId = applications?.[0]?.id || '?';
                 }
 
-                const modeLabel = mode === 'solo' ? 'Solicitante Principal' : 'Dependente' + groupInfo;
-
-                statusEl.innerHTML = '\u2705 Salvo!<br>' +
-                    '<b>Tipo:</b> ' + modeLabel + '<br>' +
-                    '<b>Nome:</b> ' + fullName + '<br>' +
-                    '<b>ID:</b> <code style="font-size:10px">' + applicantId + '</code><br>' +
-                    '<small>Abra a extensão DS-160 AI → Dashboard para iniciar a automação.</small>';
-                statusEl.style.color = '#2e7d32';
+                console.log('[DS-160] Saved:', fullName, applicantId);
 
             } catch (e) {
-                statusEl.textContent = '\u274c Erro: ' + e.message;
-                statusEl.style.color = '#c62828';
                 console.error('Supabase save error:', e);
-            } finally {
-                btn.disabled = false;
+                alert('Erro ao salvar: ' + e.message);
             }
         }
 
@@ -4506,11 +4448,8 @@
                 }
             });
 
-            // Move JSON modal and anything after pages into acc-wrapper too
-            const jsonModal = document.getElementById('jsonModal');
-            if (jsonModal) {
-                document.getElementById('acc-wrapper').appendChild(jsonModal);
-            }
+
+
 
             // Expose function to show/hide conditional accordion sections
             window.updateConditionalSections = function (hasSpouse, hasDeceasedSpouse, hasPrevSpouse) {
