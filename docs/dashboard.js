@@ -214,7 +214,7 @@ async function loadPipelineList() {
             ? '#22c55e' : (doneProcesses > 0 ? '#f59e0b' : 'var(--text-muted)');
 
         const stage = STAGES[a.pipeline_status] || STAGES.new;
-        const email = a.data?.personal?.email || a.data?.contact?.email || '';
+        const email = a.data?.addressPhone?.email || a.data?.personal?.email || a.data?.contact?.email || '';
         const updated = a.updated_at ? new Date(a.updated_at).toLocaleDateString('pt-BR') : '—';
 
         return `<tr style="cursor:pointer" onclick="openApplicantDetail('${a.id}')">
@@ -418,7 +418,7 @@ async function openApplicantDetail(id) {
         const roleLabel = isPrimary ? 'Principal' : 'Dependente';
 
         html += `
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;border-left:3px solid ${pStage.color};${isDone ? 'opacity:.7' : ''}">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;${isDone ? 'opacity:.7' : ''}">
             <div style="display:flex;justify-content:space-between;align-items:center">
                 <div>
                     <div style="font-weight:700;font-size:14px">${p.full_name}</div>
