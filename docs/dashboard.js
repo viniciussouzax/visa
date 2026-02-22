@@ -12,7 +12,7 @@ const $ = id => document.getElementById(id);
 // ============================================================
 let currentUser = null;
 let isMaster = false;
-let currentFilter = 'new';
+let userCompanyId = null;
 let currentPage = 1;
 let searchQuery = '';
 const PAGE_SIZE = 15;
@@ -80,7 +80,9 @@ async function setupApp() {
     $('user-role-display').textContent = isMaster ? 'MASTER' : 'MEMBRO';
     if (isMaster) $('nav-master').classList.remove('hidden');
 
-    const formUrl = location.href.replace('index.html', 'ds160-clone.html');
+    // Load user's company_id
+    const { data: memberData } = await sb.from('members').select('company_id').eq('user_id', currentUser.id).single();
+    if (memberData) userCompanyId = memberData.company_id;
 
     loadPipeline();
 }
@@ -142,9 +144,12 @@ $('btn-back-agencies').onclick = () => {
 // PIPELINE — LOAD STATS + LIST
 // ============================================================
 async function loadPipeline() {
-    const { data: allApplicants } = await sb.from('applicants')
+    // Stats: count by pipeline_status filtered by company
+    let statsQuery = sb.from('applicants')
         .select('id, pipeline_status')
         .is('primary_applicant_id', null);
+    if (userCompanyId) statsQuery = statsQuery.eq('company_id', userCompanyId);
+    const { data: allApplicants } = await statsQuery;
 
     const counts = { new: 0, review: 0, todo: 0, filling: 0, done: 0 };
     (allApplicants || []).forEach(a => {
@@ -166,7 +171,10 @@ async function loadPipelineList() {
     let query = sb.from('applicants')
         .select('id, full_name, data, passport_number, pipeline_status, updated_at')
         .is('primary_applicant_id', null)
-        .eq('pipeline_status', currentFilter);
+        .neq('pipeline_status', 'archived');
+
+    // Filter by organization only
+    if (userCompanyId) query = query.eq('company_id', userCompanyId);
 
     if (searchQuery) {
         query = query.or(`full_name.ilike.%${searchQuery}%,passport_number.ilike.%${searchQuery}%`);
@@ -237,6 +245,9 @@ async function loadArchived() {
         .select('id, full_name, data, passport_number, pipeline_status, updated_at')
         .is('primary_applicant_id', null)
         .eq('pipeline_status', 'archived');
+
+    // Filter by organization only
+    if (userCompanyId) query = query.eq('company_id', userCompanyId);
 
     if (archivedSearch) {
         query = query.or(`full_name.ilike.%${archivedSearch}%,passport_number.ilike.%${archivedSearch}%`);
@@ -744,7 +755,7 @@ function openAddAssessorModal(companyId) {
 const copyBtn = $('btn-copy-form');
 if (copyBtn) {
     copyBtn.onclick = () => {
-        const url = location.href.replace('index.html', 'ds160-clone.html');
+        const url = location.href.replace(/painel\.html.*$/, 'ds160/');
         navigator.clipboard.writeText(url);
         copyBtn.textContent = '✅ Copiado!';
         setTimeout(() => { copyBtn.textContent = '📋 Copiar link do formulário'; }, 2000);
