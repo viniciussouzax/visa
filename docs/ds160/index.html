@@ -366,6 +366,12 @@
             background: #f9fafb;
         }
 
+        /* Voltar button hidden — user navigates forward only */
+        .btn-back,
+        .btn-prev {
+            display: none !important;
+        }
+
         .btn-gen {
             background: #059669;
             color: #fff;
@@ -3153,6 +3159,41 @@
             }
         }
 
+        // ===== AUTO-SAVE PARTIAL DATA =====
+        async function autoSavePartial() {
+            if (!savedApplicantId) return; // not yet created
+            try {
+                // Collect all current form data using the same val/radioVal helpers
+                const partialData = {
+                    personal1: {
+                        surname: val('tbxAPP_SURNAME'), givenName: val('tbxAPP_GIVEN_NAME'),
+                        fullNameNative: val('tbxAPP_FULL_NAME_NATIVE'),
+                        gender: val('ddlAPP_GENDER'), maritalStatus: val('ddlAPP_MARITAL_STATUS'),
+                        dobDay: val('ddlDOBDay'), dobMonth: val('ddlDOBMonth'), dobYear: val('tbxDOBYear'),
+                        pobCity: val('tbxAPP_POB_CITY'), pobCountry: val('ddlAPP_POB_CNTRY'),
+                    },
+                    personal2: {
+                        nationality: val('ddlAPP_NATL'), nationalId: val('tbxAPP_NATIONAL_ID'),
+                    },
+                    addressPhone: {
+                        addr1: val('tbxAPP_ADDR_LN1'), city: val('tbxAPP_ADDR_CITY'),
+                        country: val('ddlAPP_ADDR_CNTRY'),
+                        phone: val('tbxAPP_HOME_TEL'), email: val('tbxAPP_EMAIL_ADDR'),
+                    },
+                    passport: {
+                        number: val('tbxPPT_NUM'), country: val('ddlPPT_CNTRY'),
+                        type: val('ddlPPT_TYPE'),
+                    },
+                };
+                // Remove empty values
+                const clean = JSON.parse(JSON.stringify(partialData, (k, v) => (v === '' || v === null) ? undefined : v));
+                await sbFetch(`applicants?id=eq.${savedApplicantId}`, 'PATCH', { data: clean });
+                console.log('[DS-160] Auto-save parcial OK');
+            } catch (e) {
+                console.warn('[DS-160] Auto-save parcial erro:', e.message);
+            }
+        }
+
         function prevPage() {
             for (let i = currentPage - 1; i >= 0; i--) {
                 if (isPageVisible(i)) { showPage(i); return; }
@@ -4043,6 +4084,7 @@
                         const secIdx = pageToSection[activePage.id];
                         if (secIdx !== undefined && secIdx !== prevSection) {
                             markComplete(prevSection);
+                            autoSavePartial(); // auto-save to DB
                             toggleAccordion(secIdx);
                             document.querySelector(`[data-section="${secIdx}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }
