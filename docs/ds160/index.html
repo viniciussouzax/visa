@@ -4017,21 +4017,14 @@
             results.style.display = 'none';
 
             try {
-                // Search applicants — get all, filter by email in client
+                // Search applicants by email
                 const allApplicants = await sbGet('applicants?select=id,full_name,data,primary_applicant_id&order=created_at.desc&limit=100');
                 const matches = allApplicants.filter(a => {
                     const e = (a.data?.addressPhone?.email || '').toLowerCase();
                     return e === email;
                 });
 
-                if (matches.length === 0) {
-                    // No applicant found — start new form
-                    status.innerHTML = '<span style="color:#059669">Nenhum cadastro encontrado. Iniciando novo formulário...</span>';
-                    setTimeout(() => startFormWithEmail(email, null), 800);
-                    return;
-                }
-
-                // Check applications for each match
+                // Get application status for each match
                 const withStatus = [];
                 for (const m of matches) {
                     const apps = await sbGet(`applications?applicant_id=eq.${m.id}&select=id,status&limit=1`);
@@ -4040,57 +4033,37 @@
                     withStatus.push({ ...m, appStatus, appId });
                 }
 
-                // Check for incomplete forms
-                const incomplete = withStatus.filter(a => a.appStatus === 'pending');
-                const complete = withStatus.filter(a => a.appStatus !== 'pending');
-
-                if (incomplete.length > 0) {
-                    // Has incomplete — force continue
-                    status.innerHTML = '<span style="color:#d97706">Formulário em andamento encontrado. Continuando preenchimento...</span>';
-                    const target = incomplete[0];
-                    setTimeout(() => startFormWithEmail(email, target), 800);
-                    return;
-                }
-
-                // All complete — show list + option to add new
-                status.innerHTML = '<span style="color:#059669">Preenchimento(s) encontrado(s):</span>';
+                // Always show results page
                 results.style.display = 'block';
                 results.innerHTML = '';
 
-                complete.forEach(a => {
-                    const item = document.createElement('div');
-                    item.className = 'gate-result-item';
-                    item.innerHTML = `
-                        <span class="gate-result-name">${a.full_name || 'Sem nome'}</span>
-                        <span class="gate-result-status complete">Completo</span>
-                    `;
-                    item.onclick = () => {
-                        // View-only: restore and show
-                        startFormWithEmail(email, a);
-                    };
-                    results.appendChild(item);
-                });
+                if (withStatus.length > 0) {
+                    status.innerHTML = `<span style="color:#334155">${withStatus.length} preenchimento(s) encontrado(s):</span>`;
 
-                // Add new form button (for themselves)
+                    withStatus.forEach(a => {
+                        const isPending = a.appStatus === 'pending';
+                        const item = document.createElement('div');
+                        item.className = 'gate-result-item';
+                        item.innerHTML = `
+                            <div>
+                                <span class="gate-result-name">${a.full_name || 'Sem nome'}</span>
+                            </div>
+                            <span class="gate-result-status ${isPending ? 'pending' : 'complete'}">${isPending ? 'Em andamento' : 'Completo'}</span>
+                        `;
+                        item.onclick = () => startFormWithEmail(email, a);
+                        results.appendChild(item);
+                    });
+                } else {
+                    status.innerHTML = '<span style="color:#64748b">Nenhum preenchimento encontrado para este email.</span>';
+                }
+
+                // Always show "Iniciar Novo" button
                 const newBtn = document.createElement('button');
                 newBtn.className = 'gate-btn gate-btn-primary';
-                newBtn.style.marginTop = '12px';
+                newBtn.style.marginTop = '16px';
                 newBtn.textContent = '+ Iniciar Novo Preenchimento';
-                newBtn.onclick = () => {
-                    startFormWithEmail(email, null);
-                };
+                newBtn.onclick = () => startFormWithEmail(email, null);
                 results.appendChild(newBtn);
-
-                // Add new dependent button
-                const addBtn = document.createElement('button');
-                addBtn.className = 'gate-btn gate-btn-secondary';
-                addBtn.textContent = '+ Adicionar Novo Dependente';
-                addBtn.onclick = () => {
-                    // Start new form linked to primary
-                    const primaryId = complete[0].id;
-                    startFormWithEmail(email, null, primaryId);
-                };
-                results.appendChild(addBtn);
 
             } catch (e) {
                 console.error('[Gate] Error:', e);
