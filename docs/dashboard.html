@@ -1272,6 +1272,24 @@
         </div>
     </div>
 
+    <!-- Modal: View Process (Accordion) -->
+    <div id="process-modal"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:20px">
+        <div
+            style="background:var(--surface);border-radius:16px;max-width:680px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+            <div
+                style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+                <div>
+                    <h3 id="process-modal-name" style="font-size:16px;font-weight:700;color:var(--text)"></h3>
+                    <div id="process-modal-sub" style="font-size:12px;color:var(--text-muted);margin-top:2px"></div>
+                </div>
+                <button onclick="closeProcessModal()"
+                    style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);padding:4px 8px">&times;</button>
+            </div>
+            <div id="process-modal-body" style="padding:20px 24px;overflow-y:auto;flex:1"></div>
+        </div>
+    </div>
+
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="dashboard.js"></script>
