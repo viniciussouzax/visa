@@ -23,9 +23,9 @@ let archivedPage = 1;
 let archivedSearch = '';
 
 const STAGES = {
-    new: { label: 'Novos', color: '#3b82f6' },
-    review: { label: 'Revisao', color: '#f59e0b' },
-    todo: { label: 'A Fazer', color: '#8b5cf6' },
+    new: { label: 'Novo', color: '#3b82f6' },
+    review: { label: 'Revisão', color: '#f59e0b' },
+    todo: { label: 'Aprovado', color: '#8b5cf6' },
     filling: { label: 'Fazendo', color: '#f97316' },
     done: { label: 'Feito', color: '#22c55e' },
     archived: { label: 'Arquivado', color: '#64748b' }
