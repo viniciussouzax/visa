@@ -4214,8 +4214,7 @@
             document.getElementById('group-email-box')?.remove();
 
             try {
-                const res = await sbFetch(`applicants?id=eq.${applicantId}&select=*`, 'GET');
-                const applicants = await res.json();
+                const applicants = await sbFetch(`applicants?id=eq.${applicantId}&select=*`, 'GET');
                 if (!applicants || applicants.length === 0) {
                     document.getElementById('acc-user-email').textContent = 'Solicitante não encontrado';
                     return;
@@ -4227,8 +4226,7 @@
                 document.getElementById('acc-user-email').textContent = email || a.full_name;
 
                 // Get application ID if exists
-                const appsRes = await sbFetch(`applications?applicant_id=eq.${a.id}&select=id,application_id&limit=1`, 'GET');
-                const apps = await appsRes.json();
+                const apps = await sbFetch(`applications?applicant_id=eq.${a.id}&select=id,application_id&limit=1`, 'GET');
                 if (apps && apps.length > 0) savedApplicationId = apps[0].id;
 
                 // Restore data
