@@ -4209,8 +4209,9 @@
             document.getElementById('acc-user-email').textContent = 'Carregando...';
 
 
-            // Hide Start page (mode selection) in iframe mode — handled by email gate
-            document.getElementById('pg-Start')?.remove();
+            // Hide form mode selection in iframe mode — handled by email gate
+            document.querySelector('#pg-Start .section:first-child')?.remove();
+            document.getElementById('group-email-box')?.remove();
 
             try {
                 const res = await sbFetch(`applicants?id=eq.${applicantId}&select=*`, 'GET');
