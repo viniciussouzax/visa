@@ -108,6 +108,7 @@ document.querySelectorAll('.nav-item[data-view]').forEach(item => {
         item.classList.add('active');
         showView(item.dataset.view);
         $('page-title').textContent = item.textContent.trim();
+        $('page-subtitle').textContent = '';
         if (item.dataset.view === 'pipeline') loadPipeline();
         if (item.dataset.view === 'archived') loadArchived();
         if (item.dataset.view === 'master') {
@@ -119,11 +120,7 @@ document.querySelectorAll('.nav-item[data-view]').forEach(item => {
     });
 });
 
-// Back button from detail view
-$('btn-back-pipeline').onclick = () => {
-    showView('pipeline');
-    $('page-title').textContent = 'Pipeline';
-};
+
 
 // Master Tabs
 function showMasterSub(tabName) {
@@ -369,28 +366,10 @@ async function openApplicantDetail(id) {
     const infoItems = [email, phone, passport].filter(Boolean);
 
     let html = `
-    <!-- Header card -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
-            <div>
-                <h2 style="font-size:20px;font-weight:700;margin-bottom:2px">${applicant.full_name}</h2>
-                ${infoItems.length > 0
-            ? `<div style="font-size:13px;color:var(--text-muted)">${infoItems.join(' · ')}</div>`
-            : ''}
-            </div>
-            <div style="display:flex;align-items:center;gap:16px">
-                <div style="text-align:right">
-                    <div style="font-size:24px;font-weight:800;color:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : 'var(--text-muted)'}">${doneCount}/${totalCount}</div>
-                    <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">concluídos</div>
-                </div>
-                <div style="width:80px;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
-                    <div style="width:${progressPercent}%;height:100%;background:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : '#3b82f6'};border-radius:3px;transition:width .3s"></div>
-                </div>
-            </div>
-        </div>
-        <!-- Actions row -->
-        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-            <div style="display:flex;align-items:center;gap:8px">
+    <!-- Actions card -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div style="display:flex;align-items:center;gap:12px">
                 <span style="font-size:11px;color:var(--text-muted);font-weight:600">MOVER TODOS:</span>
                 <select onchange="if(this.value){moveAllPipeline('${id}',this.value);this.value=''}" 
                     style="font-size:12px;padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;outline:none">
@@ -398,7 +377,14 @@ async function openApplicantDetail(id) {
                     ${STAGE_ORDER.map(s => `<option value="${s}">${STAGES[s].label}</option>`).join('')}
                 </select>
             </div>
-            <div style="display:flex;gap:6px">
+            <div style="display:flex;align-items:center;gap:12px">
+                <div style="text-align:right">
+                    <span style="font-size:20px;font-weight:800;color:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : 'var(--text-muted)'}">${doneCount}/${totalCount}</span>
+                    <span style="font-size:10px;color:var(--text-muted);margin-left:4px">concluídos</span>
+                </div>
+                <div style="width:60px;height:5px;background:var(--border);border-radius:3px;overflow:hidden">
+                    <div style="width:${progressPercent}%;height:100%;background:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : '#3b82f6'};border-radius:3px"></div>
+                </div>
                 <button onclick="viewApplicantJson('${id}')" style="font-size:11px;padding:5px 12px;background:rgba(59,130,246,.08);color:#3b82f6;border:1px solid rgba(59,130,246,.2);border-radius:5px;cursor:pointer">Ver JSON</button>
                 <button onclick="deleteApplicant('${id}','${applicant.full_name.replace(/'/g, "\\'")}')" style="font-size:11px;padding:5px 12px;background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:5px;cursor:pointer">Excluir</button>
             </div>
@@ -440,6 +426,7 @@ async function openApplicantDetail(id) {
     $('applicant-detail-content').innerHTML = html;
     showView('applicant-detail');
     $('page-title').textContent = applicant.full_name;
+    $('page-subtitle').textContent = email || '';
 }
 
 // ============================================================
@@ -513,6 +500,7 @@ async function deleteApplicant(id, name) {
     toast('Excluído com sucesso', 'success');
     showView('pipeline');
     $('page-title').textContent = 'Pipeline';
+    $('page-subtitle').textContent = '';
     loadPipeline();
 }
 

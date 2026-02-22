@@ -996,7 +996,10 @@
             <!-- Main -->
             <div class="main">
                 <div class="topbar">
-                    <h2 id="page-title">Pipeline</h2>
+                    <div>
+                        <h2 id="page-title">Pipeline</h2>
+                        <div id="page-subtitle" style="font-size:12px;color:var(--text-muted);margin-top:2px"></div>
+                    </div>
                     <div class="topbar-actions">
                         <button class="btn-sm btn-queue" id="btn-refresh" style="padding:8px 16px">Atualizar</button>
                     </div>
@@ -1054,9 +1057,6 @@
 
                     <!-- Applicant Detail View (full page) -->
                     <div class="view" id="view-applicant-detail">
-                        <button class="btn-sm" id="btn-back-pipeline"
-                            style="margin-bottom:16px;padding:8px 16px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;cursor:pointer">←
-                            Voltar ao Pipeline</button>
                         <div id="applicant-detail-content"></div>
                     </div>
 
