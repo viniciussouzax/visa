@@ -548,15 +548,15 @@ async function loadLogs() {
 // CAPMONSTER (Master only)
 // ============================================================
 async function loadCapmonsterKey() {
-    const { data } = await sb.from('settings').select('value').eq('key', 'capmonster_api_key').single();
-    if (data) $('capmonster-key').value = data.value || '';
+    const { data } = await sb.from('settings').select('key_value').eq('key_name', 'capmonster_key').single();
+    if (data) $('capmonster-key').value = data.key_value || '';
 }
 
 const saveCapBtn = $('btn-save-capmonster');
 if (saveCapBtn) {
     saveCapBtn.onclick = async () => {
         const val = $('capmonster-key').value.trim();
-        const { error } = await sb.from('settings').upsert({ key: 'capmonster_api_key', value: val }, { onConflict: 'key' });
+        const { error } = await sb.from('settings').upsert({ key_name: 'capmonster_key', key_value: val }, { onConflict: 'key_name' });
         if (error) { toast('Erro: ' + error.message, 'error'); return; }
         toast('API Key salva!', 'success');
     };
@@ -755,7 +755,8 @@ function openAddAssessorModal(companyId) {
 const copyBtn = $('btn-copy-form');
 if (copyBtn) {
     copyBtn.onclick = () => {
-        const url = location.href.replace(/painel\.html.*$/, 'ds160/');
+        const base = location.href.replace(/dashboard\.html.*$/, 'ds160/');
+        const url = userCompanyId ? `${base}?org=${userCompanyId}` : base;
         navigator.clipboard.writeText(url);
         copyBtn.textContent = '✅ Copiado!';
         setTimeout(() => { copyBtn.textContent = '📋 Copiar link do formulário'; }, 2000);
