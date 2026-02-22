@@ -4240,30 +4240,35 @@
             const applicantId = params.get('id');
             if (!applicantId) return;
 
+            // Hide gate immediately — don't wait for fetch
+            document.getElementById('email-gate').style.display = 'none';
+            document.getElementById('acc-wrapper').style.display = 'block';
+            document.getElementById('acc-user-email').textContent = 'Carregando...';
+
             try {
                 const res = await sbFetch(`applicants?id=eq.${applicantId}&select=*`, 'GET');
                 const applicants = await res.json();
-                if (!applicants || applicants.length === 0) return;
+                if (!applicants || applicants.length === 0) {
+                    document.getElementById('acc-user-email').textContent = 'Solicitante não encontrado';
+                    return;
+                }
 
                 const a = applicants[0];
                 const email = a.data?.addressPhone?.email || a.data?.personal?.email || '';
                 savedApplicantId = a.id;
+                document.getElementById('acc-user-email').textContent = email || a.full_name;
 
                 // Get application ID if exists
                 const appsRes = await sbFetch(`applications?applicant_id=eq.${a.id}&select=id,application_id&limit=1`, 'GET');
                 const apps = await appsRes.json();
                 if (apps && apps.length > 0) savedApplicationId = apps[0].id;
 
-                // Skip gate, show form directly
-                document.getElementById('email-gate').style.display = 'none';
-                document.getElementById('acc-wrapper').style.display = 'block';
-                document.getElementById('acc-user-email').textContent = email || a.full_name;
-
                 // Restore data
                 if (a.data) restoreApplicantData(a.data);
                 console.log('[DS-160] Auto-loaded applicant:', a.full_name);
             } catch (e) {
                 console.error('[DS-160] Auto-load error:', e);
+                document.getElementById('acc-user-email').textContent = 'Erro ao carregar';
             }
         })();
 
