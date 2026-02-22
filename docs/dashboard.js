@@ -761,7 +761,7 @@ function openAddAssessorModal(companyId) {
 const copyBtn = $('btn-copy-form');
 if (copyBtn) {
     copyBtn.onclick = () => {
-        const base = location.href.replace(/dashboard\.html.*$/, 'ds160/');
+        const base = location.href.replace(/dashboard\.html.*$/, 'ds160');
         const url = userCompanyShortId ? `${base}?org=${userCompanyShortId}` : base;
         navigator.clipboard.writeText(url);
         copyBtn.textContent = '✅ Copiado!';
