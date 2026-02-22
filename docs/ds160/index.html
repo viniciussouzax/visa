@@ -4013,9 +4013,8 @@
                     const body = item.querySelector('.acc-body');
                     const chevron = item.querySelector('.acc-chevron');
                     if (i === idx) {
-                        const isOpen = body.classList.contains('open');
-                        body.classList.toggle('open');
-                        chevron.classList.toggle('open');
+                        body.classList.add('open');
+                        chevron.classList.add('open');
                     } else {
                         body.classList.remove('open');
                         chevron.classList.remove('open');
