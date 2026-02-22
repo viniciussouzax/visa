@@ -25,13 +25,13 @@ let archivedSearch = '';
 const STAGES = {
     new: { label: 'Novo', color: '#3b82f6' },
     review: { label: 'Revisão', color: '#f59e0b' },
-    todo: { label: 'Aprovado', color: '#8b5cf6' },
-    filling: { label: 'Fazendo', color: '#f97316' },
+    approved: { label: 'Aprovado', color: '#8b5cf6' },
+    doing: { label: 'Fazendo', color: '#f97316' },
     done: { label: 'Feito', color: '#22c55e' },
     archived: { label: 'Arquivado', color: '#64748b' }
 };
 
-const STAGE_ORDER = ['new', 'review', 'todo', 'filling', 'done', 'archived'];
+const STAGE_ORDER = ['new', 'review', 'approved', 'doing', 'done', 'archived'];
 
 // ============================================================
 // TOAST
@@ -157,7 +157,7 @@ async function loadPipeline() {
     if (userCompanyId) statsQuery = statsQuery.eq('company_id', userCompanyId);
     const { data: allApplicants } = await statsQuery;
 
-    const counts = { new: 0, review: 0, todo: 0, filling: 0, done: 0 };
+    const counts = { new: 0, review: 0, approved: 0, doing: 0, done: 0 };
     (allApplicants || []).forEach(a => {
         if (counts[a.pipeline_status] !== undefined) counts[a.pipeline_status]++;
     });
