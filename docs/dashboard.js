@@ -13,6 +13,7 @@ const $ = id => document.getElementById(id);
 let currentUser = null;
 let isMaster = false;
 let userCompanyId = null;
+let userCompanyShortId = null;
 let currentPage = 1;
 let searchQuery = '';
 const PAGE_SIZE = 15;
@@ -82,7 +83,12 @@ async function setupApp() {
 
     // Load user's company_id
     const { data: memberData } = await sb.from('members').select('company_id').eq('user_id', currentUser.id).single();
-    if (memberData) userCompanyId = memberData.company_id;
+    if (memberData) {
+        userCompanyId = memberData.company_id;
+        // Load short_id
+        const { data: companyData } = await sb.from('companies').select('short_id').eq('id', userCompanyId).single();
+        if (companyData) userCompanyShortId = companyData.short_id;
+    }
 
     loadPipeline();
 }
@@ -756,7 +762,7 @@ const copyBtn = $('btn-copy-form');
 if (copyBtn) {
     copyBtn.onclick = () => {
         const base = location.href.replace(/dashboard\.html.*$/, 'ds160/');
-        const url = userCompanyId ? `${base}?org=${userCompanyId}` : base;
+        const url = userCompanyShortId ? `${base}?org=${userCompanyShortId}` : base;
         navigator.clipboard.writeText(url);
         copyBtn.textContent = '✅ Copiado!';
         setTimeout(() => { copyBtn.textContent = '📋 Copiar link do formulário'; }, 2000);
