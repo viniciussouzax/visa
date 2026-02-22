@@ -11,6 +11,7 @@ class QueueRunner {
         this.supabase = supabase;
         this.captchaMode = captchaMode || 'capmonster';
         this.running = false;
+        this.companyId = null; // loaded on start — filters by organization
         this.workerId = `worker_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         this._emitter = null;
         this._countdownTimer = null;
@@ -19,9 +20,24 @@ class QueueRunner {
         this.consecutiveErrors = 0; // global consecutive error count
     }
 
-    start(emitter) {
+    async start(emitter) {
         this._emitter = emitter;
         this.running = true;
+
+        // Load the company_id for the logged-in user
+        const { data: { user } } = await this.supabase.auth.getUser();
+        if (user) {
+            const { data: member } = await this.supabase
+                .from('members')
+                .select('company_id')
+                .eq('user_id', user.id)
+                .single();
+            if (member) {
+                this.companyId = member.company_id;
+                console.log('[Queue] Filtering by organization:', this.companyId);
+            }
+        }
+
         this._loop();
     }
 
@@ -236,27 +252,40 @@ class QueueRunner {
     }
 
     // ==============================================================
-    // CLAIM / QUERY
+    // CLAIM / QUERY (filtered by organization)
     // ==============================================================
     async _claimNext() {
-        // Priority: incomplete fills (filling) > queued, sorted by priority + queue time
-        const { data: filling } = await this.supabase
+        // Get applicant IDs belonging to this organization
+        let applicantIds = null;
+        if (this.companyId) {
+            const { data: orgApplicants } = await this.supabase
+                .from('applicants')
+                .select('id')
+                .eq('company_id', this.companyId);
+            applicantIds = (orgApplicants || []).map(a => a.id);
+            if (applicantIds.length === 0) return null;
+        }
+
+        // Priority: incomplete fills (filling) > queued
+        let fillingQuery = this.supabase
             .from('applications')
             .select('*')
             .eq('fill_status', 'filling')
-            .eq('fill_worker_id', this.workerId)
-            .limit(1);
+            .eq('fill_worker_id', this.workerId);
+        if (applicantIds) fillingQuery = fillingQuery.in('applicant_id', applicantIds);
+        const { data: filling } = await fillingQuery.limit(1);
 
         if (filling && filling.length > 0) return filling[0];
 
         // Claim next queued
-        const { data } = await this.supabase
+        let queuedQuery = this.supabase
             .from('applications')
             .select('*')
             .eq('fill_status', 'queued')
             .order('fill_priority', { ascending: true })
-            .order('fill_queued_at', { ascending: true })
-            .limit(1);
+            .order('fill_queued_at', { ascending: true });
+        if (applicantIds) queuedQuery = queuedQuery.in('applicant_id', applicantIds);
+        const { data } = await queuedQuery.limit(1);
 
         if (!data || data.length === 0) return null;
 
