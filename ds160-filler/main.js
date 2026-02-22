@@ -112,23 +112,6 @@ ipcMain.handle('login', async (_, email, password) => {
         if (error) return { success: false, error: error.message };
 
         global.supabaseClient = sb;
-        global.userCompanyId = null;
-        global.userId = data.user.id;
-
-        // Fetch company_id from members table for this user
-        const { data: memberData } = await sb
-            .from('members')
-            .select('company_id')
-            .eq('user_id', data.user.id)
-            .single();
-
-        if (memberData && memberData.company_id) {
-            global.userCompanyId = memberData.company_id;
-            console.log(`[Main] Authenticated user is from company: ${global.userCompanyId} | UserID: ${global.userId}`);
-        } else {
-            console.log(`[Main] Warning: No company found for user ${data.user.id}`);
-        }
-
         saveSession(email, password);
 
         // Auto-start automation immediately after login
@@ -156,19 +139,11 @@ ipcMain.handle('logout', async () => {
 ipcMain.handle('fetch-queue', async () => {
     if (!global.supabaseClient) return { success: false, error: 'Não conectado' };
     try {
-        let query = global.supabaseClient
+        const { data, error } = await global.supabaseClient
             .from('applications')
-            .select('id, applicant_id, status, applicants!inner(full_name, company_id, user_id)')
-            .in('status', ['pending', 'failed_soft', 'filling']);
-
-        if (global.userCompanyId) {
-            query = query.eq('applicants.company_id', global.userCompanyId);
-        }
-        if (global.userId) {
-            query = query.eq('applicants.user_id', global.userId);
-        }
-
-        const { data, error } = await query.order('created_at', { ascending: true });
+            .select('id, applicant_id, fill_status, applicants(full_name)')
+            .in('fill_status', ['queued', 'filling'])
+            .order('fill_priority', { ascending: true });
 
         if (error) return { success: false, error: error.message };
         return { success: true, queue: data || [] };
@@ -192,7 +167,7 @@ function startAutomation() {
     try {
         const { QueueRunner } = require('./automation/queue');
         console.log('[Main] Starting automation...');
-        automationRunner = new QueueRunner(global.supabaseClient, null, global.userCompanyId, global.userId);
+        automationRunner = new QueueRunner(global.supabaseClient, null);
         automationRunner.start((status) => {
             mainWindow?.webContents.send('automation-status', status);
         });
