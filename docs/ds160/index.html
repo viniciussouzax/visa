@@ -4460,9 +4460,11 @@
                 pg.querySelectorAll('textarea, input[type="text"]').forEach(el => {
                     el.disabled = true;
                 });
-                // Add visual style to indicate locked
-                pg.style.opacity = '0.7';
-                pg.style.pointerEvents = 'none';
+                // Lock only the form sections, not the navigation buttons
+                pg.querySelectorAll('.section').forEach(s => {
+                    s.style.opacity = '0.7';
+                    s.style.pointerEvents = 'none';
+                });
             });
 
             function toggleAccordion(idx) {
