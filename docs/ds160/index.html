@@ -75,6 +75,35 @@
             font-weight: 500;
         }
 
+        /* Circular check icon for section completion */
+        .acc-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #d1d5db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .3s ease;
+            flex-shrink: 0;
+        }
+
+        .acc-check svg {
+            width: 14px;
+            height: 14px;
+            stroke: #d1d5db;
+            transition: stroke .3s ease;
+        }
+
+        .acc-check.done {
+            border-color: #22c55e;
+            background: #22c55e;
+        }
+
+        .acc-check.done svg {
+            stroke: #fff;
+        }
+
         .acc-badge.done {
             background: #dbeafe;
             color: #1d4ed8;
@@ -109,8 +138,8 @@
         .fg {
             display: flex;
             flex-direction: column;
-            margin-bottom: 16px;
-            gap: 6px;
+            margin-bottom: 20px;
+            gap: 8px;
         }
 
         .fg label {
@@ -184,10 +213,10 @@
         }
 
         .section h3 {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
-            color: #1d4ed8;
-            margin-bottom: 12px;
+            color: #475569;
+            margin-bottom: 16px;
             padding-bottom: 8px;
             border-bottom: 1px solid #e5e7eb;
             line-height: 1.5;
@@ -343,25 +372,12 @@
     <!-- Accordion Header -->
     <div id="acc-wrapper">
         <header class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
-            <div class="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-                <span class="text-2xl">🇺🇸</span>
-                <div>
-                    <h1 class="text-base font-bold text-slate-800">DS-160 Formulário de Visto Online</h1>
-                    <p class="text-xs text-slate-400">Preencha todas as informações solicitadas</p>
-                </div>
+            <div class="max-w-2xl mx-auto px-4 py-3">
+                <h1 class="text-base font-bold text-slate-800">DS-160 Formulario de Visto Online</h1>
+                <p class="text-xs text-slate-400">Preencha todas as informacoes solicitadas</p>
             </div>
         </header>
-        <div class="max-w-2xl mx-auto px-4 pt-4 pb-2">
-            <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold text-slate-600" id="progress-label">Progresso: 0%</span>
-                <span class="text-xs text-slate-400" id="progress-steps">0 de 12 seções</span>
-            </div>
-            <div class="w-full h-2 bg-slate-200 rounded-[5px] overflow-hidden">
-                <div class="h-full bg-blue-500 rounded-[5px] transition-all duration-500" id="progress-bar"
-                    style="width:0%"></div>
-            </div>
-        </div>
-        <div class="max-w-2xl mx-auto px-4 pb-8" id="acc-container"></div>
+        <div class="max-w-2xl mx-auto px-4 pt-4 pb-8" id="acc-container"></div>
     </div>
     <header>
         <h1>Formulário DS-160</h1>
@@ -379,9 +395,9 @@
             <div class="fg">
                 <label style="min-width:auto">Tipo de solicitação *</label>
                 <span class="rg">
-                    <label><input type="radio" name="rblFormMode" value="solo" checked onchange="toggleGroupEmail()"> 🧑
+                    <label><input type="radio" name="rblFormMode" value="solo" checked onchange="toggleGroupEmail()">
                         Solicitante Individual</label>
-                    <label><input type="radio" name="rblFormMode" value="group" onchange="toggleGroupEmail()"> 👨‍👩‍👧
+                    <label><input type="radio" name="rblFormMode" value="group" onchange="toggleGroupEmail()">
                         Acompanhante de Grupo</label>
                 </span>
             </div>
@@ -3865,10 +3881,10 @@
                 header.innerHTML = `
                 <div style="display:flex;align-items:center;gap:10px">
                     <svg class="acc-chevron ${idx === 0 ? 'open' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    <span style="font-size:14px;font-weight:600;color:#334155">Seção ${idx + 1}: ${sec.label}</span>
+                    <span style="font-size:15px;font-weight:600;color:#334155">Secao ${idx + 1}: ${sec.label}</span>
                 </div>
-                <div style="display:flex;align-items:center;gap:8px">
-                    <span class="acc-badge pending" data-badge="${idx}">⏱ ${sec.time}</span>
+                <div class="acc-check" data-check="${idx}">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                 </div>
             `;
                 header.onclick = () => toggleAccordion(idx);
@@ -3930,12 +3946,10 @@
 
             function markComplete(idx) {
                 completedSections.add(idx);
-                const badge = document.querySelector(`[data-badge="${idx}"]`);
-                if (badge) {
-                    badge.className = 'acc-badge done';
-                    badge.textContent = '✓ concluído';
+                const check = document.querySelector(`[data-check="${idx}"]`);
+                if (check) {
+                    check.classList.add('done');
                 }
-                updateProgress();
             }
 
             function updateProgress() {
