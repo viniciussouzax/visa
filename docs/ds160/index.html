@@ -1208,7 +1208,8 @@
             <h3>Endereço de Correspondência (Mailing Address)</h3>
             <div class="fg"><label>Seu endereço de correspondência é o mesmo que o residencial? (Is your Mailing Address
                     the same as your Home Address?) *</label>
-                <span class="rg"><label><input type="radio" name="rblMailingAddrSame" value="Y"> Sim</label>
+                <span class="rg"><label><input type="radio" name="rblMailingAddrSame" value="Y"
+                            data-branch="mailingAddr"> Sim</label>
                     <label><input type="radio" name="rblMailingAddrSame" value="N" data-branch="mailingAddr">
                         Não</label></span>
             </div>
@@ -2913,9 +2914,7 @@
 
         function isPageVisible(i) {
             const pg = document.getElementById('pg-' + PAGES[i]);
-            const vis = pg && pg.style.display !== 'none';
-            console.log('[NAV] isPageVisible(' + i + '/' + PAGES[i] + ') style.display="' + (pg?.style.display) + '" → ' + vis);
-            return vis;
+            return pg && pg.style.display !== 'none';
         }
         function showPage(i) {
             if (!isPageVisible(i)) return;
@@ -2946,18 +2945,15 @@
         }
 
         function nextPage() {
-            console.log('[NAV] nextPage() called, currentPage=' + currentPage + '/' + PAGES[currentPage]);
             // Validate current page before advancing
-            if (!validateCurrentPage()) { console.log('[NAV] validation FAILED'); return; }
-            console.log('[NAV] validation passed, searching from page ' + (currentPage + 1));
+            if (!validateCurrentPage()) return;
             // Intercept leaving Personal1 (index 1) to save applicant + application
             if (currentPage === 1 && !savedApplicantId) {
                 saveOnPersonal1Exit();
             }
             for (let i = currentPage + 1; i < PAGES.length; i++) {
-                if (isPageVisible(i)) { console.log('[NAV] → navigating to page ' + i + '/' + PAGES[i]); showPage(i); return; }
+                if (isPageVisible(i)) { showPage(i); return; }
             }
-            console.log('[NAV] no next visible page found!');
         }
 
         // ===== VALIDATION =====
@@ -3246,6 +3242,11 @@
             // Other Marital Status textarea branch (matches official DS-160 tbxOtherMaritalStatus)
             const brOther = document.getElementById('br-otherMarital');
             if (brOther) brOther.classList.toggle('open', ms === 'O');
+
+            // Update conditional accordion sections
+            if (typeof updateConditionalSections === 'function') {
+                updateConditionalSections(hasSpouse, hasDeceasedSpouse, hasPrevSpouse);
+            }
         }
 
         // ===== OCCUPATION → EMPLOYER VISIBILITY =====
@@ -3304,13 +3305,16 @@
 
         // ===== RADIO BRANCHES =====
         function setupRadioBranches() {
+            // Branches that open on N instead of Y
+            const invertedBranches = ['mailingAddr'];
             document.querySelectorAll('input[type=radio][data-branch]').forEach(r => {
                 r.addEventListener('change', () => {
                     const branchName = r.dataset.branch;
                     // Special case: specific travel has Y and N branches
                     if (branchName === 'rblSpecificTravel') { updateTravelBranch(); return; }
                     const br = document.getElementById('br-' + branchName);
-                    if (br) br.classList.toggle('open', r.value === 'Y');
+                    const shouldOpen = invertedBranches.includes(branchName) ? r.value === 'N' : r.value === 'Y';
+                    if (br) br.classList.toggle('open', shouldOpen);
                 });
             });
         }
@@ -3956,7 +3960,23 @@
     <script>
         // ===== ACCORDION SYSTEM =====
         (function () {
-            const SECTIONS = [{ "label": "Início", "pages": ["pg-Start"], "time": "2 min" }, { "label": "Dados Pessoais", "pages": ["pg-Personal1"], "time": "5 min" }, { "label": "Informações Pessoais Adicionais", "pages": ["pg-Personal2"], "time": "4 min" }, { "label": "Informações de Viagem", "pages": ["pg-Travel"], "time": "5 min" }, { "label": "Acompanhantes de Viagem", "pages": ["pg-TravelCompanions"], "time": "3 min" }, { "label": "Viagens Anteriores aos EUA", "pages": ["pg-PreviousUSTravel"], "time": "4 min" }, { "label": "Endereço e Contato", "pages": ["pg-AddressPhone"], "time": "5 min" }, { "label": "Informações do Passaporte", "pages": ["pg-Passport"], "time": "4 min" }, { "label": "Contato nos EUA", "pages": ["pg-USContact"], "time": "3 min" }, { "label": "Família e Parentes", "pages": ["pg-Family1", "pg-Family2", "pg-DeceasedSpouse", "pg-PrevSpouse"], "time": "6 min" }, { "label": "Trabalho e Educação", "pages": ["pg-WorkEducation1", "pg-WorkEducation2", "pg-WorkEducation3"], "time": "8 min" }, { "label": "Antecedentes e Segurança", "pages": ["pg-Security1", "pg-Security2", "pg-Security3", "pg-Security4", "pg-Security5"], "time": "5 min" }];
+            const SECTIONS = [
+                { "label": "Início", "pages": ["pg-Start"] },
+                { "label": "Dados Pessoais", "pages": ["pg-Personal1"] },
+                { "label": "Informações Pessoais Adicionais", "pages": ["pg-Personal2"] },
+                { "label": "Informações de Viagem", "pages": ["pg-Travel"] },
+                { "label": "Acompanhantes de Viagem", "pages": ["pg-TravelCompanions"] },
+                { "label": "Viagens Anteriores aos EUA", "pages": ["pg-PreviousUSTravel"] },
+                { "label": "Endereço e Contato", "pages": ["pg-AddressPhone"] },
+                { "label": "Informações do Passaporte", "pages": ["pg-Passport"] },
+                { "label": "Contato nos EUA", "pages": ["pg-USContact"] },
+                { "label": "Família e Parentes", "pages": ["pg-Family1"] },
+                { "label": "Dados do Cônjuge", "pages": ["pg-Family2"], "conditional": true },
+                { "label": "Cônjuge Falecido", "pages": ["pg-DeceasedSpouse"], "conditional": true },
+                { "label": "Ex-Cônjuge", "pages": ["pg-PrevSpouse"], "conditional": true },
+                { "label": "Trabalho e Educação", "pages": ["pg-WorkEducation1", "pg-WorkEducation2", "pg-WorkEducation3"] },
+                { "label": "Antecedentes e Segurança", "pages": ["pg-Security1", "pg-Security2", "pg-Security3", "pg-Security4", "pg-Security5"] }
+            ];
             const container = document.getElementById('acc-container');
             const completedSections = new Set();
             let currentSectionIdx = 0;
@@ -3978,7 +3998,7 @@
                 header.innerHTML = `
                 <div style="display:flex;align-items:center;gap:10px">
                     <svg class="acc-chevron ${idx === 0 ? 'open' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    <span style="font-size:15px;font-weight:600;color:#334155">Secao ${idx + 1}: ${sec.label}</span>
+                    <span style="font-size:15px;font-weight:600;color:#334155">${sec.label}</span>
                 </div>
                 <div class="acc-check" data-check="${idx}">
                     <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -4004,6 +4024,11 @@
 
                 item.appendChild(body);
                 container.appendChild(item);
+
+                // Hide conditional sections initially
+                if (sec.conditional) {
+                    item.style.display = 'none';
+                }
             });
 
             // Move JSON modal and anything after pages into acc-wrapper too
@@ -4011,6 +4036,22 @@
             if (jsonModal) {
                 document.getElementById('acc-wrapper').appendChild(jsonModal);
             }
+
+            // Expose function to show/hide conditional accordion sections
+            window.updateConditionalSections = function (hasSpouse, hasDeceasedSpouse, hasPrevSpouse) {
+                const conditionalMap = {
+                    'pg-Family2': hasSpouse,
+                    'pg-DeceasedSpouse': hasDeceasedSpouse,
+                    'pg-PrevSpouse': hasPrevSpouse,
+                };
+                SECTIONS.forEach((sec, idx) => {
+                    if (!sec.conditional) return;
+                    const pageId = sec.pages[0];
+                    const visible = conditionalMap[pageId] || false;
+                    const accItem = container.querySelector(`[data-section="${idx}"]`);
+                    if (accItem) accItem.style.display = visible ? '' : 'none';
+                });
+            };
 
             function toggleAccordion(idx) {
                 const items = container.querySelectorAll('.acc-item');
