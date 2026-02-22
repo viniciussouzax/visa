@@ -225,8 +225,7 @@ async function loadPipelineList() {
             </td>
             <td style="font-size:12px;color:var(--text-muted)">${updated}</td>
             <td>
-                <button class="btn-sm btn-view" onclick="event.stopPropagation();viewApplicantJson('${a.id}')" title="Ver JSON">Ver</button>
-                <button class="btn-sm btn-danger" onclick="event.stopPropagation();deleteApplicant('${a.id}','${a.full_name.replace(/'/g, "\\'")}')" title="Excluir">Excluir</button>
+                <button class="btn-sm btn-danger" onclick="event.stopPropagation();showDeleteModal('${a.id}','${a.full_name.replace(/'/g, "\\\\'")}')" title="Excluir">Excluir</button>
             </td>
         </tr>`;
     }).join('') || '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhum solicitante nesta etapa</td></tr>';
@@ -385,8 +384,7 @@ async function openApplicantDetail(id) {
                 <div style="width:60px;height:5px;background:var(--border);border-radius:3px;overflow:hidden">
                     <div style="width:${progressPercent}%;height:100%;background:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : '#3b82f6'};border-radius:3px"></div>
                 </div>
-                <button onclick="viewApplicantJson('${id}')" style="font-size:11px;padding:5px 12px;background:rgba(59,130,246,.08);color:#3b82f6;border:1px solid rgba(59,130,246,.2);border-radius:5px;cursor:pointer">Ver JSON</button>
-                <button onclick="deleteApplicant('${id}','${applicant.full_name.replace(/'/g, "\\'")}')" style="font-size:11px;padding:5px 12px;background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:5px;cursor:pointer">Excluir</button>
+                <button onclick="showDeleteModal('${id}','${applicant.full_name.replace(/'/g, "\\\\'")}')" style="font-size:11px;padding:5px 12px;background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:5px;cursor:pointer">Excluir</button>
             </div>
         </div>
     </div>
@@ -488,8 +486,25 @@ $('info-modal')?.addEventListener('click', e => {
 // ============================================================
 // DELETE APPLICANT
 // ============================================================
-async function deleteApplicant(id, name) {
-    if (!confirm(`Excluir "${name}" e todos os dependentes/aplicações?`)) return;
+let pendingDeleteId = null;
+let pendingDeleteName = '';
+
+function showDeleteModal(id, name) {
+    pendingDeleteId = id;
+    pendingDeleteName = name;
+    $('delete-modal-name').textContent = name;
+    $('delete-modal').style.display = 'flex';
+}
+
+function closeDeleteModal() {
+    $('delete-modal').style.display = 'none';
+    pendingDeleteId = null;
+}
+
+async function confirmDelete() {
+    if (!pendingDeleteId) return;
+    const id = pendingDeleteId;
+    closeDeleteModal();
     const { data: deps } = await sb.from('applicants').select('id').eq('primary_applicant_id', id);
     const depIds = (deps || []).map(d => d.id);
     if (depIds.length > 0) await sb.from('applications').delete().in('applicant_id', depIds);

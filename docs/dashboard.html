@@ -1250,6 +1250,29 @@
         </div>
     </div>
 
+    <!-- Modal: Confirm Delete -->
+    <div id="delete-modal"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center">
+        <div
+            style="background:var(--surface);border-radius:16px;padding:28px;max-width:400px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+            <div
+                style="width:48px;height:48px;border-radius:50%;background:rgba(239,68,68,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+                <span style="font-size:22px;color:#ef4444;font-weight:700">!</span>
+            </div>
+            <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--text)">Confirmar exclusão</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">
+                Excluir <strong id="delete-modal-name" style="color:var(--text)"></strong> e todos os dependentes e
+                aplicações? Esta ação não pode ser desfeita.
+            </p>
+            <div style="display:flex;gap:10px;justify-content:center">
+                <button onclick="closeDeleteModal()"
+                    style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-size:13px">Cancelar</button>
+                <button onclick="confirmDelete()"
+                    style="padding:8px 20px;border-radius:8px;border:none;background:#ef4444;color:#fff;cursor:pointer;font-size:13px;font-weight:600">Excluir</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="dashboard.js"></script>
