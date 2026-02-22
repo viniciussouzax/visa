@@ -3975,7 +3975,11 @@
                 { "label": "Cônjuge Falecido", "pages": ["pg-DeceasedSpouse"], "conditional": true },
                 { "label": "Ex-Cônjuge", "pages": ["pg-PrevSpouse"], "conditional": true },
                 { "label": "Trabalho e Educação", "pages": ["pg-WorkEducation1", "pg-WorkEducation2", "pg-WorkEducation3"] },
-                { "label": "Antecedentes e Segurança", "pages": ["pg-Security1", "pg-Security2", "pg-Security3", "pg-Security4", "pg-Security5"] }
+                { "label": "Segurança - Saúde", "pages": ["pg-Security1"] },
+                { "label": "Segurança - Criminal", "pages": ["pg-Security2"] },
+                { "label": "Segurança - Nacional", "pages": ["pg-Security3"] },
+                { "label": "Segurança - Imigração", "pages": ["pg-Security4"] },
+                { "label": "Segurança - Diversos", "pages": ["pg-Security5"] }
             ];
             const container = document.getElementById('acc-container');
             const completedSections = new Set();
@@ -4052,6 +4056,25 @@
                     if (accItem) accItem.style.display = visible ? '' : 'none';
                 });
             };
+
+            // ===== SECURITY: Default all to 'Não' and disable =====
+            const securityPages = ['pg-Security1', 'pg-Security2', 'pg-Security3', 'pg-Security4', 'pg-Security5'];
+            securityPages.forEach(pgId => {
+                const pg = document.getElementById(pgId);
+                if (!pg) return;
+                pg.querySelectorAll('input[type="radio"][value="N"]').forEach(r => {
+                    r.checked = true;
+                });
+                pg.querySelectorAll('input[type="radio"]').forEach(r => {
+                    r.disabled = true;
+                });
+                pg.querySelectorAll('textarea, input[type="text"]').forEach(el => {
+                    el.disabled = true;
+                });
+                // Add visual style to indicate locked
+                pg.style.opacity = '0.7';
+                pg.style.pointerEvents = 'none';
+            });
 
             function toggleAccordion(idx) {
                 const items = container.querySelectorAll('.acc-item');
