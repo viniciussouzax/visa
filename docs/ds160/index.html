@@ -244,13 +244,7 @@
         }
 
         .page h2 {
-            color: #1e40af;
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 14px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #1e40af;
-            line-height: 1.4;
+            display: none;
         }
 
         /* Navigation buttons */
@@ -3885,11 +3879,7 @@
                 body.className = 'acc-body' + (idx === 0 ? ' open' : '');
                 body.dataset.body = idx;
 
-                // Info bar
-                const info = document.createElement('div');
-                info.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:8px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center';
-                info.innerHTML = `<span style="font-size:13px;font-weight:600;color:#334155">${sec.label}</span><span style="font-size:11px;color:#94a3b8">⏱ Tempo estimado: ${sec.time}</span>`;
-                body.appendChild(info);
+                // (info bar removed — accordion header already shows title + time)
 
                 // Move original page divs into the accordion body
                 sec.pages.forEach(pageId => {
