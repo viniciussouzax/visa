@@ -128,7 +128,7 @@
             display: none;
         }
 
-        .acc-body.open .page {
+        .acc-body.open .page.active {
             display: block;
         }
 
@@ -2980,10 +2980,11 @@
         function radioChecked(name) { return document.querySelector(`input[name="${name}"]:checked`)?.value; }
 
         function validateCurrentPage() {
-            const page = PAGES[currentPage];
+            const pageName = PAGES[currentPage];
+            if (!pageName) return true;
+            const page = document.getElementById('pg-' + pageName);
             if (!page) return true;
             clearErrors(page);
-            const pageId = page.id;
             let errors = 0;
 
             function reqInput(id, msg) {
@@ -3862,7 +3863,7 @@
                     appId = applications?.[0]?.id || '?';
                 }
 
-                const modeLabel = mode === 'solo' ? '🧑 Solicitante Principal' : '👨‍👩‍👧 Dependente' + groupInfo;
+                const modeLabel = mode === 'solo' ? 'Solicitante Principal' : 'Dependente' + groupInfo;
 
                 statusEl.innerHTML = '\u2705 Salvo!<br>' +
                     '<b>Tipo:</b> ' + modeLabel + '<br>' +
@@ -4002,17 +4003,7 @@
                 }
             }
 
-            function updateProgress() {
-                const total = SECTIONS.length;
-                const done = completedSections.size;
-                const pct = Math.round((done / total) * 100);
-                const bar = document.getElementById('progress-bar');
-                const label = document.getElementById('progress-label');
-                const steps = document.getElementById('progress-steps');
-                if (bar) bar.style.width = pct + '%';
-                if (label) label.textContent = 'Progresso: ' + pct + '% Concluído';
-                if (steps) steps.textContent = done + ' de ' + total + ' seções';
-            }
+            // updateProgress removed — progress bar was removed from UI
 
             // === INTERCEPT original navigation ===
             // Save original showPage reference
