@@ -2966,6 +2966,21 @@
         let savedApplicantId = null;
         let savedApplicationId = null;
 
+        // ===== ORG RESOLUTION from URL =====
+        let resolvedCompanyId = null;
+        const urlOrgParam = new URLSearchParams(location.search).get('org');
+        if (urlOrgParam) {
+            // Resolve short_id to company UUID
+            sbGet('companies?short_id=eq.' + encodeURIComponent(urlOrgParam) + '&select=id&limit=1').then(data => {
+                if (data && data[0]) {
+                    resolvedCompanyId = data[0].id;
+                    console.log('[DS-160] Org resolved:', urlOrgParam, '->', resolvedCompanyId);
+                } else {
+                    console.warn('[DS-160] Org not found for short_id:', urlOrgParam);
+                }
+            }).catch(e => console.error('[DS-160] Org resolution error:', e));
+        }
+
         function nextPage() {
             // Validate current page before advancing
             if (!validateCurrentPage()) return;
@@ -3159,6 +3174,7 @@
                     },
                 };
                 if (primaryApplicantId) applicantPayload.primary_applicant_id = primaryApplicantId;
+                if (resolvedCompanyId) applicantPayload.company_id = resolvedCompanyId;
 
                 const applicants = await sbFetch('applicants', 'POST', applicantPayload);
                 if (!applicants || !applicants[0]?.id) return;
@@ -3865,6 +3881,7 @@
                         data: data,
                     };
                     if (primaryApplicantId) applicantPayload.primary_applicant_id = primaryApplicantId;
+                    if (resolvedCompanyId) applicantPayload.company_id = resolvedCompanyId;
                     const applicants = await sbFetch('applicants', 'POST', applicantPayload);
                     if (!applicants || !applicants[0]?.id) throw new Error('Falha ao criar solicitante');
                     applicantId = applicants[0].id;

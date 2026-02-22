@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Redirecionando...</title>
+    <script>
+        // GitHub Pages 404 redirect: /visa/SHORT_ID → /visa/ds160?org=SHORT_ID
+        (function () {
+            var path = location.pathname;
+            // Remove trailing slash
+            if (path.endsWith('/')) path = path.slice(0, -1);
+            // Get the last segment (should be the short_id)
+            var parts = path.split('/');
+            var lastPart = parts[parts.length - 1];
+            // If it's not a known file/path, treat it as a short_id
+            var knownPaths = ['ds160', 'dashboard.html', 'painel.html', 'visa', ''];
+            if (lastPart && knownPaths.indexOf(lastPart) === -1 && lastPart.indexOf('.') === -1) {
+                // Build base path (everything except the last part)
+                var basePath = parts.slice(0, parts.length - 1).join('/');
+                location.replace(basePath + '/ds160?org=' + lastPart);
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <p>Redirecionando...</p>
+</body>
+
+</html>
