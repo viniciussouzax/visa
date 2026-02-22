@@ -1,15 +1,12 @@
 // ============================================================
 // Dynamic Field Map Builder - supports all DS-160 branches
 // ============================================================
-import { DS160Applicant } from "../tests/fixtures/brazilian-applicant";
 
-type Entry = { pattern: RegExp; value: string; type: string };
-
-function ph(s: string | undefined | null): string {
+function ph(s) {
   return (s || "").replace(/[^0-9+]/g, "").replace("+", "");
 }
 
-export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
+function buildDynamicFieldMap(a) {
   // Safe defaults for all optional properties
   a = {
     ...a,
@@ -22,45 +19,45 @@ export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
     military: a.military || [],
     previousEmployment: a.previousEmployment || [],
     education: a.education || [],
-    travel: a.travel || {} as any,
-    passport: a.passport || {} as any,
-    homeAddress: a.homeAddress || {} as any,
-    usContact: a.usContact || {} as any,
-    employer: a.employer || {} as any,
-    father: a.father || {} as any,
-    mother: a.mother || {} as any,
-    spouse: a.spouse || {} as any,
+    travel: a.travel || {},
+    passport: a.passport || {},
+    homeAddress: a.homeAddress || {},
+    usContact: a.usContact || {},
+    employer: a.employer || {},
+    father: a.father || {},
+    mother: a.mother || {},
+    spouse: a.spouse || {},
   };
   const emptyDate = { day: '', month: '', year: '' };
   a.dob = a.dob || emptyDate;
-  const t = a.travel || {} as any;
+  const t = a.travel || {};
   t.arrivalDate = t.arrivalDate || emptyDate;
   t.departureDate = t.departureDate || emptyDate;
   t.lengthOfStay = t.lengthOfStay || {};
   t.usAddress = t.usAddress || {};
   t.payer = t.payer || {};
   t.payer.address = t.payer.address || {};
-  const pp = a.passport || {} as any;
+  const pp = a.passport || {};
   pp.issuanceDate = pp.issuanceDate || emptyDate;
   pp.expirationDate = pp.expirationDate || emptyDate;
-  const addr = a.homeAddress || {} as any;
-  const uc = a.usContact || {} as any;
-  const emp = a.employer || {} as any;
+  const addr = a.homeAddress || {};
+  const uc = a.usContact || {};
+  const emp = a.employer || {};
   emp.startDate = emp.startDate || emptyDate;
-  const prev = a.previousEmployment?.[0] || {} as any;
+  const prev = a.previousEmployment?.[0] || {};
   prev.startDate = prev.startDate || emptyDate;
   prev.endDate = prev.endDate || emptyDate;
-  const edu = a.education?.[0] || {} as any;
+  const edu = a.education?.[0] || {};
   edu.startDate = edu.startDate || emptyDate;
   edu.endDate = edu.endDate || emptyDate;
-  const father = a.father || {} as any;
+  const father = a.father || {};
   father.dob = father.dob || emptyDate;
-  const mother = a.mother || {} as any;
+  const mother = a.mother || {};
   mother.dob = mother.dob || emptyDate;
-  const spouse = a.spouse || {} as any;
+  const spouse = a.spouse || {};
   spouse.dob = spouse.dob || emptyDate;
   spouse.address = spouse.address || {};
-  const map: Entry[] = [];
+  const map = [];
 
   // ===================================================================
   // PERSONAL 1 (order matches official DS-160 form hierarchy)
@@ -499,16 +496,14 @@ export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
     { pattern: /tbxPPT_ISSUED_IN_CITY$/i, value: pp.issuedCity, type: "text" },
     { pattern: /tbxPPT_ISSUED_IN_STATE$/i, value: pp.issuedState, type: "text" },
     { pattern: /ddlPPT_ISSUED_IN_CNTRY$/i, value: pp.issuedCountry, type: "select-label" },
-    { pattern: /ddlPPT_ISSUED_DTEDay$/i, value: pp.issuanceDate.day, type: "select" },
-    { pattern: /ddlPPT_ISSUED_DTEMonth$/i, value: pp.issuanceDate.month, type: "select" },
-    { pattern: /ddlPPT_ISSUEDDay$/i, value: pp.issuanceDate.day, type: "select" },
-    { pattern: /ddlPPT_ISSUEDMonth$/i, value: pp.issuanceDate.month, type: "select" },
-    { pattern: /tbxPPT_ISSUEDYear$/i, value: pp.issuanceDate.year, type: "text" },
-    { pattern: /ddlPPT_EXPIRE_DTEDay$/i, value: pp.expirationDate.day, type: "select" },
-    { pattern: /ddlPPT_EXPIRE_DTEMonth$/i, value: pp.expirationDate.month, type: "select" },
-    { pattern: /ddlPPT_EXPIREDay$/i, value: pp.expirationDate.day, type: "select" },
-    { pattern: /ddlPPT_EXPIREMonth$/i, value: pp.expirationDate.month, type: "select" },
-    { pattern: /tbxPPT_EXPIREYear$/i, value: pp.expirationDate.year, type: "text" },
+    // Issuance date — DS-160 uses both ddlPPT_ISSUED_DTEDay and ddlPPT_ISSUEDDay variants
+    { pattern: /ddlPPT_ISSUED(_DTE)?Day$/i, value: pp.issuanceDate.day, type: "select" },
+    { pattern: /ddlPPT_ISSUED(_DTE)?Month$/i, value: pp.issuanceDate.month, type: "select" },
+    { pattern: /tbxPPT_ISSUED(_DTE)?Year$/i, value: pp.issuanceDate.year, type: "text" },
+    // Expiration date — DS-160 uses both ddlPPT_EXPIRE_DTEDay and ddlPPT_EXPIREDay variants
+    { pattern: /ddlPPT_EXPIRE(_DTE)?Day$/i, value: pp.expirationDate.day, type: "select" },
+    { pattern: /ddlPPT_EXPIRE(_DTE)?Month$/i, value: pp.expirationDate.month, type: "select" },
+    { pattern: /tbxPPT_EXPIRE(_DTE)?Year$/i, value: pp.expirationDate.year, type: "text" },
   );
 
   // Book number
@@ -698,15 +693,27 @@ export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
       { pattern: /rblPreviouslyEmployed_0$/i, value: "", type: "click" },
       { pattern: /tbEmployerName$/i, value: prev.name, type: "text" },
       { pattern: /tbEmployerStreetAddress1$/i, value: prev.street1, type: "text" },
-      { pattern: /tbEmployerStreetAddress2$/i, value: "", type: "text" },
+      { pattern: /tbEmployerStreetAddress2$/i, value: prev.street2 || "", type: "text" },
       { pattern: /tbEmployerCity$/i, value: prev.city, type: "text" },
       { pattern: /tbxPREV_EMPL_ADDR_STATE$/i, value: prev.state || "", type: "text" },
       { pattern: /tbxPREV_EMPL_ADDR_POSTAL_CD$/i, value: prev.postalCode || "", type: "text" },
       { pattern: /dtlPrevEmpl.*DropDownList2$/i, value: prev.country, type: "select-label" },
       { pattern: /tbEmployerPhone$/i, value: ph(prev.phone), type: "text" },
       { pattern: /tbJobTitle$/i, value: prev.jobTitle, type: "text" },
-      { pattern: /cbxSupervisorSurname_NA$/i, value: "", type: "checkbox-check" },
-      { pattern: /cbxSupervisorGivenName_NA$/i, value: "", type: "checkbox-check" },
+    );
+    // Supervisor: fill name if available, otherwise mark NA
+    if (prev.supervisorSurname) {
+      map.push(
+        { pattern: /tbxSupervisorSurname$/i, value: prev.supervisorSurname, type: "text" },
+        { pattern: /tbxSupervisorGivenName$/i, value: prev.supervisorGivenName || "", type: "text" },
+      );
+    } else {
+      map.push(
+        { pattern: /cbxSupervisorSurname_NA$/i, value: "", type: "checkbox-check" },
+        { pattern: /cbxSupervisorGivenName_NA$/i, value: "", type: "checkbox-check" },
+      );
+    }
+    map.push(
       { pattern: /dtlPrevEmpl.*ddlEmpDateFromDay$/i, value: "1", type: "select" },
       { pattern: /dtlPrevEmpl.*ddlEmpDateFromMonth$/i, value: prev.startDate.month, type: "select" },
       { pattern: /dtlPrevEmpl.*tbxEmpDateFromYear$/i, value: prev.startDate.year, type: "text" },
@@ -827,44 +834,32 @@ export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
     const ps = a.previousSpouse;
     map.push(
       // Number of former spouses
-      { pattern: /NumberOfFormerSpouses$/i, value: ps.numberOfFormerSpouses, type: "text" },
-      { pattern: /NUM_PREV_SPOUSES$/i, value: ps.numberOfFormerSpouses, type: "text" },
-      { pattern: /ddlNumberPrevSpouses$/i, value: ps.numberOfFormerSpouses, type: "select" },
-      // Surname and Given Name (generic IDs on PrevSpouse page)
-      // These won't conflict with APP_SURNAME / SpouseSurname patterns since they use different prefixes
-      { pattern: /FormView1_tbxSURNAME$/i, value: ps.surname, type: "text" },
-      { pattern: /FormView1_tbxGIVEN_NAME$/i, value: ps.givenName, type: "text" },
-      // DOB is handled via DOB override in fill-form.ts (same as Family2)
-      // Nationality / Country of Origin
-      { pattern: /ddlCOUNTRY_OF_ORIGIN$/i, value: ps.nationality, type: "select-label" },
+      { pattern: /NumberOfFormerSpouses$|NUM_PREV_SPOUSES$|ddlNumberPrevSpouses$|tbxNumberPrevSpouses$/i, value: ps.numberOfFormerSpouses, type: "text" },
+      // Surname and Given Name (PrevSpouse page uses DListSpouse_ctl00_ prefix)
+      { pattern: /DListSpouse_ctl00_tbxSURNAME$|FormView1_tbxSURNAME$/i, value: ps.surname, type: "text" },
+      { pattern: /DListSpouse_ctl00_tbxGIVEN_NAME$|FormView1_tbxGIVEN_NAME$/i, value: ps.givenName, type: "text" },
+      // DOB (PrevSpouse page reuses generic DOB selectors under DListSpouse)
+      { pattern: /DListSpouse_ctl00_ddlDOBDay$|ddlDOBDay$/i, value: ps.dob?.day || "", type: "select" },
+      { pattern: /DListSpouse_ctl00_ddlDOBMonth$|ddlDOBMonth$/i, value: ps.dob?.month || "", type: "select" },
+      { pattern: /DListSpouse_ctl00_tbxDOBYear$|tbxDOBYear$/i, value: ps.dob?.year || "", type: "text" },
+      // Nationality / Country of Origin (camelCase IDs)
+      { pattern: /ddlCOUNTRY_OF_ORIGIN$|ddlSpouseNatDropDownList$/i, value: ps.nationality, type: "select-label" },
       { pattern: /ddlSPOUSE_NATL$/i, value: ps.nationality, type: "select-label" },
       // Place of Birth
-      { pattern: /tbxSPOUSE_POB_CITY$/i, value: ps.cityOfBirth || "", type: "text" },
-      { pattern: /tbxPOB_CITY$/i, value: ps.cityOfBirth || "", type: "text" },
-      { pattern: /ddlSPOUSE_POB_CNTRY$/i, value: ps.countryOfBirth, type: "select-label" },
-      { pattern: /ddlPOB_CNTRY$/i, value: ps.countryOfBirth, type: "select-label" },
-      { pattern: /ddlPOB_COUNTRY$/i, value: ps.countryOfBirth, type: "select-label" },
-      // Date of Marriage
-      { pattern: /ddlDATE_OF_MARRIAGEDay$/i, value: ps.dateOfMarriage.day, type: "select" },
-      { pattern: /ddlDATE_OF_MARRIAGEMonth$/i, value: ps.dateOfMarriage.month, type: "select" },
-      { pattern: /tbxDATE_OF_MARRIAGEYear$/i, value: ps.dateOfMarriage.year, type: "text" },
-      { pattern: /ddlMarriageDTEDay$/i, value: ps.dateOfMarriage.day, type: "select" },
-      { pattern: /ddlMarriageDTEMonth$/i, value: ps.dateOfMarriage.month, type: "select" },
-      { pattern: /tbxMarriageDTEYear$/i, value: ps.dateOfMarriage.year, type: "text" },
-      // Date Marriage Ended
-      { pattern: /ddlDATE_MARRIAGE_ENDEDDay$/i, value: ps.dateMarriageEnded.day, type: "select" },
-      { pattern: /ddlDATE_MARRIAGE_ENDEDMonth$/i, value: ps.dateMarriageEnded.month, type: "select" },
-      { pattern: /tbxDATE_MARRIAGE_ENDEDYear$/i, value: ps.dateMarriageEnded.year, type: "text" },
-      { pattern: /ddlMarriageEndedDTEDay$/i, value: ps.dateMarriageEnded.day, type: "select" },
-      { pattern: /ddlMarriageEndedDTEMonth$/i, value: ps.dateMarriageEnded.month, type: "select" },
-      { pattern: /tbxMarriageEndedDTEYear$/i, value: ps.dateMarriageEnded.year, type: "text" },
-      // How marriage ended
-      { pattern: /tbxHOW_MARRIAGE_ENDED$/i, value: ps.howMarriageEnded, type: "text" },
-      { pattern: /HOW_MARRIAGE_ENDED$/i, value: ps.howMarriageEnded, type: "text" },
-      // Country marriage was terminated
-      { pattern: /ddlCNTRY_MARRIAGE_TERMINATED$/i, value: ps.countryMarriageTerminated, type: "select-label" },
-      { pattern: /ddlCOUNTRY_MARRIAGE_TERMINATED$/i, value: ps.countryMarriageTerminated, type: "select-label" },
-      { pattern: /MARRIAGE_TERMINATED$/i, value: ps.countryMarriageTerminated, type: "select-label" },
+      { pattern: /DListSpouse_ctl00_tbxSPOUSE_POB_CITY$|tbxSPOUSE_POB_CITY$|tbxSpousePOBCity$|tbxPOB_CITY$/i, value: ps.cityOfBirth || "", type: "text" },
+      { pattern: /DListSpouse_ctl00_ddlSPOUSE_POB_CNTRY$|ddlSPOUSE_POB_CNTRY$|ddlSpousePOBCountry$|ddlPOB_CNTRY$|ddlPOB_COUNTRY$/i, value: ps.countryOfBirth, type: "select-label" },
+      // Date of Marriage (camelCase: ddlDateOfMarriageDay / tbxDateOfMarriageYear)
+      { pattern: /ddlDATE_OF_MARRIAGEDay$|ddlDateOfMarriageDay$|ddlMarriageDTEDay$/i, value: ps.dateOfMarriage.day, type: "select" },
+      { pattern: /ddlDATE_OF_MARRIAGEMonth$|ddlDateOfMarriageMonth$|ddlMarriageDTEMonth$/i, value: ps.dateOfMarriage.month, type: "select" },
+      { pattern: /tbxDATE_OF_MARRIAGEYear$|tbxDateOfMarriageYear$|tbxMarriageDTEYear$/i, value: ps.dateOfMarriage.year, type: "text" },
+      // Date Marriage Ended (camelCase: ddlDateMarriageEndedDay / tbxDateMarriageEndedYear)
+      { pattern: /ddlDATE_MARRIAGE_ENDEDDay$|ddlDateMarriageEndedDay$|ddlMarriageEndedDTEDay$/i, value: ps.dateMarriageEnded.day, type: "select" },
+      { pattern: /ddlDATE_MARRIAGE_ENDEDMonth$|ddlDateMarriageEndedMonth$|ddlMarriageEndedDTEMonth$/i, value: ps.dateMarriageEnded.month, type: "select" },
+      { pattern: /tbxDATE_MARRIAGE_ENDEDYear$|tbxDateMarriageEndedYear$|tbxMarriageEndedDTEYear$/i, value: ps.dateMarriageEnded.year, type: "text" },
+      // How marriage ended (camelCase: tbxHowMarriageEnded)
+      { pattern: /tbxHOW_MARRIAGE_ENDED$|tbxHowMarriageEnded$/i, value: ps.howMarriageEnded, type: "text" },
+      // Country marriage was terminated (camelCase: ddlCountryMarriageTerminated)
+      { pattern: /ddlCNTRY_MARRIAGE_TERMINATED$|ddlCOUNTRY_MARRIAGE_TERMINATED$|ddlCountryMarriageTerminated$/i, value: ps.countryMarriageTerminated, type: "select-label" },
     );
   }
 
@@ -877,14 +872,14 @@ export function buildDynamicFieldMap(a: DS160Applicant): Entry[] {
 // ===================================================================
 // POSTBACK TRIGGERS (expanded for all branches)
 // ===================================================================
-export const POSTBACK_SELECT_IDS = [
+const POSTBACK_SELECT_IDS = [
   "CNTRY", "Country", "PurposeOfTrip", "VisaClass", "OtherPurpose",
   "Occupation", "PPT_TYPE", "REL_TO_APP", "POC_REL", "SocialMedia",
   "WhoIsPaying", "PayerRelationship",
   "SpouseNatDropDownList", "SpouseAddressType", "SpousePOBCountry",
 ];
 
-export const POSTBACK_CLICK_YES_IDS = [
+const POSTBACK_CLICK_YES_IDS = [
   "PreviouslyEmployed", "AttendedEduc", "OtherEduc", "OTH_NATL",
   "OtherNames", "TelecodeQuestion", "PermResOtherCntryInd",
   "OtherPersonsTravelingWithYou", "GroupTravel",
@@ -894,21 +889,34 @@ export const POSTBACK_CLICK_YES_IDS = [
   "FATHER_LIVE_IN_US_IND", "MOTHER_LIVE_IN_US_IND",
   "CLAN_TRIBE_IND", "COUNTRIES_VISITED_IND", "ORGANIZATION_IND",
   "SPECIALIZED_SKILLS_IND", "MILITARY_SERVICE_IND", "INSURGENT_ORG_IND",
+  // Fix phantom retry: these also trigger postbacks
+  "OTH_PPT_IND", "PayerAddrSameAsInd",
+  "PREV_VISA_LOST", "PREV_VISA_CANCELLED",
+  "OTHER_RELATIVE_IND",
 ];
 
-export const POSTBACK_CLICK_ANY_IDS = [
+const POSTBACK_CLICK_ANY_IDS = [
   "SpecificTravel",
   "IMMED_RELATIVE",
   "MailingAddrSame", "MailingAddr",
 ];
 
-export function isPostbackSelect(fieldId: string): boolean {
+function isPostbackSelect(fieldId) {
   return POSTBACK_SELECT_IDS.some((trigger) => fieldId.includes(trigger));
 }
 
-export function isPostbackClick(fieldId: string, fieldType: string): boolean {
+function isPostbackClick(fieldId, fieldType) {
   if (fieldType !== "radio") return false;
   if (fieldId.match(/_0$/) && POSTBACK_CLICK_YES_IDS.some((t) => fieldId.includes(t))) return true;
   if (POSTBACK_CLICK_ANY_IDS.some((t) => fieldId.includes(t))) return true;
   return false;
 }
+
+module.exports = {
+  buildDynamicFieldMap,
+  isPostbackSelect,
+  isPostbackClick,
+  POSTBACK_SELECT_IDS,
+  POSTBACK_CLICK_YES_IDS,
+  POSTBACK_CLICK_ANY_IDS
+};

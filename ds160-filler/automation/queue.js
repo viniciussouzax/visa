@@ -58,6 +58,7 @@ class QueueRunner {
     // ==============================================================
     async _loop() {
         while (this.running) {
+            let currentApp = null; // Track claimed app for error recovery
             try {
                 // Smart update check before each cycle
                 if (global.smartCheckForUpdates) global.smartCheckForUpdates();
@@ -69,6 +70,7 @@ class QueueRunner {
 
                 // 2. Claim next item (prioritize incomplete > queued)
                 const app = await this._claimNext();
+                currentApp = app; // Track for error recovery
 
                 if (!app) {
                     console.log('[Queue] Queue empty, waiting', POLL_INTERVAL, 'seconds');
@@ -85,14 +87,23 @@ class QueueRunner {
                     const errMsg = 'Dados do solicitante não encontrados';
                     await this._markError(app.id, errMsg);
                     await this._logError(app, null, errMsg, null, null, null);
+                    currentApp = null; // Handled
                     continue;
                 }
 
                 // 4. Fill with retry logic
                 await this._fillWithRetry(app, applicant, config);
+                currentApp = null; // Successfully handled
 
             } catch (e) {
                 console.error('Queue loop error:', e);
+
+                // CRITICAL: Reset stuck app status if we have a claimed app
+                if (currentApp && currentApp.id) {
+                    console.error(`[Queue] Resetting stuck app ${currentApp.id} to 'error'`);
+                    await this._markError(currentApp.id, `Loop error: ${e.message}`).catch(() => { });
+                }
+
                 await this._logError(null, null, e.message, e.stack, null, null);
                 this.emit({ type: 'error', applicantName: '—', error: e.message });
                 this.consecutiveErrors++;
@@ -146,15 +157,30 @@ class QueueRunner {
         // ❌ Error — log it
         console.error(`[Queue] Error on ${applicant.full_name} (attempt ${currentRetry}):`, result.error);
 
-        await this._logError(app, applicant, result.error, result.stack, lastPage, result.field, result.cause);
+        const { errorClass, correlationId } = await this._logError(
+            app, applicant, result.error, result.stack, lastPage, result.field, result.cause,
+            currentRetry >= MAX_RETRIES ? result.activePage : null
+        );
+
+        // Salva o application_id no BD agressivamente caso já tenha sido emitido (AA00...) 
+        if (result.applicationId) {
+            await this.supabase.from('applications').update({ application_id: result.applicationId }).eq('id', app.id).catch(() => { });
+        }
+
         await this._updateRetry(app.id, currentRetry, lastPage, result.error);
 
         this.consecutiveErrors++;
 
         if (currentRetry >= MAX_RETRIES) {
-            // Max retries reached — close browser, mark needs_attention
+            // Max retries reached — close browser, state machine transition
             if (result.browser) await result.browser.close().catch(() => { });
-            await this._markNeedsAttention(app.id, result.error);
+
+            await this._transitionToFailed(app.id, errorClass, result.error, correlationId);
+
+            if (app.applicant_id) {
+                await this.supabase.from('applicants').update({ pipeline_status: 'needs_attention' }).eq('id', app.applicant_id).catch(() => { });
+            }
+
             this.emit({
                 type: 'error',
                 applicantName: applicant.full_name,
@@ -270,6 +296,14 @@ class QueueRunner {
             })
             .eq('id', app.id);
 
+        // Update applicant pipeline_status to 'filling'
+        if (app.applicant_id) {
+            await this.supabase
+                .from('applicants')
+                .update({ pipeline_status: 'filling' })
+                .eq('id', app.applicant_id);
+        }
+
         return { ...app, fill_status: 'filling' };
     }
 
@@ -305,6 +339,19 @@ class QueueRunner {
                 fill_error: null
             })
             .eq('id', appId);
+
+        // Update applicant pipeline_status to 'filled'
+        const { data: app } = await this.supabase
+            .from('applications')
+            .select('applicant_id')
+            .eq('id', appId)
+            .single();
+        if (app?.applicant_id) {
+            await this.supabase
+                .from('applicants')
+                .update({ pipeline_status: 'filled' })
+                .eq('id', app.applicant_id);
+        }
     }
 
     async _markError(appId, errMsg) {
@@ -327,6 +374,19 @@ class QueueRunner {
                 last_error_at: new Date().toISOString()
             })
             .eq('id', appId);
+
+        // Update applicant pipeline_status
+        const { data: app } = await this.supabase
+            .from('applications')
+            .select('applicant_id')
+            .eq('id', appId)
+            .single();
+        if (app?.applicant_id) {
+            await this.supabase
+                .from('applicants')
+                .update({ pipeline_status: 'needs_attention' })
+                .eq('id', app.applicant_id);
+        }
     }
 
     async _updateRetry(appId, retryCount, lastPage, errMsg) {
@@ -344,27 +404,64 @@ class QueueRunner {
     // ==============================================================
     // ERROR LOGGING (to Supabase for developer monitoring)
     // ==============================================================
-    async _logError(app, applicant, errorMessage, errorStack, pageName, fieldName, errorCause) {
+    async _logError(app, applicant, errorMessage, errorStack, pageName, fieldName, errorCause, activePage = null) {
+        const correlationId = `err_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        const step = pageName || 'SYSTEM';
+
+        // Enforce rigid state machine error taxonomy
+        const isHardFail = errorMessage.includes('VALIDATION_FAILED') ||
+            errorMessage.includes('SELECTOR_NOT_FOUND') ||
+            errorMessage.includes('DS160_LAYOUT_CHANGED') ||
+            errorMessage.includes('PAGE_NAV_TIMEOUT');
+
+        const errorClass = isHardFail ? 'failed_hard' : 'failed_soft';
+        let screenshotBase64 = null;
+
+        if (activePage) {
+            try {
+                // Tira um print compactado da tela no exato momento do erro letal
+                const buffer = await activePage.screenshot({ type: 'jpeg', quality: 50, fullPage: true });
+                screenshotBase64 = buffer.toString('base64');
+                console.log(`📸 Screenshot capturado para erro ${correlationId}`);
+            } catch (e) {
+                console.warn('⚠️ Não foi possível capturar screenshot:', e.message);
+            }
+        }
+
         try {
             await this.supabase
                 .from('error_logs')
                 .insert({
                     worker_id: this.workerId,
                     application_id: app?.id || null,
-                    applicant_name: (typeof applicant === 'string') ? applicant : (applicant?.full_name || null),
+                    page_name: step,
                     error_message: errorMessage,
                     error_stack: errorStack || null,
-                    page_name: pageName || null,
-                    retry_number: app?.retry_count ? (app.retry_count + 1) : 1,
-                    software_version: global.softwareVersion || 'dev',
                     field_name: fieldName || null,
                     error_cause: errorCause || 'unknown',
-                    user_id: (typeof applicant === 'object') ? (applicant?.user_id || null) : null,
-                    company_id: (typeof applicant === 'object') ? (applicant?.company_id || null) : null
+                    applicant_name: (typeof applicant === 'string') ? applicant : (applicant?.full_name || null)
+                    // (A tabela atual não tem coluna para captura de screenshot Base64, removeremos do JSON até o usuário decidir criar a coluna no BD)
                 });
         } catch (e) {
-            console.warn('Failed to log error to Supabase:', e.message);
+            console.warn('Failed to log error to Supabase error_logs:', e.message);
         }
+
+        return { errorClass, correlationId };
+    }
+
+    // New state transition methods matching strict Modo Operante
+    async _transitionToFailed(appId, type, errMsg, correlationId = null) {
+        if (!['failed_hard', 'failed_soft'].includes(type)) type = 'failed_hard';
+
+        await this.supabase
+            .from('applications')
+            .update({
+                fill_status: type,
+                fill_error: errMsg,
+                last_error_at: new Date().toISOString(),
+                error_correlation_id: correlationId // Assuming this column handles the ID tracking
+            })
+            .eq('id', appId);
     }
 }
 

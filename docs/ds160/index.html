@@ -3012,6 +3012,7 @@
                 const applications = await sbFetch('applications', 'POST', {
                     applicant_id: applicantId,
                     status: 'pending',
+                    fill_status: 'queued',
                     security_answer: securityAnswer,
                     form_data: { ds160_city: location },
                 });

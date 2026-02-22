@@ -39,3 +39,6 @@ release/
 
 # Large binary
 nul
+
+# Gemini settings (API keys)
+.gemini/settings.json

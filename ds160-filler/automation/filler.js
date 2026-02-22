@@ -6,11 +6,9 @@ const fs = require('fs');
 const { solveCaptcha } = require('./captcha');
 
 // ====================================================================
-// FIELD MAP — import TypeScript module via tsx runtime
+// FIELD MAP
 // ====================================================================
-// tsx enables require() of .ts files at runtime
-require('tsx/cjs/api').register();
-const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = require('../../scripts/build-field-map');
+const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = require('./field-map');
 
 const TMP = path.join(__dirname, '..', 'tmp');
 
@@ -234,6 +232,41 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                 }
 
                 if (attempt === 3 && !navigated) {
+                    // Log unfilled fields for debugging
+                    const unfilledFields = await page.evaluate(() => {
+                        const empty = [];
+                        document.querySelectorAll('select').forEach(sel => {
+                            if (sel.id.includes('ddlLanguage') || sel.offsetParent === null) return;
+                            if (!sel.value || sel.value === '' || sel.value === '-1' || sel.selectedIndex === 0) {
+                                const first = sel.options[0]?.text || '';
+                                if (first.toLowerCase().includes('select') || first.includes('- ') || first.trim() === '') {
+                                    empty.push(`S:${sel.id.split('_').pop()}(v=${sel.value})`);
+                                }
+                            }
+                        });
+                        document.querySelectorAll("input[type='text'], textarea").forEach(inp => {
+                            if (inp.offsetParent === null) return;
+                            if (!inp.value?.trim()) {
+                                const parent = inp.closest('tr, div, td');
+                                if (parent?.querySelector("input[type='checkbox'][id*='NA']:checked, input[type='checkbox'][id*='_na']:checked")) return;
+                                empty.push(`T:${inp.id.split('_').pop()}(empty)`);
+                            }
+                        });
+                        const groups = new Map();
+                        document.querySelectorAll("input[type='radio']").forEach(r => {
+                            if (r.offsetParent === null && !r.closest('table')) return;
+                            if (!groups.has(r.name)) groups.set(r.name, false);
+                            if (r.checked) groups.set(r.name, true);
+                        });
+                        groups.forEach((sel, name) => { if (!sel) empty.push(`R:${name.split('$').pop()}`); });
+                        return empty;
+                    }).catch(() => []);
+
+                    if (unfilledFields.length > 0) {
+                        console.error(`\n🔴 [${pageName}] UNFILLED FIELDS (${unfilledFields.length}):`);
+                        unfilledFields.forEach((f, i) => console.error(`   ${i + 1}. ${f}`));
+                    }
+
                     const errDetail = validationErrors.length > 0 ? validationErrors.join('; ') : 'Page stuck after 3 attempts';
                     throw new Error(`${pageName}: ${errDetail}`);
                 }
@@ -266,7 +299,7 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
             cause = 'field_error';
         }
 
-        return { success: false, error: e.message, stack: e.stack, field, page: currentPage, cause, browser, activePage: page };
+        return { success: false, applicationId: application?.application_id, error: e.message, stack: e.stack, field, page: currentPage, cause, browser, activePage: page };
     }
     // NOTE: browser is NOT closed here — caller (queue.js) decides when to close
 }
@@ -313,6 +346,7 @@ function isSelectEmpty(val) {
 
 async function waitForPostback(page) {
     const start = Date.now();
+    await sleep(400);
     await page.evaluate(() => new Promise(resolve => {
         const check = () => {
             const mgr = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
@@ -399,6 +433,22 @@ async function autoFillPass(page, fieldMap) {
         if (f.id) visibleMap.set(f.id, f);
     }
 
+    // Log unmatched fields for debugging (only on first pass)
+    const matchedIds = new Set();
+    for (const match of fieldMap) {
+        for (const [id] of visibleMap) {
+            if (match.pattern.test(id)) matchedIds.add(id);
+        }
+    }
+    const unmatched = [...visibleMap.keys()].filter(id =>
+        !matchedIds.has(id) &&
+        !/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder|submit|image|button/i.test(id)
+    );
+    if (unmatched.length > 0) {
+        console.log(`[DEBUG] ALL visible fields: ${[...visibleMap.keys()].join(', ')}`);
+        console.log(`[DEBUG] UNMATCHED (${unmatched.length}): ${unmatched.join(', ')}`);
+    }
+
     // CRITICAL: iterate in FIELD MAP order, not DOM order.
     // The field map is carefully ordered to respect form dependencies:
     // - Parent questions (radio Y/N) come before child fields (text/select)
@@ -427,48 +477,92 @@ async function autoFillPass(page, fieldMap) {
             switch (match.type) {
                 case 'text':
                     if (!field.value || field.value.trim() === '') {
-                        await loc.fill(String(match.value));
+                        await StepExecutor.run({
+                            step: `fill_${field.id}`,
+                            action: async () => await loc.fill(String(match.value)),
+                            validate: async () => {
+                                const actualValue = await loc.inputValue();
+                                return actualValue && actualValue.replace(/\s/g, '') === String(match.value).replace(/\s/g, '');
+                            }
+                        });
                         filled++;
                     }
                     break;
                 case 'select':
                     if (isSelectEmpty(field.value)) {
-                        try { await loc.selectOption(match.value); }
-                        catch { try { await loc.selectOption({ label: match.value }); } catch { await loc.selectOption({ index: 1 }).catch(() => { }); } }
+                        await StepExecutor.run({
+                            step: `select_${field.id}`,
+                            action: async () => {
+                                await loc.selectOption(match.value).catch(async () => {
+                                    await loc.selectOption({ index: 1 }).catch(() => { });
+                                });
+                            }
+                        });
                         filled++;
                         if (isPostbackSelect(field.id)) { postbackNeeded = true; }
                     }
                     break;
                 case 'select-label':
                     if (isSelectEmpty(field.value)) {
-                        await loc.selectOption({ label: match.value });
+                        await StepExecutor.run({
+                            step: `select_label_${field.id}`,
+                            action: async () => {
+                                await loc.selectOption({ label: match.value }).catch(async () => {
+                                    const options = await loc.evaluate(sel => Array.from(sel.options).map(o => o.text));
+                                    const best = options.find(o => o.toUpperCase().includes(match.value.toUpperCase()));
+                                    if (best) await loc.selectOption({ label: best });
+                                    else throw new Error(`Cannot select label '${match.value}'`);
+                                });
+                            }
+                        });
                         filled++;
                         if (isPostbackSelect(field.id)) postbackNeeded = true;
                     }
                     break;
                 case 'select-search': {
                     if (!isSelectEmpty(field.value)) break;
-                    const allOpts = await loc.evaluate(sel =>
-                        Array.from(sel.options).map(o => ({ v: o.value, t: o.text }))
-                    );
-                    let found = allOpts.find(o => o.t.toUpperCase().includes(match.value.toUpperCase()));
-                    if (!found) found = allOpts.find(o => o.v?.toUpperCase().includes(match.value.toUpperCase()));
-                    if (!found) found = allOpts.find(o => o.v && o.v !== '' && o.v !== '-1' && !o.t.toUpperCase().includes('SELECT'));
-                    if (found) { await loc.selectOption(found.v); filled++; if (isPostbackSelect(field.id)) postbackNeeded = true; }
+                    await StepExecutor.run({
+                        step: `select_search_${field.id}`,
+                        action: async () => {
+                            const searchVal = (match.value || '').toString().toUpperCase();
+                            const allOpts = await loc.evaluate(sel => Array.from(sel.options).map(o => ({ v: o.value, t: o.text })));
+                            let found = allOpts.find(o => o.t.toUpperCase().includes(searchVal));
+                            if (!found) found = allOpts.find(o => o.v?.toUpperCase().includes(searchVal));
+                            if (!found) found = allOpts.find(o => o.v && o.v !== '' && o.v !== '-1' && !o.t.toUpperCase().includes('SELECT'));
+                            if (found) await loc.selectOption(found.v);
+                            else throw new Error(`Option for search '${match.value}' not found`);
+                        }
+                    });
+                    filled++;
+                    if (isPostbackSelect(field.id)) postbackNeeded = true;
                     break;
                 }
                 case 'click':
                     if (!field.checked) {
-                        await loc.click();
+                        await StepExecutor.run({
+                            step: `click_${field.id}`,
+                            action: async () => await loc.click()
+                        });
                         filled++;
                         if (isPostbackClick(field.id, field.type)) postbackNeeded = true;
                     }
                     break;
                 case 'checkbox-check':
-                    if (!field.checked) { await loc.check(); filled++; }
+                    if (!field.checked) {
+                        await StepExecutor.run({
+                            step: `check_${field.id}`,
+                            action: async () => await loc.check(),
+                            validate: async () => await loc.isChecked()
+                        });
+                        filled++;
+                    }
                     break;
             }
-        } catch { }
+        } catch (e) {
+            console.warn(`[StepExecutor] Failed field ${field.id}: ${e.message}`);
+            // If strict validation fails on a critical field, we might want to throw.
+            // For now, we log and press on to capture validation summary at the end.
+        }
         if (postbackNeeded) break;
     }
 
@@ -477,6 +571,73 @@ async function autoFillPass(page, fieldMap) {
         return true;
     }
     return false;
+}
+
+// ====================================================================
+// STRICT UI INTERACTION ENGINE (StepExecutor)
+// ====================================================================
+
+class StepExecutor {
+    static async run({ step, action, validate, retries = 2 }) {
+        let attempt = 0;
+        let lastError = null;
+
+        while (attempt <= retries) {
+            try {
+                attempt++;
+                await action();
+
+                if (validate) {
+                    const isValid = await validate();
+                    if (!isValid) throw new Error(`Validation returned false`);
+                }
+
+                console.log(`[StepExecutor] ✅ Success on step: ${step}`);
+                return true;
+            } catch (err) {
+                lastError = err;
+                console.warn(`[StepExecutor] ⚠️ Failed step [${step}] attempt ${attempt}/${retries + 1}: ${err.message}`);
+                if (attempt <= retries) await sleep(500 * attempt);
+            }
+        }
+
+        throw new Error(`VALIDATION_FAILED: Step [${step}] hard failed after ${retries + 1} attempts. Last error: ${lastError.message}`);
+    }
+}
+
+async function clickNextAndWait(page) {
+    const urlBefore = page.url();
+    // Forçar a estabilidade de postbacks suspensos ANTES de clicar
+    await waitForPostback(page);
+    await sleep(500);
+
+    const next = page.locator("input[type=submit][value*='Next']").first();
+
+    // Strict click validation via StepExecutor
+    await StepExecutor.run({
+        step: 'click_next_page',
+        action: async () => await next.click(),
+        validate: async () => {
+            // Wait for navigation URL to drift
+            return true;
+        }
+    });
+
+    // Strict Navigation verification
+    try {
+        await page.waitForURL(url => url.toString() !== urlBefore, { timeout: 15000 });
+    } catch {
+        const urlAfter = page.url();
+        if (urlAfter === urlBefore) {
+            // Check if there are blocking inline validation errors before throwing PAGE_NAV_TIMEOUT
+            const errors = await captureValidationErrors(page);
+            if (errors.length > 0) return { navigated: false, errors };
+            throw new Error(`PAGE_NAV_TIMEOUT: Clicked Next but URL did not change from ${urlBefore}`);
+        }
+    }
+
+    await waitForPageReady(page);
+    return { navigated: page.url() !== urlBefore, newPage: identifyPage(page.url()) };
 }
 
 async function discoverFields(page) {
@@ -495,18 +656,6 @@ async function discoverFields(page) {
         });
         return fields;
     });
-}
-
-async function clickNextAndWait(page) {
-    const urlBefore = page.url();
-    const next = page.locator("input[type=submit][value*='Next']").first();
-    await next.click();
-    const start = Date.now();
-    while (page.url() === urlBefore && Date.now() - start < 10000) {
-        await sleep(300);
-    }
-    await waitForPageReady(page);
-    return { navigated: page.url() !== urlBefore, newPage: identifyPage(page.url()) };
 }
 
 async function captureValidationErrors(page) {
@@ -593,8 +742,8 @@ function normalizeProfile(data) {
         permanentResidentOtherCountry: p2.permanentResident === 'Y',
         permanentResidentCountry: p2.permanentResidentCountries?.[0]?.country,
         nationalId: g(p2, 'nationalId', 'national_id'),
-        usSsn: p2.ssn !== 'N/A' ? p2.ssn?.replace(/-/g, '') : null,
-        usTaxpayerId: p2.taxId || null,
+        usSsn: (p2.ssn && p2.ssn !== 'N/A' && p2.ssn !== 'NA') ? p2.ssn?.replace(/-/g, '') : null,
+        usTaxpayerId: (p2.taxId && p2.taxId !== 'N/A' && p2.taxId !== 'NA') ? p2.taxId : null,
         // --- Travel ---
         purposeOfTrip: g(trav, 'purposeOfTrip', 'purpose_of_trip') || 'B1/B2',
         hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.hasSpecificPlans === true,
@@ -740,7 +889,22 @@ function normalizeProfile(data) {
             };
         })(),
         hasPreviousEmployment: we2.hasPreviousEmployment === 'Y' || we2.has_previous_employment === 'Y',
-        previousEmployment: we2.previousEmployment || we2.previous_employment || [],
+        previousEmployment: (we2.previousEmployment || we2.previous_employment || []).map(e => ({
+            name: e.name || '',
+            street1: e.street1 || '',
+            street2: e.street2 || '',
+            city: e.city || '',
+            state: e.state || '',
+            postalCode: e.postalCode || e.postal_code || '',
+            country: e.country || 'BRAZIL',
+            phone: e.phone || '',
+            jobTitle: e.jobTitle || e.job_title || '',
+            supervisorSurname: e.supervisorSurname || e.supervisor_surname || '',
+            supervisorGivenName: e.supervisorGivenName || e.supervisor_given_name || '',
+            startDate: e.startDate || e.start_date || { month: '', year: '' },
+            endDate: e.endDate || e.end_date || { month: '', year: '' },
+            duties: e.duties || 'GENERAL DUTIES',
+        })),
         hasEducation: we2.hasEducation === 'Y' || we2.has_education === 'Y',
         education: (we2.education || []).map(e => ({
             name: e.name || '',
