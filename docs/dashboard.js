@@ -224,11 +224,8 @@ async function loadPipelineList() {
                 <span style="font-weight:700;font-size:15px;color:${progressColor}">${doneProcesses}/${totalProcesses}</span>
             </td>
             <td style="font-size:12px;color:var(--text-muted)">${updated}</td>
-            <td>
-                <button class="btn-sm btn-danger" onclick="event.stopPropagation();showDeleteModal('${a.id}','${a.full_name.replace(/'/g, "\\\\'")}')" title="Excluir">Excluir</button>
-            </td>
         </tr>`;
-    }).join('') || '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhum solicitante nesta etapa</td></tr>';
+    }).join('') || '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhum solicitante nesta etapa</td></tr>';
 
     const hasMore = (applicants || []).length === PAGE_SIZE;
     $('app-prev').disabled = currentPage <= 1;
