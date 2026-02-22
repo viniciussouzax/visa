@@ -1,486 +1,134 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DS-160 Clone - Formulário</title>
+    <title>DS-160 Formulário de Visto Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    borderRadius: { DEFAULT: '5px' },
+                    colors: {
+                        primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
+                        surface: '#ffffff',
+                        muted: '#6b7280',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        
+        /* Accordion transition */
+        .acc-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s ease; }
+        .acc-body.open { max-height: 100000px; overflow: visible; }
+        
+        /* Form group */
+        .fg { display: flex; flex-direction: column; margin-bottom: 12px; gap: 4px; }
+        .fg label { font-size: 13px; font-weight: 500; color: #374151; }
+        .fg input, .fg select, .fg textarea {
+            width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 5px;
+            font-size: 14px; background: #fff; color: #111827; outline: none;
+            transition: border-color 0.2s;
         }
-
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f0f2f5;
-            color: #333;
-            padding-bottom: 40px
-        }
-
-        header {
-            background: #003366;
-            color: #fff;
-            padding: 14px 20px;
-            position: sticky;
-            top: 0;
-            z-index: 100
-        }
-
-        header h1 {
-            font-size: 18px
-        }
-
-        header p {
-            font-size: 12px;
-            opacity: .85;
-            margin-top: 2px
-        }
-
-        nav {
-            background: #004080;
-            display: flex;
-            flex-wrap: wrap;
-            position: sticky;
-            top: 50px;
-            z-index: 99;
-            padding: 0
-        }
-
-        nav button {
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, .7);
-            padding: 8px 12px;
-            cursor: pointer;
-            font-size: 11px;
-            border-bottom: 3px solid transparent;
-            transition: .2s
-        }
-
-        nav button:hover {
-            color: #fff;
-            background: rgba(255, 255, 255, .1)
-        }
-
-        nav button.active {
-            color: #fff;
-            border-bottom-color: #4caf50;
-            font-weight: bold
-        }
-
-        nav button.hidden-tab {
-            opacity: .4;
-            text-decoration: line-through
-        }
-
-        .page {
-            display: none;
-            max-width: 900px;
-            margin: 15px auto;
-            padding: 0 15px
-        }
-
-        .page.active {
-            display: block
-        }
-
-        .page h2 {
-            color: #003366;
-            font-size: 18px;
-            margin-bottom: 12px;
-            padding-bottom: 6px;
-            border-bottom: 2px solid #003366
-        }
-
-        .section {
-            background: #fff;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .1)
-        }
-
-        .section h3 {
-            font-size: 14px;
-            color: #004080;
-            margin-bottom: 10px;
-            padding-bottom: 4px;
-            border-bottom: 1px solid #e0e0e0
-        }
-
-        .fg {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 10px;
-            gap: 4px;
-        }
-
-        .fg label {
-            font-size: 13px;
-            font-weight: 600;
-            color: #444
-        }
-
-        .fg input[type=text],
-        .fg input[type=tel],
-        .fg textarea,
-        .fg select {
-            flex: 1;
-            min-width: 180px;
-            padding: 6px 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 13px
-        }
-
-        .fg textarea {
-            min-height: 60px;
-            resize: vertical
-        }
-
-        .fg select {
-            background: #fff
-        }
-
-        .fg input:disabled,
-        .fg select:disabled,
-        .fg textarea:disabled {
-            background: #f5f5f5;
-            color: #999
-        }
-
-        .rg {
-            display: flex;
-            gap: 12px
-        }
-
-        .rg label {
-            min-width: auto;
-            font-weight: normal;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px
-        }
-
-        .na-lbl {
-            font-size: 11px;
-            color: #888;
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            cursor: pointer;
-            white-space: nowrap
-        }
-
-        .na-lbl input {
-            cursor: pointer
-        }
-
-        .br {
-            display: none;
-            margin: 4px 0 8px 20px;
-            padding: 8px 12px;
-            border-left: 3px solid #ff9800;
-            background: #fff8e1;
-            border-radius: 0 4px 4px 0
-        }
-
-        .br.open {
-            display: block
-        }
-
-        .as {
-            border: 1px dashed #90caf9;
-            border-radius: 4px;
-            padding: 8px;
-            margin: 4px 0;
-            background: #f8fbff
-        }
-
-        .entry {
-            padding: 6px 0;
-            border-bottom: 1px solid #e3f2fd;
-            position: relative
-        }
-
-        .entry:last-of-type {
-            border-bottom: none
-        }
-
-        .btn-add {
-            background: #e3f2fd;
-            color: #1565c0;
-            border: 1px solid #90caf9;
-            border-radius: 4px;
-            padding: 4px 12px;
-            font-size: 12px;
-            cursor: pointer;
-            margin-top: 4px
-        }
-
-        .btn-add:hover {
-            background: #bbdefb
-        }
-
-        .btn-rm {
-            position: absolute;
-            right: 4px;
-            top: 4px;
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ef9a9a;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 11px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1
-        }
-
-        .btn-rm:hover {
-            background: #ffcdd2
-        }
-
-        .page-btns {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 16px;
-            padding-top: 12px;
-            border-top: 2px solid #e0e0e0
-        }
-
-        .btn {
-            padding: 8px 24px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-            font-weight: bold
-        }
-
-        .btn-next {
-            background: #003366;
-            color: #fff
-        }
-
-        .btn-next:hover {
-            background: #004080
-        }
-
-        .btn-back {
-            background: #e0e0e0;
-            color: #333
-        }
-
-        .btn-back:hover {
-            background: #bdbdbd
-        }
-
-        .btn-json {
-            background: #2e7d32;
-            color: #fff;
-            font-size: 16px;
-            padding: 12px 32px
-        }
-
-        .btn-json:hover {
-            background: #1b5e20
-        }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, .6);
-            z-index: 200;
-            justify-content: center;
-            align-items: center
-        }
-
-        .modal-overlay.open {
-            display: flex
-        }
-
-        .modal {
-            background: #fff;
-            border-radius: 8px;
-            padding: 20px;
-            max-width: 800px;
-            width: 95%;
-            max-height: 85vh;
-            display: flex;
-            flex-direction: column
-        }
-
-        .modal h2 {
-            margin-bottom: 10px;
-            color: #003366
-        }
-
-        .modal textarea {
-            flex: 1;
-            min-height: 300px;
-            font-family: Consolas, monospace;
-            font-size: 12px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            resize: none
-        }
-
-        .modal .modal-btns {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px
-        }
-
-        .modal .modal-btns button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px
-        }
-
-        .date-row {
-            display: flex;
-            gap: 4px;
-            flex: 1;
-            min-width: 180px
-        }
-
-        .date-row select,
-        .date-row input {
-            flex: 1;
-            padding: 6px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 13px
-        }
-
-        .date-row input[type=text] {
-            max-width: 70px
-        }
-
-        .ssn-row {
-            display: flex;
-            gap: 4px;
-            flex: 1;
-            min-width: 180px
-        }
-
-        .ssn-row input {
-            width: 50px;
-            text-align: center;
-            padding: 6px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 13px
-        }
-
-        @media(max-width:768px) {
-            .fg {
-                flex-direction: column;
-                align-items: flex-start
-            }
-
-            .fg label {
-                min-width: auto
-            }
-        }
-
-        /* Seção desabilitada (campos fixos/padrão) */
-        .section-disabled {
-            opacity: 0.55;
-            background: #1a1a2e;
-            border-left: 3px solid #444;
-            padding: 12px 16px;
-            border-radius: 6px;
-            pointer-events: none;
-        }
-
-        .section-disabled h3,
-        .section-disabled label,
-        .section-disabled p,
-        .section-disabled small,
-        .section-disabled span {
-            color: #777 !important;
-        }
-
-        /* Validação de campos */
-        .fg.has-error input,
-        .fg.has-error select,
-        .fg.has-error textarea {
-            border-color: #e53935 !important;
-            box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.15);
-        }
-
-        .fg.has-error>label:first-child {
-            color: #e53935;
-        }
-
-        .validation-msg {
-            color: #e53935;
-            font-size: 12px;
-            margin-top: 4px;
-            display: block;
-        }
-
+        .fg input:focus, .fg select:focus, .fg textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+        .fg.has-error input, .fg.has-error select { border-color: #ef4444; }
+        .validation-msg { color: #ef4444; font-size: 11px; margin-top: 2px; }
+        
+        /* Radio/checkbox inline */
+        .fg input[type="radio"], .fg input[type="checkbox"] { width: auto; }
+        .radio-group { display: flex; gap: 16px; flex-wrap: wrap; }
+        .radio-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 400; }
+        
+        /* Section inside accordion */
+        .section { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 5px; padding: 16px; margin-bottom: 12px; }
+        .section h3 { font-size: 13px; font-weight: 600; color: #1d4ed8; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
+        
+        /* Branches */
+        .br { display: none; margin-top: 8px; padding-left: 12px; border-left: 3px solid #dbeafe; }
+        .br.open { display: block; }
+        
+        /* Entries (dynamic add/remove) */
+        .entry { background: #f0f4f8; border-radius: 5px; padding: 12px; margin-bottom: 8px; position: relative; }
+        .entry .remove-btn { position: absolute; top: 8px; right: 8px; background: #fee2e2; color: #ef4444; border: none; border-radius: 5px; padding: 4px 8px; cursor:pointer; font-size:11px; }
+        
+        /* Toast */
         .validation-toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #e53935;
-            color: #fff;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 9999;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            animation: fadeInOut 4s ease forwards;
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: #1f2937; color: #fff; padding: 12px 24px; border-radius: 5px;
+            font-size: 14px; z-index: 1000; animation: toastIn 0.3s ease;
         }
-
-        @keyframes fadeInOut {
-            0% {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            10% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-
-            80% {
-                opacity: 1;
-            }
-
-            100% {
-                opacity: 0;
-            }
-        }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        
+        /* NA checkbox styling */
+        .na-check { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+        .na-check label { font-size: 12px; color: #6b7280; }
+        .section-disabled { opacity: 0.5; pointer-events: none; }
+        
+        /* Page-btns (kept for compatibility) */
+        .page-btns { display: none; }
+        
+        /* Chevron animation */
+        .acc-chevron { transition: transform 0.3s ease; }
+        .acc-chevron.rotate { transform: rotate(90deg); }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
-<body>
-    <header>
-        <h1>Formulário DS-160</h1>
-        <p>Preencha todas as informações solicitadas. Ao finalizar, clique em "Gerar JSON" na última página.</p>
+<body class="bg-slate-50 min-h-screen">
+    <!-- Fixed Header -->
+    <header class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+        <div class="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+            <span class="text-2xl">🇺🇸</span>
+            <div>
+                <h1 class="text-base font-bold text-slate-800">DS-160 Formulário de Visto Online</h1>
+                <p class="text-xs text-slate-400">Preencha todas as informações solicitadas</p>
+            </div>
+        </div>
     </header>
-    <nav id="nav"></nav>
 
-    <!-- ===== PAGE 0: Start (Mode + Location) ===== -->
-    <div class="page active" id="pg-Start">
+    <!-- Progress Bar -->
+    <div class="max-w-2xl mx-auto px-4 pt-4 pb-2">
+        <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-semibold text-slate-600" id="progress-label">Progresso: 0%</span>
+            <span class="text-xs text-slate-400" id="progress-steps">0 de 12 seções</span>
+        </div>
+        <div class="w-full h-2 bg-slate-200 rounded-[5px] overflow-hidden">
+            <div class="h-full bg-blue-500 rounded-[5px] transition-all duration-500" id="progress-bar" style="width:0%"></div>
+        </div>
+    </div>
+
+    <!-- Accordion Container -->
+    <div class="max-w-2xl mx-auto px-4 pb-20 space-y-2" id="accordion-container">
+
+        <!-- Section 1: Início -->
+        <div class="acc-item bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden" data-section="0" data-pages="pg-Start">
+            <!-- Accordion Header -->
+            <button type="button" class="acc-header w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors" onclick="toggleSection(0)">
+                <div class="flex items-center gap-3">
+                    <svg class="acc-chevron w-4 h-4 text-slate-400 rotate" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-sm font-semibold text-slate-700">Seção 1: Início</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="acc-badge hidden text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[5px] font-medium">✓ concluído</span>
+                    <span class="text-[11px] text-slate-400">⏱ 2 min</span>
+                </div>
+            </button>
+            <!-- Accordion Body -->
+            <div class="acc-body open" data-body="0">
+                <div class="px-4 pb-4 pt-1">
+                    <!-- Section info bar -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-[5px] px-3 py-2 mb-4 flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Início</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">⏱ Tempo estimado: 2 min</span>
+                    </div>
+                    
+        <!-- pg-Start -->
+        <div id="pg-Start" class="acc-page">
         <h2>Início</h2>
         <div class="section">
             <h3>Modo de Preenchimento</h3>
@@ -513,12 +161,43 @@
                 <small style="color:#888">Escolha o posto consular mais próximo de você.</small>
             </div>
         </div>
-        <div class="page-btns"><span></span><button class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
-
+        
     <!-- ===== PAGE 1: Personal1 ===== -->
-    <div class="page" id="pg-Personal1">
+        </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <div class="flex-1"></div>
+                        <button type="button" onclick="nextSection()" class="flex-1 py-2.5 px-4 bg-blue-500 text-white font-semibold text-sm rounded-[5px] hover:bg-blue-600 transition-colors shadow-sm">Salvar e Continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Dados Pessoais -->
+        <div class="acc-item bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden" data-section="1" data-pages="pg-Personal1">
+            <!-- Accordion Header -->
+            <button type="button" class="acc-header w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors" onclick="toggleSection(1)">
+                <div class="flex items-center gap-3">
+                    <svg class="acc-chevron w-4 h-4 text-slate-400 " fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-sm font-semibold text-slate-700">Seção 2: Dados Pessoais</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="acc-badge hidden text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[5px] font-medium">✓ concluído</span>
+                    <span class="text-[11px] text-slate-400">⏱ 5 min</span>
+                </div>
+            </button>
+            <!-- Accordion Body -->
+            <div class="acc-body " data-body="1">
+                <div class="px-4 pb-4 pt-1">
+                    <!-- Section info bar -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-[5px] px-3 py-2 mb-4 flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Dados Pessoais</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">⏱ Tempo estimado: 5 min</span>
+                    </div>
+                    
+        <!-- pg-Personal1 -->
+        <div id="pg-Personal1" class="acc-page">
         <h2>1. Informações Pessoais</h2>
         <div class="section">
             <h3>Nome</h3>
@@ -614,11 +293,43 @@
                 <small style="color:#888">Selecione o nome atualmente usado para o local onde você nasceu.</small>
             </div>
         </div>
-        <div class="page-btns"><span></span><button class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 2: Personal2 ===== -->
-    <div class="page" id="pg-Personal2">
+        </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="prevSection()" class="flex-1 py-2.5 px-4 bg-white border border-slate-300 text-slate-700 font-medium text-sm rounded-[5px] hover:bg-slate-50 transition-colors">Voltar</button>
+                        <button type="button" onclick="nextSection()" class="flex-1 py-2.5 px-4 bg-blue-500 text-white font-semibold text-sm rounded-[5px] hover:bg-blue-600 transition-colors shadow-sm">Salvar e Continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Informações Pessoais Adicionais -->
+        <div class="acc-item bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden" data-section="2" data-pages="pg-Personal2">
+            <!-- Accordion Header -->
+            <button type="button" class="acc-header w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors" onclick="toggleSection(2)">
+                <div class="flex items-center gap-3">
+                    <svg class="acc-chevron w-4 h-4 text-slate-400 " fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-sm font-semibold text-slate-700">Seção 3: Informações Pessoais Adicionais</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="acc-badge hidden text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[5px] font-medium">✓ concluído</span>
+                    <span class="text-[11px] text-slate-400">⏱ 4 min</span>
+                </div>
+            </button>
+            <!-- Accordion Body -->
+            <div class="acc-body " data-body="2">
+                <div class="px-4 pb-4 pt-1">
+                    <!-- Section info bar -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-[5px] px-3 py-2 mb-4 flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Informações Pessoais Adicionais</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">⏱ Tempo estimado: 4 min</span>
+                    </div>
+                    
+        <!-- pg-Personal2 -->
+        <div id="pg-Personal2" class="acc-page">
         <h2>2. Informações Pessoais 2</h2>
         <div class="section">
             <h3>Nacionalidade</h3>
@@ -703,12 +414,43 @@
                     class="na-lbl"><input type="checkbox" class="na-cb" data-target="tbxAPP_TAX_ID"
                         id="cbexAPP_TAX_ID_NA"> Não se Aplica</label></div>
         </div>
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 3: Travel ===== -->
-    <div class="page" id="pg-Travel">
+        </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="prevSection()" class="flex-1 py-2.5 px-4 bg-white border border-slate-300 text-slate-700 font-medium text-sm rounded-[5px] hover:bg-slate-50 transition-colors">Voltar</button>
+                        <button type="button" onclick="nextSection()" class="flex-1 py-2.5 px-4 bg-blue-500 text-white font-semibold text-sm rounded-[5px] hover:bg-blue-600 transition-colors shadow-sm">Salvar e Continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Informações de Viagem -->
+        <div class="acc-item bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden" data-section="3" data-pages="pg-Travel">
+            <!-- Accordion Header -->
+            <button type="button" class="acc-header w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors" onclick="toggleSection(3)">
+                <div class="flex items-center gap-3">
+                    <svg class="acc-chevron w-4 h-4 text-slate-400 " fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-sm font-semibold text-slate-700">Seção 4: Informações de Viagem</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="acc-badge hidden text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[5px] font-medium">✓ concluído</span>
+                    <span class="text-[11px] text-slate-400">⏱ 5 min</span>
+                </div>
+            </button>
+            <!-- Accordion Body -->
+            <div class="acc-body " data-body="3">
+                <div class="px-4 pb-4 pt-1">
+                    <!-- Section info bar -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-[5px] px-3 py-2 mb-4 flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Informações de Viagem</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">⏱ Tempo estimado: 5 min</span>
+                    </div>
+                    
+        <!-- pg-Travel -->
+        <div id="pg-Travel" class="acc-page">
         <h2>3. Informações de Viagem</h2>
         <div class="section">
             <h3>Propósito da Viagem</h3>
@@ -946,12 +688,43 @@
                 </div>
             </div>
         </div>
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 4: TravelCompanions ===== -->
-    <div class="page" id="pg-TravelCompanions">
+        </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="prevSection()" class="flex-1 py-2.5 px-4 bg-white border border-slate-300 text-slate-700 font-medium text-sm rounded-[5px] hover:bg-slate-50 transition-colors">Voltar</button>
+                        <button type="button" onclick="nextSection()" class="flex-1 py-2.5 px-4 bg-blue-500 text-white font-semibold text-sm rounded-[5px] hover:bg-blue-600 transition-colors shadow-sm">Salvar e Continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 5: Acompanhantes de Viagem -->
+        <div class="acc-item bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden" data-section="4" data-pages="pg-TravelCompanions">
+            <!-- Accordion Header -->
+            <button type="button" class="acc-header w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors" onclick="toggleSection(4)">
+                <div class="flex items-center gap-3">
+                    <svg class="acc-chevron w-4 h-4 text-slate-400 " fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-sm font-semibold text-slate-700">Seção 5: Acompanhantes de Viagem</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="acc-badge hidden text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[5px] font-medium">✓ concluído</span>
+                    <span class="text-[11px] text-slate-400">⏱ 3 min</span>
+                </div>
+            </button>
+            <!-- Accordion Body -->
+            <div class="acc-body " data-body="4">
+                <div class="px-4 pb-4 pt-1">
+                    <!-- Section info bar -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-[5px] px-3 py-2 mb-4 flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Acompanhantes de Viagem</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">⏱ Tempo estimado: 3 min</span>
+                    </div>
+                    
+        <!-- pg-TravelCompanions -->
+        <div id="pg-TravelCompanions" class="acc-page">
         <h2>4. Informações sobre Acompanhantes de Viagem (Travel Companions Information)</h2>
         <div class="section">
             <h3>Pessoas Viajando com Você (Persons Traveling with You)</h3>
@@ -1015,12 +788,43 @@
                 </div>
             </div>
         </div>
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 5: PreviousUSTravel ===== -->
-    <div class="page" id="pg-PreviousUSTravel">
+        </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="prevSection()" class="flex-1 py-2.5 px-4 bg-white border border-slate-300 text-slate-700 font-medium text-sm rounded-[5px] hover:bg-slate-50 transition-colors">Voltar</button>
+                        <button type="button" onclick="nextSection()" class="flex-1 py-2.5 px-4 bg-blue-500 text-white font-semibold text-sm rounded-[5px] hover:bg-blue-600 transition-colors shadow-sm">Salvar e Continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 6: Viagens Anteriores aos EUA -->
+        <div class="acc-item bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden" data-section="5" data-pages="pg-PreviousUSTravel">
+            <!-- Accordion Header -->
+            <button type="button" class="acc-header w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors" onclick="toggleSection(5)">
+                <div class="flex items-center gap-3">
+                    <svg class="acc-chevron w-4 h-4 text-slate-400 " fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-sm font-semibold text-slate-700">Seção 6: Viagens Anteriores aos EUA</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="acc-badge hidden text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[5px] font-medium">✓ concluído</span>
+                    <span class="text-[11px] text-slate-400">⏱ 4 min</span>
+                </div>
+            </button>
+            <!-- Accordion Body -->
+            <div class="acc-body " data-body="5">
+                <div class="px-4 pb-4 pt-1">
+                    <!-- Section info bar -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-[5px] px-3 py-2 mb-4 flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Viagens Anteriores aos EUA</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">⏱ Tempo estimado: 4 min</span>
+                    </div>
+                    
+        <!-- pg-PreviousUSTravel -->
+        <div id="pg-PreviousUSTravel" class="acc-page">
         <h2>5. Informações sobre Viagens Anteriores aos EUA (Previous U.S. Travel Information)</h2>
 
         <div class="section">
@@ -1206,12 +1010,43 @@
             </div>
         </div>
 
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 6: AddressPhone ===== -->
-    <div class="page" id="pg-AddressPhone">
+        </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="prevSection()" class="flex-1 py-2.5 px-4 bg-white border border-slate-300 text-slate-700 font-medium text-sm rounded-[5px] hover:bg-slate-50 transition-colors">Voltar</button>
+                        <button type="button" onclick="nextSection()" class="flex-1 py-2.5 px-4 bg-blue-500 text-white font-semibold text-sm rounded-[5px] hover:bg-blue-600 transition-colors shadow-sm">Salvar e Continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 7: Endereço e Contato -->
+        <div class="acc-item bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden" data-section="6" data-pages="pg-AddressPhone">
+            <!-- Accordion Header -->
+            <button type="button" class="acc-header w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors" onclick="toggleSection(6)">
+                <div class="flex items-center gap-3">
+                    <svg class="acc-chevron w-4 h-4 text-slate-400 " fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-sm font-semibold text-slate-700">Seção 7: Endereço e Contato</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="acc-badge hidden text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[5px] font-medium">✓ concluído</span>
+                    <span class="text-[11px] text-slate-400">⏱ 5 min</span>
+                </div>
+            </button>
+            <!-- Accordion Body -->
+            <div class="acc-body " data-body="6">
+                <div class="px-4 pb-4 pt-1">
+                    <!-- Section info bar -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-[5px] px-3 py-2 mb-4 flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Endereço e Contato</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">⏱ Tempo estimado: 5 min</span>
+                    </div>
+                    
+        <!-- pg-AddressPhone -->
+        <div id="pg-AddressPhone" class="acc-page">
         <h2>6. Informações de Endereço e Telefone (Address and Phone Information)</h2>
 
         <!-- === Home Address === -->
@@ -1393,12 +1228,43 @@
             </div>
         </div>
 
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 7: Passport ===== -->
-    <div class="page" id="pg-Passport">
+        </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="prevSection()" class="flex-1 py-2.5 px-4 bg-white border border-slate-300 text-slate-700 font-medium text-sm rounded-[5px] hover:bg-slate-50 transition-colors">Voltar</button>
+                        <button type="button" onclick="nextSection()" class="flex-1 py-2.5 px-4 bg-blue-500 text-white font-semibold text-sm rounded-[5px] hover:bg-blue-600 transition-colors shadow-sm">Salvar e Continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 8: Informações do Passaporte -->
+        <div class="acc-item bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden" data-section="7" data-pages="pg-Passport">
+            <!-- Accordion Header -->
+            <button type="button" class="acc-header w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors" onclick="toggleSection(7)">
+                <div class="flex items-center gap-3">
+                    <svg class="acc-chevron w-4 h-4 text-slate-400 " fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-sm font-semibold text-slate-700">Seção 8: Informações do Passaporte</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="acc-badge hidden text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[5px] font-medium">✓ concluído</span>
+                    <span class="text-[11px] text-slate-400">⏱ 4 min</span>
+                </div>
+            </button>
+            <!-- Accordion Body -->
+            <div class="acc-body " data-body="7">
+                <div class="px-4 pb-4 pt-1">
+                    <!-- Section info bar -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-[5px] px-3 py-2 mb-4 flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Informações do Passaporte</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">⏱ Tempo estimado: 4 min</span>
+                    </div>
+                    
+        <!-- pg-Passport -->
+        <div id="pg-Passport" class="acc-page">
         <h2>7. Informações do Passaporte (Passport Information)</h2>
 
         <!-- === Passport Info === -->
@@ -1507,12 +1373,43 @@
             </div>
         </div>
 
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 8: USContact ===== -->
-    <div class="page" id="pg-USContact">
+        </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="prevSection()" class="flex-1 py-2.5 px-4 bg-white border border-slate-300 text-slate-700 font-medium text-sm rounded-[5px] hover:bg-slate-50 transition-colors">Voltar</button>
+                        <button type="button" onclick="nextSection()" class="flex-1 py-2.5 px-4 bg-blue-500 text-white font-semibold text-sm rounded-[5px] hover:bg-blue-600 transition-colors shadow-sm">Salvar e Continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 9: Contato nos EUA -->
+        <div class="acc-item bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden" data-section="8" data-pages="pg-USContact">
+            <!-- Accordion Header -->
+            <button type="button" class="acc-header w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors" onclick="toggleSection(8)">
+                <div class="flex items-center gap-3">
+                    <svg class="acc-chevron w-4 h-4 text-slate-400 " fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-sm font-semibold text-slate-700">Seção 9: Contato nos EUA</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="acc-badge hidden text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[5px] font-medium">✓ concluído</span>
+                    <span class="text-[11px] text-slate-400">⏱ 3 min</span>
+                </div>
+            </button>
+            <!-- Accordion Body -->
+            <div class="acc-body " data-body="8">
+                <div class="px-4 pb-4 pt-1">
+                    <!-- Section info bar -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-[5px] px-3 py-2 mb-4 flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Contato nos EUA</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">⏱ Tempo estimado: 3 min</span>
+                    </div>
+                    
+        <!-- pg-USContact -->
+        <div id="pg-USContact" class="acc-page">
         <h2>8. Informações de Contato nos EUA (U.S. Point of Contact Information)</h2>
 
         <div class="section">
@@ -1587,12 +1484,43 @@
             </div>
         </div>
 
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 9: Family1 ===== -->
-    <div class="page" id="pg-Family1">
+        </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="prevSection()" class="flex-1 py-2.5 px-4 bg-white border border-slate-300 text-slate-700 font-medium text-sm rounded-[5px] hover:bg-slate-50 transition-colors">Voltar</button>
+                        <button type="button" onclick="nextSection()" class="flex-1 py-2.5 px-4 bg-blue-500 text-white font-semibold text-sm rounded-[5px] hover:bg-blue-600 transition-colors shadow-sm">Salvar e Continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 10: Família e Parentes -->
+        <div class="acc-item bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden" data-section="9" data-pages="pg-Family1,pg-Family2,pg-DeceasedSpouse,pg-PrevSpouse">
+            <!-- Accordion Header -->
+            <button type="button" class="acc-header w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors" onclick="toggleSection(9)">
+                <div class="flex items-center gap-3">
+                    <svg class="acc-chevron w-4 h-4 text-slate-400 " fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-sm font-semibold text-slate-700">Seção 10: Família e Parentes</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="acc-badge hidden text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[5px] font-medium">✓ concluído</span>
+                    <span class="text-[11px] text-slate-400">⏱ 6 min</span>
+                </div>
+            </button>
+            <!-- Accordion Body -->
+            <div class="acc-body " data-body="9">
+                <div class="px-4 pb-4 pt-1">
+                    <!-- Section info bar -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-[5px] px-3 py-2 mb-4 flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Família e Parentes</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">⏱ Tempo estimado: 6 min</span>
+                    </div>
+                    
+        <!-- pg-Family1 -->
+        <div id="pg-Family1" class="acc-page">
         <h2>9. Informações sobre Família: Parentes (Family Information: Relatives)</h2>
 
         <!-- === Father === -->
@@ -1735,12 +1663,12 @@
             </div>
         </div>
 
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 10: Family2 ===== -->
-    <div class="page" id="pg-Family2">
+        </div>
+
+        <!-- pg-Family2 -->
+        <div id="pg-Family2" class="acc-page">
         <h2>10. Informações sobre Família: Cônjuge (Family Information: Spouse)</h2>
 
         <div class="section">
@@ -1818,12 +1746,12 @@
             </div>
         </div>
 
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 11: DeceasedSpouse ===== -->
-    <div class="page" id="pg-DeceasedSpouse">
+        </div>
+
+        <!-- pg-DeceasedSpouse -->
+        <div id="pg-DeceasedSpouse" class="acc-page">
         <h2>11. Informações sobre Família: Cônjuge Falecido (Family Information: Deceased Spouse)</h2>
 
         <div class="section">
@@ -1858,12 +1786,12 @@
             </div>
         </div>
 
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 12: PrevSpouse ===== -->
-    <div class="page" id="pg-PrevSpouse">
+        </div>
+
+        <!-- pg-PrevSpouse -->
+        <div id="pg-PrevSpouse" class="acc-page">
         <h2>12. Informações sobre Família: Ex-Cônjuge (Family Information: Former Spouse)</h2>
 
         <div class="section">
@@ -1937,12 +1865,43 @@
             </div>
         </div>
 
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 13: WorkEducation1 ===== -->
-    <div class="page" id="pg-WorkEducation1">
+        </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="prevSection()" class="flex-1 py-2.5 px-4 bg-white border border-slate-300 text-slate-700 font-medium text-sm rounded-[5px] hover:bg-slate-50 transition-colors">Voltar</button>
+                        <button type="button" onclick="nextSection()" class="flex-1 py-2.5 px-4 bg-blue-500 text-white font-semibold text-sm rounded-[5px] hover:bg-blue-600 transition-colors shadow-sm">Salvar e Continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 11: Trabalho e Educação -->
+        <div class="acc-item bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden" data-section="10" data-pages="pg-WorkEducation1,pg-WorkEducation2,pg-WorkEducation3">
+            <!-- Accordion Header -->
+            <button type="button" class="acc-header w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors" onclick="toggleSection(10)">
+                <div class="flex items-center gap-3">
+                    <svg class="acc-chevron w-4 h-4 text-slate-400 " fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-sm font-semibold text-slate-700">Seção 11: Trabalho e Educação</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="acc-badge hidden text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[5px] font-medium">✓ concluído</span>
+                    <span class="text-[11px] text-slate-400">⏱ 8 min</span>
+                </div>
+            </button>
+            <!-- Accordion Body -->
+            <div class="acc-body " data-body="10">
+                <div class="px-4 pb-4 pt-1">
+                    <!-- Section info bar -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-[5px] px-3 py-2 mb-4 flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Trabalho e Educação</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">⏱ Tempo estimado: 8 min</span>
+                    </div>
+                    
+        <!-- pg-WorkEducation1 -->
+        <div id="pg-WorkEducation1" class="acc-page">
         <h2>13. Informações sobre Trabalho/Educação/Treinamento Atual (Present Work/Education/Training Information)</h2>
 
         <div class="section">
@@ -2018,12 +1977,12 @@
             </div>
         </div>
 
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 13: WorkEducation2 ===== -->
-    <div class="page" id="pg-WorkEducation2">
+        </div>
+
+        <!-- pg-WorkEducation2 -->
+        <div id="pg-WorkEducation2" class="acc-page">
         <h2>13. Trabalho e Educação Anteriores</h2>
         <div class="section">
             <h3>Empregos Anteriores</h3>
@@ -2141,12 +2100,12 @@
                 </div>
             </div>
         </div>
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 14: WorkEducation3 ===== -->
-    <div class="page" id="pg-WorkEducation3">
+        </div>
+
+        <!-- pg-WorkEducation3 -->
+        <div id="pg-WorkEducation3" class="acc-page">
         <h2>14. Informações Adicionais</h2>
         <div class="section">
             <h3>Idiomas</h3>
@@ -2265,12 +2224,43 @@
                         placeholder="Descreva a organização"></textarea></div>
             </div>
         </div>
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 15: Security1 (Saúde) ===== -->
-    <div class="page" id="pg-Security1">
+        </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="prevSection()" class="flex-1 py-2.5 px-4 bg-white border border-slate-300 text-slate-700 font-medium text-sm rounded-[5px] hover:bg-slate-50 transition-colors">Voltar</button>
+                        <button type="button" onclick="nextSection()" class="flex-1 py-2.5 px-4 bg-blue-500 text-white font-semibold text-sm rounded-[5px] hover:bg-blue-600 transition-colors shadow-sm">Salvar e Continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 12: Antecedentes e Segurança -->
+        <div class="acc-item bg-white border border-slate-200 rounded-[5px] shadow-sm overflow-hidden" data-section="11" data-pages="pg-Security1,pg-Security2,pg-Security3,pg-Security4,pg-Security5">
+            <!-- Accordion Header -->
+            <button type="button" class="acc-header w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors" onclick="toggleSection(11)">
+                <div class="flex items-center gap-3">
+                    <svg class="acc-chevron w-4 h-4 text-slate-400 " fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-sm font-semibold text-slate-700">Seção 12: Antecedentes e Segurança</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="acc-badge hidden text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[5px] font-medium">✓ concluído</span>
+                    <span class="text-[11px] text-slate-400">⏱ 5 min</span>
+                </div>
+            </button>
+            <!-- Accordion Body -->
+            <div class="acc-body " data-body="11">
+                <div class="px-4 pb-4 pt-1">
+                    <!-- Section info bar -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-[5px] px-3 py-2 mb-4 flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Antecedentes e Segurança</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">⏱ Tempo estimado: 5 min</span>
+                    </div>
+                    
+        <!-- pg-Security1 -->
+        <div id="pg-Security1" class="acc-page">
         <h2>15. Segurança - Saúde</h2>
         <div class="section">
             <h3>Questões de Saúde</h3>
@@ -2299,12 +2289,12 @@
                         placeholder="Explique detalhadamente"></textarea></div>
             </div>
         </div>
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 16: Security2 (Criminal) ===== -->
-    <div class="page" id="pg-Security2">
+        </div>
+
+        <!-- pg-Security2 -->
+        <div id="pg-Security2" class="acc-page">
         <h2>16. Segurança - Criminal</h2>
         <div class="section">
             <h3>Questões Criminais</h3>
@@ -2368,12 +2358,12 @@
                 </div>
             </div>
         </div>
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 17: Security3 (Segurança Nacional) ===== -->
-    <div class="page" id="pg-Security3">
+        </div>
+
+        <!-- pg-Security3 -->
+        <div id="pg-Security3" class="acc-page">
         <h2>17. Segurança Nacional</h2>
         <div class="section">
             <h3>Espionagem e Terrorismo</h3>
@@ -2478,12 +2468,12 @@
                         placeholder="Explique detalhadamente"></textarea></div>
             </div>
         </div>
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 18: Security4 (Imigração) ===== -->
-    <div class="page" id="pg-Security4">
+        </div>
+
+        <!-- pg-Security4 -->
+        <div id="pg-Security4" class="acc-page">
         <h2>18. Segurança - Imigração</h2>
         <div class="section">
             <h3>Violações de Imigração</h3>
@@ -2527,12 +2517,12 @@
                         placeholder="Explique detalhadamente"></textarea></div>
             </div>
         </div>
-        <div class="page-btns"><button class="btn btn-back" onclick="prevPage()">← Voltar</button><button
-                class="btn btn-next" onclick="nextPage()">Próximo →</button></div>
-    </div>
-
+        
     <!-- ===== PAGE 19: Security5 (Diversos) ===== -->
-    <div class="page" id="pg-Security5">
+        </div>
+
+        <!-- pg-Security5 -->
+        <div id="pg-Security5" class="acc-page">
         <h2>19. Segurança - Diversos</h2>
         <div class="section">
             <h3>Outras Questões</h3>
@@ -2569,14 +2559,23 @@
                         placeholder="Explique detalhadamente"></textarea></div>
             </div>
         </div>
-        <div class="page-btns" style="flex-direction:column;gap:12px;align-items:center">
-            <button class="btn btn-json" onclick="generateJSON()">Gerar JSON</button>
-            <div style="display:flex;gap:12px;width:100%;justify-content:space-between"><button class="btn btn-back"
-                    onclick="prevPage()">← Voltar</button><span></span></div>
-        </div>
+        
     </div>
 
     <!-- JSON Modal -->
+        </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="prevSection()" class="flex-1 py-2.5 px-4 bg-white border border-slate-300 text-slate-700 font-medium text-sm rounded-[5px] hover:bg-slate-50 transition-colors">Voltar</button>
+                        <button type="button" onclick="nextSection()" class="flex-1 py-2.5 px-4 bg-blue-500 text-white font-semibold text-sm rounded-[5px] hover:bg-blue-600 transition-colors shadow-sm">Salvar e Continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
     <div class="modal-overlay" id="jsonModal">
         <div class="modal">
             <h2>JSON Gerado - DS-160</h2>
@@ -3925,7 +3924,7 @@
         }
 
         // ===== INITIALIZATION =====
-        buildNav();
+        // buildNav(); // replaced by accordion
         registerTemplates();
         setupNACheckboxes();
         setupRadioBranches();
@@ -3948,6 +3947,100 @@
         document.querySelectorAll('input[name="rblSpecificTravel"]').forEach(r => {
             r.addEventListener('change', updateTravelBranch);
         });
+    
+
+        // ===== ACCORDION NAVIGATION =====
+        const SECTION_DEFS = [{"id":"start","label":"Início","pages":["pg-Start"]},{"id":"personal1","label":"Dados Pessoais","pages":["pg-Personal1"]},{"id":"personal2","label":"Informações Pessoais Adicionais","pages":["pg-Personal2"]},{"id":"travel","label":"Informações de Viagem","pages":["pg-Travel"]},{"id":"companions","label":"Acompanhantes de Viagem","pages":["pg-TravelCompanions"]},{"id":"prevtravel","label":"Viagens Anteriores aos EUA","pages":["pg-PreviousUSTravel"]},{"id":"address","label":"Endereço e Contato","pages":["pg-AddressPhone"]},{"id":"passport","label":"Informações do Passaporte","pages":["pg-Passport"]},{"id":"uscontact","label":"Contato nos EUA","pages":["pg-USContact"]},{"id":"family","label":"Família e Parentes","pages":["pg-Family1","pg-Family2","pg-DeceasedSpouse","pg-PrevSpouse"]},{"id":"work","label":"Trabalho e Educação","pages":["pg-WorkEducation1","pg-WorkEducation2","pg-WorkEducation3"]},{"id":"security","label":"Antecedentes e Segurança","pages":["pg-Security1","pg-Security2","pg-Security3","pg-Security4","pg-Security5"]}];
+        let currentSection = 0;
+        const completedSections = new Set();
+
+        // Override old PAGES + showPage + buildNav + nextPage + prevPage
+        const PAGES = document.querySelectorAll('.acc-page');
+        
+        function toggleSection(idx) {
+            const items = document.querySelectorAll('.acc-item');
+            items.forEach((item, i) => {
+                const body = item.querySelector('.acc-body');
+                const chevron = item.querySelector('.acc-chevron');
+                if (i === idx) {
+                    body.classList.toggle('open');
+                    chevron.classList.toggle('rotate');
+                } else {
+                    body.classList.remove('open');
+                    chevron.classList.remove('rotate');
+                }
+            });
+            currentSection = idx;
+        }
+
+        function nextSection() {
+            // Mark current section as complete
+            completedSections.add(currentSection);
+            updateSectionBadge(currentSection);
+            updateProgress();
+            
+            // Find next visible section
+            for (let i = currentSection + 1; i < SECTION_DEFS.length; i++) {
+                toggleSection(i);
+                // Scroll to the section
+                document.querySelectorAll('.acc-item')[i].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+            // If last section, trigger generate JSON
+            if (typeof generateJSON === 'function') generateJSON();
+        }
+
+        function prevSection() {
+            for (let i = currentSection - 1; i >= 0; i--) {
+                toggleSection(i);
+                document.querySelectorAll('.acc-item')[i].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+        }
+
+        function updateSectionBadge(idx) {
+            const item = document.querySelectorAll('.acc-item')[idx];
+            if (!item) return;
+            const badge = item.querySelector('.acc-badge');
+            if (badge) {
+                badge.classList.remove('hidden');
+                badge.innerHTML = '✓ concluído';
+            }
+        }
+
+        function updateProgress() {
+            const total = SECTION_DEFS.length;
+            const done = completedSections.size;
+            const pct = Math.round((done / total) * 100);
+            const bar = document.getElementById('progress-bar');
+            const label = document.getElementById('progress-label');
+            const steps = document.getElementById('progress-steps');
+            if (bar) bar.style.width = pct + '%';
+            if (label) label.textContent = 'Progresso: ' + pct + '%';
+            if (steps) steps.textContent = done + ' de ' + total + ' seções';
+        }
+
+        // Override buildNav to no-op (accordion replaces it)
+        function buildNav() {}
+        
+        // Override showPage — make all acc-pages visible (accordion controls visibility)
+        function showPage(i) {}
+
+        // Override nextPage/prevPage with section-aware versions
+        // Keep originals for internal page transitions within multi-page sections
+        const _origNextPage = typeof nextPage === 'function' ? nextPage : null;
+        
+        // Make all pages visible within their sections
+        document.querySelectorAll('.acc-page').forEach(p => {
+            p.style.display = 'block';
+        });
+
+        // Keep conditional page visibility
+        if (typeof updatePageVisibility === 'function') {
+            // Delay to let DOM settle
+            setTimeout(updatePageVisibility, 100);
+        }
+
     </script>
 </body>
 
