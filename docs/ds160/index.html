@@ -420,17 +420,175 @@
             margin: 0 !important;
             padding: 0 !important;
         }
+
+        /* ===== EMAIL GATE ===== */
+        #email-gate {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8edf5 100%);
+        }
+
+        .gate-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            padding: 40px 32px;
+            max-width: 440px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .gate-card h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+
+        .gate-card p {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .gate-card input[type="email"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color .2s;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+        }
+
+        .gate-card input[type="email"]:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .gate-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .gate-btn-primary {
+            background: #3b82f6;
+            color: #fff;
+        }
+
+        .gate-btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .gate-btn-primary:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .gate-btn-secondary {
+            background: #f1f5f9;
+            color: #334155;
+            margin-top: 8px;
+        }
+
+        .gate-btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        #gate-status {
+            margin-top: 16px;
+            font-size: 14px;
+            color: #64748b;
+            min-height: 20px;
+        }
+
+        #gate-results {
+            margin-top: 16px;
+            text-align: left;
+        }
+
+        .gate-result-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .gate-result-item:hover {
+            border-color: #3b82f6;
+            background: #f0f4ff;
+        }
+
+        .gate-result-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 15px;
+        }
+
+        .gate-result-status {
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .gate-result-status.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .gate-result-status.complete {
+            background: #dcfce7;
+            color: #166534;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body class="bg-slate-50 min-h-screen">
-    <!-- Accordion Header -->
-    <div id="acc-wrapper">
+    <!-- ===== EMAIL GATE ===== -->
+    <div id="email-gate">
+        <div class="gate-card">
+            <div style="margin-bottom:20px">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5"
+                    style="margin:0 auto">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+            <h1>DS-160 Formulario de Visto</h1>
+            <p>Insira seu email para iniciar ou continuar o preenchimento do formulario.</p>
+            <input type="email" id="gate-email" placeholder="seu@email.com" autocomplete="email">
+            <button class="gate-btn gate-btn-primary" id="gate-search-btn" onclick="gateSearch()">Buscar /
+                Continuar</button>
+            <div id="gate-status"></div>
+            <div id="gate-results" style="display:none"></div>
+        </div>
+    </div>
+
+    <!-- Accordion (hidden until email resolved) -->
+    <div id="acc-wrapper" style="display:none">
         <header class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
             <div class="max-w-2xl mx-auto px-4 py-3">
                 <h1 class="text-base font-bold text-slate-800">DS-160 Formulario de Visto Online</h1>
-                <p class="text-xs text-slate-400">Preencha todas as informacoes solicitadas</p>
+                <p class="text-xs text-slate-400" id="acc-user-email"></p>
             </div>
         </header>
         <div class="max-w-2xl mx-auto px-4 pt-4 pb-8" id="acc-container"></div>
@@ -3112,10 +3270,10 @@
             const location = document.querySelector('.sel-location')?.value || 'SPL';
 
             try {
-                let primaryApplicantId = null;
+                let primaryApplicantId = window._linkToPrimaryId || null;
 
-                // If group mode, find primary applicant
-                if (mode === 'group') {
+                // If group mode and no pre-set link, find primary applicant
+                if (!primaryApplicantId && mode === 'group') {
                     const groupEmail = document.getElementById('txtGroupEmail')?.value?.trim();
                     if (groupEmail) {
                         const allResults = await sbGet(`applicants?primary_applicant_id=is.null&select=id,full_name,data&limit=50`);
@@ -3164,7 +3322,6 @@
         async function autoSavePartial() {
             if (!savedApplicantId) return; // not yet created
             try {
-                // Collect all current form data using the same val/radioVal helpers
                 const partialData = {
                     personal1: {
                         surname: val('tbxAPP_SURNAME'), givenName: val('tbxAPP_GIVEN_NAME'),
@@ -3172,22 +3329,51 @@
                         gender: val('ddlAPP_GENDER'), maritalStatus: val('ddlAPP_MARITAL_STATUS'),
                         dobDay: val('ddlDOBDay'), dobMonth: val('ddlDOBMonth'), dobYear: val('tbxDOBYear'),
                         pobCity: val('tbxAPP_POB_CITY'), pobCountry: val('ddlAPP_POB_CNTRY'),
+                        otherNames: radioChecked('rblOtherNames'),
                     },
                     personal2: {
                         nationality: val('ddlAPP_NATL'), nationalId: val('tbxAPP_NATIONAL_ID'),
+                        otherNationality: radioChecked('rblAPP_OTH_NATL_IND'),
+                        permResident: radioChecked('rblPermResOtherCntryInd'),
                     },
                     addressPhone: {
-                        addr1: val('tbxAPP_ADDR_LN1'), city: val('tbxAPP_ADDR_CITY'),
-                        country: val('ddlAPP_ADDR_CNTRY'),
-                        phone: val('tbxAPP_HOME_TEL'), email: val('tbxAPP_EMAIL_ADDR'),
+                        addr1: val('tbxAPP_ADDR_LN1'), addr2: val('tbxAPP_ADDR_LN2'),
+                        city: val('tbxAPP_ADDR_CITY'), state: val('tbxAPP_ADDR_STATE'),
+                        postalCode: val('tbxAPP_ADDR_POSTAL_CD'), country: val('ddlCountry'),
+                        phone: val('tbxAPP_HOME_TEL'), mobilePhone: val('tbxAPP_MOBILE_TEL'),
+                        workPhone: val('tbxAPP_BUS_TEL'), email: val('tbxAPP_EMAIL_ADDR'),
                     },
                     passport: {
-                        number: val('tbxPPT_NUM'), country: val('ddlPPT_CNTRY'),
-                        type: val('ddlPPT_TYPE'),
+                        number: val('tbxPPT_NUM'), type: val('ddlPPT_TYPE'),
+                        country: val('ddlPPT_CNTRY'), bookNumber: val('tbxPPT_BOOK_NUM'),
+                        issueDay: val('ddlPPT_ISSUEDay'), issueMonth: val('ddlPPT_ISSUEMonth'),
+                        issueYear: val('tbxPPT_ISSUEYear'),
+                        expireDay: val('ddlPPT_EXPIREDay'), expireMonth: val('ddlPPT_EXPIREMonth'),
+                        expireYear: val('tbxPPT_EXPIREYear'),
+                    },
+                    travel: {
+                        purpose: val('ddlTRAVEL_PURPOSE'), purposeSpec: val('ddlTRAVEL_PURPOSE_SPEC'),
+                        visaClass: val('ddlTRAVEL_VISA_CLASS'),
+                    },
+                    usContact: {
+                        surname: val('tbxUS_POC_SURNAME'), givenName: val('tbxUS_POC_GIVEN_NAME'),
+                        organization: val('tbxUS_POC_ORGANIZATION'),
+                        addr1: val('tbxUS_POC_ADDR_LN1'), city: val('tbxUS_POC_ADDR_CITY'),
+                        state: val('ddlUS_POC_ADDR_STATE'), postalCode: val('tbxUS_POC_ADDR_POSTAL_CD'),
+                        phone: val('tbxUS_POC_HOME_TEL'), email: val('tbxUS_POC_EMAIL_ADDR'),
+                    },
+                    family: {
+                        fatherSurname: val('tbxFATHER_SURNAME'), fatherGivenName: val('tbxFATHER_GIVEN_NAME'),
+                        motherSurname: val('tbxMOTHER_SURNAME'), motherGivenName: val('tbxMOTHER_GIVEN_NAME'),
+                        fatherInUS: radioChecked('rblFATHER_LIVE_IN_US_IND'),
+                        motherInUS: radioChecked('rblMOTHER_LIVE_IN_US_IND'),
+                    },
+                    spouse: {
+                        surname: val('tbxSPOUSE_SURNAME'), givenName: val('tbxSPOUSE_GIVEN_NAME'),
                     },
                 };
                 // Remove empty values
-                const clean = JSON.parse(JSON.stringify(partialData, (k, v) => (v === '' || v === null) ? undefined : v));
+                const clean = JSON.parse(JSON.stringify(partialData, (k, v) => (v === '' || v === null || v === undefined) ? undefined : v));
                 await sbFetch(`applicants?id=eq.${savedApplicantId}`, 'PATCH', { data: clean });
                 console.log('[DS-160] Auto-save parcial OK');
             } catch (e) {
@@ -3809,6 +3995,226 @@
             if (!res.ok) return [];
             return res.json();
         }
+
+        // ===== EMAIL GATE =====
+        let gateEmail = '';
+
+        async function gateSearch() {
+            const emailInput = document.getElementById('gate-email');
+            const status = document.getElementById('gate-status');
+            const results = document.getElementById('gate-results');
+            const btn = document.getElementById('gate-search-btn');
+            const email = (emailInput.value || '').trim().toLowerCase();
+
+            if (!email || !email.includes('@')) {
+                status.innerHTML = '<span style="color:#dc2626">Insira um email válido</span>';
+                return;
+            }
+
+            gateEmail = email;
+            btn.disabled = true;
+            status.textContent = 'Buscando...';
+            results.style.display = 'none';
+
+            try {
+                // Search applicants — get all, filter by email in client
+                const allApplicants = await sbGet('applicants?select=id,full_name,data,primary_applicant_id&order=created_at.desc&limit=100');
+                const matches = allApplicants.filter(a => {
+                    const e = (a.data?.addressPhone?.email || '').toLowerCase();
+                    return e === email;
+                });
+
+                if (matches.length === 0) {
+                    // No applicant found — start new form
+                    status.innerHTML = '<span style="color:#059669">Nenhum cadastro encontrado. Iniciando novo formulário...</span>';
+                    setTimeout(() => startFormWithEmail(email, null), 800);
+                    return;
+                }
+
+                // Check applications for each match
+                const withStatus = [];
+                for (const m of matches) {
+                    const apps = await sbGet(`applications?applicant_id=eq.${m.id}&select=id,status&limit=1`);
+                    const appStatus = apps?.[0]?.status || 'pending';
+                    const appId = apps?.[0]?.id || null;
+                    withStatus.push({ ...m, appStatus, appId });
+                }
+
+                // Check for incomplete forms
+                const incomplete = withStatus.filter(a => a.appStatus === 'pending');
+                const complete = withStatus.filter(a => a.appStatus !== 'pending');
+
+                if (incomplete.length > 0) {
+                    // Has incomplete — force continue
+                    status.innerHTML = '<span style="color:#d97706">Formulário em andamento encontrado. Continuando preenchimento...</span>';
+                    const target = incomplete[0];
+                    setTimeout(() => startFormWithEmail(email, target), 800);
+                    return;
+                }
+
+                // All complete — show list + option to add new
+                status.innerHTML = '<span style="color:#059669">Preenchimento(s) encontrado(s):</span>';
+                results.style.display = 'block';
+                results.innerHTML = '';
+
+                complete.forEach(a => {
+                    const item = document.createElement('div');
+                    item.className = 'gate-result-item';
+                    item.innerHTML = `
+                        <span class="gate-result-name">${a.full_name || 'Sem nome'}</span>
+                        <span class="gate-result-status complete">Completo</span>
+                    `;
+                    item.onclick = () => {
+                        // View-only: restore and show
+                        startFormWithEmail(email, a);
+                    };
+                    results.appendChild(item);
+                });
+
+                // Add new dependent button
+                const addBtn = document.createElement('button');
+                addBtn.className = 'gate-btn gate-btn-secondary';
+                addBtn.textContent = '+ Adicionar Novo Dependente';
+                addBtn.onclick = () => {
+                    // Start new form linked to primary
+                    const primaryId = complete[0].id;
+                    startFormWithEmail(email, null, primaryId);
+                };
+                results.appendChild(addBtn);
+
+            } catch (e) {
+                console.error('[Gate] Error:', e);
+                status.innerHTML = '<span style="color:#dc2626">Erro ao buscar. Tente novamente.</span>';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function startFormWithEmail(email, existingApplicant, linkToPrimaryId) {
+            // Hide gate, show form
+            document.getElementById('email-gate').style.display = 'none';
+            document.getElementById('acc-wrapper').style.display = 'block';
+            document.getElementById('acc-user-email').textContent = email;
+
+            // Pre-fill email in form
+            const emailField = document.getElementById('tbxAPP_EMAIL_ADDR');
+            if (emailField) emailField.value = email;
+
+            if (existingApplicant) {
+                // Restore existing data
+                savedApplicantId = existingApplicant.id;
+                savedApplicationId = existingApplicant.appId || null;
+                restoreApplicantData(existingApplicant.data || {});
+            } else if (linkToPrimaryId) {
+                // New dependent — store primary link
+                window._linkToPrimaryId = linkToPrimaryId;
+            }
+        }
+
+        function restoreApplicantData(data) {
+            if (!data) return;
+
+            function setVal(id, value) {
+                if (!value) return;
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.value = value;
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            function setRadio(name, value) {
+                if (!value) return;
+                const r = document.querySelector(`input[name="${name}"][value="${value}"]`);
+                if (r) {
+                    r.checked = true;
+                    r.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+            function setCheckbox(id, checked) {
+                const el = document.getElementById(id);
+                if (el && checked) {
+                    el.checked = true;
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+
+            const p1 = data.personal1 || {};
+            setVal('tbxAPP_SURNAME', p1.surname);
+            setVal('tbxAPP_GIVEN_NAME', p1.givenName);
+            setVal('tbxAPP_FULL_NAME_NATIVE', p1.fullNameNative);
+            setVal('ddlAPP_GENDER', p1.gender);
+            setVal('ddlAPP_MARITAL_STATUS', p1.maritalStatus);
+            setVal('ddlDOBDay', p1.dobDay);
+            setVal('ddlDOBMonth', p1.dobMonth);
+            setVal('tbxDOBYear', p1.dobYear);
+            setVal('tbxAPP_POB_CITY', p1.pobCity);
+            setVal('ddlAPP_POB_CNTRY', p1.pobCountry);
+            setRadio('rblOtherNames', p1.otherNames);
+
+            const p2 = data.personal2 || {};
+            setVal('ddlAPP_NATL', p2.nationality);
+            setVal('tbxAPP_NATIONAL_ID', p2.nationalId);
+            setRadio('rblAPP_OTH_NATL_IND', p2.otherNationality);
+            setRadio('rblPermResOtherCntryInd', p2.permResident);
+
+            const ap = data.addressPhone || {};
+            setVal('tbxAPP_ADDR_LN1', ap.addr1);
+            setVal('tbxAPP_ADDR_LN2', ap.addr2);
+            setVal('tbxAPP_ADDR_CITY', ap.city);
+            setVal('tbxAPP_ADDR_STATE', ap.state);
+            setVal('tbxAPP_ADDR_POSTAL_CD', ap.postalCode);
+            setVal('ddlCountry', ap.country);
+            setVal('tbxAPP_HOME_TEL', ap.phone);
+            setVal('tbxAPP_MOBILE_TEL', ap.mobilePhone);
+            setVal('tbxAPP_BUS_TEL', ap.workPhone);
+            setVal('tbxAPP_EMAIL_ADDR', ap.email);
+
+            const pp = data.passport || {};
+            setVal('tbxPPT_NUM', pp.number);
+            setVal('ddlPPT_TYPE', pp.type);
+            setVal('ddlPPT_CNTRY', pp.country);
+            setVal('tbxPPT_BOOK_NUM', pp.bookNumber);
+            setVal('ddlPPT_ISSUEDay', pp.issueDay);
+            setVal('ddlPPT_ISSUEMonth', pp.issueMonth);
+            setVal('tbxPPT_ISSUEYear', pp.issueYear);
+            setVal('ddlPPT_EXPIREDay', pp.expireDay);
+            setVal('ddlPPT_EXPIREMonth', pp.expireMonth);
+            setVal('tbxPPT_EXPIREYear', pp.expireYear);
+
+            const tr = data.travel || {};
+            setVal('ddlTRAVEL_PURPOSE', tr.purpose);
+            setVal('ddlTRAVEL_PURPOSE_SPEC', tr.purposeSpec);
+            setVal('ddlTRAVEL_VISA_CLASS', tr.visaClass);
+
+            const uc = data.usContact || {};
+            setVal('tbxUS_POC_SURNAME', uc.surname);
+            setVal('tbxUS_POC_GIVEN_NAME', uc.givenName);
+            setVal('tbxUS_POC_ORGANIZATION', uc.organization);
+            setVal('tbxUS_POC_ADDR_LN1', uc.addr1);
+            setVal('tbxUS_POC_ADDR_CITY', uc.city);
+            setVal('ddlUS_POC_ADDR_STATE', uc.state);
+            setVal('tbxUS_POC_ADDR_POSTAL_CD', uc.postalCode);
+            setVal('tbxUS_POC_HOME_TEL', uc.phone);
+            setVal('tbxUS_POC_EMAIL_ADDR', uc.email);
+
+            const f1 = data.family || {};
+            setVal('tbxFATHER_SURNAME', f1.fatherSurname);
+            setVal('tbxFATHER_GIVEN_NAME', f1.fatherGivenName);
+            setVal('tbxMOTHER_SURNAME', f1.motherSurname);
+            setVal('tbxMOTHER_GIVEN_NAME', f1.motherGivenName);
+            setRadio('rblFATHER_LIVE_IN_US_IND', f1.fatherInUS);
+            setRadio('rblMOTHER_LIVE_IN_US_IND', f1.motherInUS);
+
+            const sp = data.spouse || {};
+            setVal('tbxSPOUSE_SURNAME', sp.surname);
+            setVal('tbxSPOUSE_GIVEN_NAME', sp.givenName);
+
+            console.log('[DS-160] Data restored from applicant');
+        }
+
+        // Listen for Enter key on email gate
+        document.getElementById('gate-email')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') gateSearch();
+        });
 
         async function saveToSupabase() {
             const statusEl = document.getElementById('supabaseStatus');
