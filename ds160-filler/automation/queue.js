@@ -3,13 +3,15 @@ const { fillApplication } = require('./filler');
 
 const POLL_INTERVAL = 1800; // 30 minutes between checks
 const MAX_RETRIES = 3;
-const BACKOFF_DELAYS = [2 * 60, 5 * 60]; // 2min, 5min between retries
+const BACKOFF_DELAYS = [5, 10]; // 5sec, 10sec between retries
 const GLOBAL_PAUSE = 15 * 60; // 15min pause after 3 consecutive global errors
 
 class QueueRunner {
-    constructor(supabase, captchaMode) {
+    constructor(supabase, captchaMode, companyId, userId) {
         this.supabase = supabase;
         this.captchaMode = captchaMode || 'capmonster';
+        this.companyId = companyId;
+        this.userId = userId;
         this.running = false;
         this.workerId = `worker_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         this._emitter = null;
@@ -17,6 +19,11 @@ class QueueRunner {
         this._countdown = 0;
         this._skipWait = false;
         this.consecutiveErrors = 0; // global consecutive error count
+
+        // Single Browser Instance
+        this.browser = null;
+        this.browserContext = null;
+        this.activePage = null;
     }
 
     start(emitter) {
@@ -27,9 +34,16 @@ class QueueRunner {
 
     async stop() {
         this.running = false;
+        this.running = false;
         if (this._countdownTimer) {
             clearInterval(this._countdownTimer);
             this._countdownTimer = null;
+        }
+        if (this.browser) {
+            await this.browser.close().catch(() => { });
+            this.browser = null;
+            this.browserContext = null;
+            this.activePage = null;
         }
     }
 
@@ -68,7 +82,7 @@ class QueueRunner {
                 // 1. Fetch config
                 const config = await this._getConfig();
 
-                // 2. Claim next item (prioritize incomplete > queued)
+                // 2. Claim next item (prioritize incomplete > pending)
                 const app = await this._claimNext();
                 currentApp = app; // Track for error recovery
 
@@ -130,7 +144,7 @@ class QueueRunner {
         this.emit({
             type: 'filling',
             applicantName: applicant.full_name,
-            page: app.last_page ? `Retomando de ${app.last_page}` : 'Iniciando...'
+            page: app.current_page ? `Retomando de ${app.current_page}` : 'Iniciando...'
         });
 
         // Smart update check before fill
@@ -139,16 +153,26 @@ class QueueRunner {
         // Determine captcha mode from config
         const captchaMode = config.captcha_mode || this.captchaMode || 'capmonster';
 
-        let lastPage = app.last_page || '';
-        const result = await fillApplication(applicant, app, config, captchaMode, (page) => {
-            lastPage = page;
-            this.emit({ type: 'filling', applicantName: applicant.full_name, page });
-        });
+        let currentPage = app.current_page || '';
+
+        // Ensure browser is running
+        await this._ensureBrowser();
+        await this.browserContext.clearCookies();
+
+        let result;
+        try {
+            result = await fillApplication(applicant, app, config, captchaMode, this.activePage, (page) => {
+                currentPage = page;
+                this.emit({ type: 'filling', applicantName: applicant.full_name, page });
+            });
+        } catch (globalErr) {
+            result = { success: false, error: globalErr.message, stack: globalErr.stack };
+            await this._restartBrowser();
+        }
 
         if (result.success) {
-            // ✅ Success — close browser, reset counters
-            if (result.browser) await result.browser.close().catch(() => { });
-            await this._markDone(app.id, result.applicationId, lastPage);
+            // ✅ Success — reset counters (do NOT close browser)
+            await this._markDone(app.id, result.applicationId, currentPage);
             this.emit({ type: 'done', applicantName: applicant.full_name });
             this.consecutiveErrors = 0;
             return;
@@ -158,22 +182,25 @@ class QueueRunner {
         console.error(`[Queue] Error on ${applicant.full_name} (attempt ${currentRetry}):`, result.error);
 
         const { errorClass, correlationId } = await this._logError(
-            app, applicant, result.error, result.stack, lastPage, result.field, result.cause,
+            app, applicant, result.error, result.stack, currentPage, result.field, result.cause,
             currentRetry >= MAX_RETRIES ? result.activePage : null
         );
 
         // Salva o application_id no BD agressivamente caso já tenha sido emitido (AA00...) 
         if (result.applicationId) {
             await this.supabase.from('applications').update({ application_id: result.applicationId }).eq('id', app.id).then();
+            if (app.applicant_id) {
+                await this.supabase.from('applicants').update({ application_id: result.applicationId }).eq('id', app.applicant_id).then();
+            }
         }
 
-        await this._updateRetry(app.id, currentRetry, lastPage, result.error);
+        await this._updateRetry(app.id, currentRetry, currentPage, result.error);
 
         this.consecutiveErrors++;
 
         if (currentRetry >= MAX_RETRIES) {
-            // Max retries reached — close browser, state machine transition
-            if (result.browser) await result.browser.close().catch(() => { });
+            // Max retries reached — state machine transition
+            await this._restartBrowser(); // only close browser on hard fails to clear any bad state
 
             await this._transitionToFailed(app.id, errorClass, result.error, correlationId);
 
@@ -206,7 +233,7 @@ class QueueRunner {
         // Re-claim the same app and retry
         if (this.running) {
             const refreshedApp = await this._getApp(app.id);
-            if (refreshedApp && refreshedApp.fill_status !== 'needs_attention') {
+            if (refreshedApp && refreshedApp.status !== 'needs_attention') {
                 await this._fillWithRetry(refreshedApp, applicant, await this._getConfig());
             }
         }
@@ -251,6 +278,35 @@ class QueueRunner {
     }
 
     // ==============================================================
+    // BROWSER LIFECYCLE MAINTAINER
+    // ==============================================================
+    async _ensureBrowser() {
+        if (!this.browser || !this.browser.isConnected()) {
+            console.log('[Queue] Launching single Playwright Chromium instance...');
+            const { chromium } = require('playwright');
+
+            this.browser = await chromium.launch({
+                headless: false,
+                channel: 'chrome', // Força o uso do Chrome Instalado no Windows do cliente
+                args: ['--disable-blink-features=AutomationControlled']
+            });
+            this.browserContext = await this.browser.newContext({ viewport: { width: 1280, height: 900 } });
+            this.activePage = await this.browserContext.newPage();
+            this.activePage.setDefaultTimeout(15000);
+            this.activePage.setDefaultNavigationTimeout(30000);
+            this.activePage.on('dialog', async d => d.accept().catch(() => { }));
+        }
+    }
+
+    async _restartBrowser() {
+        console.log('[Queue] Restarting browser due to hard failure...');
+        if (this.browser) await this.browser.close().catch(() => { });
+        this.browser = null;
+        this.browserContext = null;
+        this.activePage = null;
+    }
+
+    // ==============================================================
     // CONFIG
     // ==============================================================
     async _getConfig() {
@@ -265,24 +321,38 @@ class QueueRunner {
     // CLAIM / QUERY
     // ==============================================================
     async _claimNext() {
-        // Priority: incomplete fills (filling) > queued, sorted by priority + queue time
-        const { data: filling } = await this.supabase
+        // Priority: incomplete fills (filling) > pending, sorted by priority + queue time
+        let qFilling = this.supabase
             .from('applications')
-            .select('*')
-            .eq('fill_status', 'filling')
-            .eq('fill_worker_id', this.workerId)
-            .limit(1);
+            .select('*, applicants!inner(*)')
+            .eq('status', 'filling')
+            .eq('fill_worker_id', this.workerId);
+
+        if (this.companyId) {
+            qFilling = qFilling.eq('applicants.company_id', this.companyId);
+        }
+        if (this.userId) {
+            qFilling = qFilling.eq('applicants.user_id', this.userId);
+        }
+
+        const { data: filling } = await qFilling.limit(1);
 
         if (filling && filling.length > 0) return filling[0];
 
-        // Claim next queued
-        const { data } = await this.supabase
+        // Claim next pending
+        let qpending = this.supabase
             .from('applications')
-            .select('*')
-            .eq('fill_status', 'queued')
-            .order('fill_priority', { ascending: true })
-            .order('fill_queued_at', { ascending: true })
-            .limit(1);
+            .select('*, applicants!inner(*)')
+            .eq('status', 'pending');
+
+        if (this.companyId) {
+            qpending = qpending.eq('applicants.company_id', this.companyId);
+        }
+        if (this.userId) {
+            qpending = qpending.eq('applicants.user_id', this.userId);
+        }
+
+        const { data } = await qpending.limit(1);
 
         if (!data || data.length === 0) return null;
 
@@ -290,7 +360,7 @@ class QueueRunner {
         await this.supabase
             .from('applications')
             .update({
-                fill_status: 'filling',
+                status: 'filling',
                 fill_started_at: new Date().toISOString(),
                 fill_worker_id: this.workerId
             })
@@ -304,7 +374,7 @@ class QueueRunner {
                 .eq('id', app.applicant_id);
         }
 
-        return { ...app, fill_status: 'filling' };
+        return { ...app, status: 'filling' };
     }
 
     async _getApp(appId) {
@@ -328,28 +398,30 @@ class QueueRunner {
     // ==============================================================
     // STATUS UPDATES
     // ==============================================================
-    async _markDone(appId, applicationId, lastPage) {
+    async _markDone(appId, applicationId, currentPage) {
         await this.supabase
             .from('applications')
             .update({
-                fill_status: 'filled',
+                status: 'filled',
                 fill_finished_at: new Date().toISOString(),
                 application_id: applicationId || null,
-                last_page: lastPage || null,
+                current_page: currentPage || null,
                 fill_error: null
             })
             .eq('id', appId);
 
-        // Update applicant pipeline_status to 'filled'
+        // Update applicant pipeline_status to 'filled' and sync application_id
         const { data: app } = await this.supabase
             .from('applications')
             .select('applicant_id')
             .eq('id', appId)
             .single();
         if (app?.applicant_id) {
+            let updatePayload = { pipeline_status: 'filled' };
+            if (applicationId) updatePayload.application_id = applicationId;
             await this.supabase
                 .from('applicants')
-                .update({ pipeline_status: 'filled' })
+                .update(updatePayload)
                 .eq('id', app.applicant_id);
         }
     }
@@ -358,7 +430,7 @@ class QueueRunner {
         await this.supabase
             .from('applications')
             .update({
-                fill_status: 'error',
+                status: 'error',
                 fill_error: errMsg,
                 last_error_at: new Date().toISOString()
             })
@@ -369,7 +441,7 @@ class QueueRunner {
         await this.supabase
             .from('applications')
             .update({
-                fill_status: 'needs_attention',
+                status: 'needs_attention',
                 fill_error: errMsg,
                 last_error_at: new Date().toISOString()
             })
@@ -389,12 +461,12 @@ class QueueRunner {
         }
     }
 
-    async _updateRetry(appId, retryCount, lastPage, errMsg) {
+    async _updateRetry(appId, retryCount, currentPage, errMsg) {
         await this.supabase
             .from('applications')
             .update({
                 retry_count: retryCount,
-                last_page: lastPage || null,
+                current_page: currentPage || null,
                 fill_error: errMsg,
                 last_error_at: new Date().toISOString()
             })
@@ -456,12 +528,19 @@ class QueueRunner {
         await this.supabase
             .from('applications')
             .update({
-                fill_status: type,
+                status: type,
                 fill_error: errMsg,
-                last_error_at: new Date().toISOString(),
-                error_correlation_id: correlationId // Assuming this column handles the ID tracking
+                last_error_at: new Date().toISOString()
             })
             .eq('id', appId);
+
+        // Sync application_id if it exists, along with the failed status
+        const { data: app } = await this.supabase.from('applications').select('applicant_id, application_id').eq('id', appId).single();
+        if (app?.applicant_id) {
+            let updatePayload = { pipeline_status: 'needs_attention' };
+            if (app.application_id) updatePayload.application_id = app.application_id;
+            await this.supabase.from('applicants').update(updatePayload).eq('id', app.applicant_id);
+        }
     }
 }
 

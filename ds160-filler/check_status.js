@@ -5,7 +5,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function check() {
     console.log("=== APPLICATIONS STATUS ===");
-    const { data: apps } = await supabase.from('applications').select('id, fill_status, fill_error, application_id, retry_count, last_page, applicant_id').in('fill_status', ['filling', 'filled', 'queued', 'failed_hard', 'failed_soft', 'needs_attention', 'error']);
+    const { data: apps } = await supabase.from('applications').select('id, status, fill_error, application_id, retry_count, current_page, applicant_id').in('status', ['filling', 'filled', 'pending', 'failed_hard', 'failed_soft', 'needs_attention', 'error']);
     console.log(JSON.stringify(apps, null, 2));
 
     console.log("\n=== APPLICANTS PIPELINE ===");

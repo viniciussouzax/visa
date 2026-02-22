@@ -286,9 +286,9 @@ function buildDynamicFieldMap(a) {
   if (a.travelingWithOthers && a.companions?.length) {
     map.push(
       { pattern: /rblOtherPersonsTravelingWithYou_0$/i, value: "", type: "click" },
-      { pattern: /TravelCompanions_ctl00_tbxSurname$/i, value: a.companions[0].surname, type: "text" },
-      { pattern: /TravelCompanions_ctl00_tbxGivenName$/i, value: a.companions[0].givenName, type: "text" },
-      { pattern: /TravelCompanions_ctl00_ddlTCRelationship$/i, value: a.companions[0].relationship, type: "select" },
+      { pattern: /.*tbxSurname$/i, value: a.companions[0].surname, type: "text" },
+      { pattern: /.*tbxGivenName$/i, value: a.companions[0].givenName, type: "text" },
+      { pattern: /.*ddlTCRelationship$/i, value: a.companions[0].relationship, type: "select" },
     );
     if (a.partOfGroup && a.groupName) {
       map.push(
@@ -412,11 +412,11 @@ function buildDynamicFieldMap(a) {
   );
 
   // Mailing address
-  if (addr.isMailingSameAsHome) {
+  if (a.mailingAddressSame) {
     map.push({ pattern: /rblMailingAddrSame_0$/i, value: "", type: "click" });
     // Note: rblMailingAddr_0 is often just part of the generic Yes/No question sets, 
     // we use "rblMailingAddrSame_0" exactly to answer Yes.
-  } else if (addr.isMailingSameAsHome === false) {
+  } else if (a.mailingAddressSame === false || a.mailingAddress) {
     map.push(
       { pattern: /rblMailingAddrSame_1$/i, value: "", type: "click" },
       { pattern: /tbxMAILING_ADDR_LN1$/i, value: a.mailingAddress?.street1 || "", type: "text" },
@@ -684,6 +684,23 @@ function buildDynamicFieldMap(a) {
       { pattern: /tbxEmpSchPhone$/i, value: ph(emp.phone), type: "text" },
       { pattern: /tbxWORK_EDUC_TEL$/i, value: ph(emp.phone), type: "text" },
       { pattern: /tbxCURR_MONTHLY_SALARY$/i, value: emp.monthlyIncome, type: "text" },
+      { pattern: /JobTitle/i, value: emp.jobTitle || "", type: "text" },
+    );
+
+    // Supervisor in Current Employment
+    if (emp.supervisorSurname) {
+      map.push(
+        { pattern: /SupervisorSurname/i, value: emp.supervisorSurname, type: "text" },
+        { pattern: /SupervisorGivenName/i, value: emp.supervisorGivenName || "", type: "text" },
+      );
+    } else {
+      map.push(
+        { pattern: /SupervisorSurname.*_NA/i, value: "", type: "checkbox-check" },
+        { pattern: /SupervisorGivenName.*_NA/i, value: "", type: "checkbox-check" },
+      );
+    }
+
+    map.push(
       { pattern: /FormView1_ddlEmpDateFromDay$/i, value: "1", type: "select" },
       { pattern: /FormView1_ddlEmpDateFromMonth$/i, value: emp.startDate.month, type: "select" },
       { pattern: /FormView1_tbxEmpDateFromYear$/i, value: emp.startDate.year, type: "text" },
@@ -710,8 +727,8 @@ function buildDynamicFieldMap(a) {
     // Supervisor: fill name if available, otherwise mark NA
     if (prev.supervisorSurname) {
       map.push(
-        { pattern: /tbxSupervisorSurname$/i, value: prev.supervisorSurname, type: "text" },
-        { pattern: /tbxSupervisorGivenName$/i, value: prev.supervisorGivenName || "", type: "text" },
+        { pattern: /.*SupervisorSurname$/i, value: prev.supervisorSurname, type: "text" },
+        { pattern: /.*SupervisorGivenName$/i, value: prev.supervisorGivenName || "", type: "text" },
       );
     } else {
       map.push(
@@ -896,7 +913,7 @@ const POSTBACK_CLICK_YES_IDS = [
   "CLAN_TRIBE_IND", "COUNTRIES_VISITED_IND", "ORGANIZATION_IND",
   "SPECIALIZED_SKILLS_IND", "MILITARY_SERVICE_IND", "INSURGENT_ORG_IND",
   // Fix phantom retry: these also trigger postbacks
-  "OTH_PPT_IND", "PayerAddrSameAsInd",
+  "OTHER_PPT_IND", "PayerAddrSameAsInd",
   "PREV_VISA_LOST", "PREV_VISA_CANCELLED",
   "OTHER_RELATIVE_IND",
 ];

@@ -10,7 +10,8 @@ const { solveCaptcha } = require('./captcha');
 // ====================================================================
 const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = require('./field-map');
 
-const TMP = path.join(__dirname, '..', 'tmp');
+const os = require('os');
+const TMP = path.join(os.tmpdir(), 'ds160-filler-tmp');
 
 // ====================================================================
 // MAIN ENTRY POINT
@@ -21,10 +22,11 @@ const TMP = path.join(__dirname, '..', 'tmp');
  * @param {object} application - Row from 'applications' table
  * @param {object} config - From automation_config table
  * @param {string} captchaMode - 'capmonster' | 'ai_vision'
+ * @param {object} page - Injected Playwright page instance from QueueRunner
  * @param {function} onPage - Callback(pageName) for status updates
  * @returns {{ success: boolean, applicationId?: string, error?: string }}
  */
-async function fillApplication(applicant, application, config, captchaMode, onPage) {
+async function fillApplication(applicant, application, config, captchaMode, page, onPage) {
     if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
 
     // Build field map from applicant data
@@ -32,20 +34,12 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
     const fieldMap = buildDynamicFieldMap(profile);
     console.log(`[Filler] Profile: ${applicant.full_name} | Fields: ${fieldMap.length} | hasSpecificPlans: ${profile.hasSpecificPlans}`);
 
-    let browser, page;
     const visited = []; // Declared outside try so catch can access it
 
     try {
-        // Launch Playwright's OWN Chromium (not user's Chrome!)
-        browser = await chromium.launch({
-            headless: false,
-            args: ['--disable-blink-features=AutomationControlled']
-        });
-        const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-        page = await context.newPage();
-        page.setDefaultTimeout(15000);
-        page.setDefaultNavigationTimeout(30000);
-        page.on('dialog', async d => d.accept().catch(() => { }));
+        // We use the injected `page` instead of launching a new browser context.
+        // It has already been cleared (`clearCookies`) by `QueueRunner._fillWithRetry` 
+        // to prevent session mixing.
 
         // Navigate to DS-160
         await page.goto('https://ceac.state.gov/GenNIV/Default.aspx', { waitUntil: 'domcontentloaded' });
@@ -95,75 +89,155 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
             return { success: false, error: 'Captcha não resolvido após 3 tentativas' };
         }
 
-        // Click Start New Application — retry if captcha was wrong
-        const isRetrieve = !!(application?.application_id);
+        // ============================================================
+        // BRANCHING: START NEW vs RETRIEVE EXISTING
+        // ============================================================
+        const isRetrieve = !!(application?.application_id && application.application_id.startsWith('AA'));
+
         if (isRetrieve) {
-            return { success: false, error: 'Retrieve flow not implemented yet' };
-        }
+            console.log(`[Filler] Initializing RETRIEVE flow for ID: ${application.application_id}`);
+            let navRetrieveOk = false;
 
-        for (let startAttempt = 1; startAttempt <= 3; startAttempt++) {
-            const startLink = page.locator("a[id$='_lnkNew']").first();
-            await startLink.click();
-            const navOk = await page.waitForURL(/ConfirmApplicationID|SecureQuestion|complete_personal/i, { timeout: 30000 }).then(() => true).catch(() => false);
-            if (navOk) break;
+            for (let retrieveAttempt = 1; retrieveAttempt <= 3; retrieveAttempt++) {
+                const retrieveLink = page.locator("a[id$='_lnkRetrieve']").first();
+                await retrieveLink.click();
 
-            // Check if still on landing (captcha might be wrong)
-            console.warn(`[Filler] Landing did not advance (attempt ${startAttempt}/3) — retrying captcha...`);
-            if (startAttempt >= 3) {
-                return { success: false, error: 'Landing page timeout after 3 captcha attempts', page: 'Landing', cause: 'timeout' };
-            }
-            // Re-solve captcha
-            try {
-                const img2 = page.locator("img[id$='_CaptchaImage']").first();
-                const imgPath2 = path.join(require('os').tmpdir(), `captcha_retry_${Date.now()}.png`);
-                await img2.screenshot({ path: imgPath2 });
-                const answer2 = await solveCaptcha(imgPath2, captchaMode, { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key });
-                console.log(`[Filler] Captcha retry answer: ${answer2}`);
-                const input2 = page.locator("input[id$='_txtCodeTextBox']").first();
-                await input2.fill('');
-                await input2.fill(answer2);
-            } catch (e) {
-                console.warn(`[Filler] Captcha retry failed:`, e.message);
-            }
-        }
-        await waitForPageReady(page);
+                navRetrieveOk = await page.waitForURL(/Recovery/i, { timeout: 30000 }).then(() => true).catch(() => false);
+                if (navRetrieveOk) break;
 
-        // ============================================================
-        // STEP 2: Security Question Setup
-        // ============================================================
-        let currentPage = identifyPage(page.url());
-        if (currentPage === 'SecurityQuestion') {
-            onPage('SecurityQuestion');
-
-            const privacyCheck = page.locator("#ctl00_SiteContentPlaceHolder_chkbxPrivacyAct");
-            if (await privacyCheck.isVisible().catch(() => false)) {
-                await privacyCheck.check();
-            }
-
-            await page.locator("select[id$='_ddlQuestions']").selectOption({ index: 1 });
-            const secAnswer = application?.security_answer || 'BRAZIL';
-            await page.locator("input[id$='_txtAnswer']").fill(secAnswer);
-
-            const urlBefore = page.url();
-            await page.locator("input[id$='_btnContinue']").click();
-            await waitForUrlChange(page, urlBefore);
-            await waitForPageReady(page);
-
-            // Confirm Application ID page
-            const continueBtn = page.locator("input[id$='_btnContinueApp']");
-            if (await continueBtn.isVisible().catch(() => false)) {
-                // Capture application ID
-                const appIdText = await page.locator("span[id$='_lblAppID'], b").first().innerText().catch(() => '');
-                const appIdMatch = appIdText.match(/[A-Z]{2}\d{8,}/);
-                if (appIdMatch) {
-                    application.application_id = appIdMatch[0];
-                    console.log(`[Filler] Application ID: ${appIdMatch[0]}`);
+                console.warn(`[Filler] Did not advance to Recovery (attempt ${retrieveAttempt}/3) — retrying captcha...`);
+                if (retrieveAttempt >= 3) {
+                    return { success: false, error: 'Landing page timeout entering Recovery', page: 'Landing', cause: 'timeout' };
                 }
 
-                const urlBefore2 = page.url();
-                await continueBtn.click();
-                await waitForUrlChange(page, urlBefore2);
+                try {
+                    const img2 = page.locator("img[id$='_CaptchaImage']").first();
+                    const imgPath2 = path.join(require('os').tmpdir(), `captcha_retry_${Date.now()}.png`);
+                    await img2.screenshot({ path: imgPath2 });
+                    const answer2 = await solveCaptcha(imgPath2, captchaMode, { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key });
+                    console.log(`[Filler] Captcha retry answer: ${answer2}`);
+                    const input2 = page.locator("input[id$='_txtCodeTextBox']").first();
+                    await input2.fill('');
+                    await input2.fill(answer2);
+                } catch (e) { console.warn(`[Filler] Captcha retry failed:`, e.message); }
+            }
+
+            await waitForPageReady(page);
+            onPage('Retrieve');
+
+            // 1. Verify and Fill Application ID (It might be auto-filled, or we need to input it)
+            const appIdInput = page.locator("input[name*='ApplicationID'], input[id*='ApplicationID']").first();
+            if (await appIdInput.isVisible().catch(() => false)) {
+                await appIdInput.fill(application.application_id);
+            }
+            await waitForPageReady(page);
+
+            // 2. Resolve captcha if present on Recovery page
+            const recoveryCaptchaImg = page.locator("img[id$='_CaptchaImage'], img[src*='captcha']").first();
+            if (await recoveryCaptchaImg.isVisible().catch(() => false)) {
+                console.log(`[Filler] Captcha found on Recovery page, solving...`);
+                const imgPath3 = path.join(TMP, `captcha_recovery_${Date.now()}.png`);
+                await recoveryCaptchaImg.screenshot({ path: imgPath3 });
+                const answer3 = await solveCaptcha(imgPath3, captchaMode, { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key });
+                await page.locator("input[id$='_txtCodeTextBox']").first().fill(answer3);
+            }
+
+            // 3. Fill Security Questions
+            const surname = (profile.personal1?.surname || 'SILVA');
+            const surname5 = surname.replace(/\s/g, '').substring(0, 5).toUpperCase();
+            const dobYear = profile.personal1?.dob?.year || '1990';
+            const secAnswer = application?.security_answer || 'VO';
+
+            await page.locator("input[name*='Surname'], input[id*='Surname']").first().fill(surname5);
+            await page.locator("input[name*='DOB'], input[id*='DOBYear'], input[id*='DOB']").first().fill(String(dobYear));
+            await page.locator("input[name*='Answer'], input[id*='Answer']").first().fill(secAnswer);
+
+            const urlBeforeRetrieve = page.url();
+            await page.locator("input[id$='_btnSubmit'], input[id$='_btnRetrieve'], a[id$='_btnRetrieve']").first().click();
+            await waitForUrlChange(page, urlBeforeRetrieve);
+            await waitForPageReady(page);
+
+            // Check if stuck on Recovery (example: invalid answer)
+            if (page.url().includes('Recovery')) {
+                const validationErrorArea = page.locator(".validation-error, span[id*='lblErrorMessage']");
+                let errText = 'Failed to retrieve application. Security answers might be blocked or invalid.';
+                if (await validationErrorArea.first().isVisible().catch(() => false)) {
+                    errText = await validationErrorArea.first().innerText();
+                }
+                return { success: false, error: errText, page: 'Retrieve', cause: 'field_error' };
+            }
+
+            // Em seguida a página será carregada na iteração principal
+
+        } else {
+            // ============================================================
+            // START NEW APPLICATION
+            // ============================================================
+            for (let startAttempt = 1; startAttempt <= 3; startAttempt++) {
+                const startLink = page.locator("a[id$='_lnkNew']").first();
+                await startLink.click();
+                const navOk = await page.waitForURL(/ConfirmApplicationID|SecureQuestion|complete_personal/i, { timeout: 30000 }).then(() => true).catch(() => false);
+                if (navOk) break;
+
+                // Check if still on landing (captcha might be wrong)
+                console.warn(`[Filler] Landing did not advance (attempt ${startAttempt}/3) — retrying captcha...`);
+                if (startAttempt >= 3) {
+                    return { success: false, error: 'Landing page timeout after 3 captcha attempts', page: 'Landing', cause: 'timeout' };
+                }
+                // Re-solve captcha
+                try {
+                    const img2 = page.locator("img[id$='_CaptchaImage']").first();
+                    const imgPath2 = path.join(require('os').tmpdir(), `captcha_retry_${Date.now()}.png`);
+                    await img2.screenshot({ path: imgPath2 });
+                    const answer2 = await solveCaptcha(imgPath2, captchaMode, { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key });
+                    console.log(`[Filler] Captcha retry answer: ${answer2}`);
+                    const input2 = page.locator("input[id$='_txtCodeTextBox']").first();
+                    await input2.fill('');
+                    await input2.fill(answer2);
+                } catch (e) {
+                    console.warn(`[Filler] Captcha retry failed:`, e.message);
+                }
+            }
+            await waitForPageReady(page);
+
+            // ============================================================
+            // STEP 2: Security Question Setup
+            // ============================================================
+            let currentPage = identifyPage(page.url());
+            if (currentPage === 'SecurityQuestion') {
+                onPage('SecurityQuestion');
+
+                const privacyCheck = page.locator("#ctl00_SiteContentPlaceHolder_chkbxPrivacyAct");
+                if (await privacyCheck.isVisible().catch(() => false)) {
+                    await privacyCheck.check();
+                }
+
+                await page.locator("select[id$='_ddlQuestions']").selectOption({ index: 1 });
+                const secAnswer = application?.security_answer || 'BRAZIL';
+                await page.locator("input[id$='_txtAnswer']").fill(secAnswer);
+
+                const urlBefore = page.url();
+                await page.locator("input[id$='_btnContinue']").click();
+                await waitForUrlChange(page, urlBefore);
                 await waitForPageReady(page);
+
+                // Confirm Application ID page
+                const continueBtn = page.locator("input[id$='_btnContinueApp']");
+                if (await continueBtn.isVisible().catch(() => false)) {
+                    // Capture application ID
+                    const appIdText = await page.locator("span[id$='_lblAppID'], b").first().innerText().catch(() => '');
+                    // DS-160 IDs are typically 10 chars: AA + 8 alphanumeric like "AA00CVT12Q"
+                    const appIdMatch = appIdText.match(/AA\w{8}/i) || appIdText.match(/[A-Z0-9]{10}/i);
+                    if (appIdMatch) {
+                        application.application_id = appIdMatch[0].toUpperCase();
+                        console.log(`[Filler] Application ID: ${application.application_id}`);
+                    }
+
+                    const urlBefore2 = page.url();
+                    await continueBtn.click();
+                    await waitForUrlChange(page, urlBefore2);
+                    await waitForPageReady(page);
+                }
             }
         }
 
@@ -220,16 +294,14 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
 
             // Fill page with retry
             for (let attempt = 1; attempt <= 3; attempt++) {
+                // Preenche tudo da página visível atual
                 await fillPageCompletely(page, fieldMap);
-                const { navigated } = await clickNextAndWait(page);
+                const { navigated, errors } = await clickNextAndWait(page);
+
                 if (navigated) break;
 
                 // Capture validation errors from DS-160 form (multiple selectors)
-                const validationErrors = await captureValidationErrors(page);
-                if (validationErrors.length > 0) {
-                    console.warn(`\n🔴 [${pageName}] Validation errors (attempt ${attempt}/3):`);
-                    validationErrors.forEach((e, i) => console.warn(`   ${i + 1}. ${e}`));
-                }
+                const validationErrors = (errors && errors.length > 0) ? errors : await captureValidationErrors(page);
 
                 if (attempt === 3 && !navigated) {
                     // Log unfilled fields for debugging
@@ -249,7 +321,8 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                             if (!inp.value?.trim()) {
                                 const parent = inp.closest('tr, div, td');
                                 if (parent?.querySelector("input[type='checkbox'][id*='NA']:checked, input[type='checkbox'][id*='_na']:checked")) return;
-                                empty.push(`T:${inp.id.split('_').pop()}(empty)`);
+                                if (parent && parent.innerText.toUpperCase().includes('OPTIONAL')) return;
+                                empty.push(`T:${inp.id.split('_').pop()}`);
                             }
                         });
                         const groups = new Map();
@@ -276,7 +349,7 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
         }
 
         console.log(`[Filler] Done: ${visited.join(' -> ')}`);
-        return { success: true, applicationId: application.application_id, browser };
+        return { success: true, applicationId: application.application_id };
 
     } catch (e) {
         console.error('[Filler] Error:', e);
@@ -299,9 +372,9 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
             cause = 'field_error';
         }
 
-        return { success: false, applicationId: application?.application_id, error: e.message, stack: e.stack, field, page: currentPage, cause, browser, activePage: page };
+        return { success: false, applicationId: application?.application_id, error: e.message, stack: e.stack, field, page: currentPage, cause, activePage: page };
     }
-    // NOTE: browser is NOT closed here — caller (queue.js) decides when to close
+    // NOTE: browser closure is fully managed by QueueRunner now
 }
 
 // ====================================================================
@@ -346,7 +419,7 @@ function isSelectEmpty(val) {
 
 async function waitForPostback(page) {
     const start = Date.now();
-    await sleep(400);
+    await sleep(800); // 1. Dá mais margem para o JS do DS-160 realmente reagir ao click na Radio condicional e iniciar o AJAX de inserir as caixinhas
     await page.evaluate(() => new Promise(resolve => {
         const check = () => {
             const mgr = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
@@ -376,7 +449,7 @@ async function waitForPostback(page) {
         await sleep(300);
         const cur = await countFields();
         if (cur !== initial && cur === last) { stable += 300; if (stable >= 600) break; }
-        else if (cur === initial && Date.now() - start > 1500) break;
+        else if (cur === initial && Date.now() - start > 3000) break;
         else stable = 0;
         last = cur;
     }
@@ -482,7 +555,7 @@ async function autoFillPass(page, fieldMap) {
                             action: async () => await loc.fill(String(match.value)),
                             validate: async () => {
                                 const actualValue = await loc.inputValue();
-                                return actualValue && actualValue.replace(/\s/g, '') === String(match.value).replace(/\s/g, '');
+                                return actualValue && actualValue.toUpperCase().replace(/\s/g, '') === String(match.value).toUpperCase().replace(/\s/g, '');
                             }
                         });
                         filled++;
@@ -617,10 +690,7 @@ async function clickNextAndWait(page) {
     await StepExecutor.run({
         step: 'click_next_page',
         action: async () => await next.click(),
-        validate: async () => {
-            // Wait for navigation URL to drift
-            return true;
-        }
+        validate: async () => { return true; }
     });
 
     // Strict Navigation verification
@@ -629,10 +699,10 @@ async function clickNextAndWait(page) {
     } catch {
         const urlAfter = page.url();
         if (urlAfter === urlBefore) {
-            // Check if there are blocking inline validation errors before throwing PAGE_NAV_TIMEOUT
+            // Se URL não mudou, o clique no NEXT revelou campos novos (Conditional Loading) ou disparou erro de validação
             const errors = await captureValidationErrors(page);
-            if (errors.length > 0) return { navigated: false, errors };
-            throw new Error(`PAGE_NAV_TIMEOUT: Clicked Next but URL did not change from ${urlBefore}`);
+            await sleep(1000); // Aguarda possíveis elementos renderizarem de postbacks tardios The user mentioned "nem carrega e já clica"
+            return { navigated: false, errors };
         }
     }
 
