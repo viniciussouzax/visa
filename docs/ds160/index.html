@@ -4071,6 +4071,16 @@
                     results.appendChild(item);
                 });
 
+                // Add new form button (for themselves)
+                const newBtn = document.createElement('button');
+                newBtn.className = 'gate-btn gate-btn-primary';
+                newBtn.style.marginTop = '12px';
+                newBtn.textContent = '+ Iniciar Novo Preenchimento';
+                newBtn.onclick = () => {
+                    startFormWithEmail(email, null);
+                };
+                results.appendChild(newBtn);
+
                 // Add new dependent button
                 const addBtn = document.createElement('button');
                 addBtn.className = 'gate-btn gate-btn-secondary';
