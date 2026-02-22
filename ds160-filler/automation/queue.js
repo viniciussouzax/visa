@@ -164,7 +164,7 @@ class QueueRunner {
 
         // Salva o application_id no BD agressivamente caso já tenha sido emitido (AA00...) 
         if (result.applicationId) {
-            await this.supabase.from('applications').update({ application_id: result.applicationId }).eq('id', app.id).catch(() => { });
+            await this.supabase.from('applications').update({ application_id: result.applicationId }).eq('id', app.id).then();
         }
 
         await this._updateRetry(app.id, currentRetry, lastPage, result.error);
@@ -178,7 +178,7 @@ class QueueRunner {
             await this._transitionToFailed(app.id, errorClass, result.error, correlationId);
 
             if (app.applicant_id) {
-                await this.supabase.from('applicants').update({ pipeline_status: 'needs_attention' }).eq('id', app.applicant_id).catch(() => { });
+                await this.supabase.from('applicants').update({ pipeline_status: 'needs_attention' }).eq('id', app.applicant_id).then();
             }
 
             this.emit({
