@@ -3017,7 +3017,7 @@
             }
 
             // ===== Start =====
-            if (pageId === 'pg-Start') {
+            if (page.id === 'pg-Start') {
                 reqSelect('ddlLocation', 'Selecione a Embaixada / Consulado');
                 const mode = radioChecked('rblFormMode');
                 if (mode === 'group') {
@@ -3026,7 +3026,7 @@
             }
 
             // ===== Personal 1 =====
-            if (pageId === 'pg-Personal1') {
+            if (page.id === 'pg-Personal1') {
                 reqInput('tbxAPP_SURNAME', 'Sobrenome é obrigatório');
                 reqInput('tbxAPP_GIVEN_NAME', 'Nome é obrigatório');
                 reqRadio('rblOtherNames', 'Selecione Sim ou Não');
@@ -3059,7 +3059,7 @@
             }
 
             // ===== Personal 2 =====
-            if (pageId === 'pg-Personal2') {
+            if (page.id === 'pg-Personal2') {
                 reqSelect('ddlAPP_NATL', 'Selecione a nacionalidade');
                 reqRadio('rblAPP_OTH_NATL_IND', 'Selecione Sim ou Não');
                 reqRadio('rblPermResOtherCntryInd', 'Selecione Sim ou Não');
