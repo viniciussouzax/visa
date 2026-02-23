@@ -4795,17 +4795,39 @@
                     // Open first incomplete, or first for review
                     toggleAccordion(firstIncomplete > 0 ? firstIncomplete : 0, true);
                 } else {
-                    // For applicant: restore saved checks from snapshot
-                    const snap = data._formSnapshot;
-                    if (snap && snap.completedSections && snap.completedSections.length > 0) {
-                        snap.completedSections.forEach(idx => markComplete(idx));
-                        // Open first incomplete section
-                        const maxCompleted = Math.max(...snap.completedSections);
-                        const nextSection = maxCompleted + 1;
-                        toggleAccordion(nextSection < SECTIONS.length ? nextSection : 0, true);
-                    } else {
-                        toggleAccordion(0, true);
+                    // For applicant: mark checks based on existing data
+                    const dataToSection = {
+                        'location': 0, 'personal1': 1, 'personal2': 2,
+                        'travel': 3, 'travelCompanions': 4, 'previousUSTravel': 5,
+                        'addressPhone': 6, 'passport': 7, 'usContact': 8,
+                        'family1': 9, 'family2': 10,
+                        'workEducation1': 13,
+                        'security1': 14, 'security2': 15, 'security3': 16,
+                        'security4': 17, 'security5': 18
+                    };
+
+                    // Find first section without data (hierarchically)
+                    let firstIncomplete = 0;
+                    for (let s = 0; s < SECTIONS.length; s++) {
+                        // Check if this section has data via any mapped key
+                        const keys = Object.entries(dataToSection).filter(([k, v]) => v === s).map(([k]) => k);
+                        const hasData = keys.some(k => {
+                            const d = data[k];
+                            if (!d) return false;
+                            if (typeof d === 'string') return d.length > 0;
+                            if (typeof d === 'object') return Object.keys(d).length > 0;
+                            return false;
+                        });
+                        // Conditional sections (family2, deceased, prevspouse) skip if hidden
+                        if (SECTIONS[s].conditional && !hasData) continue;
+                        if (hasData) {
+                            markComplete(s);
+                        } else {
+                            firstIncomplete = s;
+                            break;
+                        }
                     }
+                    toggleAccordion(firstIncomplete, true);
                 }
             };
         })();
