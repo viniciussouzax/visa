@@ -474,18 +474,15 @@ function isSelectEmpty(val) {
 
 async function waitForPostback(page) {
     const start = Date.now();
-    // Use native waitForFunction instead of manual polling
+    // Wait for ASP.NET postback manager to finish
     await page.waitForFunction(() => {
         const mgr = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
         return !mgr || !mgr.get_isInAsyncPostBack();
-    }, { timeout: 8000 }).catch(() => { });
+    }, { timeout: 5000 }).catch(() => { });
 
-    await page.evaluate(() => {
-        window.scrollTo(0, document.body.scrollHeight);
-        window.scrollTo(0, 0);
-    }).catch(() => { });
-    await sleep(300);
+    await sleep(150);
 
+    // Quick field count stabilization check
     const countFields = () => page.evaluate(() => {
         let c = 0;
         document.querySelectorAll('select, input:not([type="hidden"]), textarea').forEach(el => {
@@ -496,20 +493,19 @@ async function waitForPostback(page) {
 
     const initial = await countFields();
     let last = initial, stable = 0;
-    while (Date.now() - start < 5000) {
-        await sleep(300);
+    while (Date.now() - start < 3000) {
+        await sleep(150);
         const cur = await countFields();
-        if (cur !== initial && cur === last) { stable += 300; if (stable >= 600) break; }
-        else if (cur === initial && Date.now() - start > 1500) break;
+        if (cur !== initial && cur === last) { stable += 150; if (stable >= 300) break; }
+        else if (cur === initial && Date.now() - start > 800) break;
         else stable = 0;
         last = cur;
     }
 }
 
-async function waitForPageReady(page, timeout = 10000) {
+async function waitForPageReady(page, timeout = 5000) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
-        await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); window.scrollTo(0, 0); }).catch(() => { });
         const count = await page.evaluate(() => {
             let c = 0;
             document.querySelectorAll("select, input[type='text'], input[type='radio'], textarea").forEach(el => {
@@ -522,9 +518,9 @@ async function waitForPageReady(page, timeout = 10000) {
                 const m = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
                 return m?.get_isInAsyncPostBack?.() || false;
             }).catch(() => false);
-            if (!inPB && (count >= 3 || Date.now() - start > 3000)) return count;
+            if (!inPB && (count >= 3 || Date.now() - start > 1500)) return count;
         }
-        await sleep(300);
+        await sleep(200);
     }
     return 0;
 }
