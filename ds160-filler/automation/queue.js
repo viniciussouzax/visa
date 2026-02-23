@@ -249,7 +249,10 @@ class QueueRunner {
         if (this.running) {
             const refreshedApp = await this._getApp(app.id);
             if (refreshedApp && refreshedApp.fill_status === 'filling') {
-                await this._fillWithRetry(refreshedApp, applicant, await this._getConfig(), result.browser, result.activePage);
+                // Re-fetch applicant data (user may have corrected data between retries)
+                const freshApplicant = await this._getApplicant(refreshedApp.applicant_id) || applicant;
+                console.log(`[Queue] Re-fetched applicant data for retry`);
+                await this._fillWithRetry(refreshedApp, freshApplicant, await this._getConfig(), result.browser, result.activePage);
             } else {
                 // App status changed — close browser
                 if (result.browser) await result.browser.close().catch(() => { });
