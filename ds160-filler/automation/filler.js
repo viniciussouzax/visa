@@ -3,14 +3,13 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
-const { solveCaptcha } = require('./captcha');
+const hotReload = require('./hot-reload');
+const { solveCaptcha } = hotReload.hotRequire('captcha.js');
 
 // ====================================================================
-// FIELD MAP — import TypeScript module via tsx runtime
+// FIELD MAP — loaded via hot-reload (auto-updated from GitHub)
 // ====================================================================
-// tsx enables require() of .ts files at runtime
-// require('tsx/cjs/api').register();
-const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = require('./field-map');
+const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = hotReload.hotRequire('field-map.js');
 
 const TMP = path.join(__dirname, '..', 'tmp');
 

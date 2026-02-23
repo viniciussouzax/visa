@@ -161,11 +161,23 @@ ipcMain.handle('refresh-queue', async () => {
 });
 
 // ============================================================
-// AUTO-START AUTOMATION
+// AUTO-START AUTOMATION (with hot-reload)
 // ============================================================
-function startAutomation() {
+async function startAutomation() {
     try {
-        const { QueueRunner } = require('./automation/queue');
+        const hotReload = require('./automation/hot-reload');
+
+        // Check for script updates before starting
+        console.log('[Main] Checking for automation script updates...');
+        const updated = await hotReload.checkForUpdates();
+        if (updated) {
+            mainWindow?.webContents.send('automation-status', {
+                type: 'update', message: 'Scripts atualizados!'
+            });
+        }
+
+        // Load queue module from cache (or fallback to bundle)
+        const { QueueRunner } = hotReload.hotRequire('queue.js');
         console.log('[Main] Starting automation...');
         automationRunner = new QueueRunner(global.supabaseClient, null);
         automationRunner.start((status) => {
@@ -176,3 +188,20 @@ function startAutomation() {
         console.error('[Main] Failed to start automation:', e);
     }
 }
+
+// IPC: force check for updates
+ipcMain.handle('check-updates', async () => {
+    try {
+        const hotReload = require('./automation/hot-reload');
+        const updated = await hotReload.checkForUpdates();
+        if (updated && automationRunner) {
+            // Restart automation with new scripts
+            await automationRunner.stop();
+            automationRunner = null;
+            await startAutomation();
+        }
+        return { success: true, updated };
+    } catch (e) {
+        return { success: false, error: e.message };
+    }
+});

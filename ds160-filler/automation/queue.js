@@ -1,5 +1,6 @@
 // Queue Runner — Resilient automation with retry, backoff, and smart updates
-const { fillApplication } = require('./filler');
+const hotReload = require('./hot-reload');
+function getFiller() { return hotReload.hotRequire('filler.js'); }
 const path = require('path');
 
 const POLL_INTERVAL = 1800; // 30 minutes between checks
@@ -146,6 +147,7 @@ class QueueRunner {
         const captchaMode = config.captcha_mode || this.captchaMode || 'capmonster';
 
         let lastPage = app.last_page || '';
+        const { fillApplication } = getFiller();
         const result = await fillApplication(applicant, app, config, captchaMode, (page) => {
             lastPage = page;
             this.emit({ type: 'filling', applicantName: applicant.full_name, page });
