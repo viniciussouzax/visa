@@ -97,4 +97,16 @@ async function solveWithAIVision(imageBase64, apiKey) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-module.exports = { solveCaptcha };
+/**
+ * Solve captcha directly from base64 string (no file needed).
+ * Used by network interception to avoid screenshot overhead.
+ */
+async function solveCaptchaBase64(imageBase64, mode, keys) {
+    if (mode === 'capmonster') {
+        return solveWithCapMonster(imageBase64, keys.capmonsterKey);
+    } else {
+        return solveWithAIVision(imageBase64, keys.aiVisionKey);
+    }
+}
+
+module.exports = { solveCaptcha, solveCaptchaBase64 };

@@ -3,7 +3,7 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
-const { solveCaptcha } = require('./captcha');
+const { solveCaptcha, solveCaptchaBase64 } = require('./captcha');
 
 // ====================================================================
 // FIELD MAP — loaded directly (no cache)
@@ -90,6 +90,20 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
         await page.route('**/{google-analytics.com,googletagmanager.com,ssl.google-analytics.com,eum.state.gov}/**', route => route.abort());
         await page.route('**/*.{woff,woff2,ttf,otf}', route => route.abort()); // Block fonts (not needed for form filling)
 
+        // Captcha network interception — capture captcha image directly from HTTP response
+        let captchaBase64 = null;
+        page.on('response', async response => {
+            try {
+                const url = response.url().toLowerCase();
+                if ((url.includes('captcha') || url.includes('botdetect')) &&
+                    response.headers()['content-type']?.includes('image')) {
+                    const buffer = await response.body();
+                    captchaBase64 = buffer.toString('base64');
+                    console.log(`[Filler] Captcha image intercepted from network (${buffer.length} bytes)`);
+                }
+            } catch { /* ignore — response may have been disposed */ }
+        });
+
         // Navigate to DS-160
         await page.goto('https://ceac.state.gov/GenNIV/Default.aspx', { waitUntil: 'domcontentloaded' });
         await waitForPageReady(page);
@@ -144,15 +158,25 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
 
         let landingPassed = false;
         for (let attempt = 1; attempt <= 3; attempt++) {
-            // Solve captcha
+            // Solve captcha — prefer network-intercepted image, fallback to screenshot
             try {
-                const imgEl = page.locator("img[id$='_CaptchaImage'], img[src*='captcha'], img[id$='c_default_ctl00_sitecontentplaceholder_uclocation_identifycaptcha1_captchaimage']").first();
-                await imgEl.waitFor({ state: 'visible', timeout: 10000 });
-                const imgPath = path.join(TMP, 'captcha.png');
-                await imgEl.screenshot({ path: imgPath });
-
                 const keys = { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key };
-                const answer = await solveCaptcha(imgPath, captchaMode, keys);
+                let answer;
+
+                if (captchaBase64) {
+                    // Use intercepted image from network (faster, more accurate)
+                    console.log(`[Filler] Using network-intercepted captcha image`);
+                    answer = await solveCaptchaBase64(captchaBase64, captchaMode, keys);
+                    captchaBase64 = null; // Reset for next attempt
+                } else {
+                    // Fallback: screenshot the captcha element
+                    const imgEl = page.locator("img[id$='_CaptchaImage'], img[src*='captcha'], img[id$='c_default_ctl00_sitecontentplaceholder_uclocation_identifycaptcha1_captchaimage']").first();
+                    await imgEl.waitFor({ state: 'visible', timeout: 10000 });
+                    const imgPath = path.join(TMP, 'captcha.png');
+                    await imgEl.screenshot({ path: imgPath });
+                    answer = await solveCaptcha(imgPath, captchaMode, keys);
+                }
+
                 console.log(`[Filler] Captcha answer (attempt ${attempt}): ${answer}`);
 
                 const input = page.locator("input[id$='_txtCodeTextBox']").first();
@@ -164,8 +188,16 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                 return { success: false, error: 'Captcha não resolvido após 3 tentativas' };
             }
 
-            // Click Start Application
+            // Click Start Application with human-like mouse movement
             const startBtn = page.locator("a[id$='_lnkNew']").first();
+            const box = await startBtn.boundingBox();
+            if (box) {
+                // Move mouse to button with slight randomization (human-like)
+                const targetX = box.x + box.width * (0.3 + Math.random() * 0.4);
+                const targetY = box.y + box.height * (0.3 + Math.random() * 0.4);
+                await page.mouse.move(targetX, targetY, { steps: 5 + Math.floor(Math.random() * 10) });
+                await sleep(100 + Math.floor(Math.random() * 200));
+            }
             await startBtn.click({ timeout: 15000 });
             await sleep(2000);
             await waitForPageReady(page);
