@@ -998,6 +998,7 @@
                 <div class="sidebar-nav">
                     <div class="nav-item active" data-view="pipeline">Pipeline</div>
                     <div class="nav-item" data-view="archived">Arquivados</div>
+                    <div class="nav-item" data-view="errors">⚠ Erros</div>
                     <div class="nav-item" data-view="software">Software</div>
                     <div class="nav-separator"></div>
                     <div class="nav-item hidden" id="nav-master" data-view="master">Painel Master</div>
@@ -1109,6 +1110,32 @@
                             <button id="arch-prev" disabled>← Anterior</button>
                             <span id="arch-page-info">Página 1</span>
                             <button id="arch-next">Próxima →</button>
+                        </div>
+                    </div>
+
+                    <!-- Errors View -->
+                    <div class="view" id="view-errors">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                            <div>
+                                <span style="font-size:13px;color:var(--text-muted)" id="errors-count">0 erros</span>
+                            </div>
+                            <button class="btn-sm" style="background:rgba(239,68,68,.15);color:#ef4444;border:none"
+                                id="btn-archive-errors">Arquivar Todos</button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Applicant</th>
+                                        <th>Página</th>
+                                        <th>Causa</th>
+                                        <th>Campos c/ Erro</th>
+                                        <th>Screenshot</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="errors-tbody"></tbody>
+                            </table>
                         </div>
                     </div>
 

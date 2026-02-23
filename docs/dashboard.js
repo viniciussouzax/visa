@@ -119,6 +119,7 @@ document.querySelectorAll('.nav-item[data-view]').forEach(item => {
         $('page-subtitle').textContent = '';
         if (item.dataset.view === 'pipeline') loadPipeline();
         if (item.dataset.view === 'archived') loadArchived();
+        if (item.dataset.view === 'errors') loadErrors();
         if (item.dataset.view === 'software') loadSoftwareInfo();
         if (item.dataset.view === 'master') {
             showMasterSub('agencies');
@@ -1029,6 +1030,92 @@ async function loadOrgId() {
             toast('ID copiado!', 'success');
         };
     }
+}
+
+// ============================================================
+// ERROR LOGS — View & Archive
+// ============================================================
+async function loadErrors() {
+    const tbody = $('errors-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
+
+    const { data: errors, error } = await sb
+        .from('error_logs')
+        .select('*')
+        .eq('archived', false)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="6" style="color:#ef4444">Erro: ${error.message}</td></tr>`;
+        return;
+    }
+
+    $('errors-count').textContent = `${errors.length} erro${errors.length !== 1 ? 's' : ''}`;
+
+    if (!errors.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">Nenhum erro registrado 🎉</td></tr>';
+        return;
+    }
+
+    const causeLabels = {
+        validation_error: { label: 'Validação', bg: 'rgba(245,158,11,.15)', color: '#f59e0b' },
+        postback_stuck: { label: 'Postback', bg: 'rgba(239,68,68,.15)', color: '#ef4444' },
+        browser_closed: { label: 'Browser', bg: 'rgba(107,114,128,.15)', color: '#6b7280' },
+        timeout: { label: 'Timeout', bg: 'rgba(139,92,246,.15)', color: '#8b5cf6' },
+        field_not_found: { label: 'Campo', bg: 'rgba(59,130,246,.15)', color: '#3b82f6' },
+    };
+
+    tbody.innerHTML = errors.map(e => {
+        const dt = new Date(e.created_at);
+        const dateStr = dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const cause = causeLabels[e.error_cause] || { label: e.error_cause || '—', bg: 'rgba(107,114,128,.15)', color: '#6b7280' };
+
+        // Build validation errors list
+        let fieldErrors = '—';
+        if (e.validation_errors && e.validation_errors.length) {
+            // De-duplicate and limit to 5
+            const unique = [...new Set(e.validation_errors)];
+            const shown = unique.slice(0, 5);
+            fieldErrors = shown.map(v => `<div style="font-size:11px;color:var(--text-muted);margin:1px 0">• ${v}</div>`).join('');
+            if (unique.length > 5) fieldErrors += `<div style="font-size:10px;color:var(--text-muted)">+${unique.length - 5} mais</div>`;
+        } else if (e.field_name) {
+            fieldErrors = `<div style="font-size:11px;color:var(--text-muted)">• ${e.field_name}</div>`;
+        }
+
+        const screenshot = e.screenshot_url
+            ? `<a href="${e.screenshot_url}" target="_blank" style="color:var(--accent);font-size:12px;text-decoration:none">📸 Ver</a>`
+            : '—';
+
+        return `<tr>
+            <td style="font-size:12px;white-space:nowrap">${dateStr}</td>
+            <td style="font-size:12px;font-weight:600">${e.applicant_name || '—'}</td>
+            <td><span style="font-size:11px;background:rgba(59,130,246,.1);color:var(--accent);padding:2px 8px;border-radius:10px">${e.page_name || '—'}</span></td>
+            <td><span style="font-size:10px;padding:3px 8px;border-radius:10px;background:${cause.bg};color:${cause.color};font-weight:600;text-transform:uppercase">${cause.label}</span>${e.retry_number ? `<div style="font-size:10px;color:var(--text-muted);margin-top:2px">Retry #${e.retry_number}</div>` : ''}</td>
+            <td style="max-width:250px">${fieldErrors}</td>
+            <td>${screenshot}</td>
+        </tr>`;
+    }).join('');
+}
+
+async function archiveAllErrors() {
+    if (!confirm('Arquivar todos os erros visíveis?')) return;
+    const { error } = await sb
+        .from('error_logs')
+        .update({ archived: true })
+        .eq('archived', false);
+
+    if (error) {
+        toast('Erro ao arquivar: ' + error.message, 'error');
+    } else {
+        toast('Erros arquivados', 'success');
+        loadErrors();
+    }
+}
+
+if ($('btn-archive-errors')) {
+    $('btn-archive-errors').onclick = archiveAllErrors;
 }
 
 // ============================================================
