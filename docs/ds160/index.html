@@ -3999,6 +3999,13 @@
                 const count = c.querySelectorAll('.entry').length;
                 if (count > 1) snapshot.dynamicEntries[c.dataset.list] = count;
             });
+            // Save completed sections state
+            const checkEls = document.querySelectorAll('.acc-check.done');
+            snapshot.completedSections = [];
+            checkEls.forEach(el => {
+                const idx = parseInt(el.dataset.check);
+                if (!isNaN(idx)) snapshot.completedSections.push(idx);
+            });
             clean._formSnapshot = snapshot;
 
             return clean || {};
@@ -4788,8 +4795,17 @@
                     // Open first incomplete, or first for review
                     toggleAccordion(firstIncomplete > 0 ? firstIncomplete : 0, true);
                 } else {
-                    // For applicant: no auto-checks, just open first section
-                    toggleAccordion(0, true);
+                    // For applicant: restore saved checks from snapshot
+                    const snap = data._formSnapshot;
+                    if (snap && snap.completedSections && snap.completedSections.length > 0) {
+                        snap.completedSections.forEach(idx => markComplete(idx));
+                        // Open first incomplete section
+                        const maxCompleted = Math.max(...snap.completedSections);
+                        const nextSection = maxCompleted + 1;
+                        toggleAccordion(nextSection < SECTIONS.length ? nextSection : 0, true);
+                    } else {
+                        toggleAccordion(0, true);
+                    }
                 }
             };
         })();
