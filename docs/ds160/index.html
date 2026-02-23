@@ -4795,30 +4795,47 @@
                     // Open first incomplete, or first for review
                     toggleAccordion(firstIncomplete > 0 ? firstIncomplete : 0, true);
                 } else {
-                    // For applicant: mark checks based on existing data
+                    // For applicant: mark checks based on REAL user data
+                    // Only count sections where user actually filled substantial fields
                     const dataToSection = {
                         'location': 0, 'personal1': 1, 'personal2': 2,
                         'travel': 3, 'travelCompanions': 4, 'previousUSTravel': 5,
                         'addressPhone': 6, 'passport': 7, 'usContact': 8,
                         'family1': 9, 'family2': 10,
-                        'workEducation1': 13,
-                        'security1': 14, 'security2': 15, 'security3': 16,
-                        'security4': 17, 'security5': 18
+                        'workEducation1': 13
+                        // Security sections intentionally excluded — defaults don't count
                     };
 
-                    // Find first section without data (hierarchically)
+                    // Check if object has real values (not just empty sub-objects or N/A)
+                    function hasSubstantialData(obj) {
+                        if (!obj || typeof obj !== 'object') return false;
+                        for (const [key, val] of Object.entries(obj)) {
+                            if (key === '_formSnapshot') continue;
+                            if (val === null || val === undefined || val === '' || val === 'N/A') continue;
+                            if (typeof val === 'string' && val.length > 0 && val !== 'N' && val !== 'N/A') return true;
+                            if (typeof val === 'number') return true;
+                            if (Array.isArray(val) && val.some(item => hasSubstantialData(item))) return true;
+                            if (typeof val === 'object' && !Array.isArray(val) && hasSubstantialData(val)) return true;
+                        }
+                        return false;
+                    }
+
                     let firstIncomplete = 0;
                     for (let s = 0; s < SECTIONS.length; s++) {
-                        // Check if this section has data via any mapped key
                         const keys = Object.entries(dataToSection).filter(([k, v]) => v === s).map(([k]) => k);
+                        if (keys.length === 0) {
+                            // No mapping (security, conditional) — skip silently
+                            if (SECTIONS[s].conditional) continue;
+                            // Security sections: not completed by default
+                            if (s >= 14) continue;
+                            firstIncomplete = s;
+                            break;
+                        }
                         const hasData = keys.some(k => {
                             const d = data[k];
-                            if (!d) return false;
                             if (typeof d === 'string') return d.length > 0;
-                            if (typeof d === 'object') return Object.keys(d).length > 0;
-                            return false;
+                            return hasSubstantialData(d);
                         });
-                        // Conditional sections (family2, deceased, prevspouse) skip if hidden
                         if (SECTIONS[s].conditional && !hasData) continue;
                         if (hasData) {
                             markComplete(s);
