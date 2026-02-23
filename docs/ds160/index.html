@@ -4445,6 +4445,21 @@
         document.querySelectorAll('input[name="rblSpecificTravel"]').forEach(r => {
             r.addEventListener('change', updateTravelBranch);
         });
+
+        // Default security questions to "Não" (editable)
+        ['rblDisease', 'rblDisorder', 'rblDruguser', 'rblArrested', 'rblControlledSubstances',
+            'rblProstitution', 'rblMoneyLaundering', 'rblHumanTrafficking', 'rblAssistedSevereTrafficking',
+            'rblHumanTraffickingRelated', 'rblIllegalActivity', 'rblTerroristActivity', 'rblTerroristSupport',
+            'rblTerroristOrg', 'rblTerroristRel', 'rblGenocide', 'rblTorture', 'rblExViolence',
+            'rblChildSoldier', 'rblReligiousFreedom', 'rblPopulationControls', 'rblTransplant',
+            'rblRemovalHearing', 'rblImmigrationFraud', 'rblFailToAttend', 'rblVisaViolation', 'rblDeport',
+            'rblChildCustody', 'rblVotingViolation', 'rblRenounceExp', 'rblAttWoReimb'
+        ].forEach(name => {
+            const r = document.querySelector(`input[name="${name}"][value="N"]`);
+            if (r && !document.querySelector(`input[name="${name}"]:checked`)) {
+                r.checked = true;
+            }
+        });
     </script>
 
     <script>
