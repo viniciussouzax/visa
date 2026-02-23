@@ -3482,6 +3482,12 @@
             br.querySelectorAll('input[type="radio"]').forEach(el => { el.checked = false; });
             br.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; });
             br.querySelectorAll('.br.open').forEach(nested => { nested.classList.remove('open'); });
+            // Remove extra dynamic entries (keep only idx=0)
+            br.querySelectorAll('.as[data-list]').forEach(container => {
+                container.querySelectorAll('.entry').forEach(entry => {
+                    if (parseInt(entry.dataset.idx) > 0) entry.remove();
+                });
+            });
         }
 
         function updateTravelBranch() {
