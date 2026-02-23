@@ -4165,7 +4165,10 @@
                 const err = await res.text();
                 throw new Error(res.status + ': ' + err);
             }
-            return res.json();
+            // Safe JSON parse: handle 204 No Content and empty responses
+            const text = await res.text();
+            if (!text) return null;
+            try { return JSON.parse(text); } catch { return null; }
         }
 
         async function sbGet(path) {
@@ -4582,7 +4585,7 @@
                 }
             } catch (e) {
                 console.error('Final action error:', e);
-                alert('Erro ao salvar: ' + e.message);
+                showToast('Erro ao salvar: ' + e.message);
                 btn.disabled = false;
                 btn.textContent = window._isAssessorMode ? 'Aprovar' : 'Concluir';
             }
@@ -4651,7 +4654,7 @@
 
             } catch (e) {
                 console.error('Supabase save error:', e);
-                alert('Erro ao salvar: ' + e.message);
+                showToast('Erro ao salvar: ' + e.message);
             }
         }
 
@@ -4910,8 +4913,8 @@
                         'location': 0, 'personal1': 1, 'personal2': 2,
                         'travel': 3, 'travelCompanions': 4, 'previousUSTravel': 5,
                         'addressPhone': 6, 'passport': 7, 'usContact': 8,
-                        'family1': 9, 'family2': 10,
-                        'workEducation1': 13
+                        'family1': 9, 'family2': 10, 'deceasedSpouse': 11, 'prevSpouse': 12,
+                        'workEducation1': 13, 'workEducation2': 13, 'workEducation3': 13
                     };
 
                     // Reuse hasSubstantialData from applicant logic (defined below)
@@ -4934,8 +4937,8 @@
                         if (keys.length === 0) {
                             if (SECTIONS[s].conditional) continue;
                             if (s >= 14) continue; // Security sections: skip if no mapping
-                            firstIncomplete = s;
-                            break;
+                            if (firstIncomplete === 0) firstIncomplete = s;
+                            continue; // Don't break — keep marking remaining sections
                         }
                         const hasData = keys.some(k => {
                             const d = data[k];
@@ -4945,9 +4948,9 @@
                         if (SECTIONS[s].conditional && !hasData) continue;
                         if (hasData) {
                             markComplete(s);
-                        } else {
-                            firstIncomplete = s;
-                            break;
+                        } else if (!SECTIONS[s].conditional) {
+                            if (firstIncomplete === 0) firstIncomplete = s;
+                            // Don't break — continue checking remaining sections
                         }
                     }
 
@@ -4967,8 +4970,8 @@
                         'location': 0, 'personal1': 1, 'personal2': 2,
                         'travel': 3, 'travelCompanions': 4, 'previousUSTravel': 5,
                         'addressPhone': 6, 'passport': 7, 'usContact': 8,
-                        'family1': 9, 'family2': 10,
-                        'workEducation1': 13
+                        'family1': 9, 'family2': 10, 'deceasedSpouse': 11, 'prevSpouse': 12,
+                        'workEducation1': 13, 'workEducation2': 13, 'workEducation3': 13
                         // Security sections intentionally excluded — defaults don't count
                     };
 
@@ -4994,8 +4997,8 @@
                             if (SECTIONS[s].conditional) continue;
                             // Security sections: not completed by default
                             if (s >= 14) continue;
-                            firstIncomplete = s;
-                            break;
+                            if (firstIncomplete === 0) firstIncomplete = s;
+                            continue; // Don't break — keep marking remaining sections
                         }
                         const hasData = keys.some(k => {
                             const d = data[k];
@@ -5005,9 +5008,9 @@
                         if (SECTIONS[s].conditional && !hasData) continue;
                         if (hasData) {
                             markComplete(s);
-                        } else {
-                            firstIncomplete = s;
-                            break;
+                        } else if (!SECTIONS[s].conditional) {
+                            if (firstIncomplete === 0) firstIncomplete = s;
+                            // Don't break — continue checking remaining sections
                         }
                     }
                     toggleAccordion(firstIncomplete, true);
