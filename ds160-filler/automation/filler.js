@@ -748,7 +748,15 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                 if (!isVis) continue;
                 await loc.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
                 if (match.type === 'select-label') {
-                    await loc.selectOption({ label: match.value });
+                    try { await loc.selectOption({ label: match.value }); }
+                    catch {
+                        // Fallback: fuzzy match by option text
+                        const opts = await loc.evaluate(sel => Array.from(sel.options).map(o => ({ v: o.value, t: o.text })));
+                        let found = opts.find(o => o.t.trim().toUpperCase() === match.value.trim().toUpperCase());
+                        if (!found) found = opts.find(o => o.t.toUpperCase().includes(match.value.trim().toUpperCase()));
+                        if (found) await loc.selectOption(found.v);
+                        else continue;
+                    }
                 } else if (match.type === 'select-search') {
                     const allOpts = await loc.evaluate(sel =>
                         Array.from(sel.options).map(o => ({ v: o.value, t: o.text }))
@@ -882,7 +890,13 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                     filled++;
                     break;
                 case 'select-label':
-                    await loc.selectOption({ label: match.value });
+                    try { await loc.selectOption({ label: match.value }); }
+                    catch {
+                        const opts = await loc.evaluate(sel => Array.from(sel.options).map(o => ({ v: o.value, t: o.text })));
+                        let found = opts.find(o => o.t.trim().toUpperCase() === match.value.trim().toUpperCase());
+                        if (!found) found = opts.find(o => o.t.toUpperCase().includes(match.value.trim().toUpperCase()));
+                        if (found) await loc.selectOption(found.v);
+                    }
                     filled++;
                     break;
                 case 'select-search': {
