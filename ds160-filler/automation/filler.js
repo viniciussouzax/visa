@@ -502,31 +502,97 @@ function normalizeProfile(data) {
     const g = (obj, camel, snake) => obj[camel] || obj[snake] || '';
 
     return {
+        // === PERSONAL 1 ===
         surname: g(p1, 'surname', 'surname'),
         givenName: g(p1, 'givenName', 'given_name'),
         fullNameNative: g(p1, 'fullNameNative', 'full_name_native'),
         otherNamesUsed: p1.otherNamesUsed === 'Y' || p1.other_names_used === 'Y',
         otherNames: p1.otherNames || p1.other_names || [],
+        telecode: p1.telecode === 'Y' || p1.telecode_question === 'Y',
+        telecodeSurname: g(p1, 'telecodeSurname', 'telecode_surname'),
+        telecodeGivenName: g(p1, 'telecodeGivenName', 'telecode_given_name'),
         sex: g(p1, 'sex', 'sex') || 'M',
         maritalStatus: g(p1, 'maritalStatus', 'marital_status') || 'S',
+        otherMaritalStatusText: g(p1, 'otherMaritalStatusText', 'other_marital_status_text'),
         dob: p1.dob || { day: '', month: '', year: '' },
         cityOfBirth: g(p1, 'cityOfBirth', 'city_of_birth'),
         stateOfBirth: g(p1, 'stateOfBirth', 'state_of_birth'),
         countryOfBirth: g(p1, 'countryOfBirth', 'country_of_birth') || 'BRAZIL',
+
+        // === PERSONAL 2 ===
         nationality: g(p2, 'nationality', 'nationality') || 'BRAZIL',
+        otherNationality: p2.otherNationality === 'Y' || p2.other_nationality === 'Y',
+        otherNationalityCountry: (p2.otherNationalities || p2.other_nationalities || [])[0]?.country,
+        otherNationalityPassport: (p2.otherNationalities || p2.other_nationalities || [])[0]?.hasPassport === 'Y',
+        otherNationalityPassportNumber: (p2.otherNationalities || p2.other_nationalities || [])[0]?.passportNumber,
+        permanentResidentOtherCountry: p2.permanentResident === 'Y' || p2.permanent_resident === 'Y',
+        permanentResidentCountry: (p2.permanentResidentCountries || p2.permanent_resident_countries || [])[0]?.country,
         nationalId: g(p2, 'nationalId', 'national_id'),
+        usSsn: p2.ssn && p2.ssn !== 'N/A' ? p2.ssn.replace(/-/g, '') : null,
+        usTaxpayerId: p2.taxId && p2.taxId !== 'N/A' ? p2.taxId : null,
+
+        // === TRAVEL ===
         purposeOfTrip: g(trav, 'purposeOfTrip', 'purpose_of_trip') || 'B1/B2',
         hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.hasSpecificPlans === true || trav.has_specific_plans === 'Y',
         travel: {
             arrivalDate: trav.arrivalDate || trav.arrival_date,
             departureDate: trav.departureDate || trav.departure_date,
+            arrivalFlight: trav.arrivalFlight || trav.arrival_flight,
+            arrivalCity: trav.arrivalCity || trav.arrival_city,
+            departureFlight: trav.departureFlight || trav.departure_flight,
+            departureCity: trav.departureCity || trav.departure_city,
+            location: trav.specificLocation || trav.specific_location,
             lengthOfStay: {
                 value: (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.value : trav.lengthOfStay) || trav.length_of_stay || '30',
-                unit: (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.unit : trav.lengthOfStayUnit) || trav.length_of_stay_unit || 'D'
+                unit: (typeof trav.lengthOfStayUnit === 'string' ? trav.lengthOfStayUnit : (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.unit : null)) || trav.length_of_stay_unit || 'D'
             },
             usAddress: trav.usAddress || trav.us_address || { street1: 'N/A', street2: '', city: 'N/A', state: 'FL', zip: '00000' }
         },
         payingForTrip: trav.whoIsPaying || trav.who_is_paying || 'S',
+        payer: trav.payer || null,
+
+        // === TRAVEL COMPANIONS ===
+        travelingWithOthers: tc.travelingWithOthers === 'Y' || tc.traveling_with_others === 'Y',
+        companions: tc.companions || [],
+        partOfGroup: tc.partOfGroup === 'Y' || tc.part_of_group === 'Y',
+        groupName: tc.groupName || tc.group_name || '',
+
+        // === PREVIOUS US TRAVEL ===
+        hasBeenInUS: prev.hasBeenInUS === 'Y' || prev.has_been_in_us === 'Y',
+        previousUSVisit: (() => {
+            const visits = prev.previousVisits || prev.previous_visits || [];
+            if (!visits.length) return null;
+            const v = visits[0];
+            return {
+                arrivalDate: v.arrivalDate || { day: v.day, month: v.month, year: v.year },
+                lengthOfStay: v.lengthOfStay || v.length_of_stay || '',
+                lengthOfStayUnit: v.lengthOfStayUnit || v.length_of_stay_unit || 'D',
+            };
+        })(),
+        previousUSDriversLicense: prev.hasDriversLicense === 'Y' || prev.has_drivers_license === 'Y',
+        previousUSDriversLicenseNumber: (prev.driversLicenses || prev.drivers_licenses || [])[0]?.number,
+        previousUSDriversLicenseState: (prev.driversLicenses || prev.drivers_licenses || [])[0]?.state,
+        hasUSVisa: prev.hasUSVisa === 'Y' || prev.has_us_visa === 'Y',
+        previousVisa: (() => {
+            const visa = prev.previousVisa || prev.previous_visa;
+            if (!visa) return null;
+            return {
+                issueDate: visa.issueDate || visa.issue_date || { day: '', month: '', year: '' },
+                number: visa.number || '',
+                numberNA: !visa.number,
+                sameType: visa.sameType === 'Y' || visa.same_type === 'Y',
+                sameCountry: visa.sameCountry === 'Y' || visa.same_country === 'Y',
+                tenPrint: visa.tenPrint === 'Y' || visa.ten_print === 'Y',
+                lost: visa.lost === 'Y',
+                cancelled: visa.cancelled === 'Y',
+            };
+        })(),
+        visaRefused: prev.visaRefused === 'Y' || prev.visa_refused === 'Y',
+        visaRefusedExplanation: prev.visaRefusedExplanation || prev.visa_refused_explanation || '',
+        immigrantPetition: prev.immigrantPetition === 'Y' || prev.immigrant_petition === 'Y',
+        immigrantPetitionExplanation: prev.immigrantPetitionExplanation || prev.immigrant_petition_explanation || '',
+
+        // === ADDRESS & PHONE ===
         homeAddress: addr.homeAddress || addr.home_address || {},
         mailingAddressSame: addr.mailingAddressSame !== false && addr.mailing_address_same !== false,
         mailingAddress: addr.mailingAddress || addr.mailing_address || null,
@@ -535,19 +601,30 @@ function normalizeProfile(data) {
         businessPhone: addr.businessPhone || addr.business_phone || null,
         email: g(addr, 'email', 'email'),
         additionalPhones: addr.additionalPhones === 'Y' || addr.additional_phones === 'Y' || false,
+        additionalPhoneNumbers: addr.additionalPhoneNumbers || addr.additional_phone_numbers || [],
         additionalEmails: addr.additionalEmails === 'Y' || addr.additional_emails === 'Y' || false,
-        additionalWebsites: false,
+        additionalEmailAddresses: addr.additionalEmailAddresses || addr.additional_email_addresses || [],
         socialMedia: addr.socialMedia || addr.social_media || [],
+        additionalSocialMedia: addr.additionalSocialMedia === 'Y' || addr.additional_social_media === 'Y',
+        additionalSocialMediaAccounts: addr.additionalSocialMediaAccounts || addr.additional_social_media_accounts || [],
+
+        // === PASSPORT ===
         passport: {
             type: g(ppt, 'type', 'type') || 'R',
+            typeExplanation: ppt.typeExplanation || ppt.type_explanation,
             number: g(ppt, 'number', 'number'),
+            bookNumber: ppt.bookNumber || ppt.book_number || null,
             issuingCountry: g(ppt, 'issuingCountry', 'issuing_country') || 'BRAZIL',
             issuedCity: g(ppt, 'issuedCity', 'issued_city'),
             issuedState: g(ppt, 'issuedState', 'issued_state'),
             issuedCountry: g(ppt, 'issuedCountry', 'issued_country') || 'BRAZIL',
             issuanceDate: ppt.issuanceDate || ppt.issuance_date,
             expirationDate: ppt.expirationDate || ppt.expiration_date,
+            lostOrStolen: ppt.lostOrStolen === 'Y' || ppt.lost_or_stolen === 'Y',
+            lostPassport: (ppt.lostPassports || ppt.lost_passports || [])[0] || null,
         },
+
+        // === US CONTACT ===
         usContact: (() => {
             const uc = data.usContact || data.us_contact || {};
             const ucAddr = uc.address || {};
@@ -557,6 +634,7 @@ function normalizeProfile(data) {
                 organization: uc.organization || '',
                 relationship: uc.relationship || 'O',
                 street1: uc.street1 || ucAddr.street1 || '',
+                street2: uc.street2 || ucAddr.street2 || '',
                 city: uc.city || ucAddr.city || '',
                 state: uc.state || ucAddr.state || '',
                 zip: uc.zip || ucAddr.zip || '',
@@ -564,12 +642,54 @@ function normalizeProfile(data) {
                 email: uc.email || '',
             };
         })(),
+
+        // === FAMILY ===
         father: fam1.father || {},
         mother: fam1.mother || {},
         spouse: fam2 || {},
         relativesInUS: fam1.immediateRelativesInUS === 'Y' || fam1.relatives_in_us === 'Y',
+        immediateRelative: (fam1.relatives || [])[0] || null,
+        otherRelativesInUS: fam1.otherRelativesInUS === 'Y' || fam1.other_relatives_in_us === 'Y',
+
+        // === DECEASED SPOUSE ===
+        deceasedSpouse: (() => {
+            const ds = data.deceasedSpouse || data.deceased_spouse;
+            if (!ds || !ds.surname) return null;
+            return {
+                surname: ds.surname || '', givenName: ds.givenName || ds.given_name || '',
+                dob: ds.dob || { day: '', month: '', year: '' },
+                nationality: ds.nationality || '',
+                cityOfBirth: ds.cityOfBirth || ds.city_of_birth || '',
+                countryOfBirth: ds.countryOfBirth || ds.country_of_birth || '',
+            };
+        })(),
+
+        // === PREVIOUS SPOUSE ===
+        previousSpouse: (() => {
+            const ps = data.prevSpouse || data.prev_spouse || {};
+            const spouses = ps.spouses || [];
+            if (!spouses.length) return null;
+            const s = spouses[0];
+            return {
+                numberOfFormerSpouses: ps.numberOfPrevious || ps.number_of_previous || '1',
+                surname: s.surname || '', givenName: s.givenName || s.given_name || '',
+                dob: s.dob || { day: '', month: '', year: '' },
+                nationality: s.nationality || '',
+                cityOfBirth: s.cityOfBirth || s.city_of_birth || '',
+                countryOfBirth: s.countryOfBirth || s.country_of_birth || '',
+                dateOfMarriage: s.dateOfMarriage || s.date_of_marriage || { day: '', month: '', year: '' },
+                dateMarriageEnded: s.dateMarriageEnded || s.date_marriage_ended || { day: '', month: '', year: '' },
+                howMarriageEnded: s.howEnded || s.how_ended || '',
+                countryMarriageTerminated: s.countryTerminated || s.country_terminated || '',
+            };
+        })(),
+
+        // === WORK / EDUCATION 1 ===
         occupationCode: g(we1, 'occupation', 'occupation') || 'H',
+        occupationExplanation: we1.occupationExplanation || we1.occupation_explanation,
         employer: we1.employer || {},
+
+        // === WORK / EDUCATION 2 ===
         hasPreviousEmployment: we2.hasPreviousEmployment === 'Y' || we2.has_previous_employment === 'Y',
         previousEmployment: we2.previousEmployment || we2.previous_employment || [],
         hasEducation: we2.hasEducation === 'Y' || we2.has_education === 'Y',
@@ -584,13 +704,23 @@ function normalizeProfile(data) {
             startDate: e.startDate || e.start_date || { month: '', year: '' },
             endDate: e.endDate || e.end_date || { month: '', year: '' },
         })),
+
+        // === WORK / EDUCATION 3 ===
         languages: we3.languages || ['PORTUGUESE'],
         clanTribe: we3.clanTribe === 'Y' || we3.clan_tribe === 'Y',
+        clanTribeName: we3.clanTribeName || we3.clan_tribe_name || '',
         countriesVisited: we3.countriesVisited === 'Y' || we3.countries_visited === 'Y',
+        countriesVisitedList: we3.countriesVisitedList || we3.countries_visited_list || [],
         organizationMember: we3.organizationMember === 'Y' || we3.organization_member === 'Y',
+        organizationName: (we3.organizations || [])[0] || '',
         specializedSkills: we3.specializedSkills === 'Y' || we3.specialized_skills === 'Y',
+        specializedSkillsExplanation: we3.specializedSkillsExplanation || we3.specialized_skills_explanation || '',
         militaryService: we3.militaryService === 'Y' || we3.military_service === 'Y',
+        military: (we3.military || [])[0] || null,
         insurgentOrg: we3.insurgentOrg === 'Y' || we3.insurgent_org === 'Y',
+        insurgentOrgExplanation: we3.insurgentOrgExplanation || we3.insurgent_org_explanation || '',
+
+        // === META ===
         location: data.location || 'SPL',
         securityAnswer: data.securityAnswer || data.security_answer || 'BRAZIL'
     };

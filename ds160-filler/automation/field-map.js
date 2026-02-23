@@ -886,6 +886,23 @@ function buildDynamicFieldMap(a) {
     );
   }
 
+  // ===================================================================
+  // DECEASED SPOUSE (DeceasedSpouse page - W marital status)
+  // ===================================================================
+  if (a.maritalStatus === 'W' && a.deceasedSpouse) {
+    const ds = a.deceasedSpouse;
+    map.push(
+      { pattern: /tbxDECEASED_SPOUSE_SURNAME$|tbxSURNAME$/i, value: ds.surname, type: "text" },
+      { pattern: /tbxDECEASED_SPOUSE_GIVEN_NAME$|tbxGIVEN_NAME$/i, value: ds.givenName, type: "text" },
+      { pattern: /ddlDECEASED_SPOUSE_DOBDay$/i, value: ds.dob?.day || "", type: "select" },
+      { pattern: /ddlDECEASED_SPOUSE_DOBMonth$/i, value: ds.dob?.month || "", type: "select" },
+      { pattern: /tbxDECEASED_SPOUSE_DOBYear$/i, value: ds.dob?.year || "", type: "text" },
+      { pattern: /ddlDECEASED_SPOUSE_NATL$/i, value: ds.nationality, type: "select-label" },
+      { pattern: /tbxDECEASED_SPOUSE_POB_CITY$/i, value: ds.cityOfBirth || "", type: "text" },
+      { pattern: /ddlDECEASED_SPOUSE_POB_CNTRY$/i, value: ds.countryOfBirth, type: "select-label" },
+    );
+  }
+
   // Security pages are handled by the dedicated fillSecurityPage() in fill-form.ts.
   // Do NOT add a generic rbl.*_IND_1 fallback here - it conflicts with family/travel radios.
 
