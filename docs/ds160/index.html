@@ -3922,7 +3922,7 @@
             };
 
             // Remove empty/null sections for cleaner output
-            const clean = JSON.stringify(data, (k, v) => {
+            const clean = JSON.parse(JSON.stringify(data, (k, v) => {
                 if (v === '' || v === null) return undefined;
                 if (Array.isArray(v) && v.length === 0) return undefined;
                 if (typeof v === 'object' && !Array.isArray(v) && v !== null) {
@@ -3930,9 +3930,9 @@
                     if (keys.length === 0) return undefined;
                 }
                 return v;
-            }, 2);
+            }));
 
-            return data;
+            return clean || {};
         }
 
 
@@ -4154,6 +4154,18 @@
             setVal('ddlTRAVEL_PURPOSE_SPEC', tr.purposeSpec);
             setVal('ddlTRAVEL_VISA_CLASS', tr.visaClass);
 
+            // Travel companions
+            const tc = data.travelCompanions || {};
+            setRadio('rblOtherPersonsTravelingInd', tc.travelingWithOthers);
+            setRadio('rblGroupTravel', tc.groupTravel);
+
+            // Previous US Travel
+            const put = data.prevUSTravel || {};
+            setRadio('rblPREV_US_TRAVEL_IND', put.previouslyInUS);
+            setRadio('rblPREV_VISA_IND', put.previousVisa);
+            setRadio('rblPREV_VISA_REFUSED_IND', put.visaRefused);
+            setRadio('rblIV_PETITION_IND', put.ivPetition);
+
             const uc = data.usContact || {};
             setVal('tbxUS_POC_SURNAME', uc.surname);
             setVal('tbxUS_POC_GIVEN_NAME', uc.givenName);
@@ -4164,6 +4176,7 @@
             setVal('tbxUS_POC_ADDR_POSTAL_CD', uc.postalCode);
             setVal('tbxUS_POC_HOME_TEL', uc.phone);
             setVal('tbxUS_POC_EMAIL_ADDR', uc.email);
+            setRadio('rblUS_POC_REL', uc.relationship);
 
             const f1 = data.family || {};
             setVal('tbxFATHER_SURNAME', f1.fatherSurname);
@@ -4176,6 +4189,23 @@
             const sp = data.spouse || {};
             setVal('tbxSPOUSE_SURNAME', sp.surname);
             setVal('tbxSPOUSE_GIVEN_NAME', sp.givenName);
+
+            // Work/Education 1
+            const we1 = data.workEducation1 || {};
+            setVal('ddlPresentOccupation', we1.occupation);
+            setVal('tbxEmpSchName', we1.employerName);
+            setVal('tbxEmpSchAddr1', we1.employerAddr1);
+            setVal('tbxEmpSchCity', we1.employerCity);
+            setVal('ddlEmpSchCountry', we1.employerCountry);
+            setVal('tbxEmpSchPhone', we1.employerPhone);
+            setVal('tbxJobTitle', we1.jobTitle);
+            setVal('ddlEmpDateFromMonth', we1.startMonth);
+            setVal('tbxEmpDateFromYear', we1.startYear);
+            setVal('tbxMonthlySalary', we1.monthlySalary);
+            setVal('tbxDescribeDuties', we1.duties);
+
+            // Location
+            if (data.location) setVal('ddlLocation', data.location);
 
             console.log('[DS-160] Data restored from applicant');
         }
