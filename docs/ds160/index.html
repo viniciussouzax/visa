@@ -3078,8 +3078,16 @@
             const v = document.getElementById('ddlWhoIsPaying')?.value || '';
             const person = document.getElementById('br-payerPerson');
             const company = document.getElementById('br-payerCompany');
-            if (person) person.classList.toggle('open', v === 'OTH');
-            if (company) company.classList.toggle('open', v === 'COM');
+            if (person) {
+                const wasOpen = person.classList.contains('open');
+                person.classList.toggle('open', v === 'OTH');
+                if (wasOpen && v !== 'OTH') clearBranchInputs(person);
+            }
+            if (company) {
+                const wasOpen = company.classList.contains('open');
+                company.classList.toggle('open', v === 'COM');
+                if (wasOpen && v !== 'COM') clearBranchInputs(company);
+            }
         }
         updatePayerBranch();
 
@@ -3089,8 +3097,16 @@
             const v = checked ? checked.value : '';
             const groupYes = document.getElementById('br-groupYes');
             const groupNo = document.getElementById('br-groupNo');
-            if (groupYes) groupYes.classList.toggle('open', v === 'Y');
-            if (groupNo) groupNo.classList.toggle('open', v === 'N');
+            if (groupYes) {
+                const wasOpen = groupYes.classList.contains('open');
+                groupYes.classList.toggle('open', v === 'Y');
+                if (wasOpen && v !== 'Y') clearBranchInputs(groupYes);
+            }
+            if (groupNo) {
+                const wasOpen = groupNo.classList.contains('open');
+                groupNo.classList.toggle('open', v === 'N');
+                if (wasOpen && v !== 'N') clearBranchInputs(groupNo);
+            }
         }
         updateGroupBranch();
 
@@ -3479,7 +3495,11 @@
 
             // Other Marital Status textarea branch (matches official DS-160 tbxOtherMaritalStatus)
             const brOther = document.getElementById('br-otherMarital');
-            if (brOther) brOther.classList.toggle('open', ms === 'O');
+            if (brOther) {
+                const wasOpen = brOther.classList.contains('open');
+                brOther.classList.toggle('open', ms === 'O');
+                if (wasOpen && ms !== 'O') clearBranchInputs(brOther);
+            }
 
             // Update conditional accordion sections
             if (typeof updateConditionalSections === 'function') {
@@ -3495,7 +3515,11 @@
             // RETIRED and HOMEMAKER: hide everything
             if (sec) sec.style.display = NO_EMPLOYER.includes(occ) ? 'none' : '';
             // OTHER: show Specify Other textarea
-            if (brOther) brOther.classList.toggle('open', occ === 'O');
+            if (brOther) {
+                const wasOpen = brOther.classList.contains('open');
+                brOther.classList.toggle('open', occ === 'O');
+                if (wasOpen && occ !== 'O') clearBranchInputs(brOther);
+            }
         }
 
 
@@ -3504,14 +3528,22 @@
         function updateSpouseAddrBranch() {
             const val = document.getElementById('ddlSpouseAddressType').value;
             const br = document.getElementById('br-spouseAddr');
-            if (br) br.classList.toggle('open', val === 'O');
+            if (br) {
+                const wasOpen = br.classList.contains('open');
+                br.classList.toggle('open', val === 'O');
+                if (wasOpen && val !== 'O') clearBranchInputs(br);
+            }
         }
 
         // ===== PASSPORT TYPE BRANCH =====
         function updatePptTypeBranch() {
             const val = document.getElementById('ddlPPT_TYPE').value;
             const br = document.getElementById('br-pptOther');
-            if (br) br.classList.toggle('open', val === 'T');
+            if (br) {
+                const wasOpen = br.classList.contains('open');
+                br.classList.toggle('open', val === 'T');
+                if (wasOpen && val !== 'T') clearBranchInputs(br);
+            }
         }
 
         // ===== SPECIFIC TRAVEL BRANCH (Y shows specific, N shows non-specific) =====
@@ -3674,7 +3706,11 @@
                 r.addEventListener('change', () => {
                     const branchName = r.dataset.branch;
                     const br = entry.querySelector('#br-' + branchName) || document.getElementById('br-' + branchName);
-                    if (br) br.classList.toggle('open', r.value === 'Y');
+                    if (br) {
+                        const shouldOpen = r.value === 'Y';
+                        br.classList.toggle('open', shouldOpen);
+                        if (!shouldOpen) clearBranchInputs(br);
+                    }
                 });
             });
         }
