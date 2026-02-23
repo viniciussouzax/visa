@@ -1,6 +1,6 @@
 {
     "name": "ds160-filler",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "DS-160 Auto-Filler - Software de automação",
     "main": "main.js",
     "scripts": {
@@ -19,8 +19,12 @@
         "electron-builder": "^25.0.0"
     },
     "build": {
+        "directories": {
+            "output": "dist2"
+        },
         "appId": "com.ds160.filler",
         "productName": "DS-160 Filler",
+        "npmRebuild": false,
         "publish": {
             "provider": "github",
             "owner": "viniciussouzax",
@@ -44,5 +48,9 @@
             "automation/**",
             "node_modules/**"
         ]
-    }
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs"
 }
