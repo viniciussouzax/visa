@@ -3098,8 +3098,29 @@
             if (currentPage === 1 && !savedApplicantId) {
                 saveOnPersonal1Exit();
             }
+            // Auto-save on every page transition
+            autoSaveData();
             for (let i = currentPage + 1; i < PAGES.length; i++) {
                 if (isPageVisible(i)) { showPage(i); return; }
+            }
+        }
+
+        // Silent auto-save: saves data without blocking UI
+        function autoSaveData() {
+            if (!savedApplicantId) return;
+            try {
+                const data = generateJSON();
+                if (!data) return;
+                const surname = (data.personal1?.surname || '').toUpperCase();
+                const givenName = (data.personal1?.givenName || '').toUpperCase();
+                const fullName = (surname + ' ' + givenName).trim();
+                sbFetch(`applicants?id=eq.${savedApplicantId}`, 'PATCH', {
+                    full_name: fullName || undefined,
+                    data: data,
+                }).then(() => console.log('[DS-160] Auto-saved'))
+                    .catch(e => console.warn('[DS-160] Auto-save failed:', e));
+            } catch (e) {
+                console.warn('[DS-160] Auto-save error:', e);
             }
         }
 
