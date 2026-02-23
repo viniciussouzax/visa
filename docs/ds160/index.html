@@ -3797,7 +3797,7 @@
                 },
                 // Travel
                 travel: {
-                    purposeOfTrip: val('dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip'),
+                    purposeOfTrip: val('dlPrincipalAppTravel_ctl00_ddlOtherPurpose') || val('dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip'),
                     hasSpecificPlans: radioVal('rblSpecificTravel'),
                     arrivalDate: dateVal('ddlARRIVAL_US_DTEDay', 'ddlARRIVAL_US_DTEMonth', 'tbxARRIVAL_US_DTEYear'),
                     arrivalFlight: val('tbxArriveFlight'), arrivalCity: val('tbxArriveCity'),
