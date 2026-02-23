@@ -4699,18 +4699,42 @@
             window._toggleAccordion = toggleAccordion;
             window._SECTIONS = SECTIONS;
 
-            // Navigate to first section that needs attention (don't mark any checks)
+            // Restore completion state based on mode
             window.restoreCompletionState = function (data) {
                 if (!data) return;
 
-                // Just navigate to the first section — checks only appear after user clicks next
-                // If we have a snapshot, find the first section without data
-                const snap = data._formSnapshot;
-                if (snap && snap.values && Object.keys(snap.values).length > 10) {
-                    // Has substantial data — open first section for review
-                    toggleAccordion(0);
+                // For assessor: show checks for sections that have data
+                if (window._isAssessorMode) {
+                    const dataToSection = {
+                        'location': 0, 'personal1': 1, 'personal2': 2,
+                        'travel': 3, 'travelCompanions': 4, 'previousUSTravel': 5,
+                        'addressPhone': 6, 'passport': 7, 'usContact': 8,
+                        'family1': 9, 'family2': 10, 'family2': 10,
+                        'workEducation1': 13, 'workEducation2': 13, 'workEducation3': 13,
+                        'security1': 14, 'security2': 15, 'security3': 16,
+                        'security4': 17, 'security5': 18
+                    };
+
+                    let firstIncomplete = -1;
+                    Object.entries(dataToSection).forEach(([key, secIdx]) => {
+                        const sectionData = data[key];
+                        if (sectionData && typeof sectionData === 'object' && Object.keys(sectionData).length > 0) {
+                            markComplete(secIdx);
+                        } else if (typeof sectionData === 'string' && sectionData) {
+                            markComplete(secIdx);
+                        } else if (firstIncomplete === -1) {
+                            firstIncomplete = secIdx;
+                        }
+                    });
+
+                    // Security sections with default "Não" are considered complete
+                    [14, 15, 16, 17, 18].forEach(idx => markComplete(idx));
+
+                    // Open first incomplete, or first for review
+                    toggleAccordion(firstIncomplete > 0 ? firstIncomplete : 0, true);
                 } else {
-                    toggleAccordion(0);
+                    // For applicant: no auto-checks, just open first section
+                    toggleAccordion(0, true);
                 }
             };
         })();
