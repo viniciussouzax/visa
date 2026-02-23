@@ -810,7 +810,7 @@ function normalizeProfile(data) {
         // === TRAVEL ===
         purposeOfTrip: (() => {
             const pt = g(trav, 'purposeOfTrip', 'purpose_of_trip');
-            return (pt && pt !== 'N/A') ? pt : null;
+            return (pt && pt !== 'N/A') ? pt : 'B1/B2';
         })(),
         hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.hasSpecificPlans === true || trav.has_specific_plans === 'Y',
         travel: {
