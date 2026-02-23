@@ -121,179 +121,208 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
         await page.route('**/{google-analytics.com,googletagmanager.com,ssl.google-analytics.com,eum.state.gov}/**', route => route.abort());
         await page.route('**/*.{woff,woff2,ttf,otf}', route => route.abort()); // Block fonts (not needed for form filling)
 
-        // Navigate to DS-160
-        await page.goto('https://ceac.state.gov/GenNIV/Default.aspx', { waitUntil: 'domcontentloaded' });
-        await waitForPageReady(page);
+        // Detect if we already have an active DS-160 form session
+        let skipToFilling = false;
+        if (existingPage && page === existingPage) {
+            const currentUrl = page.url();
+            const currentPageName = identifyPage(currentUrl);
 
-        // ============================================================
-        // STEP 1: Landing page — location + modal + captcha + Start
-        // ============================================================
-        onPage('Landing');
-        const location = profile.location;
-
-        // 1) Select location — this triggers a postback and may show a modal
-        const locSelect = page.locator("select[id$='_ddlLocation']");
-        if (await locSelect.isVisible().catch(() => false)) {
-            await locSelect.selectOption(location);
-            console.log(`[Filler] Location selected: ${location}`);
-            await waitForPostback(page);
-            await sleep(2000); // Wait for modal to appear after postback
+            // Check for session timeout
+            const isTimedOut = currentUrl.includes('TimedOut') || currentUrl.includes('SessionTimedOut') || currentUrl.includes('Default.aspx');
+            if (!isTimedOut) {
+                const bodyText = await page.locator('body').innerText({ timeout: 3000 }).catch(() => '');
+                const sessionExpired = /timeout|session.*expired|timed out|idle.*too long/i.test(bodyText);
+                if (sessionExpired) {
+                    console.log('[Filler] ⏰ Sessão expirou — reiniciando do zero');
+                } else if (currentPageName !== 'Unknown' && currentPageName !== 'Landing') {
+                    console.log(`[Filler] ♻️ Sessão ativa detectada na página: ${currentPageName} — pulando Landing/Captcha/Security`);
+                    skipToFilling = true;
+                    await waitForPageReady(page);
+                } else {
+                    console.log(`[Filler] Página atual não é form DS-160 (${currentPageName}) — reiniciando do zero`);
+                }
+            } else {
+                console.log('[Filler] ⏰ URL indica sessão expirada — reiniciando do zero');
+            }
         }
 
-        // 2) Dismiss location info modal if present
-        //    Some consulates (e.g. Recife/Brazil) show "Additional Location Information"
-        //    modal AFTER selecting location. Must close BEFORE solving captcha.
-        const modalOverlay = page.locator('.modalBackground')
-            .or(page.locator('[id*="ModalPanel"]'))
-            .or(page.locator('[id*="pnlPopup"]'))
-            .or(page.locator('[id*="pnlModal"]'))
-            .first();
-        if (await modalOverlay.isVisible({ timeout: 5000 }).catch(() => false)) {
-            console.log('[Filler] Location info modal detected — clicking Close...');
-            const closeBtn = page.locator('a:text("Close")')
-                .or(page.locator('a:text("close")'))
-                .or(page.locator('[id*="btnClose"]'))
-                .or(page.locator('[id*="lnkClose"]'))
-                .or(page.locator('input[value="Close"]'))
-                .or(page.locator('input[value="OK"]'))
-                .or(page.locator('.modalPopup a'))
-                .or(page.locator('.modalPopup input[type="button"]'));
-            const firstClose = closeBtn.first();
-            if (await firstClose.isVisible({ timeout: 3000 }).catch(() => false)) {
-                console.log('[Filler] Clicking modal close button');
-                await firstClose.click();
-                await sleep(1000);
-            }
-            await modalOverlay.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => { });
+        if (!skipToFilling) {
+            // Navigate to DS-160 (only when starting fresh)
+            await page.goto('https://ceac.state.gov/GenNIV/Default.aspx', { waitUntil: 'domcontentloaded' });
             await waitForPageReady(page);
-            console.log('[Filler] Modal dismissed — page ready for captcha');
         }
 
-        // 3) Solve captcha + click Start (retry if captcha was wrong)
-        const isRetrieve = !!(application?.application_id);
-        if (isRetrieve) {
-            return { success: false, error: 'Retrieve flow not implemented yet' };
-        }
+        if (!skipToFilling) {
+            // ============================================================
+            // STEP 1: Landing page — location + modal + captcha + Start
+            // ============================================================
+            onPage('Landing');
+            const location = profile.location;
 
-        let landingPassed = false;
-        for (let attempt = 1; attempt <= 3; attempt++) {
-            // Solve captcha — screenshot the captcha element
-            try {
-                const keys = { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key };
-                const imgEl = page.locator("img[id$='_CaptchaImage'], img[src*='captcha'], img[id$='c_default_ctl00_sitecontentplaceholder_uclocation_identifycaptcha1_captchaimage']").first();
-                await imgEl.waitFor({ state: 'visible', timeout: 10000 });
-                const imgPath = path.join(TMP, 'captcha.png');
-                await imgEl.screenshot({ path: imgPath });
-                const answer = await solveCaptcha(imgPath, captchaMode, keys);
-
-                console.log(`[Filler] Captcha answer (attempt ${attempt}): ${answer}`);
-
-                const input = page.locator("input[id$='_txtCodeTextBox']").first();
-                await input.fill('');
-                await input.fill(answer);
-            } catch (e) {
-                console.warn(`[Filler] Captcha attempt ${attempt} failed:`, e.message);
-                if (attempt < 3) { await sleep(2000); continue; }
-                return { success: false, error: 'Captcha não resolvido após 3 tentativas' };
+            // 1) Select location — this triggers a postback and may show a modal
+            const locSelect = page.locator("select[id$='_ddlLocation']");
+            if (await locSelect.isVisible().catch(() => false)) {
+                await locSelect.selectOption(location);
+                console.log(`[Filler] Location selected: ${location}`);
+                await waitForPostback(page);
+                await sleep(2000); // Wait for modal to appear after postback
             }
 
-            // Dismiss any modal that might be covering the START button
-            const modalBg = page.locator('.modalBackground').first();
-            if (await modalBg.isVisible({ timeout: 1000 }).catch(() => false)) {
-                console.log('[Filler] Modal covering START btn — dismissing...');
-                const closeBtns = page.locator('a:text("Close"), a:text("close"), [id*="btnClose"], [id*="lnkClose"], input[value="Close"], input[value="OK"], .modalPopup a, .modalPopup input[type="button"]');
-                const closeBtn = closeBtns.first();
-                if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-                    await closeBtn.click();
+            // 2) Dismiss location info modal if present
+            //    Some consulates (e.g. Recife/Brazil) show "Additional Location Information"
+            //    modal AFTER selecting location. Must close BEFORE solving captcha.
+            const modalOverlay = page.locator('.modalBackground')
+                .or(page.locator('[id*="ModalPanel"]'))
+                .or(page.locator('[id*="pnlPopup"]'))
+                .or(page.locator('[id*="pnlModal"]'))
+                .first();
+            if (await modalOverlay.isVisible({ timeout: 5000 }).catch(() => false)) {
+                console.log('[Filler] Location info modal detected — clicking Close...');
+                const closeBtn = page.locator('a:text("Close")')
+                    .or(page.locator('a:text("close")'))
+                    .or(page.locator('[id*="btnClose"]'))
+                    .or(page.locator('[id*="lnkClose"]'))
+                    .or(page.locator('input[value="Close"]'))
+                    .or(page.locator('input[value="OK"]'))
+                    .or(page.locator('.modalPopup a'))
+                    .or(page.locator('.modalPopup input[type="button"]'));
+                const firstClose = closeBtn.first();
+                if (await firstClose.isVisible({ timeout: 3000 }).catch(() => false)) {
+                    console.log('[Filler] Clicking modal close button');
+                    await firstClose.click();
                     await sleep(1000);
                 }
-                await modalBg.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => { });
+                await modalOverlay.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => { });
                 await waitForPageReady(page);
-                console.log('[Filler] Modal dismissed before START');
+                console.log('[Filler] Modal dismissed — page ready for captcha');
             }
 
-            // Click Start Application with human-like mouse movement
-            const startBtn = page.locator("a[id$='_lnkNew']").first();
-            const box = await startBtn.boundingBox();
-            if (box) {
-                // Move mouse to button with slight randomization (human-like)
-                const targetX = box.x + box.width * (0.3 + Math.random() * 0.4);
-                const targetY = box.y + box.height * (0.3 + Math.random() * 0.4);
-                await page.mouse.move(targetX, targetY, { steps: 5 + Math.floor(Math.random() * 10) });
-                await sleep(100 + Math.floor(Math.random() * 200));
-            }
-            await startBtn.click({ timeout: 15000 });
-            await sleep(2000);
-            await waitForPageReady(page);
-
-            // Check if we actually left the Landing page
-            const currentUrl = page.url();
-            if (currentUrl.includes('SessionTimedOut') || currentUrl.includes('TimedOut')) {
-                throw new Error('Session expired after clicking Start');
+            // 3) Solve captcha + click Start (retry if captcha was wrong)
+            const isRetrieve = !!(application?.application_id);
+            if (isRetrieve) {
+                return { success: false, error: 'Retrieve flow not implemented yet' };
             }
 
-            // Check for captcha validation error (we're still on Landing)
-            const validationError = page.locator('[id*="ValidationSummary"]').first();
-            const hasError = await validationError.isVisible({ timeout: 1000 }).catch(() => false);
-            const stillOnLanding = currentUrl.includes('Default.aspx') || (!currentUrl.includes('SecureQuestion') && !currentUrl.includes('ConfirmApplicationID') && !currentUrl.includes('complete_'));
+            let landingPassed = false;
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                // Solve captcha — screenshot the captcha element
+                try {
+                    const keys = { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key };
+                    const imgEl = page.locator("img[id$='_CaptchaImage'], img[src*='captcha'], img[id$='c_default_ctl00_sitecontentplaceholder_uclocation_identifycaptcha1_captchaimage']").first();
+                    await imgEl.waitFor({ state: 'visible', timeout: 10000 });
+                    const imgPath = path.join(TMP, 'captcha.png');
+                    await imgEl.screenshot({ path: imgPath });
+                    const answer = await solveCaptcha(imgPath, captchaMode, keys);
 
-            if (hasError || stillOnLanding) {
-                console.warn(`[Filler] Captcha likely wrong (attempt ${attempt}) — page didn't advance. Retrying...`);
-                if (attempt < 3) await sleep(1000);
-                continue;
-            }
+                    console.log(`[Filler] Captcha answer (attempt ${attempt}): ${answer}`);
 
-            // Successfully left Landing
-            landingPassed = true;
-            break;
-        }
-
-        if (!landingPassed) {
-            return { success: false, error: 'Failed to pass Landing after 3 captcha attempts', cause: 'captcha_failed', browser, activePage: page };
-        }
-        await waitForPageReady(page);
-
-        // ============================================================
-        // STEP 2: Security Question Setup
-        // ============================================================
-        let currentPage = identifyPage(page.url());
-        if (currentPage === 'SecurityQuestion') {
-            onPage('SecurityQuestion');
-
-            const privacyCheck = page.locator("#ctl00_SiteContentPlaceHolder_chkbxPrivacyAct");
-            if (await privacyCheck.isVisible().catch(() => false)) {
-                await privacyCheck.check();
-            }
-
-            // Select security question from settings (config.security_question = index from DB)
-            const questionIndex = parseInt(config.security_question || '1', 10);
-            await page.locator("select[id$='_ddlQuestions']").selectOption({ index: questionIndex });
-            // Security answer: config (from settings/dashboard) takes priority, profile as fallback
-            const secAnswer = config.security_answer || profile.securityAnswer || '';
-            await page.locator("input[id$='_txtAnswer']").fill(secAnswer);
-
-            const urlBefore = page.url();
-            await page.locator("input[id$='_btnContinue']").click();
-            await waitForUrlChange(page, urlBefore);
-            await waitForPageReady(page);
-
-            // Confirm Application ID page
-            const continueBtn = page.locator("input[id$='_btnContinueApp']");
-            if (await continueBtn.isVisible().catch(() => false)) {
-                // Capture application ID
-                const appIdText = await page.locator("span[id$='_lblAppID'], b").first().innerText().catch(() => '');
-                const appIdMatch = appIdText.match(/[A-Z]{2}\d{8,}/);
-                if (appIdMatch) {
-                    application.application_id = appIdMatch[0];
-                    console.log(`[Filler] Application ID: ${appIdMatch[0]}`);
+                    const input = page.locator("input[id$='_txtCodeTextBox']").first();
+                    await input.fill('');
+                    await input.fill(answer);
+                } catch (e) {
+                    console.warn(`[Filler] Captcha attempt ${attempt} failed:`, e.message);
+                    if (attempt < 3) { await sleep(2000); continue; }
+                    return { success: false, error: 'Captcha não resolvido após 3 tentativas' };
                 }
 
-                const urlBefore2 = page.url();
-                await continueBtn.click();
-                await waitForUrlChange(page, urlBefore2);
+                // Dismiss any modal that might be covering the START button
+                const modalBg = page.locator('.modalBackground').first();
+                if (await modalBg.isVisible({ timeout: 1000 }).catch(() => false)) {
+                    console.log('[Filler] Modal covering START btn — dismissing...');
+                    const closeBtns = page.locator('a:text("Close"), a:text("close"), [id*="btnClose"], [id*="lnkClose"], input[value="Close"], input[value="OK"], .modalPopup a, .modalPopup input[type="button"]');
+                    const closeBtn = closeBtns.first();
+                    if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+                        await closeBtn.click();
+                        await sleep(1000);
+                    }
+                    await modalBg.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => { });
+                    await waitForPageReady(page);
+                    console.log('[Filler] Modal dismissed before START');
+                }
+
+                // Click Start Application with human-like mouse movement
+                const startBtn = page.locator("a[id$='_lnkNew']").first();
+                const box = await startBtn.boundingBox();
+                if (box) {
+                    // Move mouse to button with slight randomization (human-like)
+                    const targetX = box.x + box.width * (0.3 + Math.random() * 0.4);
+                    const targetY = box.y + box.height * (0.3 + Math.random() * 0.4);
+                    await page.mouse.move(targetX, targetY, { steps: 5 + Math.floor(Math.random() * 10) });
+                    await sleep(100 + Math.floor(Math.random() * 200));
+                }
+                await startBtn.click({ timeout: 15000 });
+                await sleep(2000);
                 await waitForPageReady(page);
+
+                // Check if we actually left the Landing page
+                const currentUrl = page.url();
+                if (currentUrl.includes('SessionTimedOut') || currentUrl.includes('TimedOut')) {
+                    throw new Error('Session expired after clicking Start');
+                }
+
+                // Check for captcha validation error (we're still on Landing)
+                const validationError = page.locator('[id*="ValidationSummary"]').first();
+                const hasError = await validationError.isVisible({ timeout: 1000 }).catch(() => false);
+                const stillOnLanding = currentUrl.includes('Default.aspx') || (!currentUrl.includes('SecureQuestion') && !currentUrl.includes('ConfirmApplicationID') && !currentUrl.includes('complete_'));
+
+                if (hasError || stillOnLanding) {
+                    console.warn(`[Filler] Captcha likely wrong (attempt ${attempt}) — page didn't advance. Retrying...`);
+                    if (attempt < 3) await sleep(1000);
+                    continue;
+                }
+
+                // Successfully left Landing
+                landingPassed = true;
+                break;
             }
-        }
+
+            if (!landingPassed) {
+                return { success: false, error: 'Failed to pass Landing after 3 captcha attempts', cause: 'captcha_failed', browser, activePage: page };
+            }
+            await waitForPageReady(page);
+
+            // ============================================================
+            // STEP 2: Security Question Setup
+            // ============================================================
+            let currentPage = identifyPage(page.url());
+            if (currentPage === 'SecurityQuestion') {
+                onPage('SecurityQuestion');
+
+                const privacyCheck = page.locator("#ctl00_SiteContentPlaceHolder_chkbxPrivacyAct");
+                if (await privacyCheck.isVisible().catch(() => false)) {
+                    await privacyCheck.check();
+                }
+
+                // Select security question from settings (config.security_question = index from DB)
+                const questionIndex = parseInt(config.security_question || '1', 10);
+                await page.locator("select[id$='_ddlQuestions']").selectOption({ index: questionIndex });
+                // Security answer: config (from settings/dashboard) takes priority, profile as fallback
+                const secAnswer = config.security_answer || profile.securityAnswer || '';
+                await page.locator("input[id$='_txtAnswer']").fill(secAnswer);
+
+                const urlBefore = page.url();
+                await page.locator("input[id$='_btnContinue']").click();
+                await waitForUrlChange(page, urlBefore);
+                await waitForPageReady(page);
+
+                // Confirm Application ID page
+                const continueBtn = page.locator("input[id$='_btnContinueApp']");
+                if (await continueBtn.isVisible().catch(() => false)) {
+                    // Capture application ID
+                    const appIdText = await page.locator("span[id$='_lblAppID'], b").first().innerText().catch(() => '');
+                    const appIdMatch = appIdText.match(/[A-Z]{2}\d{8,}/);
+                    if (appIdMatch) {
+                        application.application_id = appIdMatch[0];
+                        console.log(`[Filler] Application ID: ${appIdMatch[0]}`);
+                    }
+
+                    const urlBefore2 = page.url();
+                    await continueBtn.click();
+                    await waitForUrlChange(page, urlBefore2);
+                    await waitForPageReady(page);
+                }
+            }
+        } // end if (!skipToFilling)
 
         // ============================================================
         // STEP 3: Fill all pages until Review
