@@ -4271,6 +4271,12 @@
                 }
 
                 console.log('[DS-160] Restored from snapshot:', Object.keys(snap.values || {}).length, 'fields,', Object.keys(snap.radios || {}).length, 'radios');
+
+                // Phase 5: Clear any values inside CLOSED branches (stale data)
+                document.querySelectorAll('.br:not(.open)').forEach(br => {
+                    clearBranchInputs(br);
+                });
+                console.log('[DS-160] Cleaned stale data from closed branches');
                 return;
             }
 
