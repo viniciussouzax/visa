@@ -9,8 +9,8 @@ const { solveCaptcha } = require('./captcha');
 // FIELD MAP — import TypeScript module via tsx runtime
 // ====================================================================
 // tsx enables require() of .ts files at runtime
-require('tsx/cjs/api').register();
-const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = require('../../scripts/build-field-map');
+// require('tsx/cjs/api').register();
+const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = require('./field-map');
 
 const TMP = path.join(__dirname, '..', 'tmp');
 
