@@ -189,11 +189,13 @@ class QueueRunner {
         await this._logError(app, applicant, result.error, result.stack, lastPage, result.field, result.cause, screenshotUrl, result.validationErrors);
         await this._updateRetry(app.id, currentRetry, lastPage, result.error);
 
+        // Close browser BEFORE retry to avoid accumulating windows
+        if (result.browser) await result.browser.close().catch(() => { });
+
         this.consecutiveErrors++;
 
         if (currentRetry >= MAX_RETRIES) {
-            // Max retries reached — close browser, mark needs_attention
-            if (result.browser) await result.browser.close().catch(() => { });
+            // Max retries reached — mark needs_attention
             await this._markNeedsAttention(app.id, result.error);
             this.emit({
                 type: 'error',

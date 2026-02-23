@@ -3,13 +3,12 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
-const hotReload = require('./hot-reload');
-const { solveCaptcha } = hotReload.hotRequire('captcha.js');
+const { solveCaptcha } = require('./captcha');
 
 // ====================================================================
-// FIELD MAP — loaded via hot-reload (auto-updated from GitHub)
+// FIELD MAP — loaded directly (no cache)
 // ====================================================================
-const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = hotReload.hotRequire('field-map.js');
+const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = require('./field-map');
 
 const TMP = path.join(__dirname, '..', 'tmp');
 
