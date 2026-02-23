@@ -33,6 +33,14 @@ const STAGES = {
 
 const STAGE_ORDER = ['new', 'review', 'approved', 'doing', 'done', 'archived'];
 
+const FILL_STAGES = {
+    queued: { label: 'Na fila', color: '#6b7280' },
+    filling: { label: 'Preenchendo', color: '#3b82f6' },
+    filled: { label: 'Preenchido', color: '#22c55e' },
+    error: { label: 'Erro', color: '#ef4444' },
+    needs_attention: { label: 'Atenção', color: '#f59e0b' },
+};
+
 // ============================================================
 // TOAST
 // ============================================================
@@ -399,20 +407,36 @@ async function openApplicantDetail(id) {
         const isDone = p.pipeline_status === 'done';
         const roleLabel = isPrimary ? 'Principal' : 'Dependente';
 
+        // Application data
+        const pApps = appsMap[p.id] || [];
+        const pApp = pApps[0];
+        const appId = pApp?.application_id || '—';
+        const fillStatus = pApp?.fill_status || '—';
+        const fStage = FILL_STAGES[fillStatus] || { label: fillStatus, color: '#6b7280' };
+
         html += `
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;${isDone ? 'opacity:.7' : ''}cursor:pointer" onclick="openProcessModal('${p.id}')">
-            <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;${isDone ? 'opacity:.7;' : ''}">
+            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="openProcessModal('${p.id}')">
                 <div>
-                    <div style="font-weight:700;font-size:14px">${p.full_name}</div>
-                    <div style="font-size:11px;color:var(--text-muted)">${roleLabel}${pPassport ? ' · ' + pPassport : ''}</div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <span style="font-weight:700;font-size:14px">${p.full_name}</span>
+                        ${appId !== '—' ? `<span style="font-size:10px;color:var(--text-muted);background:var(--bg);padding:2px 6px;border-radius:4px;font-family:monospace">${appId}</span>` : ''}
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+                        <span style="font-size:11px;color:var(--text-muted)">${roleLabel}${pPassport ? ' · ' + pPassport : ''}</span>
+                        ${fillStatus !== '—' ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${fStage.color}15;color:${fStage.color};font-weight:600">${fStage.label}</span>` : ''}
+                    </div>
                 </div>
-                <select onclick="event.stopPropagation()" onchange="if(this.value){movePipeline('${p.id}',this.value,'${id}')}" 
-                    style="font-size:11px;padding:5px 10px;background:${pStage.color}10;color:${pStage.color};border:1px solid ${pStage.color}30;border-radius:5px;cursor:pointer;outline:none;font-weight:600">
-                    <option value="">${pStage.label}</option>
-                    ${STAGE_ORDER.filter(s => s !== p.pipeline_status).map(s =>
+                <div style="display:flex;align-items:center;gap:8px">
+                    ${pApp ? `<button onclick="event.stopPropagation();viewAppDetails('${p.id}')" style="font-size:10px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--text)">Detalhes</button>` : ''}
+                    <select onclick="event.stopPropagation()" onchange="if(this.value){movePipeline('${p.id}',this.value,'${id}')}" 
+                        style="font-size:11px;padding:5px 10px;background:${pStage.color}10;color:${pStage.color};border:1px solid ${pStage.color}30;border-radius:5px;cursor:pointer;outline:none;font-weight:600">
+                        <option value="">${pStage.label}</option>
+                        ${STAGE_ORDER.filter(s => s !== p.pipeline_status).map(s =>
             `<option value="${s}">${STAGES[s].label}</option>`
         ).join('')}
-                </select>
+                    </select>
+                </div>
             </div>
         </div>`;
     });
@@ -443,6 +467,57 @@ async function openProcessModal(applicantId) {
 function closeProcessModal() {
     $('process-modal').style.display = 'none';
     $('process-modal-iframe').src = 'about:blank';
+}
+
+// View Application Details Modal
+async function viewAppDetails(applicantId) {
+    const { data: applicant } = await sb.from('applicants').select('*').eq('id', applicantId).single();
+    if (!applicant) return;
+    const { data: apps } = await sb.from('applications').select('*').eq('applicant_id', applicantId).limit(1);
+    const app = apps?.[0];
+
+    const surname = (applicant.data?.personal1?.surname || applicant.full_name?.split(' ')[0] || '').toUpperCase();
+    const surname5 = surname.substring(0, 5);
+    const birthYear = applicant.data?.personal1?.dob?.year || '—';
+    const securityAnswer = app?.security_answer || '—';
+    const applicationId = app?.application_id || '—';
+    const fillStatus = app?.fill_status || '—';
+    const fillError = app?.fill_error || '';
+    const fStage = FILL_STAGES[fillStatus] || { label: fillStatus, color: '#6b7280' };
+
+    $('info-modal').classList.remove('hidden');
+    $('modal-title').textContent = `Detalhes — ${applicant.full_name}`;
+    $('modal-body').innerHTML = `
+        <div style="display:grid;gap:12px;margin-bottom:16px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+                    <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Application ID</div>
+                    <div style="font-size:16px;font-weight:700;font-family:monospace;word-break:break-all">${applicationId}</div>
+                </div>
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+                    <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Security Answer</div>
+                    <div style="font-size:16px;font-weight:700;font-family:monospace">${securityAnswer}</div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+                    <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Sobrenome (5)</div>
+                    <div style="font-size:16px;font-weight:700">${surname5}</div>
+                </div>
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+                    <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Ano Nascimento</div>
+                    <div style="font-size:16px;font-weight:700">${birthYear}</div>
+                </div>
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+                    <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Preenchimento</div>
+                    <div style="font-size:14px;font-weight:700;color:${fStage.color}">${fStage.label}</div>
+                </div>
+            </div>
+            ${fillError ? `<div style="background:#fef2f210;border:1px solid #ef444430;border-radius:8px;padding:12px">
+                <div style="font-size:10px;color:#ef4444;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Último Erro</div>
+                <div style="font-size:12px;color:var(--text)">${fillError}</div>
+            </div>` : ''}
+        </div>`;
 }
 
 // Listen for form-approved message from iframe

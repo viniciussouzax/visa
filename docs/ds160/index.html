@@ -4907,62 +4907,74 @@
             window.restoreCompletionState = function (data) {
                 if (!data) return;
 
-                // For assessor: show checks based on REAL data (same logic as applicant)
+                // For assessor: use _formSnapshot.completedSections as primary source
                 if (window._isAssessorMode) {
-                    const dataToSection = {
-                        'location': 0, 'personal1': 1, 'personal2': 2,
-                        'travel': 3, 'travelCompanions': 4, 'previousUSTravel': 5,
-                        'addressPhone': 6, 'passport': 7, 'usContact': 8,
-                        'family1': 9, 'family2': 10, 'deceasedSpouse': 11, 'prevSpouse': 12,
-                        'workEducation1': 13, 'workEducation2': 13, 'workEducation3': 13
-                    };
+                    const snapshot = data._formSnapshot && data._formSnapshot.completedSections;
 
-                    // Reuse hasSubstantialData from applicant logic (defined below)
-                    function hasRealData(obj) {
-                        if (!obj || typeof obj !== 'object') return false;
-                        for (const [key, val] of Object.entries(obj)) {
-                            if (key === '_formSnapshot') continue;
-                            if (val === null || val === undefined || val === '' || val === 'N/A') continue;
-                            if (typeof val === 'string' && val.length > 0 && val !== 'N' && val !== 'N/A') return true;
-                            if (typeof val === 'number') return true;
-                            if (Array.isArray(val) && val.some(item => hasRealData(item))) return true;
-                            if (typeof val === 'object' && !Array.isArray(val) && hasRealData(val)) return true;
+                    if (snapshot && Array.isArray(snapshot) && snapshot.length > 0) {
+                        // Primary: restore from saved snapshot
+                        snapshot.forEach(idx => markComplete(idx));
+
+                        // Find first incomplete for review
+                        let firstIncomplete = 0;
+                        for (let s = 0; s < SECTIONS.length; s++) {
+                            if (SECTIONS[s].conditional) {
+                                const accItem = container.querySelector(`[data-section="${s}"]`);
+                                if (accItem && accItem.style.display === 'none') continue;
+                            }
+                            if (s >= 14) continue;
+                            if (!completedSections.has(s)) {
+                                firstIncomplete = s;
+                                break;
+                            }
                         }
-                        return false;
-                    }
+                        toggleAccordion(firstIncomplete > 0 ? firstIncomplete : 0, true);
+                    } else {
+                        // Fallback: mark based on data presence (legacy data without snapshot)
+                        const dataToSection = {
+                            'location': 0, 'personal1': 1, 'personal2': 2,
+                            'travel': 3, 'travelCompanions': 4, 'previousUSTravel': 5,
+                            'addressPhone': 6, 'passport': 7, 'usContact': 8,
+                            'family1': 9, 'family2': 10, 'deceasedSpouse': 11, 'prevSpouse': 12,
+                            'workEducation1': 13, 'workEducation2': 13, 'workEducation3': 13
+                        };
 
-                    let firstIncomplete = 0;
-                    for (let s = 0; s < SECTIONS.length; s++) {
-                        const keys = Object.entries(dataToSection).filter(([k, v]) => v === s).map(([k]) => k);
-                        if (keys.length === 0) {
-                            if (SECTIONS[s].conditional) continue;
-                            if (s >= 14) continue; // Security sections: skip if no mapping
-                            if (firstIncomplete === 0) firstIncomplete = s;
-                            continue; // Don't break — keep marking remaining sections
+                        function hasRealData(obj) {
+                            if (!obj || typeof obj !== 'object') return false;
+                            for (const [key, val] of Object.entries(obj)) {
+                                if (key === '_formSnapshot') continue;
+                                if (val === null || val === undefined || val === '' || val === 'N/A') continue;
+                                if (typeof val === 'string' && val.length > 0 && val !== 'N' && val !== 'N/A') return true;
+                                if (typeof val === 'number') return true;
+                                if (Array.isArray(val) && val.some(item => hasRealData(item))) return true;
+                                if (typeof val === 'object' && !Array.isArray(val) && hasRealData(val)) return true;
+                            }
+                            return false;
                         }
-                        const hasData = keys.some(k => {
-                            const d = data[k];
-                            if (typeof d === 'string') return d.length > 0;
-                            return hasRealData(d);
-                        });
-                        if (SECTIONS[s].conditional && !hasData) continue;
-                        if (hasData) {
-                            markComplete(s);
-                        } else if (!SECTIONS[s].conditional) {
-                            if (firstIncomplete === 0) firstIncomplete = s;
-                            // Don't break — continue checking remaining sections
+
+                        let firstIncomplete = 0;
+                        for (let s = 0; s < SECTIONS.length; s++) {
+                            const keys = Object.entries(dataToSection).filter(([k, v]) => v === s).map(([k]) => k);
+                            if (keys.length === 0) {
+                                if (SECTIONS[s].conditional) continue;
+                                if (s >= 14) continue;
+                                if (firstIncomplete === 0) firstIncomplete = s;
+                                continue;
+                            }
+                            const hasData = keys.some(k => {
+                                const d = data[k];
+                                if (typeof d === 'string') return d.length > 0;
+                                return hasRealData(d);
+                            });
+                            if (SECTIONS[s].conditional && !hasData) continue;
+                            if (hasData) {
+                                markComplete(s);
+                            } else if (!SECTIONS[s].conditional) {
+                                if (firstIncomplete === 0) firstIncomplete = s;
+                            }
                         }
+                        toggleAccordion(firstIncomplete > 0 ? firstIncomplete : 0, true);
                     }
-
-                    // Security sections: only mark if saved in snapshot
-                    if (data._formSnapshot && data._formSnapshot.completedSections) {
-                        data._formSnapshot.completedSections.forEach(idx => {
-                            if (idx >= 14 && idx <= 18) markComplete(idx);
-                        });
-                    }
-
-                    // Open first incomplete, or first for review
-                    toggleAccordion(firstIncomplete > 0 ? firstIncomplete : 0, true);
                 } else {
                     // For applicant: use _formSnapshot.completedSections as primary source
                     // This is the most reliable — saved by generateJSON during nextPage()
