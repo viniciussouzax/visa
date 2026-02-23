@@ -4002,12 +4002,8 @@
             status.textContent = 'Buscando...';
 
             try {
-                // Search applicants by email
-                const allApplicants = await sbGet('applicants?select=id,full_name,data,primary_applicant_id&order=created_at.desc&limit=100');
-                const matches = allApplicants.filter(a => {
-                    const e = (a.data?.addressPhone?.email || '').toLowerCase();
-                    return e === email;
-                });
+                // Search applicants by email via secure RPC function
+                const matches = await sbGet(`rpc/get_applicants_by_email?search_email=${encodeURIComponent(email)}`);
 
                 // Get application status for each match
                 const withStatus = [];
