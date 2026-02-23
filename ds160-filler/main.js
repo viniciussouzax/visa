@@ -90,7 +90,70 @@ app.whenReady().then(() => {
         // Check on startup
         global.smartCheckForUpdates();
     } else {
-        global.smartCheckForUpdates = () => { }; // no-op in dev
+        // DEV MODE: git pull + auto-restart if automation files changed
+        const { execSync } = require('child_process');
+        const repoDir = path.join(__dirname, '..');
+        const GIT_CHECK_COOLDOWN = 3 * 60 * 1000; // 3 minutes
+
+        global.smartCheckForUpdates = () => {
+            const now = Date.now();
+            if (now - lastUpdateCheck < GIT_CHECK_COOLDOWN) return;
+            lastUpdateCheck = now;
+
+            try {
+                // Fetch remote changes silently
+                execSync('git fetch origin main', { cwd: repoDir, stdio: 'ignore', timeout: 15000 });
+
+                // Check if there are differences between local and remote
+                const diff = execSync('git diff HEAD origin/main --name-only', {
+                    cwd: repoDir, encoding: 'utf-8', timeout: 10000
+                }).trim();
+
+                if (!diff) {
+                    console.log('[AutoUpdate] Nenhuma atualização disponível');
+                    return;
+                }
+
+                console.log('[AutoUpdate] Arquivos alterados:', diff);
+
+                // Pull changes
+                execSync('git pull origin main --ff-only', { cwd: repoDir, stdio: 'ignore', timeout: 30000 });
+                console.log('[AutoUpdate] ✅ Git pull concluído');
+
+                // Check if automation-critical files changed
+                const automationFiles = diff.split('\n').filter(f =>
+                    f.includes('automation/') || f.includes('main.js') || f.includes('field-map')
+                );
+
+                if (automationFiles.length > 0) {
+                    console.log('[AutoUpdate] 🔄 Arquivos de automação alterados — reiniciando app...');
+                    mainWindow?.webContents.send('automation-status', {
+                        type: 'updating', message: 'Atualização detectada — reiniciando...'
+                    });
+
+                    // Stop automation gracefully
+                    if (automationRunner) {
+                        automationRunner.stop().catch(() => { });
+                    }
+
+                    // Relaunch after brief delay (let UI update)
+                    setTimeout(() => {
+                        app.relaunch();
+                        app.exit(0);
+                    }, 2000);
+                } else {
+                    console.log('[AutoUpdate] Apenas arquivos não-críticos alterados, sem restart necessário');
+                }
+            } catch (e) {
+                console.warn('[AutoUpdate] Erro no check:', e.message);
+            }
+        };
+
+        // Check on startup (delayed)
+        setTimeout(() => global.smartCheckForUpdates(), 10000);
+
+        // Periodic check every 3 minutes
+        setInterval(() => global.smartCheckForUpdates(), GIT_CHECK_COOLDOWN);
     }
 
     // Expose software version globally for error logs
