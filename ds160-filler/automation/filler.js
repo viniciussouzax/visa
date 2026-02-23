@@ -183,6 +183,50 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
             onPage(pageName);
             visited.push(pageName);
 
+            // Detectar páginas desconhecidas e tentar recovery
+            if (pageName === 'Unknown') {
+                console.warn(`[Filler] ⚠️ Página desconhecida: ${url}`);
+
+                // Verificar se é timeout/session expired
+                const pageText = await page.locator('body').innerText().catch(() => '');
+                const isTimeout = /timeout|session.*expired|timed out|idle/i.test(pageText);
+                const isWarning = /warning|continue.*application|recover/i.test(pageText);
+
+                if (isTimeout) {
+                    console.error('[Filler] 🔴 Session expirada/timeout detectado');
+                    throw new Error('Session expired: ' + url);
+                }
+
+                if (isWarning) {
+                    console.warn('[Filler] ⚠️ Página de warning — tentando continuar');
+                    // Tentar clicar em botões de continuação/recovery
+                    const recoveryBtns = [
+                        "input[value*='Continue']",
+                        "input[value*='OK']",
+                        "input[id*='btnContinue']",
+                        "a[id*='Continue']",
+                        "input[id*='btnOk']",
+                    ];
+                    let recovered = false;
+                    for (const sel of recoveryBtns) {
+                        const btn = page.locator(sel).first();
+                        if (await btn.isVisible().catch(() => false)) {
+                            console.log(`[Filler] Clicando recovery: ${sel}`);
+                            const urlBefore = page.url();
+                            await btn.click();
+                            await waitForUrlChange(page, urlBefore);
+                            recovered = true;
+                            break;
+                        }
+                    }
+                    if (recovered) continue;
+                }
+
+                // Se chegou aqui, página desconhecida sem recovery
+                console.error(`[Filler] 🔴 Página desconhecida sem recovery: ${url}`);
+                throw new Error(`Unknown page: ${url}`);
+            }
+
             // Security pages: click all "No" radios
             if (isSecurityPage(url)) {
                 await waitForPageReady(page);
@@ -376,17 +420,29 @@ async function waitForUrlChange(page, urlBefore, timeout = 10000) {
 async function fillPageCompletely(page, fieldMap) {
     await waitForPageReady(page);
     let pass = 0, needsRescan = true;
+    const postbackLog = [];
     while (needsRescan && pass < 10) {
-        needsRescan = await autoFillPass(page, fieldMap);
+        const result = await autoFillPass(page, fieldMap, pass);
+        needsRescan = result.needsRescan;
+        if (result.postbackField) {
+            postbackLog.push(result.postbackField);
+        }
         pass++;
     }
+    if (postbackLog.length > 0) {
+        console.log(`[Filler] Postback triggers nesta página: ${postbackLog.join(' → ')}`);
+    }
+    console.log(`[Filler] Página preenchida em ${pass} pass(es)`);
+    return { passes: pass, postbackLog };
 }
 
-async function autoFillPass(page, fieldMap) {
+async function autoFillPass(page, fieldMap, passNum = 0) {
     const fields = await discoverFields(page);
     const visible = fields.filter(f => f.visible && f.id);
     let postbackNeeded = false, filled = 0;
+    let postbackField = null;
     const unmatched = [];
+    const fieldsBeforeCount = visible.length;
 
     for (const field of visible) {
         if (!field.id) continue;
@@ -416,14 +472,14 @@ async function autoFillPass(page, fieldMap) {
                         try { await loc.selectOption(match.value); }
                         catch { try { await loc.selectOption({ label: match.value }); } catch { await loc.selectOption({ index: 1 }).catch(() => { }); } }
                         filled++;
-                        if (isPostbackSelect(field.id)) { postbackNeeded = true; }
+                        if (isPostbackSelect(field.id)) { postbackNeeded = true; postbackField = field.id; }
                     }
                     break;
                 case 'select-label':
                     if (isSelectEmpty(field.value)) {
                         await loc.selectOption({ label: match.value });
                         filled++;
-                        if (isPostbackSelect(field.id)) postbackNeeded = true;
+                        if (isPostbackSelect(field.id)) { postbackNeeded = true; postbackField = field.id; }
                     }
                     break;
                 case 'select-search': {
@@ -434,14 +490,14 @@ async function autoFillPass(page, fieldMap) {
                     let found = allOpts.find(o => o.t.toUpperCase().includes(match.value.toUpperCase()));
                     if (!found) found = allOpts.find(o => o.v?.toUpperCase().includes(match.value.toUpperCase()));
                     if (!found) found = allOpts.find(o => o.v && o.v !== '' && o.v !== '-1' && !o.t.toUpperCase().includes('SELECT'));
-                    if (found) { await loc.selectOption(found.v); filled++; if (isPostbackSelect(field.id)) postbackNeeded = true; }
+                    if (found) { await loc.selectOption(found.v); filled++; if (isPostbackSelect(field.id)) { postbackNeeded = true; postbackField = field.id; } }
                     break;
                 }
                 case 'click':
                     if (!field.checked) {
                         await loc.click();
                         filled++;
-                        if (isPostbackClick(field.id, field.type)) postbackNeeded = true;
+                        if (isPostbackClick(field.id, field.type)) { postbackNeeded = true; postbackField = field.id; }
                     }
                     break;
                 case 'checkbox-check':
@@ -453,13 +509,35 @@ async function autoFillPass(page, fieldMap) {
     }
 
     if (unmatched.length > 0) {
-        console.warn('[Filler] Unmatched date/stay fields:', unmatched);
+        console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} campos sem match:`, unmatched.slice(0, 5).join(', '));
     }
+    console.log(`[Filler] Pass ${passNum} — ${filled} preenchidos, ${visible.length} visíveis${postbackField ? `, ⏳ postback: ${postbackField}` : ''}`);
+
     if (postbackNeeded) {
+        const urlBefore = page.url();
         await waitForPostback(page);
-        return true;
+        const urlAfter = page.url();
+
+        // Detectar se o postback causou navegação inesperada
+        if (urlAfter !== urlBefore) {
+            const newPage = identifyPage(urlAfter);
+            console.warn(`[Filler] ⚠️ Postback em ${postbackField} causou NAVEGAÇÃO: ${identifyPage(urlBefore)} → ${newPage}`);
+            if (newPage === 'Unknown') {
+                console.error(`[Filler] 🔴 Página desconhecida após postback! URL: ${urlAfter}`);
+            }
+        }
+
+        // Detectar postback inesperado (campo mudou contagem de fields)
+        const fieldsAfter = await discoverFields(page);
+        const visibleAfter = fieldsAfter.filter(f => f.visible && f.id).length;
+        const delta = visibleAfter - fieldsBeforeCount;
+        if (delta !== 0) {
+            console.log(`[Filler] Postback ${postbackField}: ${delta > 0 ? '+' : ''}${delta} campos (${fieldsBeforeCount} → ${visibleAfter})`);
+        }
+
+        return { needsRescan: true, postbackField };
     }
-    return false;
+    return { needsRescan: false, postbackField: null };
 }
 
 async function discoverFields(page) {
