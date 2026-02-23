@@ -22,9 +22,11 @@ const TMP = path.join(__dirname, '..', 'tmp');
  * @param {object} config - From automation_config table
  * @param {string} captchaMode - 'capmonster' | 'ai_vision'
  * @param {function} onPage - Callback(pageName) for status updates
- * @returns {{ success: boolean, applicationId?: string, error?: string }}
+ * @param {object} [existingBrowser] - Reuse this browser instead of creating new
+ * @param {object} [existingPage] - Reuse this page instead of creating new
+ * @returns {{ success: boolean, applicationId?: string, error?: string, browser, activePage }}
  */
-async function fillApplication(applicant, application, config, captchaMode, onPage) {
+async function fillApplication(applicant, application, config, captchaMode, onPage, existingBrowser, existingPage) {
     if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
 
     // Build field map from applicant data
@@ -70,16 +72,45 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
     const visited = []; // Declared outside try so catch can access it
 
     try {
-        // Launch Playwright's OWN Chromium (not user's Chrome!)
-        browser = await chromium.launch({
-            headless: false,
-            args: ['--disable-blink-features=AutomationControlled']
-        });
-        const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-        page = await context.newPage();
-        page.setDefaultTimeout(15000);
-        page.setDefaultNavigationTimeout(30000);
-        page.on('dialog', async d => d.accept().catch(() => { }));
+        if (existingBrowser) {
+            // Reuse existing browser instance
+            browser = existingBrowser;
+            try {
+                // Check if browser is still connected
+                const contexts = browser.contexts();
+                if (contexts.length > 0 && existingPage && !existingPage.isClosed()) {
+                    // Reuse existing page
+                    page = existingPage;
+                    console.log('[Filler] Reutilizando browser e página existentes');
+                } else {
+                    // Browser alive but page gone — create new page
+                    const ctx = contexts[0] || await browser.newContext({ viewport: { width: 1280, height: 900 } });
+                    page = await ctx.newPage();
+                    page.setDefaultTimeout(15000);
+                    page.setDefaultNavigationTimeout(30000);
+                    page.on('dialog', async d => d.accept().catch(() => { }));
+                    console.log('[Filler] Reutilizando browser, nova página');
+                }
+            } catch {
+                // Browser crashed — create new one
+                existingBrowser = null;
+                browser = null;
+            }
+        }
+
+        if (!browser) {
+            // Launch fresh Playwright Chromium
+            browser = await chromium.launch({
+                headless: false,
+                args: ['--disable-blink-features=AutomationControlled']
+            });
+            const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+            page = await context.newPage();
+            page.setDefaultTimeout(15000);
+            page.setDefaultNavigationTimeout(30000);
+            page.on('dialog', async d => d.accept().catch(() => { }));
+            console.log('[Filler] Novo browser criado');
+        }
 
         // Anti-detection: hide webdriver flag
         await page.addInitScript(() => {

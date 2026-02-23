@@ -152,7 +152,7 @@ class QueueRunner {
         const result = await fillApplication(applicant, app, config, captchaMode, (page) => {
             lastPage = page;
             this.emit({ type: 'filling', applicantName: applicant.full_name, page });
-        });
+        }, existingBrowser, existingPage);
 
         if (result.success) {
             // ✅ Success — close browser, reset counters
@@ -232,7 +232,7 @@ class QueueRunner {
             return;
         }
 
-        // ⏳ Retryable error — keep browser open, backoff then retry
+        // ⏳ Retryable error — keep browser open, backoff then retry with SAME browser
         const delay = BACKOFF_DELAYS[currentRetry - 1] || BACKOFF_DELAYS[BACKOFF_DELAYS.length - 1];
         this.emit({
             type: 'retrying',
@@ -245,13 +245,13 @@ class QueueRunner {
         if (global.smartCheckForUpdates) global.smartCheckForUpdates();
         await this._waitWithCountdown(delay);
 
-        // Re-claim the same app and retry (browser still open)
+        // Re-claim the same app and retry — PASS BROWSER so it's reused
         if (this.running) {
             const refreshedApp = await this._getApp(app.id);
             if (refreshedApp && refreshedApp.fill_status === 'filling') {
-                await this._fillWithRetry(refreshedApp, applicant, await this._getConfig());
+                await this._fillWithRetry(refreshedApp, applicant, await this._getConfig(), result.browser, result.activePage);
             } else {
-                // App status changed (e.g. manually fixed) — close browser
+                // App status changed — close browser
                 if (result.browser) await result.browser.close().catch(() => { });
             }
         } else {
