@@ -129,7 +129,7 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
         // STEP 1: Landing page — location + modal + captcha + Start
         // ============================================================
         onPage('Landing');
-        const location = profile.location || 'SPL';
+        const location = profile.location;
 
         // 1) Select location — this triggers a postback and may show a modal
         const locSelect = page.locator("select[id$='_ddlLocation']");
@@ -268,8 +268,8 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
             // Select security question from settings (config.security_question = index from DB)
             const questionIndex = parseInt(config.security_question || '1', 10);
             await page.locator("select[id$='_ddlQuestions']").selectOption({ index: questionIndex });
-            // Security answer priority: profile > config (from settings table) > null
-            const secAnswer = profile.securityAnswer || config.security_answer || '';
+            // Security answer: config (from settings/dashboard) takes priority, profile as fallback
+            const secAnswer = config.security_answer || profile.securityAnswer || '';
             await page.locator("input[id$='_txtAnswer']").fill(secAnswer);
 
             const urlBefore = page.url();

@@ -3358,12 +3358,10 @@
                 if (!applicants || !applicants[0]?.id) return;
                 savedApplicantId = applicants[0].id;
 
-                // Create Application
-                const securityAnswer = Math.random().toString(36).slice(2, 8).toUpperCase();
+                // Create Application (security_answer comes from settings table, not here)
                 const applications = await sbFetch('applications', 'POST', {
                     applicant_id: savedApplicantId,
                     status: 'pending',
-                    security_answer: securityAnswer,
                     form_data: { ds160_city: location },
                 });
                 savedApplicationId = applications?.[0]?.id || null;
@@ -4640,11 +4638,10 @@
                         form_data: { ds160_city: location },
                     });
                 } else {
-                    const securityAnswer = Math.random().toString(36).slice(2, 8).toUpperCase();
+                    // security_answer comes from settings table, not generated here
                     const applications = await sbFetch('applications', 'POST', {
                         applicant_id: applicantId,
                         status: 'pending',
-                        security_answer: securityAnswer,
                         form_data: { ds160_city: location },
                     });
                     appId = applications?.[0]?.id || '?';
