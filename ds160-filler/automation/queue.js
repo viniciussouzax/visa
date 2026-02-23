@@ -165,7 +165,12 @@ class QueueRunner {
         console.error(`[Queue] Error on ${applicant.full_name} (attempt ${currentRetry}):`, result.error);
 
         let screenshotUrl = null;
+        let pageHtml = null;
         if (result.activePage) {
+            try {
+                // Capture page HTML for debugging
+                pageHtml = await result.activePage.content().catch(() => null);
+            } catch { }
             try {
                 const buf = await result.activePage.screenshot({ fullPage: true });
                 const filename = `errors/${app.id}_${Date.now()}.png`;
@@ -186,7 +191,7 @@ class QueueRunner {
             }
         }
 
-        await this._logError(app, applicant, result.error, result.stack, lastPage, result.field, result.cause, screenshotUrl, result.validationErrors);
+        await this._logError(app, applicant, result.error, result.stack, lastPage, result.field, result.cause, screenshotUrl, result.validationErrors, pageHtml);
         await this._updateRetry(app.id, currentRetry, lastPage, result.error);
 
         // Close browser BEFORE retry to avoid accumulating windows
@@ -418,7 +423,7 @@ class QueueRunner {
     // ==============================================================
     // ERROR LOGGING (to Supabase for developer monitoring)
     // ==============================================================
-    async _logError(app, applicant, errorMessage, errorStack, pageName, fieldName, errorCause, screenshotUrl, validationErrors) {
+    async _logError(app, applicant, errorMessage, errorStack, pageName, fieldName, errorCause, screenshotUrl, validationErrors, pageHtml) {
         try {
             await this.supabase
                 .from('error_logs')
@@ -436,7 +441,8 @@ class QueueRunner {
                     screenshot_url: screenshotUrl || null,
                     validation_errors: validationErrors && validationErrors.length > 0 ? validationErrors : null,
                     user_id: (typeof applicant === 'object') ? (applicant?.user_id || null) : null,
-                    company_id: (typeof applicant === 'object') ? (applicant?.company_id || null) : null
+                    company_id: (typeof applicant === 'object') ? (applicant?.company_id || null) : null,
+                    page_html: pageHtml || null
                 });
         } catch (e) {
             console.warn('Failed to log error to Supabase:', e.message);

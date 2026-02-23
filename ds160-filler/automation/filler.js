@@ -102,9 +102,39 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
             return { success: false, error: 'Retrieve flow not implemented yet' };
         }
 
+        // Dismiss location info modal if present (e.g. "Additional Location Information")
+        // DS-160 shows this for certain consulates (like Recife) — has a "Close" link
+        const modalOverlay = page.locator('.modalBackground').first();
+        if (await modalOverlay.isVisible({ timeout: 2000 }).catch(() => false)) {
+            console.log('[Filler] Location info modal detected — clicking Close...');
+            const closeBtns = [
+                'a:text("Close")', 'a:text("close")',
+                '[id*="ucPost"] a', '[id*="modalConfirm"] a',
+                '[id*="btnClose"]', '[id*="lnkClose"]',
+                'input[value="Close"]', 'input[value="OK"]'
+            ];
+            for (const sel of closeBtns) {
+                const btn = page.locator(sel).first();
+                if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
+                    console.log(`[Filler] Clicking modal close: ${sel}`);
+                    await btn.click();
+                    await sleep(1500);
+                    break;
+                }
+            }
+            await modalOverlay.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => { });
+            console.log('[Filler] Modal dismissed');
+        }
+
+        // Click Start Application
         const startLink = page.locator("a[id$='_lnkNew']").first();
-        await startLink.click();
+        await startLink.click({ timeout: 15000 });
         await page.waitForURL(/ConfirmApplicationID|SecureQuestion|complete_personal/i, { timeout: 15000 }).catch(() => { });
+
+        // Check for session timeout redirect
+        if (page.url().includes('SessionTimedOut') || page.url().includes('TimedOut')) {
+            throw new Error('Session expired after clicking Start');
+        }
         await waitForPageReady(page);
 
         // ============================================================
