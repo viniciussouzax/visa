@@ -916,6 +916,7 @@ function buildDynamicFieldMap(a) {
 const POSTBACK_SELECT_IDS = [
   "CNTRY", "Country", "PurposeOfTrip", "VisaClass", "OtherPurpose",
   "Occupation", "PPT_TYPE", "REL_TO_APP", "POC_REL", "SocialMedia",
+  "MARITAL_STATUS", "APP_GENDER",
   "WhoIsPaying", "PayerRelationship",
   "SpouseNatDropDownList", "SpouseAddressType", "SpousePOBCountry",
 ];
@@ -948,7 +949,8 @@ function isPostbackSelect(fieldId) {
 
 function isPostbackClick(fieldId, fieldType) {
   if (fieldType !== "radio") return false;
-  if (fieldId.match(/_0$/) && POSTBACK_CLICK_YES_IDS.some((t) => fieldId.includes(t))) return true;
+  // Both Yes (_0) and No (_1) can trigger postbacks in DS-160
+  if (POSTBACK_CLICK_YES_IDS.some((t) => fieldId.includes(t))) return true;
   if (POSTBACK_CLICK_ANY_IDS.some((t) => fieldId.includes(t))) return true;
   return false;
 }
