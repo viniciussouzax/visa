@@ -4074,6 +4074,8 @@
                 savedApplicantId = existingApplicant.id;
                 savedApplicationId = existingApplicant.appId || null;
                 restoreApplicantData(existingApplicant.data || {});
+                // Mark completed sections and open next incomplete
+                setTimeout(() => { if (window.restoreCompletionState) window.restoreCompletionState(existingApplicant.data || {}); }, 100);
             } else if (linkToPrimaryId) {
                 // New dependent — store primary link
                 window._linkToPrimaryId = linkToPrimaryId;
@@ -4256,6 +4258,9 @@
                 // Restore data
                 if (a.data) restoreApplicantData(a.data);
                 console.log('[DS-160] Auto-loaded applicant:', a.full_name);
+
+                // Mark completed sections and open next incomplete
+                setTimeout(() => { if (window.restoreCompletionState) window.restoreCompletionState(a.data); }, 100);
 
                 // Update final button for assessor
                 const btn = document.getElementById('btnFinalAction');
@@ -4617,6 +4622,66 @@
 
             // Show first section
             toggleAccordion(0);
+
+            // Expose for use after data restore
+            window._markComplete = markComplete;
+            window._toggleAccordion = toggleAccordion;
+            window._SECTIONS = SECTIONS;
+
+            // Restore check marks and navigate to first incomplete section
+            window.restoreCompletionState = function (data) {
+                if (!data) return;
+
+                // Map data keys to section indexes
+                // 0=Início, 1=Personal1, 2=Personal2, 3=Travel, 4=TravelCompanions,
+                // 5=PreviousUSTravel, 6=AddressPhone, 7=Passport, 8=USContact,
+                // 9=Family1, 10=Family2, 11=DeceasedSpouse, 12=PrevSpouse,
+                // 13=WorkEducation, 14-18=Security
+                const dataToSection = {
+                    'location': 0,
+                    'personal1': 1,
+                    'personal2': 2,
+                    'travel': 3,
+                    'travelCompanions': 4,
+                    'prevUSTravel': 5,
+                    'addressPhone': 6,
+                    'passport': 7,
+                    'usContact': 8,
+                    'family': 9,
+                    'workEducation1': 13,
+                };
+
+                let firstIncomplete = -1;
+
+                // Check each section
+                Object.entries(dataToSection).forEach(([key, secIdx]) => {
+                    const sectionData = key === 'location' ? data[key] : data[key];
+                    if (sectionData && typeof sectionData === 'object' && Object.keys(sectionData).length > 0) {
+                        markComplete(secIdx);
+                    } else if (typeof sectionData === 'string' && sectionData) {
+                        markComplete(secIdx);
+                    } else if (firstIncomplete === -1) {
+                        firstIncomplete = secIdx;
+                    }
+                });
+
+                // Security sections are always pre-filled with 'N', mark them complete
+                [14, 15, 16, 17, 18].forEach(idx => markComplete(idx));
+
+                // Open first incomplete section, or first section if all complete
+                const target = firstIncomplete > 0 ? firstIncomplete : 0;
+                toggleAccordion(target);
+
+                // Show the first page of that section
+                const sec = SECTIONS[target];
+                if (sec && sec.pages.length > 0) {
+                    const firstPageId = sec.pages[0].replace('pg-', '');
+                    const pageIdx = window._PAGES_NAMES?.indexOf(firstPageId);
+                    if (pageIdx >= 0 && window._origShowPage) {
+                        window._origShowPage(pageIdx);
+                    }
+                }
+            };
         })();
     </script>
 </body>
