@@ -933,7 +933,7 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
         const match = fieldMap.find(m => m.pattern.test(field.id));
         if (!match) continue;
         if (match.type === 'text' && (!field.value || field.value.trim() === '') && match.value != null) {
-            textBatch.push({ id: field.id, value: String(match.value) });
+            textBatch.push({ id: field.id, value: String(match.value).trim() });
         }
     }
 
