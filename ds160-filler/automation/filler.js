@@ -679,10 +679,14 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
             batch.forEach(({ id, value }) => {
                 const el = document.getElementById(id);
                 if (el && (!el.value || el.value.trim() === '')) {
-                    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set
-                        || Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
-                    if (nativeSetter) nativeSetter.call(el, value);
-                    else el.value = value;
+                    try {
+                        const proto = el.tagName === 'TEXTAREA'
+                            ? window.HTMLTextAreaElement.prototype
+                            : window.HTMLInputElement.prototype;
+                        const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+                        if (setter) setter.call(el, value);
+                        else el.value = value;
+                    } catch { el.value = value; }
                     el.dispatchEvent(new Event('input', { bubbles: true }));
                     el.dispatchEvent(new Event('change', { bubbles: true }));
                     count++;
