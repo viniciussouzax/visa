@@ -32,6 +32,40 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
     const fieldMap = buildDynamicFieldMap(profile);
     console.log(`[Filler] Profile: ${applicant.full_name} | Fields: ${fieldMap.length} | hasSpecificPlans: ${profile.hasSpecificPlans}`);
 
+    // === PRE-FILL VALIDATION: Check required fields exist in JSON ===
+    const missingFields = [];
+    // Personal 1
+    if (!profile.surname) missingFields.push('personal1.surname');
+    if (!profile.givenName) missingFields.push('personal1.givenName');
+    if (!profile.sex) missingFields.push('personal1.sex');
+    if (!profile.maritalStatus) missingFields.push('personal1.maritalStatus');
+    if (!profile.dob?.day || !profile.dob?.month || !profile.dob?.year) missingFields.push('personal1.dob');
+    if (!profile.cityOfBirth) missingFields.push('personal1.cityOfBirth');
+    if (!profile.countryOfBirth) missingFields.push('personal1.countryOfBirth');
+    // Personal 2
+    if (!profile.nationality) missingFields.push('personal2.nationality');
+    // Travel
+    if (!profile.purposeOfTrip) missingFields.push('travel.purposeOfTrip');
+    if (!profile.travel?.arrivalDate) missingFields.push('travel.arrivalDate');
+    if (!profile.travel?.lengthOfStay?.value) missingFields.push('travel.lengthOfStay');
+    if (!profile.travel?.usAddress) missingFields.push('travel.usAddress');
+    if (!profile.payingForTrip) missingFields.push('travel.payingForTrip');
+    // Passport
+    if (!profile.passport?.number) missingFields.push('passport.number');
+    // Contact
+    if (!profile.phone) missingFields.push('addressPhone.phone');
+    if (!profile.email) missingFields.push('addressPhone.email');
+
+    if (missingFields.length > 0) {
+        console.warn(`[Filler] ⚠️ DADOS FALTANTES (${missingFields.length}): ${missingFields.join(', ')}`);
+        return {
+            success: false,
+            error: `Dados faltantes no formulário: ${missingFields.join(', ')}`,
+            cause: 'missing_data',
+            missingFields
+        };
+    }
+
     let browser, page;
     const visited = []; // Declared outside try so catch can access it
 
@@ -652,16 +686,16 @@ function normalizeProfile(data) {
         telecode: p1.telecode === 'Y' || p1.telecode_question === 'Y',
         telecodeSurname: g(p1, 'telecodeSurname', 'telecode_surname'),
         telecodeGivenName: g(p1, 'telecodeGivenName', 'telecode_given_name'),
-        sex: g(p1, 'sex', 'sex') || 'M',
-        maritalStatus: g(p1, 'maritalStatus', 'marital_status') || 'S',
+        sex: g(p1, 'sex', 'sex') || null,
+        maritalStatus: g(p1, 'maritalStatus', 'marital_status') || null,
         otherMaritalStatusText: g(p1, 'otherMaritalStatusText', 'other_marital_status_text'),
         dob: p1.dob || { day: '', month: '', year: '' },
         cityOfBirth: g(p1, 'cityOfBirth', 'city_of_birth'),
         stateOfBirth: g(p1, 'stateOfBirth', 'state_of_birth'),
-        countryOfBirth: g(p1, 'countryOfBirth', 'country_of_birth') || 'BRAZIL',
+        countryOfBirth: g(p1, 'countryOfBirth', 'country_of_birth') || null,
 
         // === PERSONAL 2 ===
-        nationality: g(p2, 'nationality', 'nationality') || 'BRAZIL',
+        nationality: g(p2, 'nationality', 'nationality') || null,
         otherNationality: p2.otherNationality === 'Y' || p2.other_nationality === 'Y',
         otherNationalityCountry: (() => {
             const nat = g(p2, 'nationality', 'nationality') || 'BRAZIL';
@@ -699,16 +733,14 @@ function normalizeProfile(data) {
         // === TRAVEL ===
         purposeOfTrip: (() => {
             const pt = g(trav, 'purposeOfTrip', 'purpose_of_trip');
-            return (pt && pt !== 'N/A') ? pt : 'B1/B2';
+            return (pt && pt !== 'N/A') ? pt : null;
         })(),
         hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.hasSpecificPlans === true || trav.has_specific_plans === 'Y',
         travel: {
             arrivalDate: (() => {
                 const d = trav.arrivalDate || trav.arrival_date;
                 if (d && d.day && d.month && d.year) return d;
-                // Default: ~30 days from now
-                const future = new Date(); future.setDate(future.getDate() + 30);
-                return { day: String(future.getDate()), month: String(future.getMonth() + 1).padStart(2, '0'), year: String(future.getFullYear()) };
+                return null; // Missing — will be caught by validation
             })(),
             departureDate: trav.departureDate || trav.departure_date,
             arrivalFlight: trav.arrivalFlight || trav.arrival_flight,
@@ -717,19 +749,16 @@ function normalizeProfile(data) {
             departureCity: trav.departureCity || trav.departure_city,
             location: trav.specificLocation || trav.specific_location,
             lengthOfStay: {
-                value: (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.value : trav.lengthOfStay) || trav.length_of_stay || '30',
-                unit: (typeof trav.lengthOfStayUnit === 'string' ? trav.lengthOfStayUnit : (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.unit : null)) || trav.length_of_stay_unit || 'D'
+                value: (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.value : trav.lengthOfStay) || trav.length_of_stay || null,
+                unit: (typeof trav.lengthOfStayUnit === 'string' ? trav.lengthOfStayUnit : (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.unit : null)) || trav.length_of_stay_unit || null
             },
             usAddress: (() => {
                 const ua = trav.usAddress || trav.us_address || {};
-                // Check if address is actually empty (all fields missing)
-                if (!ua.street1 && !ua.city && !ua.state) {
-                    return { street1: 'N/A', street2: '', city: 'N/A', state: 'FL', zip: '00000' };
-                }
-                return { street1: ua.street1 || 'N/A', street2: ua.street2 || '', city: ua.city || 'N/A', state: ua.state || 'FL', zip: ua.zip || ua.postalCode || '00000' };
+                if (!ua.street1 && !ua.city && !ua.state) return null; // Missing — will be caught by validation
+                return { street1: ua.street1 || '', street2: ua.street2 || '', city: ua.city || '', state: ua.state || '', zip: ua.zip || ua.postalCode || '' };
             })()
         },
-        payingForTrip: trav.whoIsPaying || trav.who_is_paying || 'S',
+        payingForTrip: trav.whoIsPaying || trav.who_is_paying || null,
         payer: (() => {
             const p = trav.payer;
             if (!p) return null;

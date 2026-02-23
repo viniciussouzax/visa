@@ -160,6 +160,18 @@ class QueueRunner {
             this.consecutiveErrors = 0;
             return;
         }
+        // ⚠️ Missing data — DON'T retry, mark needs_attention immediately
+        if (result.cause === 'missing_data') {
+            console.warn(`[Queue] ⚠️ ${applicant.full_name}: dados faltantes — ${result.error}`);
+            await this._logError(app, applicant, result.error, null, 'Validation', null, 'missing_data', null, result.missingFields?.map(f => `Campo faltante: ${f}`));
+            await this._markNeedsAttention(app.id, result.error);
+            this.emit({
+                type: 'error',
+                applicantName: applicant.full_name,
+                error: `Dados incompletos: ${result.missingFields?.join(', ')}`
+            });
+            return;
+        }
 
         // ❌ Error — capture screenshot BEFORE closing browser
         console.error(`[Queue] Error on ${applicant.full_name} (attempt ${currentRetry}):`, result.error);
