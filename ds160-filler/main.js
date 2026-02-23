@@ -69,10 +69,20 @@ app.whenReady().then(() => {
         });
 
         autoUpdater.on('update-downloaded', (info) => {
+            console.log(`[Update] v${info.version} baixada — reiniciando automaticamente em 3s...`);
             mainWindow?.webContents.send('update-status', {
                 type: 'downloaded',
                 version: info.version
             });
+
+            // Auto-restart after 3s (allow UI to show notification)
+            setTimeout(async () => {
+                // Stop automation gracefully before restart
+                if (automationRunner) {
+                    try { await automationRunner.stop(); } catch { }
+                }
+                autoUpdater.quitAndInstall(false, true);
+            }, 3000);
         });
 
         autoUpdater.on('error', (err) => {
@@ -272,6 +282,49 @@ ipcMain.handle('refresh-queue', async () => {
         return { success: true };
     }
     return { success: false, error: 'Automação não iniciada' };
+});
+
+ipcMain.handle('force-update-restart', async () => {
+    try {
+        console.log('[Update] Force update requested by user');
+        mainWindow?.webContents.send('update-status', { type: 'checking' });
+
+        // Stop automation first
+        if (automationRunner) {
+            try { await automationRunner.stop(); } catch { }
+            automationRunner = null;
+        }
+
+        if (app.isPackaged) {
+            // Prod: check for electron-updater updates and install if available
+            const { autoUpdater } = require('electron-updater');
+            const result = await autoUpdater.checkForUpdates().catch(() => null);
+            if (result?.updateInfo) {
+                mainWindow?.webContents.send('update-status', {
+                    type: 'available',
+                    version: result.updateInfo.version
+                });
+                // Download will trigger auto-install via update-downloaded handler
+                return { success: true, message: 'Atualização encontrada, baixando...' };
+            } else {
+                // No update available — just restart
+                app.relaunch();
+                app.exit(0);
+                return { success: true, message: 'Nenhuma atualização — reiniciando...' };
+            }
+        } else {
+            // Dev: force hot-reload and restart
+            const { checkForUpdates } = require('./automation/hot-reload');
+            const updated = await checkForUpdates();
+            console.log(`[Update] Hot-reload result: ${updated ? 'scripts atualizados' : 'já atualizado'}`);
+            app.relaunch();
+            app.exit(0);
+            return { success: true, message: updated ? 'Scripts atualizados — reiniciando...' : 'Reiniciando...' };
+        }
+    } catch (e) {
+        console.error('[Update] Force update failed:', e.message);
+        return { success: false, error: e.message };
+    }
 });
 
 // ============================================================

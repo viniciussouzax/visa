@@ -164,17 +164,35 @@ function log(msg) {
 }
 
 // ============================================================
+// FORCE UPDATE & RESTART
+// ============================================================
+$('btn-update').addEventListener('click', async () => {
+    $('btn-update').disabled = true;
+    $('btn-update').textContent = '⏳ Atualizando...';
+    log('🔄 Forçando atualização e reinício...');
+
+    const result = await window.api.forceUpdateRestart();
+    if (result && !result.success) {
+        log(`❌ Falha: ${result.error}`);
+        $('btn-update').disabled = false;
+        $('btn-update').textContent = '🔄 Fechar e Atualizar';
+    }
+    // If success, app will restart — no need to reset button
+});
+
+// ============================================================
 // AUTO-UPDATE NOTIFICATIONS
 // ============================================================
 window.api.onUpdate((status) => {
-    if (status.type === 'available') {
+    if (status.type === 'checking') {
+        log('🔍 Verificando atualizações...');
+    } else if (status.type === 'available') {
         log(`🔄 Atualização v${status.version} encontrada, baixando...`);
     } else if (status.type === 'progress') {
-        // Only log at 25%, 50%, 75%, 100%
         if (status.percent % 25 === 0) {
             log(`⬇ Baixando atualização: ${status.percent}%`);
         }
     } else if (status.type === 'downloaded') {
-        log(`✅ v${status.version} pronta! Será instalada ao fechar o app.`);
+        log(`✅ v${status.version} pronta! Reiniciando automaticamente em 3s...`);
     }
 });

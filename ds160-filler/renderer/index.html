@@ -119,6 +119,23 @@
             background: #1e293b;
         }
 
+        .btn-update {
+            background: #16213e;
+            color: #f39c12;
+            border: 1px solid #f39c12;
+            font-size: 12px;
+            padding: 8px 16px;
+        }
+
+        .btn-update:hover {
+            background: #1e293b;
+        }
+
+        .btn-update:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         /* Status */
         .status-card {
             background: #16213e;
@@ -306,6 +323,7 @@
             </div>
 
             <button class="btn-refresh" id="btn-refresh">↻ Verificar fila agora</button>
+            <button class="btn-update" id="btn-update">🔄 Fechar e Atualizar</button>
 
             <div class="log" id="log"></div>
         </div>

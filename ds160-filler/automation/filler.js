@@ -678,8 +678,9 @@ async function fillPageCompletely(page, fieldMap) {
     await waitForPageReady(page);
     let pass = 0, needsRescan = true;
     const postbackLog = [];
+    const addAnotherClicked = new Set(); // Track "list:idx" to prevent infinite Add Another
     while (needsRescan && pass < 10) {
-        const result = await autoFillPass(page, fieldMap, pass);
+        const result = await autoFillPass(page, fieldMap, pass, addAnotherClicked);
         needsRescan = result.needsRescan;
         if (result.postbackField) {
             postbackLog.push(result.postbackField);
@@ -693,7 +694,7 @@ async function fillPageCompletely(page, fieldMap) {
     return { passes: pass, postbackLog };
 }
 
-async function autoFillPass(page, fieldMap, passNum = 0) {
+async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new Set()) {
     // Scroll page to ensure all elements are rendered (DS-160 lazy-loads some fields)
     await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); }).catch(() => { });
     await sleep(100);
@@ -786,15 +787,19 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
     }
 
     // Phase 2.5: "Add Another" — click Add buttons when multi-entry fields are mapped but not yet on page
+    // SAFETY: max 5 Add Another per list, tracked by addAnotherClicked Set
     const addAnotherEntries = fieldMap.filter(m => m.addAnother);
     if (addAnotherEntries.length > 0) {
         // Group by list name, process lowest pending index first
         const pendingByList = {};
         for (const entry of addAnotherEntries) {
             const listName = entry.addAnother.list;
+            const trackKey = `${listName}:${entry.addAnother.idx}`;
+            // Skip if already clicked for this list+idx
+            if (addAnotherClicked.has(trackKey)) continue;
             const fieldExists = visible.some(f => f.id && entry.pattern.test(f.id));
             if (!fieldExists) {
-                if (!pendingByList[listName] || entry.addAnother.idx < pendingByList[listName].idx) {
+                if (!pendingByList[listName] || entry.addAnother.idx < pendingByList[listName].addAnother.idx) {
                     pendingByList[listName] = entry;
                 }
             }
@@ -802,6 +807,16 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
 
         // Click "Add Another" for the first pending list
         for (const [listName, entry] of Object.entries(pendingByList)) {
+            const trackKey = `${listName}:${entry.addAnother.idx}`;
+
+            // Safety limit: max 5 Add Another per list
+            const listClickCount = [...addAnotherClicked].filter(k => k.startsWith(listName + ':')).length;
+            if (listClickCount >= 5) {
+                console.warn(`[Filler] ⚠️ Limite de Add Another atingido para "${listName}" (max 5)`);
+                addAnotherClicked.add(trackKey); // Mark as done to prevent retrying
+                continue;
+            }
+
             console.log(`[Filler] 📋 Add Another necessário para "${listName}" (entry idx ${entry.addAnother.idx})`);
 
             // Find the Add Another button — DS-160 uses: btnAdd, lnkAdd, or input[type=button] near the DataList
@@ -810,11 +825,6 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
                 `a[id*="btnAdd"][id*="${listName}"]`,
                 `input[id*="lnkAdd"][id*="${listName}"]`,
                 `a[id*="lnkAdd"][id*="${listName}"]`,
-                // Generic: find Add button inside the same panel
-                `input[value="Add Another"]`,
-                `a:has-text("Add Another")`,
-                `input[value="Add Item"]`,
-                `a:has-text("Add Item")`,
             ];
 
             let clicked = false;
@@ -834,8 +844,12 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
                 }
             }
 
+            // Mark as clicked regardless (prevent infinite retry)
+            addAnotherClicked.add(trackKey);
+
             if (!clicked) {
-                console.error(`[Filler] ❌ Add Another button não encontrado para "${listName}" — entradas adicionais não serão preenchidas`);
+                console.error(`[Filler] ❌ Add Another button não encontrado para "${listName}" — pulando`);
+                continue; // Try next list instead of returning
             }
 
             // Only one Add Another per pass (it causes postback)
