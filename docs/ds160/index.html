@@ -4911,7 +4911,7 @@
                                 const accItem = container.querySelector(`[data-section="${s}"]`);
                                 if (accItem && accItem.style.display === 'none') continue;
                             }
-                            if (s >= 14) continue;
+
                             if (!completedSections.has(s)) {
                                 firstIncomplete = s;
                                 break;
@@ -4925,7 +4925,8 @@
                             'travel': 3, 'travelCompanions': 4, 'previousUSTravel': 5,
                             'addressPhone': 6, 'passport': 7, 'usContact': 8,
                             'family1': 9, 'family2': 10, 'deceasedSpouse': 11, 'prevSpouse': 12,
-                            'workEducation1': 13, 'workEducation2': 13, 'workEducation3': 13
+                            'workEducation1': 13, 'workEducation2': 13, 'workEducation3': 13,
+                            'security': 14
                         };
 
                         function hasRealData(obj) {
@@ -4946,7 +4947,7 @@
                             const keys = Object.entries(dataToSection).filter(([k, v]) => v === s).map(([k]) => k);
                             if (keys.length === 0) {
                                 if (SECTIONS[s].conditional) continue;
-                                if (s >= 14) continue;
+
                                 if (firstIncomplete === 0) firstIncomplete = s;
                                 continue;
                             }
@@ -4980,7 +4981,7 @@
                                 const pageEl = document.getElementById(SECTIONS[s].pages[0]);
                                 if (!pageEl || pageEl.closest('[style*="display: none"]') || pageEl.closest('.acc-item[style*="display: none"]')) continue;
                             }
-                            if (s >= 14) continue; // Security: skip
+
                             if (!completedSections.has(s)) {
                                 firstIncomplete = s;
                                 break;
@@ -4994,7 +4995,8 @@
                             'travel': 3, 'travelCompanions': 4, 'previousUSTravel': 5,
                             'addressPhone': 6, 'passport': 7, 'usContact': 8,
                             'family1': 9, 'family2': 10, 'deceasedSpouse': 11, 'prevSpouse': 12,
-                            'workEducation1': 13, 'workEducation2': 13, 'workEducation3': 13
+                            'workEducation1': 13, 'workEducation2': 13, 'workEducation3': 13,
+                            'security': 14
                         };
 
                         function hasSubstantialData(obj) {
