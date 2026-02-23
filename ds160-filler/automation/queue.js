@@ -6,6 +6,8 @@ const POLL_INTERVAL = 1800; // 30 minutes between checks
 const MAX_RETRIES = 3;
 const BACKOFF_DELAYS = [2 * 60, 5 * 60]; // 2min, 5min between retries
 const GLOBAL_PAUSE = 15 * 60; // 15min pause after 3 consecutive global errors
+const STALE_FILLING_TIMEOUT = 10 * 60; // 10min — if filling for longer, consider stale
+const RE_QUEUE_DELAY = 15 * 60; // 15min — wait before retrying after max retries exhausted
 
 class QueueRunner {
     constructor(supabase, captchaMode) {
@@ -160,15 +162,15 @@ class QueueRunner {
             this.consecutiveErrors = 0;
             return;
         }
-        // ⚠️ Missing data — DON'T retry, mark needs_attention immediately
+        // ⚠️ Missing data — re-queue after delay (data may be corrected)
         if (result.cause === 'missing_data') {
             console.warn(`[Queue] ⚠️ ${applicant.full_name}: dados faltantes — ${result.error}`);
             await this._logError(app, applicant, result.error, null, 'Validation', null, 'missing_data', null, result.missingFields?.map(f => `Campo faltante: ${f}`));
-            await this._markNeedsAttention(app.id, result.error);
+            await this._reQueue(app.id, result.error);
             this.emit({
                 type: 'error',
                 applicantName: applicant.full_name,
-                error: `Dados incompletos: ${result.missingFields?.join(', ')}`
+                error: `Dados incompletos: ${result.missingFields?.join(', ')} — tentará novamente em ${RE_QUEUE_DELAY / 60}min`
             });
             return;
         }
@@ -212,12 +214,12 @@ class QueueRunner {
         this.consecutiveErrors++;
 
         if (currentRetry >= MAX_RETRIES) {
-            // Max retries reached — mark needs_attention
-            await this._markNeedsAttention(app.id, result.error);
+            // Max retries reached — re-queue with delay (NEVER stop permanently)
+            await this._reQueue(app.id, result.error);
             this.emit({
                 type: 'error',
                 applicantName: applicant.full_name,
-                error: `${result.error} (${MAX_RETRIES} tentativas esgotadas)`
+                error: `${result.error} (${MAX_RETRIES} tentativas — reagendado em ${RE_QUEUE_DELAY / 60}min)`
             });
             return;
         }
@@ -239,7 +241,7 @@ class QueueRunner {
         // Re-claim the same app and retry
         if (this.running) {
             const refreshedApp = await this._getApp(app.id);
-            if (refreshedApp && refreshedApp.fill_status !== 'needs_attention') {
+            if (refreshedApp && refreshedApp.fill_status === 'filling') {
                 await this._fillWithRetry(refreshedApp, applicant, await this._getConfig());
             }
         }
@@ -309,7 +311,43 @@ class QueueRunner {
             if (applicantIds.length === 0) return null;
         }
 
-        // Priority: incomplete fills (filling) > queued
+        // 0. Recovery: re-queue stale 'filling' from crashed/old workers (>10min)
+        const staleThreshold = new Date(Date.now() - STALE_FILLING_TIMEOUT * 1000).toISOString();
+        let staleQuery = this.supabase
+            .from('applications')
+            .select('id, fill_error')
+            .eq('fill_status', 'filling')
+            .lt('fill_started_at', staleThreshold);
+        if (applicantIds) staleQuery = staleQuery.in('applicant_id', applicantIds);
+        const { data: stale } = await staleQuery;
+        if (stale && stale.length > 0) {
+            for (const s of stale) {
+                await this.supabase.from('applications').update({
+                    fill_status: 'queued',
+                    fill_worker_id: null,
+                }).eq('id', s.id);
+                console.log(`[Queue] Recovered stale filling: ${s.id}`);
+            }
+        }
+
+        // 0b. Recovery: re-queue 'needs_attention' and 'error' (never leave stuck)
+        let stuckQuery = this.supabase
+            .from('applications')
+            .select('id')
+            .in('fill_status', ['needs_attention', 'error']);
+        if (applicantIds) stuckQuery = stuckQuery.in('applicant_id', applicantIds);
+        const { data: stuck } = await stuckQuery;
+        if (stuck && stuck.length > 0) {
+            for (const s of stuck) {
+                await this.supabase.from('applications').update({
+                    fill_status: 'queued',
+                    fill_worker_id: null,
+                }).eq('id', s.id);
+                console.log(`[Queue] Re-queued stuck item: ${s.id}`);
+            }
+        }
+
+        // 1. Priority: incomplete fills (filling) from THIS worker
         let fillingQuery = this.supabase
             .from('applications')
             .select('*')
@@ -418,6 +456,23 @@ class QueueRunner {
                 last_error_at: new Date().toISOString()
             })
             .eq('id', appId);
+    }
+
+    // Re-queue: reset to queued with future timestamp (auto-retry after delay)
+    async _reQueue(appId, errMsg) {
+        const futureAt = new Date(Date.now() + RE_QUEUE_DELAY * 1000).toISOString();
+        await this.supabase
+            .from('applications')
+            .update({
+                fill_status: 'queued',
+                fill_worker_id: null,
+                retry_count: 0,
+                fill_error: errMsg,
+                fill_queued_at: futureAt,
+                last_error_at: new Date().toISOString()
+            })
+            .eq('id', appId);
+        console.log(`[Queue] Re-queued ${appId} — next attempt after ${RE_QUEUE_DELAY / 60}min`);
     }
 
     async _updateRetry(appId, retryCount, lastPage, errMsg) {
