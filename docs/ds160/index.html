@@ -4794,24 +4794,16 @@
                 });
             };
 
-            // ===== SECURITY: Default all to 'Não' and disable =====
+            // ===== SECURITY: Default all to 'Não' (editable) =====
             const securityPages = ['pg-Security1', 'pg-Security2', 'pg-Security3', 'pg-Security4', 'pg-Security5'];
             securityPages.forEach(pgId => {
                 const pg = document.getElementById(pgId);
                 if (!pg) return;
+                // Default to 'Não' only if not already answered
                 pg.querySelectorAll('input[type="radio"][value="N"]').forEach(r => {
-                    r.checked = true;
-                });
-                pg.querySelectorAll('input[type="radio"]').forEach(r => {
-                    r.disabled = true;
-                });
-                pg.querySelectorAll('textarea, input[type="text"]').forEach(el => {
-                    el.disabled = true;
-                });
-                // Lock only the form sections, not the navigation buttons
-                pg.querySelectorAll('.section').forEach(s => {
-                    s.style.opacity = '0.7';
-                    s.style.pointerEvents = 'none';
+                    if (!document.querySelector(`input[name="${r.name}"]:checked`)) {
+                        r.checked = true;
+                    }
                 });
             });
 
