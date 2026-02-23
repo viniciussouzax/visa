@@ -3114,9 +3114,10 @@
                 const surname = (data.personal1?.surname || '').toUpperCase();
                 const givenName = (data.personal1?.givenName || '').toUpperCase();
                 const fullName = (surname + ' ' + givenName).trim();
-                sbFetch(`applicants?id=eq.${savedApplicantId}`, 'PATCH', {
-                    full_name: fullName || undefined,
-                    data: data,
+                sbFetch('rpc/save_applicant_data', 'POST', {
+                    applicant_id: savedApplicantId,
+                    applicant_full_name: fullName || 'SEM NOME',
+                    applicant_data: data,
                 }).then(() => console.log('[DS-160] Auto-saved'))
                     .catch(e => console.warn('[DS-160] Auto-save failed:', e));
             } catch (e) {
@@ -3271,25 +3272,10 @@
             const givenName = (document.getElementById('tbxAPP_GIVEN_NAME')?.value || '').trim().toUpperCase();
             const fullName = (surname + ' ' + givenName).trim();
             if (!fullName) return; // no data to save
-
-            const mode = document.querySelector('input[name="rblFormMode"]:checked')?.value || 'solo';
             const location = document.querySelector('.sel-location')?.value || 'SPL';
 
             try {
                 let primaryApplicantId = window._linkToPrimaryId || null;
-
-                // If group mode and no pre-set link, find primary applicant
-                if (!primaryApplicantId && mode === 'group') {
-                    const groupEmail = document.getElementById('txtGroupEmail')?.value?.trim();
-                    if (groupEmail) {
-                        const allResults = await sbGet(`applicants?primary_applicant_id=is.null&select=id,full_name,data&limit=50`);
-                        const primary = allResults?.find(a => {
-                            const e = a.data?.addressPhone?.email || '';
-                            return e.toLowerCase() === groupEmail.toLowerCase();
-                        });
-                        if (primary) primaryApplicantId = primary.id;
-                    }
-                }
 
                 // Create Applicant
                 const applicantPayload = {
@@ -3380,7 +3366,14 @@
                 };
                 // Remove empty values
                 const clean = JSON.parse(JSON.stringify(partialData, (k, v) => (v === '' || v === null || v === undefined) ? undefined : v));
-                await sbFetch(`applicants?id=eq.${savedApplicantId}`, 'PATCH', { data: clean });
+                const surname = (clean.personal1?.surname || '').toUpperCase();
+                const givenName = (clean.personal1?.givenName || '').toUpperCase();
+                const fullName = (surname + ' ' + givenName).trim();
+                await sbFetch('rpc/save_applicant_data', 'POST', {
+                    applicant_id: savedApplicantId,
+                    applicant_full_name: fullName || 'SEM NOME',
+                    applicant_data: clean,
+                });
                 console.log('[DS-160] Auto-save parcial OK');
             } catch (e) {
                 console.warn('[DS-160] Auto-save parcial erro:', e.message);
@@ -4260,8 +4253,8 @@
                 if (window._isAssessorMode) {
                     // Assessor: approve the applicant
                     if (savedApplicantId) {
-                        await sbFetch(`applicants?id=eq.${savedApplicantId}`, 'PATCH', {
-                            pipeline_status: 'approved'
+                        await sbFetch('rpc/approve_applicant', 'POST', {
+                            applicant_id: savedApplicantId
                         });
                     }
                     btn.textContent = 'Aprovado!';
@@ -4303,11 +4296,11 @@
                 // 1. Applicant - update if already created on Personal1, else create
                 let applicantId;
                 if (savedApplicantId) {
-                    // Update existing applicant with complete data
-                    await sbFetch(`applicants?id=eq.${savedApplicantId}`, 'PATCH', {
-                        full_name: fullName,
-                        passport_number: passportNumber || null,
-                        data: data,
+                    // Update existing applicant via secure RPC
+                    await sbFetch('rpc/save_applicant_data', 'POST', {
+                        applicant_id: savedApplicantId,
+                        applicant_full_name: fullName,
+                        applicant_data: data,
                     });
                     applicantId = savedApplicantId;
                 } else {
