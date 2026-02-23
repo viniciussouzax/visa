@@ -1278,10 +1278,14 @@ function normalizeProfile(data) {
         usContact: (() => {
             const uc = data.usContact || data.us_contact || data.travel?.usContact || data.travel?.us_contact || {};
             const ucAddr = uc.address || {};
+            const nameNA = uc.nameDoNotKnow || uc.name_do_not_know || (!uc.surname && !uc.givenName);
+            const orgNA = uc.orgDoNotKnow || uc.org_do_not_know || false;
             return {
                 surname: uc.surname || '',
                 givenName: uc.givenName || uc.given_name || '',
+                nameDoNotKnow: nameNA,
                 organization: uc.organization || '',
+                orgDoNotKnow: orgNA,
                 relationship: uc.relationship || '',
                 street1: uc.street1 || ucAddr.street1 || '',
                 street2: uc.street2 || ucAddr.street2 || '',

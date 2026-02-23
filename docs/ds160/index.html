@@ -3421,7 +3421,9 @@
                     },
                     usContact: {
                         surname: val('tbxUS_POC_SURNAME'), givenName: val('tbxUS_POC_GIVEN_NAME'),
+                        nameDoNotKnow: document.getElementById('cbxUS_POC_NAME_NA')?.checked || false,
                         organization: val('tbxUS_POC_ORGANIZATION'),
+                        orgDoNotKnow: document.getElementById('cbxUS_POC_ORG_NA_IND')?.checked || false,
                         addr1: val('tbxUS_POC_ADDR_LN1'), city: val('tbxUS_POC_ADDR_CITY'),
                         state: val('ddlUS_POC_ADDR_STATE'), postalCode: val('tbxUS_POC_ADDR_POSTAL_CD'),
                         phone: val('tbxUS_POC_HOME_TEL'), email: val('tbxUS_POC_EMAIL_ADDR'),
@@ -3929,10 +3931,12 @@
                         explanation: entryVal(e, 'tbxLOST_PPT_EXPL'),
                     })),
                 },
-                // USContact
                 usContact: {
                     surname: val('tbxUS_POC_SURNAME'), givenName: val('tbxUS_POC_GIVEN_NAME'),
-                    organization: val('tbxUS_POC_ORGANIZATION'), relationship: val('ddlUS_POC_REL_TO_APP'),
+                    nameDoNotKnow: document.getElementById('cbxUS_POC_NAME_NA')?.checked || false,
+                    organization: val('tbxUS_POC_ORGANIZATION'),
+                    orgDoNotKnow: document.getElementById('cbxUS_POC_ORG_NA_IND')?.checked || false,
+                    relationship: val('ddlUS_POC_REL_TO_APP'),
                     address: {
                         street1: val('tbxUS_POC_ADDR_LN1'), street2: val('tbxUS_POC_ADDR_LN2'),
                         city: val('tbxUS_POC_ADDR_CITY'), state: val('ddlUS_POC_ADDR_STATE'),

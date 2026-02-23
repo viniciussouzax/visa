@@ -513,10 +513,28 @@ function buildDynamicFieldMap(a) {
   // ===================================================================
   // US CONTACT (Point of Contact in the US)
   // ===================================================================
+  // Surname / GivenName — or "Do Not Know" checkbox
+  if (uc.nameDoNotKnow || (!uc.surname && !uc.givenName)) {
+    map.push(
+      { pattern: /cbexUS_POC_SURNAME_NA$/i, value: "", type: "checkbox-check" },
+    );
+  } else {
+    map.push(
+      { pattern: /tbxUS_POC_SURNAME$/i, value: uc.surname || "", type: "text" },
+      { pattern: /tbxUS_POC_GIVEN_NAME$/i, value: uc.givenName || "", type: "text" },
+    );
+  }
+  // Organization — or "Do Not Know" checkbox
+  if (uc.orgDoNotKnow) {
+    map.push(
+      { pattern: /cbexUS_POC_ORG_NA_IND$/i, value: "", type: "checkbox-check" },
+    );
+  } else {
+    map.push(
+      { pattern: /tbxUS_POC_ORGANIZATION$/i, value: uc.organization || "", type: "text" },
+    );
+  }
   map.push(
-    { pattern: /tbxUS_POC_SURNAME$/i, value: uc.surname || uc.organization || "", type: "text" },
-    { pattern: /tbxUS_POC_GIVEN_NAME$/i, value: uc.givenName || uc.organization || "", type: "text" },
-    { pattern: /tbxUS_POC_ORGANIZATION$/i, value: uc.organization || "", type: "text" },
     { pattern: /ddlUS_POC_REL_TO_APP$/i, value: uc.relationship || "O", type: "select" },
     { pattern: /tbxUS_POC_ADDR_LN1$/i, value: uc.street1 || "", type: "text" },
     { pattern: /tbxUS_POC_ADDR_LN2$/i, value: uc.street2 || "", type: "text" },
