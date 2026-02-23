@@ -52,60 +52,26 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
         await waitForPageReady(page);
 
         // ============================================================
-        // STEP 1: Landing page — location + captcha + Start
+        // STEP 1: Landing page — location + modal + captcha + Start
         // ============================================================
         onPage('Landing');
         const location = profile.location || 'SPL';
 
-        // Set location
+        // 1) Select location — this triggers a postback and may show a modal
         const locSelect = page.locator("select[id$='_ddlLocation']");
         if (await locSelect.isVisible().catch(() => false)) {
             await locSelect.selectOption(location);
+            console.log(`[Filler] Location selected: ${location}`);
             await waitForPostback(page);
+            await sleep(1000); // Extra wait for potential page reload
         }
 
-        // Solve captcha
-        let captchaSolved = false;
-        for (let attempt = 1; attempt <= 3; attempt++) {
-            try {
-                const imgEl = page.locator("img[id$='_CaptchaImage'], img[src*='captcha'], img[id$='c_default_ctl00_sitecontentplaceholder_uclocation_identifycaptcha1_captchaimage']").first();
-                await imgEl.waitFor({ state: 'visible', timeout: 10000 });
-
-                const imgPath = path.join(TMP, 'captcha.png');
-                await imgEl.screenshot({ path: imgPath });
-
-                const keys = {
-                    capmonsterKey: config.capmonster_key,
-                    aiVisionKey: config.ai_vision_key
-                };
-                const answer = await solveCaptcha(imgPath, captchaMode, keys);
-                console.log(`[Filler] Captcha answer: ${answer}`);
-
-                const input = page.locator("input[id$='_txtCodeTextBox']").first();
-                await input.fill(answer);
-                captchaSolved = true;
-                break;
-            } catch (e) {
-                console.warn(`[Filler] Captcha attempt ${attempt} failed:`, e.message);
-                if (attempt < 3) await sleep(2000);
-            }
-        }
-
-        if (!captchaSolved) {
-            return { success: false, error: 'Captcha não resolvido após 3 tentativas' };
-        }
-
-        // Click Start New Application
-        const isRetrieve = !!(application?.application_id);
-        if (isRetrieve) {
-            // TODO: implement retrieve flow
-            return { success: false, error: 'Retrieve flow not implemented yet' };
-        }
-
-        // Dismiss location info modal if present (e.g. "Additional Location Information")
-        // DS-160 shows this for certain consulates (like Recife) — has a "Close" link
+        // 2) Dismiss location info modal if present
+        //    Some consulates (e.g. Recife/Brazil) show "Additional Location Information"
+        //    modal AFTER selecting location. Must close BEFORE solving captcha to avoid 
+        //    wasting captcha credits (modal may trigger page reload/new captcha).
         const modalOverlay = page.locator('.modalBackground').first();
-        if (await modalOverlay.isVisible({ timeout: 2000 }).catch(() => false)) {
+        if (await modalOverlay.isVisible({ timeout: 3000 }).catch(() => false)) {
             console.log('[Filler] Location info modal detected — clicking Close...');
             const closeBtns = [
                 'a:text("Close")', 'a:text("close")',
@@ -123,17 +89,68 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                 }
             }
             await modalOverlay.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => { });
-            console.log('[Filler] Modal dismissed');
+            await waitForPageReady(page);
+            console.log('[Filler] Modal dismissed — page ready for captcha');
         }
 
-        // Click Start Application
-        const startLink = page.locator("a[id$='_lnkNew']").first();
-        await startLink.click({ timeout: 15000 });
-        await page.waitForURL(/ConfirmApplicationID|SecureQuestion|complete_personal/i, { timeout: 15000 }).catch(() => { });
+        // 3) Solve captcha + click Start (unified loop — retry if captcha was wrong)
+        const isRetrieve = !!(application?.application_id);
+        if (isRetrieve) {
+            return { success: false, error: 'Retrieve flow not implemented yet' };
+        }
 
-        // Check for session timeout redirect
-        if (page.url().includes('SessionTimedOut') || page.url().includes('TimedOut')) {
-            throw new Error('Session expired after clicking Start');
+        let landingPassed = false;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            // Solve captcha
+            try {
+                const imgEl = page.locator("img[id$='_CaptchaImage'], img[src*='captcha'], img[id$='c_default_ctl00_sitecontentplaceholder_uclocation_identifycaptcha1_captchaimage']").first();
+                await imgEl.waitFor({ state: 'visible', timeout: 10000 });
+                const imgPath = path.join(TMP, 'captcha.png');
+                await imgEl.screenshot({ path: imgPath });
+
+                const keys = { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key };
+                const answer = await solveCaptcha(imgPath, captchaMode, keys);
+                console.log(`[Filler] Captcha answer (attempt ${attempt}): ${answer}`);
+
+                const input = page.locator("input[id$='_txtCodeTextBox']").first();
+                await input.fill('');
+                await input.fill(answer);
+            } catch (e) {
+                console.warn(`[Filler] Captcha attempt ${attempt} failed:`, e.message);
+                if (attempt < 3) { await sleep(2000); continue; }
+                return { success: false, error: 'Captcha não resolvido após 3 tentativas' };
+            }
+
+            // Click Start Application
+            const startBtn = page.locator("a[id$='_lnkNew']").first();
+            await startBtn.click({ timeout: 15000 });
+            await sleep(2000);
+            await waitForPageReady(page);
+
+            // Check if we actually left the Landing page
+            const currentUrl = page.url();
+            if (currentUrl.includes('SessionTimedOut') || currentUrl.includes('TimedOut')) {
+                throw new Error('Session expired after clicking Start');
+            }
+
+            // Check for captcha validation error (we're still on Landing)
+            const validationError = page.locator('[id*="ValidationSummary"]').first();
+            const hasError = await validationError.isVisible({ timeout: 1000 }).catch(() => false);
+            const stillOnLanding = currentUrl.includes('Default.aspx') || (!currentUrl.includes('SecureQuestion') && !currentUrl.includes('ConfirmApplicationID') && !currentUrl.includes('complete_'));
+
+            if (hasError || stillOnLanding) {
+                console.warn(`[Filler] Captcha likely wrong (attempt ${attempt}) — page didn't advance. Retrying...`);
+                if (attempt < 3) await sleep(1000);
+                continue;
+            }
+
+            // Successfully left Landing
+            landingPassed = true;
+            break;
+        }
+
+        if (!landingPassed) {
+            return { success: false, error: 'Failed to pass Landing after 3 captcha attempts', cause: 'captcha_failed', browser, activePage: page };
         }
         await waitForPageReady(page);
 
@@ -646,20 +663,53 @@ function normalizeProfile(data) {
         // === PERSONAL 2 ===
         nationality: g(p2, 'nationality', 'nationality') || 'BRAZIL',
         otherNationality: p2.otherNationality === 'Y' || p2.other_nationality === 'Y',
-        otherNationalityCountry: (p2.otherNationalities || p2.other_nationalities || [])[0]?.country,
-        otherNationalityPassport: (p2.otherNationalities || p2.other_nationalities || [])[0]?.hasPassport === 'Y',
-        otherNationalityPassportNumber: (p2.otherNationalities || p2.other_nationalities || [])[0]?.passportNumber,
+        otherNationalityCountry: (() => {
+            const nat = g(p2, 'nationality', 'nationality') || 'BRAZIL';
+            const others = (p2.otherNationalities || p2.other_nationalities || [])
+                .filter(o => o.country && o.country !== nat) // exclude primary nationality
+                .filter((o, i, arr) => arr.findIndex(x => x.country === o.country) === i); // deduplicate
+            return others[0]?.country;
+        })(),
+        otherNationalityPassport: (() => {
+            const nat = g(p2, 'nationality', 'nationality') || 'BRAZIL';
+            const others = (p2.otherNationalities || p2.other_nationalities || [])
+                .filter(o => o.country && o.country !== nat)
+                .filter((o, i, arr) => arr.findIndex(x => x.country === o.country) === i);
+            return others[0]?.hasPassport === 'Y';
+        })(),
+        otherNationalityPassportNumber: (() => {
+            const nat = g(p2, 'nationality', 'nationality') || 'BRAZIL';
+            const others = (p2.otherNationalities || p2.other_nationalities || [])
+                .filter(o => o.country && o.country !== nat)
+                .filter((o, i, arr) => arr.findIndex(x => x.country === o.country) === i);
+            return others[0]?.passportNumber;
+        })(),
         permanentResidentOtherCountry: p2.permanentResident === 'Y' || p2.permanent_resident === 'Y',
-        permanentResidentCountry: (p2.permanentResidentCountries || p2.permanent_resident_countries || [])[0]?.country,
+        permanentResidentCountry: (() => {
+            const nat = g(p2, 'nationality', 'nationality') || 'BRAZIL';
+            const countries = (p2.permanentResidentCountries || p2.permanent_resident_countries || [])
+                .filter(c => c.country && c.country !== nat) // exclude primary nationality
+                .filter((c, i, arr) => arr.findIndex(x => x.country === c.country) === i); // deduplicate
+            return countries[0]?.country;
+        })(),
         nationalId: g(p2, 'nationalId', 'national_id'),
         usSsn: p2.ssn && p2.ssn !== 'N/A' ? p2.ssn.replace(/-/g, '') : null,
         usTaxpayerId: p2.taxId && p2.taxId !== 'N/A' ? p2.taxId : null,
 
         // === TRAVEL ===
-        purposeOfTrip: g(trav, 'purposeOfTrip', 'purpose_of_trip') || 'B1/B2',
+        purposeOfTrip: (() => {
+            const pt = g(trav, 'purposeOfTrip', 'purpose_of_trip');
+            return (pt && pt !== 'N/A') ? pt : 'B1/B2';
+        })(),
         hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.hasSpecificPlans === true || trav.has_specific_plans === 'Y',
         travel: {
-            arrivalDate: trav.arrivalDate || trav.arrival_date,
+            arrivalDate: (() => {
+                const d = trav.arrivalDate || trav.arrival_date;
+                if (d && d.day && d.month && d.year) return d;
+                // Default: ~30 days from now
+                const future = new Date(); future.setDate(future.getDate() + 30);
+                return { day: String(future.getDate()), month: String(future.getMonth() + 1).padStart(2, '0'), year: String(future.getFullYear()) };
+            })(),
             departureDate: trav.departureDate || trav.departure_date,
             arrivalFlight: trav.arrivalFlight || trav.arrival_flight,
             arrivalCity: trav.arrivalCity || trav.arrival_city,
@@ -670,7 +720,14 @@ function normalizeProfile(data) {
                 value: (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.value : trav.lengthOfStay) || trav.length_of_stay || '30',
                 unit: (typeof trav.lengthOfStayUnit === 'string' ? trav.lengthOfStayUnit : (typeof trav.lengthOfStay === 'object' ? trav.lengthOfStay?.unit : null)) || trav.length_of_stay_unit || 'D'
             },
-            usAddress: trav.usAddress || trav.us_address || { street1: 'N/A', street2: '', city: 'N/A', state: 'FL', zip: '00000' }
+            usAddress: (() => {
+                const ua = trav.usAddress || trav.us_address || {};
+                // Check if address is actually empty (all fields missing)
+                if (!ua.street1 && !ua.city && !ua.state) {
+                    return { street1: 'N/A', street2: '', city: 'N/A', state: 'FL', zip: '00000' };
+                }
+                return { street1: ua.street1 || 'N/A', street2: ua.street2 || '', city: ua.city || 'N/A', state: ua.state || 'FL', zip: ua.zip || ua.postalCode || '00000' };
+            })()
         },
         payingForTrip: trav.whoIsPaying || trav.who_is_paying || 'S',
         payer: (() => {
