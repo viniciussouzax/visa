@@ -4010,15 +4010,15 @@
             // Capture raw form snapshot for 100% reliable restore
             const snapshot = { values: {}, radios: {}, checkboxes: {}, dynamicEntries: {} };
             // All inputs, selects, textareas (by ID)
-            document.querySelectorAll('#acc-wrapper input[type="text"], #acc-wrapper input[type="hidden"], #acc-wrapper input[type="tel"], #acc-wrapper input[type="email"], #acc-wrapper input[type="number"], #acc-wrapper select, #acc-wrapper textarea').forEach(el => {
+            document.querySelectorAll('.page input[type="text"], .page input[type="hidden"], .page input[type="tel"], .page input[type="email"], .page input[type="number"], .page select, .page textarea').forEach(el => {
                 if (el.id && el.value && !el.disabled) snapshot.values[el.id] = el.value;
             });
             // Radio buttons (by name)
-            document.querySelectorAll('#acc-wrapper input[type="radio"]:checked').forEach(r => {
+            document.querySelectorAll('.page input[type="radio"]:checked').forEach(r => {
                 if (r.name && !r.disabled) snapshot.radios[r.name] = r.value;
             });
             // Checkboxes (by ID)
-            document.querySelectorAll('#acc-wrapper input[type="checkbox"]').forEach(cb => {
+            document.querySelectorAll('.page input[type="checkbox"]').forEach(cb => {
                 if (cb.id && cb.checked) snapshot.checkboxes[cb.id] = true;
             });
             // Dynamic entries count per DataList
@@ -4172,20 +4172,20 @@
             if (window._resetChecks) window._resetChecks();
 
             // RESET form completely before loading new data
-            document.querySelectorAll('#acc-wrapper input[type="text"], #acc-wrapper input[type="tel"], #acc-wrapper input[type="email"], #acc-wrapper input[type="number"], #acc-wrapper textarea').forEach(el => {
+            document.querySelectorAll('.page input[type="text"], .page input[type="tel"], .page input[type="email"], .page input[type="number"], .page textarea').forEach(el => {
                 if (!el.disabled) el.value = '';
             });
-            document.querySelectorAll('#acc-wrapper select').forEach(el => {
+            document.querySelectorAll('.page select').forEach(el => {
                 if (!el.disabled) el.selectedIndex = 0;
             });
-            document.querySelectorAll('#acc-wrapper input[type="radio"]').forEach(r => {
+            document.querySelectorAll('.page input[type="radio"]').forEach(r => {
                 r.checked = false;
             });
-            document.querySelectorAll('#acc-wrapper input[type="checkbox"]').forEach(cb => {
+            document.querySelectorAll('.page input[type="checkbox"]').forEach(cb => {
                 cb.checked = false;
             });
             // Close all conditional branches
-            document.querySelectorAll('#acc-wrapper .br.open').forEach(br => {
+            document.querySelectorAll('.page .br.open').forEach(br => {
                 br.classList.remove('open');
             });
             // Remove extra dynamic entries (keep only first)
