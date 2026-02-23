@@ -3489,6 +3489,42 @@
             });
         }
 
+        // ===== DS-160 CHARACTER NORMALIZATION =====
+        function setupDS160Normalization() {
+            // Normalize: uppercase, remove accents, strip invalid chars
+            function normalize(str, isEmail) {
+                // Remove accents: NFD splits accented chars, then strip combining marks
+                let normalized = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                // Uppercase
+                normalized = normalized.toUpperCase();
+                // Filter allowed chars
+                if (isEmail) {
+                    // Email: allow @ _ . - and alphanumeric
+                    normalized = normalized.replace(/[^A-Z0-9@._\-]/g, '');
+                } else {
+                    // Standard DS-160 fields: A-Z, 0-9, space, - ' . , /
+                    normalized = normalized.replace(/[^A-Z0-9 \-'.,\/]/g, '');
+                }
+                return normalized;
+            }
+
+            // Apply to all text inputs and textareas inside the form
+            document.querySelectorAll('#acc-wrapper input[type="text"], #acc-wrapper input[type="tel"], #acc-wrapper input[type="email"], #acc-wrapper textarea').forEach(el => {
+                el.addEventListener('input', () => {
+                    const isEmail = el.type === 'email' || el.id.toLowerCase().includes('email');
+                    const pos = el.selectionStart;
+                    const before = el.value;
+                    const after = normalize(before, isEmail);
+                    if (before !== after) {
+                        el.value = after;
+                        // Keep cursor position adjusted for removed chars
+                        const diff = before.length - after.length;
+                        el.setSelectionRange(pos - diff, pos - diff);
+                    }
+                });
+            });
+        }
+
         // ===== RADIO BRANCHES =====
         function setupRadioBranches() {
             // Branches that open on N instead of Y
@@ -4467,6 +4503,7 @@
         registerTemplates();
         setupNACheckboxes();
         setupRadioBranches();
+        setupDS160Normalization();
 
         // Initially hide Family2, DeceasedSpouse and PrevSpouse
         document.getElementById('pg-Family2').style.display = 'none';
