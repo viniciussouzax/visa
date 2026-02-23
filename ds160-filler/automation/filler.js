@@ -727,6 +727,8 @@ function normalizeProfile(data) {
 
     // Helper: prefer camelCase, fallback to snake_case
     const g = (obj, camel, snake) => obj[camel] || obj[snake] || '';
+    // Helper: convert 'N/A', empty strings to null (for checkbox-check fields)
+    const na = (v) => (!v || v === 'N/A' || v === 'n/a') ? null : v;
 
     return {
         // === PERSONAL 1 ===
@@ -893,7 +895,7 @@ function normalizeProfile(data) {
             type: g(ppt, 'type', 'type') || 'R',
             typeExplanation: ppt.typeExplanation || ppt.type_explanation,
             number: g(ppt, 'number', 'number'),
-            bookNumber: ppt.bookNumber || ppt.book_number || null,
+            bookNumber: na(ppt.bookNumber || ppt.book_number),
             issuingCountry: g(ppt, 'issuingCountry', 'issuing_country') || 'BRAZIL',
             issuedCity: g(ppt, 'issuedCity', 'issued_city'),
             issuedState: g(ppt, 'issuedState', 'issued_state'),
