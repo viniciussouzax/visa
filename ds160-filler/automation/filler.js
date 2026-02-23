@@ -197,6 +197,21 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                 return { success: false, error: 'Captcha não resolvido após 3 tentativas' };
             }
 
+            // Dismiss any modal that might be covering the START button
+            const modalBg = page.locator('.modalBackground').first();
+            if (await modalBg.isVisible({ timeout: 1000 }).catch(() => false)) {
+                console.log('[Filler] Modal covering START btn — dismissing...');
+                const closeBtns = page.locator('a:text("Close"), a:text("close"), [id*="btnClose"], [id*="lnkClose"], input[value="Close"], input[value="OK"], .modalPopup a, .modalPopup input[type="button"]');
+                const closeBtn = closeBtns.first();
+                if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+                    await closeBtn.click();
+                    await sleep(1000);
+                }
+                await modalBg.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => { });
+                await waitForPageReady(page);
+                console.log('[Filler] Modal dismissed before START');
+            }
+
             // Click Start Application with human-like mouse movement
             const startBtn = page.locator("a[id$='_lnkNew']").first();
             const box = await startBtn.boundingBox();
@@ -311,6 +326,25 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
 
             onPage(pageName);
             visited.push(pageName);
+
+            // Capture application_id from URL as early as possible (e.g. Personal1→Personal2)
+            if (!application.application_id) {
+                const urlAppIdMatch = url.match(/[?&](?:c|appId|applicationId)=([A-Z]{2}\d{8,})/i)
+                    || url.match(/\/([A-Z]{2}\d{8,})\//)
+                    || url.match(/([A-Z]{2}\d{8,})/);
+                if (urlAppIdMatch) {
+                    application.application_id = urlAppIdMatch[1];
+                    console.log(`[Filler] 🆔 Application ID (from URL): ${urlAppIdMatch[1]}`);
+                } else {
+                    // Also try to read from the page header (DS-160 shows ID in top bar)
+                    const headerAppId = await page.locator("span[id$='_lblAppID'], span[id$='_lblBarcode']").first().innerText().catch(() => '');
+                    const headerMatch = headerAppId.match(/[A-Z]{2}\d{8,}/);
+                    if (headerMatch) {
+                        application.application_id = headerMatch[0];
+                        console.log(`[Filler] 🆔 Application ID (from header): ${headerMatch[0]}`);
+                    }
+                }
+            }
 
             // Detectar páginas desconhecidas e tentar recovery
             if (pageName === 'Unknown') {
@@ -995,7 +1029,7 @@ function normalizeProfile(data) {
 
         // === US CONTACT ===
         usContact: (() => {
-            const uc = data.usContact || data.us_contact || {};
+            const uc = data.usContact || data.us_contact || data.travel?.usContact || data.travel?.us_contact || {};
             const ucAddr = uc.address || {};
             return {
                 surname: uc.surname || '',
