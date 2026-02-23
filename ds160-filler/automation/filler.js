@@ -125,25 +125,22 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
 
         // 2) Dismiss location info modal if present
         //    Some consulates (e.g. Recife/Brazil) show "Additional Location Information"
-        //    modal AFTER selecting location. Must close BEFORE solving captcha to avoid 
-        //    wasting captcha credits (modal may trigger page reload/new captcha).
+        //    modal AFTER selecting location. Must close BEFORE solving captcha.
         const modalOverlay = page.locator('.modalBackground').first();
         if (await modalOverlay.isVisible({ timeout: 3000 }).catch(() => false)) {
             console.log('[Filler] Location info modal detected — clicking Close...');
-            const closeBtns = [
-                'a:text("Close")', 'a:text("close")',
-                '[id*="ucPost"] a', '[id*="modalConfirm"] a',
-                '[id*="btnClose"]', '[id*="lnkClose"]',
-                'input[value="Close"]', 'input[value="OK"]'
-            ];
-            for (const sel of closeBtns) {
-                const btn = page.locator(sel).first();
-                if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-                    console.log(`[Filler] Clicking modal close: ${sel}`);
-                    await btn.click();
-                    await sleep(1500);
-                    break;
-                }
+            // Use locator.or() to check all close buttons at once
+            const closeBtn = page.locator('a:text("Close")')
+                .or(page.locator('a:text("close")'))
+                .or(page.locator('[id*="btnClose"]'))
+                .or(page.locator('[id*="lnkClose"]'))
+                .or(page.locator('input[value="Close"]'))
+                .or(page.locator('input[value="OK"]'));
+            const firstClose = closeBtn.first();
+            if (await firstClose.isVisible({ timeout: 2000 }).catch(() => false)) {
+                console.log('[Filler] Clicking modal close button');
+                await firstClose.click();
+                await sleep(1500);
             }
             await modalOverlay.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => { });
             await waitForPageReady(page);
@@ -471,14 +468,11 @@ function isSelectEmpty(val) {
 
 async function waitForPostback(page) {
     const start = Date.now();
-    await page.evaluate(() => new Promise(resolve => {
-        const check = () => {
-            const mgr = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
-            if (!mgr || !mgr.get_isInAsyncPostBack()) resolve();
-            else setTimeout(check, 150);
-        };
-        check();
-    })).catch(() => { });
+    // Use native waitForFunction instead of manual polling
+    await page.waitForFunction(() => {
+        const mgr = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
+        return !mgr || !mgr.get_isInAsyncPostBack();
+    }, { timeout: 8000 }).catch(() => { });
 
     await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight);
@@ -564,16 +558,51 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
     const unmatched = [];
     const fieldsBeforeCount = visible.length;
 
+    // Phase 1: Batch fill ALL empty text fields in one evaluate() call
+    const textBatch = [];
+    for (const field of visible) {
+        if (!field.id) continue;
+        if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
+        if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
+        const match = fieldMap.find(m => m.pattern.test(field.id));
+        if (!match) { unmatched.push(field.id + '(' + field.type + ')'); continue; }
+        if (match.type === 'text' && (!field.value || field.value.trim() === '') && match.value != null) {
+            textBatch.push({ id: field.id, value: String(match.value) });
+        }
+    }
+
+    if (textBatch.length > 0) {
+        // Fill all text fields at once (1 browser call instead of N)
+        const batchFilled = await page.evaluate((batch) => {
+            let count = 0;
+            batch.forEach(({ id, value }) => {
+                const el = document.getElementById(id);
+                if (el && (!el.value || el.value.trim() === '')) {
+                    // Use native setter to trigger React/ASP.NET change detection
+                    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set
+                        || Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+                    if (nativeSetter) nativeSetter.call(el, value);
+                    else el.value = value;
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                    count++;
+                }
+            });
+            return count;
+        }, textBatch);
+        filled += batchFilled;
+        console.log(`[Filler] Batch fill: ${batchFilled} text fields filled in 1 call`);
+    }
+
+    // Phase 2: Handle selects, clicks, checkboxes individually (may trigger postback)
     for (const field of visible) {
         if (!field.id) continue;
         if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
         if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
 
         const match = fieldMap.find(m => m.pattern.test(field.id));
-        if (!match) {
-            unmatched.push(field.id + '(' + field.type + ')');
-            continue;
-        }
+        if (!match) continue;
+        if (match.type === 'text') continue; // Already handled in batch
         const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
 
         try {
@@ -584,12 +613,6 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
             await loc.scrollIntoViewIfNeeded({ timeout: 2000 }).catch(() => { });
 
             switch (match.type) {
-                case 'text':
-                    if (!field.value || field.value.trim() === '') {
-                        await loc.fill(String(match.value));
-                        filled++;
-                    }
-                    break;
                 case 'select':
                     if (isSelectEmpty(field.value)) {
                         try { await loc.selectOption(match.value); }

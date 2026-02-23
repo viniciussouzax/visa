@@ -184,11 +184,11 @@ class QueueRunner {
                 pageHtml = await result.activePage.content().catch(() => null);
             } catch { }
             try {
-                const buf = await result.activePage.screenshot({ fullPage: true });
-                const filename = `errors/${app.id}_${Date.now()}.png`;
+                const buf = await result.activePage.screenshot({ fullPage: true, type: 'jpeg', quality: 70 });
+                const filename = `errors/${app.id}_${Date.now()}.jpg`;
                 const { data: upload, error: uploadErr } = await this.supabase.storage
                     .from('screenshots')
-                    .upload(filename, buf, { contentType: 'image/png', upsert: false });
+                    .upload(filename, buf, { contentType: 'image/jpeg', upsert: false });
                 if (upload && !uploadErr) {
                     const { data: pub } = this.supabase.storage
                         .from('screenshots')
