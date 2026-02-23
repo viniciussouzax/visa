@@ -4193,7 +4193,8 @@
 
             gateEmail = email;
             btn.disabled = true;
-            status.textContent = 'Buscando...';
+            btn.textContent = 'Buscando...';
+            status.textContent = '';
 
             try {
                 // Search applicants by email via secure RPC function
@@ -4250,6 +4251,7 @@
                 status.innerHTML = '<span style="color:#dc2626">Erro ao buscar. Tente novamente.</span>';
             } finally {
                 btn.disabled = false;
+                btn.textContent = 'Buscar';
             }
         }
 
