@@ -3099,14 +3099,14 @@
             if (currentPage === 1 && !savedApplicantId) {
                 saveOnPersonal1Exit();
             }
-            // Auto-save on every page transition
-            autoSaveData();
             const prevPage = currentPage;
             for (let i = currentPage + 1; i < PAGES.length; i++) {
                 if (isPageVisible(i)) {
                     showPage(i);
-                    // Notify accordion of section change
+                    // Notify accordion of section change (marks check FIRST)
                     if (window._onSectionChange) window._onSectionChange(prevPage, currentPage);
+                    // Auto-save AFTER check is marked so snapshot includes it
+                    autoSaveData();
                     return;
                 }
             }
