@@ -97,6 +97,18 @@ async function checkForUpdates() {
             fs.mkdirSync(CACHE_DIR, { recursive: true });
         }
 
+        // Ensure node_modules symlink exists (so cached scripts can require deps)
+        const cacheNodeModules = path.join(CACHE_DIR, 'node_modules');
+        const sourceNodeModules = path.join(__dirname, 'node_modules');
+        if (!fs.existsSync(cacheNodeModules) && fs.existsSync(sourceNodeModules)) {
+            try {
+                fs.symlinkSync(sourceNodeModules, cacheNodeModules, 'junction');
+                console.log('[HotReload] node_modules linked to cache');
+            } catch (e) {
+                console.warn('[HotReload] Could not symlink node_modules:', e.message);
+            }
+        }
+
         const remoteSHA = await getRemoteSHA();
         const localSHA = getLocalSHA();
 

@@ -34,6 +34,7 @@ const STAGES = {
 const STAGE_ORDER = ['new', 'review', 'approved', 'doing', 'done', 'archived'];
 
 const FILL_STAGES = {
+    draft: { label: 'Rascunho', color: '#94a3b8' },
     queued: { label: 'Na fila', color: '#6b7280' },
     filling: { label: 'Preenchendo', color: '#3b82f6' },
     filled: { label: 'Preenchido', color: '#22c55e' },
@@ -410,7 +411,7 @@ async function openApplicantDetail(id) {
         // Application data
         const pApps = appsMap[p.id] || [];
         const pApp = pApps[0];
-        const appId = pApp?.application_id || '—';
+        const appId = pApp?.id ? pApp.id.substring(0, 8) : '';
         const fillStatus = pApp?.fill_status || '—';
         const fStage = FILL_STAGES[fillStatus] || { label: fillStatus, color: '#6b7280' };
 
@@ -420,7 +421,7 @@ async function openApplicantDetail(id) {
                 <div>
                     <div style="display:flex;align-items:center;gap:8px">
                         <span style="font-weight:700;font-size:14px">${p.full_name}</span>
-                        ${appId !== '—' ? `<span style="font-size:10px;color:var(--text-muted);background:var(--bg);padding:2px 6px;border-radius:4px;font-family:monospace">${appId}</span>` : ''}
+                        ${appId ? `<span style="font-size:10px;color:var(--text-muted);background:var(--bg);padding:2px 6px;border-radius:4px;font-family:monospace">${appId}</span>` : ''}
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
                         <span style="font-size:11px;color:var(--text-muted)">${roleLabel}${pPassport ? ' · ' + pPassport : ''}</span>
