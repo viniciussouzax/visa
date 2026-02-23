@@ -527,13 +527,18 @@ function buildDynamicFieldMap(a) {
   if (pp.lostOrStolen && pp.lostPassport) {
     map.push(
       { pattern: /rblLOST_PPT_IND_0$/i, value: "", type: "click" },
-      { pattern: /dtlLostPPT_ctl00_tbxLOST_PPT_NUM$/i, value: pp.lostPassport.number, type: "text" },
+    );
+    // Lost passport number: fill input if known, otherwise mark checkbox
+    const lostNum = pp.lostPassport.number;
+    if (lostNum && lostNum !== 'N/A' && lostNum !== 'n/a' && !pp.lostPassport.numberUnknown) {
+      map.push({ pattern: /dtlLostPPT_ctl00_tbxLOST_PPT_NUM$/i, value: lostNum, type: "text" });
+    } else {
+      map.push({ pattern: /cbxLOST_PPT_NUM_UNKN_IND$/i, value: "", type: "checkbox-check" });
+    }
+    map.push(
       { pattern: /ddlLOST_PPT_NATL$/i, value: pp.lostPassport.country, type: "select-label" },
       { pattern: /tbxLOST_PPT_EXPL$/i, value: pp.lostPassport.explanation, type: "text" },
     );
-    if (pp.lostPassport.numberUnknown) {
-      map.push({ pattern: /cbxLOST_PPT_NUM_UNKN_IND$/i, value: "", type: "checkbox-check" });
-    }
   } else {
     map.push({ pattern: /rblLOST_PPT_IND_1$/i, value: "", type: "click" });
   }

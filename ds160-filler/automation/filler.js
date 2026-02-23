@@ -611,7 +611,10 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
                     const allOpts = await loc.evaluate(sel =>
                         Array.from(sel.options).map(o => ({ v: o.value, t: o.text }))
                     );
-                    let found = allOpts.find(o => o.t.toUpperCase().includes(match.value.toUpperCase()));
+                    // Exact match first, then partial
+                    let found = allOpts.find(o => o.t.toUpperCase() === match.value.toUpperCase());
+                    if (!found) found = allOpts.find(o => o.t.toUpperCase().includes(match.value.toUpperCase()));
+                    if (!found) found = allOpts.find(o => o.v?.toUpperCase() === match.value.toUpperCase());
                     if (!found) found = allOpts.find(o => o.v?.toUpperCase().includes(match.value.toUpperCase()));
                     if (found) await loc.selectOption(found.v);
                     else continue;
@@ -673,7 +676,10 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
                     const allOpts = await loc.evaluate(sel =>
                         Array.from(sel.options).map(o => ({ v: o.value, t: o.text }))
                     );
-                    let found = allOpts.find(o => o.t.toUpperCase().includes(match.value.toUpperCase()));
+                    // Exact match first, then partial — prevents BAHAMAS→BANGLADESH
+                    let found = allOpts.find(o => o.t.toUpperCase() === match.value.toUpperCase());
+                    if (!found) found = allOpts.find(o => o.t.toUpperCase().includes(match.value.toUpperCase()));
+                    if (!found) found = allOpts.find(o => o.v?.toUpperCase() === match.value.toUpperCase());
                     if (!found) found = allOpts.find(o => o.v?.toUpperCase().includes(match.value.toUpperCase()));
                     if (!found) found = allOpts.find(o => o.v && o.v !== '' && o.v !== '-1' && !o.t.toUpperCase().includes('SELECT'));
                     if (found) { await loc.selectOption(found.v); filled++; }
