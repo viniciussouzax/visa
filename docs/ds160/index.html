@@ -4182,6 +4182,16 @@
             const accHeader = document.querySelector('#acc-wrapper > header');
             if (accHeader) accHeader.style.display = 'none';
 
+            // Clean up layout for iframe: hide scrollbar, remove padding
+            const iframeCSS = document.createElement('style');
+            iframeCSS.textContent = `
+                html, body { scrollbar-width: none; -ms-overflow-style: none; }
+                html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+                body { background: #fff !important; }
+                #acc-container { max-width: 100% !important; padding: 16px 24px !important; }
+            `;
+            document.head.appendChild(iframeCSS);
+
 
 
             try {
