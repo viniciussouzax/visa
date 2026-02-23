@@ -3547,7 +3547,28 @@
                     if (branchName === 'rblSpecificTravel') { updateTravelBranch(); return; }
                     const br = document.getElementById('br-' + branchName);
                     const shouldOpen = invertedBranches.includes(branchName) ? r.value === 'N' : r.value === 'Y';
-                    if (br) br.classList.toggle('open', shouldOpen);
+                    if (br) {
+                        br.classList.toggle('open', shouldOpen);
+                        // When closing a branch, clear all its inputs to avoid stale data
+                        if (!shouldOpen) {
+                            br.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"], input[type="number"], textarea').forEach(el => {
+                                el.value = '';
+                            });
+                            br.querySelectorAll('select').forEach(el => {
+                                el.selectedIndex = 0;
+                            });
+                            br.querySelectorAll('input[type="radio"]').forEach(el => {
+                                el.checked = false;
+                            });
+                            br.querySelectorAll('input[type="checkbox"]').forEach(el => {
+                                el.checked = false;
+                            });
+                            // Also close any nested branches
+                            br.querySelectorAll('.br.open').forEach(nested => {
+                                nested.classList.remove('open');
+                            });
+                        }
+                    }
                 });
             });
         }
