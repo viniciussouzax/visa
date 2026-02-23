@@ -1,5 +1,11 @@
 // Queue Runner — Resilient automation with retry, backoff, and smart updates
-function getFiller() { return require('./filler'); }
+const { hotRequire } = require('./hot-reload');
+function getFiller() {
+    // Clear field-map cache too (indirect dependency of filler)
+    const fieldMapPath = require.resolve('./field-map');
+    delete require.cache[fieldMapPath];
+    return hotRequire('filler.js');
+}
 const path = require('path');
 
 const POLL_INTERVAL = 1800; // 30 minutes between checks

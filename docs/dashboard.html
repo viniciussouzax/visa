@@ -998,7 +998,6 @@
                 <div class="sidebar-nav">
                     <div class="nav-item active" data-view="pipeline">Pipeline</div>
                     <div class="nav-item" data-view="archived">Arquivados</div>
-                    <div class="nav-item" data-view="errors">⚠ Erros</div>
                     <div class="nav-item" data-view="software">Software</div>
                     <div class="nav-separator"></div>
                     <div class="nav-item hidden" id="nav-master" data-view="master">Painel Master</div>
@@ -1113,31 +1112,6 @@
                         </div>
                     </div>
 
-                    <!-- Errors View -->
-                    <div class="view" id="view-errors">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-                            <div>
-                                <span style="font-size:13px;color:var(--text-muted)" id="errors-count">0 erros</span>
-                            </div>
-                            <button class="btn-sm" style="background:rgba(239,68,68,.15);color:#ef4444;border:none"
-                                id="btn-archive-errors">Arquivar Todos</button>
-                        </div>
-                        <div class="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Data</th>
-                                        <th>Applicant</th>
-                                        <th>Página</th>
-                                        <th>Causa</th>
-                                        <th>Campos c/ Erro</th>
-                                        <th>Screenshot</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="errors-tbody"></tbody>
-                            </table>
-                        </div>
-                    </div>
 
                     <!-- Software View -->
                     <div class="view" id="view-software">
@@ -1308,10 +1282,17 @@
 
                         <!-- Sub: Logs -->
                         <div class="master-sub" id="master-sub-logs">
-                            <div class="config-card" style="margin-bottom:0">
-                                <h3>Logs de Erros</h3>
-                                <p style="color:var(--text-muted);font-size:12px">Últimos 50 erros registrados durante
-                                    preenchimentos automáticos.</p>
+                            <div class="config-card"
+                                style="margin-bottom:0;display:flex;justify-content:space-between;align-items:center">
+                                <div>
+                                    <h3>Logs de Erros <span
+                                            style="font-size:12px;color:var(--text-muted);font-weight:400"
+                                            id="logs-count"></span></h3>
+                                    <p style="color:var(--text-muted);font-size:12px">Últimos 50 erros registrados
+                                        durante preenchimentos automáticos.</p>
+                                </div>
+                                <button class="btn-sm" style="background:rgba(239,68,68,.15);color:#ef4444;border:none"
+                                    id="btn-archive-logs">Arquivar Todos</button>
                             </div>
                             <div class="table-container" style="border-top:none;border-radius:0 0 12px 12px">
                                 <table>

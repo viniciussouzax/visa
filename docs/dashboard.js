@@ -119,7 +119,6 @@ document.querySelectorAll('.nav-item[data-view]').forEach(item => {
         $('page-subtitle').textContent = '';
         if (item.dataset.view === 'pipeline') loadPipeline();
         if (item.dataset.view === 'archived') loadArchived();
-        if (item.dataset.view === 'errors') loadErrors();
         if (item.dataset.view === 'software') loadSoftwareInfo();
         if (item.dataset.view === 'master') {
             showMasterSub('agencies');
@@ -145,6 +144,7 @@ function showMasterSub(tabName) {
 document.querySelectorAll('.master-tab').forEach(tab => {
     tab.addEventListener('click', () => {
         showMasterSub(tab.dataset.masterTab);
+        if (tab.dataset.masterTab === 'logs') loadLogs();
     });
 });
 
@@ -680,7 +680,8 @@ async function confirmDelete() {
 // LOGS (Master only)
 // ============================================================
 async function loadLogs() {
-    const { data } = await sb.from('error_logs').select('*').order('created_at', { ascending: false }).limit(50);
+    const { data, error: fetchErr } = await sb.from('error_logs').select('*').eq('archived', false).order('created_at', { ascending: false }).limit(50);
+    if (fetchErr) { $('logs-list').innerHTML = `<tr><td colspan="6" style="color:#ef4444">${fetchErr.message}</td></tr>`; return; }
     const causeLabels = {
         browser_closed: 'Browser fechado', network_error: 'Internet', timeout: 'Timeout',
         field_error: 'Campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente',
@@ -694,7 +695,10 @@ async function loadLogs() {
         page_stuck: '#374151', unknown: '#334155'
     };
 
-    $('logs-list').innerHTML = (data || []).map((l, i) => `
+    const logs = data || [];
+    if ($('logs-count')) $('logs-count').textContent = `(${logs.length})`;
+
+    $('logs-list').innerHTML = logs.map((l, i) => `
         <tr style="cursor:pointer" onclick="document.getElementById('stack-${i}').style.display = document.getElementById('stack-${i}').style.display === 'none' ? 'table-row' : 'none'">
             <td style="font-size:12px;color:var(--text-muted)">${new Date(l.created_at).toLocaleString('pt-BR')}</td>
             <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;background:${causeBg[l.error_cause] || causeBg.unknown}">${causeLabels[l.error_cause] || l.error_cause || '—'}</span></td>
@@ -708,7 +712,17 @@ async function loadLogs() {
             ${l.screenshot_url ? `<div style="margin-bottom:8px"><img src="${l.screenshot_url}" style="max-width:100%;max-height:300px;border-radius:4px;border:1px solid #333" onclick="window.open('${l.screenshot_url}','_blank')"></div>` : ''}
             <pre style="font-size:11px;color:var(--text-muted);white-space:pre-wrap;max-height:200px;overflow:auto;padding:8px;background:var(--bg);border-radius:4px">${l.error_stack || 'Sem stack trace'}</pre>
         </td></tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">Nenhum log</td></tr>';
+    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">Nenhum erro ativo 🎉</td></tr>';
+}
+
+// Archive all logs
+if ($('btn-archive-logs')) {
+    $('btn-archive-logs').onclick = async () => {
+        if (!confirm('Arquivar todos os erros?')) return;
+        const { error } = await sb.from('error_logs').update({ archived: true }).eq('archived', false);
+        if (error) toast('Erro: ' + error.message, 'error');
+        else { toast('Erros arquivados', 'success'); loadLogs(); }
+    };
 }
 
 // ============================================================
@@ -1032,91 +1046,6 @@ async function loadOrgId() {
     }
 }
 
-// ============================================================
-// ERROR LOGS — View & Archive
-// ============================================================
-async function loadErrors() {
-    const tbody = $('errors-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">Carregando...</td></tr>';
-
-    const { data: errors, error } = await sb
-        .from('error_logs')
-        .select('*')
-        .eq('archived', false)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-    if (error) {
-        tbody.innerHTML = `<tr><td colspan="6" style="color:#ef4444">Erro: ${error.message}</td></tr>`;
-        return;
-    }
-
-    $('errors-count').textContent = `${errors.length} erro${errors.length !== 1 ? 's' : ''}`;
-
-    if (!errors.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">Nenhum erro registrado 🎉</td></tr>';
-        return;
-    }
-
-    const causeLabels = {
-        validation_error: { label: 'Validação', bg: 'rgba(245,158,11,.15)', color: '#f59e0b' },
-        postback_stuck: { label: 'Postback', bg: 'rgba(239,68,68,.15)', color: '#ef4444' },
-        browser_closed: { label: 'Browser', bg: 'rgba(107,114,128,.15)', color: '#6b7280' },
-        timeout: { label: 'Timeout', bg: 'rgba(139,92,246,.15)', color: '#8b5cf6' },
-        field_not_found: { label: 'Campo', bg: 'rgba(59,130,246,.15)', color: '#3b82f6' },
-    };
-
-    tbody.innerHTML = errors.map(e => {
-        const dt = new Date(e.created_at);
-        const dateStr = dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-        const cause = causeLabels[e.error_cause] || { label: e.error_cause || '—', bg: 'rgba(107,114,128,.15)', color: '#6b7280' };
-
-        // Build validation errors list
-        let fieldErrors = '—';
-        if (e.validation_errors && e.validation_errors.length) {
-            // De-duplicate and limit to 5
-            const unique = [...new Set(e.validation_errors)];
-            const shown = unique.slice(0, 5);
-            fieldErrors = shown.map(v => `<div style="font-size:11px;color:var(--text-muted);margin:1px 0">• ${v}</div>`).join('');
-            if (unique.length > 5) fieldErrors += `<div style="font-size:10px;color:var(--text-muted)">+${unique.length - 5} mais</div>`;
-        } else if (e.field_name) {
-            fieldErrors = `<div style="font-size:11px;color:var(--text-muted)">• ${e.field_name}</div>`;
-        }
-
-        const screenshot = e.screenshot_url
-            ? `<a href="${e.screenshot_url}" target="_blank" style="color:var(--accent);font-size:12px;text-decoration:none">📸 Ver</a>`
-            : '—';
-
-        return `<tr>
-            <td style="font-size:12px;white-space:nowrap">${dateStr}</td>
-            <td style="font-size:12px;font-weight:600">${e.applicant_name || '—'}</td>
-            <td><span style="font-size:11px;background:rgba(59,130,246,.1);color:var(--accent);padding:2px 8px;border-radius:10px">${e.page_name || '—'}</span></td>
-            <td><span style="font-size:10px;padding:3px 8px;border-radius:10px;background:${cause.bg};color:${cause.color};font-weight:600;text-transform:uppercase">${cause.label}</span>${e.retry_number ? `<div style="font-size:10px;color:var(--text-muted);margin-top:2px">Retry #${e.retry_number}</div>` : ''}</td>
-            <td style="max-width:250px">${fieldErrors}</td>
-            <td>${screenshot}</td>
-        </tr>`;
-    }).join('');
-}
-
-async function archiveAllErrors() {
-    if (!confirm('Arquivar todos os erros visíveis?')) return;
-    const { error } = await sb
-        .from('error_logs')
-        .update({ archived: true })
-        .eq('archived', false);
-
-    if (error) {
-        toast('Erro ao arquivar: ' + error.message, 'error');
-    } else {
-        toast('Erros arquivados', 'success');
-        loadErrors();
-    }
-}
-
-if ($('btn-archive-errors')) {
-    $('btn-archive-errors').onclick = archiveAllErrors;
-}
 
 // ============================================================
 // INIT
