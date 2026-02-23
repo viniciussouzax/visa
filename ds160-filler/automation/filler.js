@@ -230,20 +230,38 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
         if (selectorMatch) field = selectorMatch[1];
         const currentPage = visited.length > 0 ? visited[visited.length - 1] : 'Unknown';
 
-        // Classify error cause
+        // Capture validation errors from DS-160 if page is still alive
+        let validationErrors = [];
+        try {
+            if (page && !page.isClosed()) {
+                validationErrors = await page.locator('.error-message li, .aspNetValidator, [id*="validator"]')
+                    .allTextContents().catch(() => []);
+                validationErrors = validationErrors.filter(v => v.trim().length > 0);
+            }
+        } catch { /* page may be gone */ }
+
+        // Classify error cause with granular sub-causes
         let cause = 'unknown';
         const msg = (e.message || '').toLowerCase();
         if (msg.includes('browser has been closed') || msg.includes('target closed') || msg.includes('context or browser')) {
             cause = 'browser_closed';
         } else if (msg.includes('net::err_') || msg.includes('network') || msg.includes('econnrefused') || msg.includes('enotfound')) {
             cause = 'network_error';
+        } else if (msg.includes('captcha')) {
+            cause = 'captcha_failed';
+        } else if (validationErrors.length > 0) {
+            cause = 'validation_error';
         } else if (msg.includes('timeout') || msg.includes('waiting for')) {
-            cause = 'timeout';
+            cause = msg.includes('postback') ? 'postback_stuck' : 'timeout';
+        } else if (msg.includes('selectoption') || msg.includes('no option')) {
+            cause = 'field_error:select';
         } else if (field) {
-            cause = 'field_error';
+            cause = msg.includes('not found') || msg.includes('missing') ? 'field_error:missing' : 'field_error';
+        } else if (msg.includes('stuck after')) {
+            cause = 'page_stuck';
         }
 
-        return { success: false, error: e.message, stack: e.stack, field, page: currentPage, cause, browser, activePage: page };
+        return { success: false, error: e.message, stack: e.stack, field, page: currentPage, cause, validationErrors, browser, activePage: page };
     }
     // NOTE: browser is NOT closed here — caller (queue.js) decides when to close
 }

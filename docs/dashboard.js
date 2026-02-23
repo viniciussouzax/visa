@@ -555,18 +555,34 @@ async function confirmDelete() {
 // ============================================================
 async function loadLogs() {
     const { data } = await sb.from('error_logs').select('*').order('created_at', { ascending: false }).limit(50);
-    const causeLabels = { browser_closed: 'Browser fechado', network_error: 'Internet', timeout: 'Timeout', field_error: 'Campo', unknown: 'Desconhecido' };
-    const causeBg = { browser_closed: '#7f1d1d', network_error: '#713f12', timeout: '#1e3a5f', field_error: '#4a1d7a', unknown: '#334155' };
+    const causeLabels = {
+        browser_closed: 'Browser fechado', network_error: 'Internet', timeout: 'Timeout',
+        field_error: 'Campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente',
+        captcha_failed: 'Captcha', validation_error: 'Validação DS-160', postback_stuck: 'Postback',
+        page_stuck: 'Página travada', unknown: 'Desconhecido'
+    };
+    const causeBg = {
+        browser_closed: '#7f1d1d', network_error: '#713f12', timeout: '#1e3a5f',
+        field_error: '#4a1d7a', 'field_error:select': '#4a1d7a', 'field_error:missing': '#6b21a8',
+        captcha_failed: '#92400e', validation_error: '#dc2626', postback_stuck: '#1e40af',
+        page_stuck: '#374151', unknown: '#334155'
+    };
 
     $('logs-list').innerHTML = (data || []).map((l, i) => `
         <tr style="cursor:pointer" onclick="document.getElementById('stack-${i}').style.display = document.getElementById('stack-${i}').style.display === 'none' ? 'table-row' : 'none'">
             <td style="font-size:12px;color:var(--text-muted)">${new Date(l.created_at).toLocaleString('pt-BR')}</td>
-            <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;background:${causeBg[l.cause] || causeBg.unknown}">${causeLabels[l.cause] || l.cause}</span></td>
-            <td style="font-size:12px">${l.page || '—'}</td>
-            <td style="font-size:12px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.message || '—'}</td>
+            <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;background:${causeBg[l.error_cause] || causeBg.unknown}">${causeLabels[l.error_cause] || l.error_cause || '—'}</span></td>
+            <td style="font-size:12px">${l.page_name || '—'}</td>
+            <td style="font-size:12px;color:#a78bfa">${l.field_name || '—'}</td>
+            <td style="font-size:12px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.error_message || '—'}</td>
+            <td style="text-align:center">${l.screenshot_url ? `<a href="${l.screenshot_url}" target="_blank" style="color:#60a5fa;text-decoration:underline;font-size:11px">📸 Ver</a>` : '—'}</td>
         </tr>
-        <tr id="stack-${i}" style="display:none"><td colspan="4"><pre style="font-size:11px;color:var(--text-muted);white-space:pre-wrap;max-height:200px;overflow:auto;padding:8px;background:var(--bg);border-radius:4px">${l.stack || 'Sem stack trace'}</pre></td></tr>
-    `).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">Nenhum log</td></tr>';
+        <tr id="stack-${i}" style="display:none"><td colspan="6">
+            ${l.validation_errors && l.validation_errors.length > 0 ? `<div style="margin-bottom:8px;padding:8px;background:#7f1d1d;border-radius:4px;font-size:12px"><strong>Erros do DS-160:</strong><ul style="margin:4px 0 0 16px">${l.validation_errors.map(v => `<li>${v}</li>`).join('')}</ul></div>` : ''}
+            ${l.screenshot_url ? `<div style="margin-bottom:8px"><img src="${l.screenshot_url}" style="max-width:100%;max-height:300px;border-radius:4px;border:1px solid #333" onclick="window.open('${l.screenshot_url}','_blank')"></div>` : ''}
+            <pre style="font-size:11px;color:var(--text-muted);white-space:pre-wrap;max-height:200px;overflow:auto;padding:8px;background:var(--bg);border-radius:4px">${l.error_stack || 'Sem stack trace'}</pre>
+        </td></tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">Nenhum log</td></tr>';
 }
 
 // ============================================================

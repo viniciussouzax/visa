@@ -1,5 +1,6 @@
 // Queue Runner — Resilient automation with retry, backoff, and smart updates
 const { fillApplication } = require('./filler');
+const path = require('path');
 
 const POLL_INTERVAL = 1800; // 30 minutes between checks
 const MAX_RETRIES = 3;
@@ -159,10 +160,32 @@ class QueueRunner {
             return;
         }
 
-        // ❌ Error — log it
+        // ❌ Error — capture screenshot BEFORE closing browser
         console.error(`[Queue] Error on ${applicant.full_name} (attempt ${currentRetry}):`, result.error);
 
-        await this._logError(app, applicant, result.error, result.stack, lastPage, result.field, result.cause);
+        let screenshotUrl = null;
+        if (result.activePage) {
+            try {
+                const buf = await result.activePage.screenshot({ fullPage: true });
+                const filename = `errors/${app.id}_${Date.now()}.png`;
+                const { data: upload, error: uploadErr } = await this.supabase.storage
+                    .from('screenshots')
+                    .upload(filename, buf, { contentType: 'image/png', upsert: false });
+                if (upload && !uploadErr) {
+                    const { data: pub } = this.supabase.storage
+                        .from('screenshots')
+                        .getPublicUrl(filename);
+                    screenshotUrl = pub?.publicUrl || null;
+                    console.log(`[Queue] Screenshot saved: ${screenshotUrl}`);
+                } else {
+                    console.warn('[Queue] Screenshot upload failed:', uploadErr?.message);
+                }
+            } catch (e) {
+                console.warn('[Queue] Screenshot capture failed:', e.message);
+            }
+        }
+
+        await this._logError(app, applicant, result.error, result.stack, lastPage, result.field, result.cause, screenshotUrl, result.validationErrors);
         await this._updateRetry(app.id, currentRetry, lastPage, result.error);
 
         this.consecutiveErrors++;
@@ -373,7 +396,7 @@ class QueueRunner {
     // ==============================================================
     // ERROR LOGGING (to Supabase for developer monitoring)
     // ==============================================================
-    async _logError(app, applicant, errorMessage, errorStack, pageName, fieldName, errorCause) {
+    async _logError(app, applicant, errorMessage, errorStack, pageName, fieldName, errorCause, screenshotUrl, validationErrors) {
         try {
             await this.supabase
                 .from('error_logs')
@@ -388,6 +411,8 @@ class QueueRunner {
                     software_version: global.softwareVersion || 'dev',
                     field_name: fieldName || null,
                     error_cause: errorCause || 'unknown',
+                    screenshot_url: screenshotUrl || null,
+                    validation_errors: validationErrors && validationErrors.length > 0 ? validationErrors : null,
                     user_id: (typeof applicant === 'object') ? (applicant?.user_id || null) : null,
                     company_id: (typeof applicant === 'object') ? (applicant?.company_id || null) : null
                 });
