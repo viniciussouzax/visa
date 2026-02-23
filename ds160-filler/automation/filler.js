@@ -121,33 +121,61 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
         await page.route('**/{google-analytics.com,googletagmanager.com,ssl.google-analytics.com,eum.state.gov}/**', route => route.abort());
         await page.route('**/*.{woff,woff2,ttf,otf}', route => route.abort()); // Block fonts (not needed for form filling)
 
-        // Detect if we already have an active DS-160 form session
-        let skipToFilling = false;
+        // =============================================================
+        // SMART SESSION DETECTION — decide best action
+        // =============================================================
+        let skipToFilling = false;  // Skip Landing/Captcha/Security, go straight to fill loop
+        let useRetrieve = false;    // Use "Retrieve Application" instead of "Start New"
+
         if (existingPage && page === existingPage) {
             const currentUrl = page.url();
             const currentPageName = identifyPage(currentUrl);
+            console.log(`[Filler] 🔍 Sessão existente detectada — URL: ${currentUrl}, Página: ${currentPageName}`);
 
-            // Check for session timeout
-            const isTimedOut = currentUrl.includes('TimedOut') || currentUrl.includes('SessionTimedOut') || currentUrl.includes('Default.aspx');
-            if (!isTimedOut) {
-                const bodyText = await page.locator('body').innerText({ timeout: 3000 }).catch(() => '');
-                const sessionExpired = /timeout|session.*expired|timed out|idle.*too long/i.test(bodyText);
-                if (sessionExpired) {
-                    console.log('[Filler] ⏰ Sessão expirou — reiniciando do zero');
-                } else if (currentPageName !== 'Unknown' && currentPageName !== 'Landing') {
-                    console.log(`[Filler] ♻️ Sessão ativa detectada na página: ${currentPageName} — pulando Landing/Captcha/Security`);
-                    skipToFilling = true;
-                    await waitForPageReady(page);
-                } else {
-                    console.log(`[Filler] Página atual não é form DS-160 (${currentPageName}) — reiniciando do zero`);
-                }
-            } else {
-                console.log('[Filler] ⏰ URL indica sessão expirada — reiniciando do zero');
+            // Scenario A: Already at Review/Confirmation → mark as done immediately
+            if (currentPageName === 'Review' || currentPageName === 'Confirmation') {
+                console.log(`[Filler] ✅ Sessão já está no ${currentPageName} — marcando como concluído`);
+                // Try to capture application_id from page
+                const headerAppId = await page.locator("span[id$='_lblAppID'], span[id$='_lblBarcode']").first().innerText().catch(() => '');
+                const appMatch = headerAppId.match(/[A-Z]{2}\d{8,}/);
+                if (appMatch) application.application_id = appMatch[0];
+                return { success: true, applicationId: application.application_id || null, browser, activePage: page };
             }
+
+            // Scenario B: Active form page → continue from where we left off
+            const isTimedOut = currentUrl.includes('TimedOut') || currentUrl.includes('SessionTimedOut');
+            const isOnLanding = currentUrl.includes('Default.aspx');
+            let sessionExpired = isTimedOut;
+
+            if (!isTimedOut && !isOnLanding) {
+                // Check page text for session expiry indicators
+                const bodyText = await page.locator('body').innerText({ timeout: 3000 }).catch(() => '');
+                sessionExpired = /timeout|session.*expired|timed out|idle.*too long/i.test(bodyText);
+            }
+
+            if (!sessionExpired && !isOnLanding && currentPageName !== 'Unknown' && currentPageName !== 'Landing') {
+                console.log(`[Filler] ♻️ Sessão ativa na página: ${currentPageName} — continuando preenchimento`);
+                skipToFilling = true;
+                await waitForPageReady(page);
+            }
+            // Scenario C: Session expired/Landing BUT we have an application_id → use Retrieve
+            else if (application.application_id) {
+                console.log(`[Filler] 🔄 Sessão expirada mas app_id existe (${application.application_id}) — usando Retrieve Application`);
+                useRetrieve = true;
+            }
+            // Scenario D: No app_id → start fresh
+            else {
+                console.log(`[Filler] 🆕 Sem app_id — iniciando nova aplicação`);
+            }
+        }
+        // No existing page but we have an app_id → also use Retrieve
+        else if (application.application_id) {
+            console.log(`[Filler] 🔄 Novo browser mas app_id existe (${application.application_id}) — usando Retrieve Application`);
+            useRetrieve = true;
         }
 
         if (!skipToFilling) {
-            // Navigate to DS-160 (only when starting fresh)
+            // Navigate to DS-160 Landing (needed for both Start New and Retrieve)
             await page.goto('https://ceac.state.gov/GenNIV/Default.aspx', { waitUntil: 'domcontentloaded' });
             await waitForPageReady(page);
         }
@@ -197,12 +225,7 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                 console.log('[Filler] Modal dismissed — page ready for captcha');
             }
 
-            // 3) Solve captcha + click Start (retry if captcha was wrong)
-            const isRetrieve = !!(application?.application_id);
-            if (isRetrieve) {
-                return { success: false, error: 'Retrieve flow not implemented yet' };
-            }
-
+            // 3) Solve captcha + click Start or Retrieve (retry if captcha was wrong)
             let landingPassed = false;
             for (let attempt = 1; attempt <= 3; attempt++) {
                 // Solve captcha — screenshot the captcha element
@@ -225,10 +248,10 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                     return { success: false, error: 'Captcha não resolvido após 3 tentativas' };
                 }
 
-                // Dismiss any modal that might be covering the START button
+                // Dismiss any modal that might be covering buttons
                 const modalBg = page.locator('.modalBackground').first();
                 if (await modalBg.isVisible({ timeout: 1000 }).catch(() => false)) {
-                    console.log('[Filler] Modal covering START btn — dismissing...');
+                    console.log('[Filler] Modal covering buttons — dismissing...');
                     const closeBtns = page.locator('a:text("Close"), a:text("close"), [id*="btnClose"], [id*="lnkClose"], input[value="Close"], input[value="OK"], .modalPopup a, .modalPopup input[type="button"]');
                     const closeBtn = closeBtns.first();
                     if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
@@ -237,45 +260,89 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                     }
                     await modalBg.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => { });
                     await waitForPageReady(page);
-                    console.log('[Filler] Modal dismissed before START');
+                    console.log('[Filler] Modal dismissed');
                 }
 
-                // Click Start Application with human-like mouse movement
-                const startBtn = page.locator("a[id$='_lnkNew']").first();
-                const box = await startBtn.boundingBox();
-                if (box) {
-                    // Move mouse to button with slight randomization (human-like)
-                    const targetX = box.x + box.width * (0.3 + Math.random() * 0.4);
-                    const targetY = box.y + box.height * (0.3 + Math.random() * 0.4);
-                    await page.mouse.move(targetX, targetY, { steps: 5 + Math.floor(Math.random() * 10) });
-                    await sleep(100 + Math.floor(Math.random() * 200));
-                }
-                await startBtn.click({ timeout: 15000 });
-                await sleep(2000);
-                await waitForPageReady(page);
+                if (useRetrieve) {
+                    // ====== RETRIEVE APPLICATION FLOW ======
+                    console.log(`[Filler] 🔄 Usando Retrieve Application para ${application.application_id}`);
 
-                // Check if we actually left the Landing page
-                const currentUrl = page.url();
-                if (currentUrl.includes('SessionTimedOut') || currentUrl.includes('TimedOut')) {
-                    throw new Error('Session expired after clicking Start');
-                }
+                    // Fill Application ID field
+                    const appIdInput = page.locator("input[id$='_tbxApplicationID']").first();
+                    if (await appIdInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+                        await appIdInput.fill(application.application_id);
+                    }
 
-                // Check for captcha validation error (we're still on Landing)
-                const validationError = page.locator('[id*="ValidationSummary"]').first();
-                const hasError = await validationError.isVisible({ timeout: 1000 }).catch(() => false);
-                const stillOnLanding = currentUrl.includes('Default.aspx') || (!currentUrl.includes('SecureQuestion') && !currentUrl.includes('ConfirmApplicationID') && !currentUrl.includes('complete_'));
+                    // Fill security answer
+                    const secAnswerInput = page.locator("input[id$='_txtAnswer']").first();
+                    if (await secAnswerInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+                        const secAnswer = config.security_answer || profile.securityAnswer || '';
+                        await secAnswerInput.fill(secAnswer);
+                    }
 
-                if (hasError || stillOnLanding) {
-                    console.warn(`[Filler] Captcha likely wrong (attempt ${attempt}) — page didn't advance. Retrying...`);
-                    if (attempt < 3) await sleep(1000);
-                    continue;
-                }
+                    // Click Retrieve button
+                    const retrieveBtn = page.locator("a[id$='_lnkRetrieve'], input[id$='_btnRetrieve']").first();
+                    const urlBefore = page.url();
+                    await retrieveBtn.click({ timeout: 15000 });
+                    await sleep(2000);
+                    await waitForPageReady(page);
 
-                // Successfully left Landing
-                landingPassed = true;
-                break;
-            }
+                    const currentUrl = page.url();
+                    if (currentUrl.includes('SessionTimedOut') || currentUrl.includes('TimedOut')) {
+                        throw new Error('Session expired after clicking Retrieve');
+                    }
 
+                    // Check if we left Landing
+                    const validationError = page.locator('[id*="ValidationSummary"]').first();
+                    const hasError = await validationError.isVisible({ timeout: 1000 }).catch(() => false);
+                    const stillOnLanding = currentUrl.includes('Default.aspx');
+
+                    if (hasError || stillOnLanding) {
+                        console.warn(`[Filler] Retrieve failed (attempt ${attempt}) — captcha wrong or invalid app_id`);
+                        if (attempt < 3) { await sleep(1000); continue; }
+                        // Fallback: try Start New on last attempt
+                        console.log('[Filler] Retrieve falhou 3x — tentando Start New como fallback');
+                        useRetrieve = false;
+                        continue;
+                    }
+
+                    console.log(`[Filler] ✅ Retrieve bem-sucedido — retomando formulário`);
+                    landingPassed = true;
+                    break;
+                } else {
+                    // ====== START NEW APPLICATION FLOW ======
+                    const startBtn = page.locator("a[id$='_lnkNew']").first();
+                    const box = await startBtn.boundingBox();
+                    if (box) {
+                        const targetX = box.x + box.width * (0.3 + Math.random() * 0.4);
+                        const targetY = box.y + box.height * (0.3 + Math.random() * 0.4);
+                        await page.mouse.move(targetX, targetY, { steps: 5 + Math.floor(Math.random() * 10) });
+                        await sleep(100 + Math.floor(Math.random() * 200));
+                    }
+                    await startBtn.click({ timeout: 15000 });
+                    await sleep(2000);
+                    await waitForPageReady(page);
+
+                    const currentUrl = page.url();
+                    if (currentUrl.includes('SessionTimedOut') || currentUrl.includes('TimedOut')) {
+                        throw new Error('Session expired after clicking Start');
+                    }
+
+                    const validationError = page.locator('[id*="ValidationSummary"]').first();
+                    const hasError = await validationError.isVisible({ timeout: 1000 }).catch(() => false);
+                    const stillOnLanding = currentUrl.includes('Default.aspx') || (!currentUrl.includes('SecureQuestion') && !currentUrl.includes('ConfirmApplicationID') && !currentUrl.includes('complete_'));
+
+                    if (hasError || stillOnLanding) {
+                        console.warn(`[Filler] Captcha likely wrong (attempt ${attempt}) — page didn't advance. Retrying...`);
+                        if (attempt < 3) await sleep(1000);
+                        continue;
+                    }
+
+                    // Successfully left Landing
+                    landingPassed = true;
+                    break;
+                } // end else (Start New)
+            } // end for (captcha attempts)
             if (!landingPassed) {
                 return { success: false, error: 'Failed to pass Landing after 3 captcha attempts', cause: 'captcha_failed', browser, activePage: page };
             }
@@ -718,6 +785,64 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
         return { needsRescan: true, postbackField };
     }
 
+    // Phase 2.5: "Add Another" — click Add buttons when multi-entry fields are mapped but not yet on page
+    const addAnotherEntries = fieldMap.filter(m => m.addAnother);
+    if (addAnotherEntries.length > 0) {
+        // Group by list name, process lowest pending index first
+        const pendingByList = {};
+        for (const entry of addAnotherEntries) {
+            const listName = entry.addAnother.list;
+            const fieldExists = visible.some(f => f.id && entry.pattern.test(f.id));
+            if (!fieldExists) {
+                if (!pendingByList[listName] || entry.addAnother.idx < pendingByList[listName].idx) {
+                    pendingByList[listName] = entry;
+                }
+            }
+        }
+
+        // Click "Add Another" for the first pending list
+        for (const [listName, entry] of Object.entries(pendingByList)) {
+            console.log(`[Filler] 📋 Add Another necessário para "${listName}" (entry idx ${entry.addAnother.idx})`);
+
+            // Find the Add Another button — DS-160 uses: btnAdd, lnkAdd, or input[type=button] near the DataList
+            const addBtnSelectors = [
+                `input[id*="btnAdd"][id*="${listName}"]`,
+                `a[id*="btnAdd"][id*="${listName}"]`,
+                `input[id*="lnkAdd"][id*="${listName}"]`,
+                `a[id*="lnkAdd"][id*="${listName}"]`,
+                // Generic: find Add button inside the same panel
+                `input[value="Add Another"]`,
+                `a:has-text("Add Another")`,
+                `input[value="Add Item"]`,
+                `a:has-text("Add Item")`,
+            ];
+
+            let clicked = false;
+            for (const sel of addBtnSelectors) {
+                const addBtn = page.locator(sel).first();
+                try {
+                    if (await addBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+                        await addBtn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
+                        await addBtn.click();
+                        console.log(`[Filler] ✅ Clicou Add Another para "${listName}" (selector: ${sel})`);
+                        await waitForPostback(page);
+                        clicked = true;
+                        break;
+                    }
+                } catch (e) {
+                    console.warn(`[Filler] ⚠️ Add Another click falhou (${sel}):`, e.message);
+                }
+            }
+
+            if (!clicked) {
+                console.error(`[Filler] ❌ Add Another button não encontrado para "${listName}" — entradas adicionais não serão preenchidas`);
+            }
+
+            // Only one Add Another per pass (it causes postback)
+            return { needsRescan: true, postbackField: `AddAnother:${listName}` };
+        }
+    }
+
     // Phase 3: Non-postback selects, clicks, checkboxes
     for (const field of visible) {
         if (!field.id) continue;
@@ -904,11 +1029,19 @@ function normalizeProfile(data) {
         // === PERSONAL 2 ===
         nationality: g(p2, 'nationality', 'nationality') || null,
         otherNationality: p2.otherNationality === 'Y' || p2.other_nationality === 'Y',
+        // Full array of other nationalities (for Add Another support)
+        otherNationalities: (() => {
+            const nat = g(p2, 'nationality', 'nationality') || null;
+            return (p2.otherNationalities || p2.other_nationalities || [])
+                .filter(o => o.country && o.country !== nat)
+                .filter((o, i, arr) => arr.findIndex(x => x.country === o.country) === i);
+        })(),
+        // Legacy single-entry (first item) for backward compatibility
         otherNationalityCountry: (() => {
             const nat = g(p2, 'nationality', 'nationality') || null;
             const others = (p2.otherNationalities || p2.other_nationalities || [])
-                .filter(o => o.country && o.country !== nat) // exclude primary nationality
-                .filter((o, i, arr) => arr.findIndex(x => x.country === o.country) === i); // deduplicate
+                .filter(o => o.country && o.country !== nat)
+                .filter((o, i, arr) => arr.findIndex(x => x.country === o.country) === i);
             return others[0]?.country;
         })(),
         otherNationalityPassport: (() => {
@@ -926,11 +1059,19 @@ function normalizeProfile(data) {
             return others[0]?.passportNumber;
         })(),
         permanentResidentOtherCountry: p2.permanentResident === 'Y' || p2.permanent_resident === 'Y',
+        // Full array of perm resident countries (for Add Another support)
+        permanentResidentCountries: (() => {
+            const nat = g(p2, 'nationality', 'nationality') || null;
+            return (p2.permanentResidentCountries || p2.permanent_resident_countries || [])
+                .filter(c => c.country && c.country !== nat)
+                .filter((c, i, arr) => arr.findIndex(x => x.country === c.country) === i);
+        })(),
+        // Legacy single-entry (first item)
         permanentResidentCountry: (() => {
             const nat = g(p2, 'nationality', 'nationality') || null;
             const countries = (p2.permanentResidentCountries || p2.permanent_resident_countries || [])
-                .filter(c => c.country && c.country !== nat) // exclude primary nationality
-                .filter((c, i, arr) => arr.findIndex(x => x.country === c.country) === i); // deduplicate
+                .filter(c => c.country && c.country !== nat)
+                .filter((c, i, arr) => arr.findIndex(x => x.country === c.country) === i);
             return countries[0]?.country;
         })(),
         nationalId: g(p2, 'nationalId', 'national_id'),

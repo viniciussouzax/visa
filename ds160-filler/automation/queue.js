@@ -251,7 +251,8 @@ class QueueRunner {
             if (refreshedApp && refreshedApp.fill_status === 'filling') {
                 // Re-fetch applicant data (user may have corrected data between retries)
                 const freshApplicant = await this._getApplicant(refreshedApp.applicant_id) || applicant;
-                console.log(`[Queue] Re-fetched applicant data for retry`);
+                const dataChanged = JSON.stringify(freshApplicant.data) !== JSON.stringify(applicant.data);
+                console.log(`[Queue] Re-fetched applicant data for retry — ${dataChanged ? '📝 DADOS ATUALIZADOS' : '♻️ dados iguais'} (${freshApplicant.full_name}, updated_at: ${freshApplicant.updated_at || 'N/A'})`);
                 await this._fillWithRetry(refreshedApp, freshApplicant, await this._getConfig(), result.browser, result.activePage);
             } else {
                 // App status changed — close browser
