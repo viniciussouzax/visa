@@ -3508,8 +3508,8 @@
                 return normalized;
             }
 
-            // Apply to all text inputs and textareas inside the form
-            document.querySelectorAll('#acc-wrapper input[type="text"], #acc-wrapper input[type="tel"], #acc-wrapper input[type="email"], #acc-wrapper textarea').forEach(el => {
+            // Apply to all text inputs and textareas inside form pages
+            document.querySelectorAll('.page input[type="text"], .page input[type="tel"], .page input[type="email"], .page textarea').forEach(el => {
                 el.addEventListener('input', () => {
                     const isEmail = el.type === 'email' || el.id.toLowerCase().includes('email');
                     const pos = el.selectionStart;
