@@ -311,81 +311,94 @@ class QueueRunner {
             if (applicantIds.length === 0) return null;
         }
 
-        // 0. Recovery: re-queue stale 'filling' from crashed/old workers (>10min)
+        // 0. Recovery: reset stale fills (>10min, stuck from crashes)
         const staleThreshold = new Date(Date.now() - STALE_FILLING_TIMEOUT * 1000).toISOString();
         let staleQuery = this.supabase
             .from('applications')
-            .select('id, fill_error')
+            .select('id')
             .eq('fill_status', 'filling')
+            .neq('fill_worker_id', this.workerId)
             .lt('fill_started_at', staleThreshold);
         if (applicantIds) staleQuery = staleQuery.in('applicant_id', applicantIds);
         const { data: stale } = await staleQuery;
         if (stale && stale.length > 0) {
             for (const s of stale) {
                 await this.supabase.from('applications').update({
-                    fill_status: 'queued',
+                    fill_status: 'pending',
                     fill_worker_id: null,
                 }).eq('id', s.id);
-                console.log(`[Queue] Recovered stale filling: ${s.id}`);
+                console.log(`[Queue] Recovered stale: ${s.id}`);
             }
         }
 
-        // 0b. Recovery: re-queue 'needs_attention' and 'error' (never leave stuck)
-        let stuckQuery = this.supabase
-            .from('applications')
-            .select('id')
-            .in('fill_status', ['needs_attention', 'error']);
-        if (applicantIds) stuckQuery = stuckQuery.in('applicant_id', applicantIds);
-        const { data: stuck } = await stuckQuery;
-        if (stuck && stuck.length > 0) {
-            for (const s of stuck) {
-                await this.supabase.from('applications').update({
-                    fill_status: 'queued',
-                    fill_worker_id: null,
-                }).eq('id', s.id);
-                console.log(`[Queue] Re-queued stuck item: ${s.id}`);
-            }
-        }
-
-        // 1. Priority: incomplete fills (filling) from THIS worker
-        let fillingQuery = this.supabase
-            .from('applications')
-            .select('*')
-            .eq('fill_status', 'filling')
-            .eq('fill_worker_id', this.workerId);
-        if (applicantIds) fillingQuery = fillingQuery.in('applicant_id', applicantIds);
-        const { data: filling } = await fillingQuery.limit(1);
-
-        if (filling && filling.length > 0) return filling[0];
-
-        // Claim next queued
-        let queuedQuery = this.supabase
-            .from('applications')
-            .select('*')
-            .eq('fill_status', 'queued')
-            .order('fill_priority', { ascending: true })
-            .order('fill_queued_at', { ascending: true });
-        if (applicantIds) queuedQuery = queuedQuery.in('applicant_id', applicantIds);
-        const { data } = await queuedQuery.limit(1);
-
-        if (!data || data.length === 0) return null;
-
-        const app = data[0];
-        await this.supabase
-            .from('applications')
-            .update({
-                fill_status: 'filling',
-                fill_started_at: new Date().toISOString(),
-                fill_worker_id: this.workerId
-            })
-            .eq('id', app.id);
-
-        // Sync pipeline status → 'doing'
-        await this.supabase
+        // 1. PRIORITY: applicants with pipeline_status='doing' (in progress)
+        let doingQuery = this.supabase
             .from('applicants')
-            .update({ pipeline_status: 'doing', updated_at: new Date().toISOString() })
-            .eq('id', app.applicant_id);
-        console.log('[Queue] Pipeline status → doing for', app.applicant_id);
+            .select('id')
+            .eq('pipeline_status', 'doing');
+        if (applicantIds) doingQuery = doingQuery.in('id', applicantIds);
+        const { data: doingApplicants } = await doingQuery;
+
+        if (doingApplicants && doingApplicants.length > 0) {
+            const doingIds = doingApplicants.map(a => a.id);
+            // Find their application that isn't completed
+            const { data: doingApps } = await this.supabase
+                .from('applications')
+                .select('*')
+                .in('applicant_id', doingIds)
+                .neq('fill_status', 'filled')
+                .limit(1);
+
+            if (doingApps && doingApps.length > 0) {
+                const app = doingApps[0];
+                await this.supabase.from('applications').update({
+                    fill_status: 'filling',
+                    fill_started_at: new Date().toISOString(),
+                    fill_worker_id: this.workerId
+                }).eq('id', app.id);
+                console.log('[Queue] Resuming doing:', app.id);
+                return { ...app, fill_status: 'filling' };
+            }
+        }
+
+        // 2. NEW: applicants with pipeline_status='approved' (ready to fill)
+        let approvedQuery = this.supabase
+            .from('applicants')
+            .select('id')
+            .eq('pipeline_status', 'approved')
+            .order('updated_at', { ascending: true });
+        if (applicantIds) approvedQuery = approvedQuery.in('id', applicantIds);
+        const { data: approvedApplicants } = await approvedQuery.limit(1);
+
+        if (!approvedApplicants || approvedApplicants.length === 0) return null;
+
+        const targetApplicantId = approvedApplicants[0].id;
+
+        // Find their application
+        const { data: apps } = await this.supabase
+            .from('applications')
+            .select('*')
+            .eq('applicant_id', targetApplicantId)
+            .neq('fill_status', 'filled')
+            .limit(1);
+
+        if (!apps || apps.length === 0) return null;
+
+        const app = apps[0];
+
+        // Claim: set application to filling
+        await this.supabase.from('applications').update({
+            fill_status: 'filling',
+            fill_started_at: new Date().toISOString(),
+            fill_worker_id: this.workerId
+        }).eq('id', app.id);
+
+        // Pipeline: approved → doing
+        await this.supabase.from('applicants').update({
+            pipeline_status: 'doing',
+            updated_at: new Date().toISOString()
+        }).eq('id', targetApplicantId);
+        console.log('[Queue] Claimed approved:', app.id, '→ doing');
 
         return { ...app, fill_status: 'filling' };
     }
@@ -458,21 +471,19 @@ class QueueRunner {
             .eq('id', appId);
     }
 
-    // Re-queue: reset to queued with future timestamp (auto-retry after delay)
+    // Re-queue: reset fill_status (pipeline_status stays 'doing' so it'll be retried)
     async _reQueue(appId, errMsg) {
-        const futureAt = new Date(Date.now() + RE_QUEUE_DELAY * 1000).toISOString();
         await this.supabase
             .from('applications')
             .update({
-                fill_status: 'queued',
+                fill_status: 'pending',
                 fill_worker_id: null,
                 retry_count: 0,
                 fill_error: errMsg,
-                fill_queued_at: futureAt,
                 last_error_at: new Date().toISOString()
             })
             .eq('id', appId);
-        console.log(`[Queue] Re-queued ${appId} — next attempt after ${RE_QUEUE_DELAY / 60}min`);
+        console.log(`[Queue] Re-queued ${appId} for retry`);
     }
 
     async _updateRetry(appId, retryCount, lastPage, errMsg) {

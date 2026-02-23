@@ -34,8 +34,7 @@ const STAGES = {
 const STAGE_ORDER = ['new', 'review', 'approved', 'doing', 'done', 'archived'];
 
 const FILL_STAGES = {
-    draft: { label: 'Rascunho', color: '#94a3b8' },
-    queued: { label: 'Na fila', color: '#6b7280' },
+    pending: { label: 'Aguardando', color: '#6b7280' },
     filling: { label: 'Preenchendo', color: '#3b82f6' },
     filled: { label: 'Preenchido', color: '#22c55e' },
     error: { label: 'Erro', color: '#ef4444' },

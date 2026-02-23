@@ -139,14 +139,32 @@ ipcMain.handle('logout', async () => {
 ipcMain.handle('fetch-queue', async () => {
     if (!global.supabaseClient) return { success: false, error: 'Não conectado' };
     try {
-        const { data, error } = await global.supabaseClient
-            .from('applications')
-            .select('id, applicant_id, fill_status, applicants(full_name)')
-            .in('fill_status', ['queued', 'filling'])
-            .order('fill_priority', { ascending: true });
+        // Find applicants with pipeline_status in ['approved', 'doing']
+        const { data: applicants } = await global.supabaseClient
+            .from('applicants')
+            .select('id, full_name, pipeline_status')
+            .in('pipeline_status', ['approved', 'doing'])
+            .order('updated_at', { ascending: true });
 
-        if (error) return { success: false, error: error.message };
-        return { success: true, queue: data || [] };
+        if (!applicants || applicants.length === 0) {
+            return { success: true, queue: [] };
+        }
+
+        // Get their applications
+        const ids = applicants.map(a => a.id);
+        const { data: apps } = await global.supabaseClient
+            .from('applications')
+            .select('id, applicant_id, fill_status')
+            .in('applicant_id', ids)
+            .neq('fill_status', 'filled');
+
+        // Merge applicant name into app data
+        const queue = (apps || []).map(app => {
+            const applicant = applicants.find(a => a.id === app.applicant_id);
+            return { ...app, applicants: { full_name: applicant?.full_name || '—' } };
+        });
+
+        return { success: true, queue };
     } catch (e) {
         return { success: false, error: e.message };
     }
