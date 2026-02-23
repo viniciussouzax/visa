@@ -90,20 +90,6 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
         await page.route('**/{google-analytics.com,googletagmanager.com,ssl.google-analytics.com,eum.state.gov}/**', route => route.abort());
         await page.route('**/*.{woff,woff2,ttf,otf}', route => route.abort()); // Block fonts (not needed for form filling)
 
-        // Captcha network interception — capture captcha image directly from HTTP response
-        let captchaBase64 = null;
-        page.on('response', async response => {
-            try {
-                const url = response.url().toLowerCase();
-                if ((url.includes('captcha') || url.includes('botdetect')) &&
-                    response.headers()['content-type']?.includes('image')) {
-                    const buffer = await response.body();
-                    captchaBase64 = buffer.toString('base64');
-                    console.log(`[Filler] Captcha image intercepted from network (${buffer.length} bytes)`);
-                }
-            } catch { /* ignore — response may have been disposed */ }
-        });
-
         // Navigate to DS-160
         await page.goto('https://ceac.state.gov/GenNIV/Default.aspx', { waitUntil: 'domcontentloaded' });
         await waitForPageReady(page);
@@ -129,7 +115,6 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
         const modalOverlay = page.locator('.modalBackground').first();
         if (await modalOverlay.isVisible({ timeout: 3000 }).catch(() => false)) {
             console.log('[Filler] Location info modal detected — clicking Close...');
-            // Use locator.or() to check all close buttons at once
             const closeBtn = page.locator('a:text("Close")')
                 .or(page.locator('a:text("close")'))
                 .or(page.locator('[id*="btnClose"]'))
@@ -147,7 +132,7 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
             console.log('[Filler] Modal dismissed — page ready for captcha');
         }
 
-        // 3) Solve captcha + click Start (unified loop — retry if captcha was wrong)
+        // 3) Solve captcha + click Start (retry if captcha was wrong)
         const isRetrieve = !!(application?.application_id);
         if (isRetrieve) {
             return { success: false, error: 'Retrieve flow not implemented yet' };
@@ -155,24 +140,14 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
 
         let landingPassed = false;
         for (let attempt = 1; attempt <= 3; attempt++) {
-            // Solve captcha — prefer network-intercepted image, fallback to screenshot
+            // Solve captcha — screenshot the captcha element
             try {
                 const keys = { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key };
-                let answer;
-
-                if (captchaBase64) {
-                    // Use intercepted image from network (faster, more accurate)
-                    console.log(`[Filler] Using network-intercepted captcha image`);
-                    answer = await solveCaptchaBase64(captchaBase64, captchaMode, keys);
-                    captchaBase64 = null; // Reset for next attempt
-                } else {
-                    // Fallback: screenshot the captcha element
-                    const imgEl = page.locator("img[id$='_CaptchaImage'], img[src*='captcha'], img[id$='c_default_ctl00_sitecontentplaceholder_uclocation_identifycaptcha1_captchaimage']").first();
-                    await imgEl.waitFor({ state: 'visible', timeout: 10000 });
-                    const imgPath = path.join(TMP, 'captcha.png');
-                    await imgEl.screenshot({ path: imgPath });
-                    answer = await solveCaptcha(imgPath, captchaMode, keys);
-                }
+                const imgEl = page.locator("img[id$='_CaptchaImage'], img[src*='captcha'], img[id$='c_default_ctl00_sitecontentplaceholder_uclocation_identifycaptcha1_captchaimage']").first();
+                await imgEl.waitFor({ state: 'visible', timeout: 10000 });
+                const imgPath = path.join(TMP, 'captcha.png');
+                await imgEl.screenshot({ path: imgPath });
+                const answer = await solveCaptcha(imgPath, captchaMode, keys);
 
                 console.log(`[Filler] Captcha answer (attempt ${attempt}): ${answer}`);
 
