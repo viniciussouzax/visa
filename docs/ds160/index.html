@@ -2693,8 +2693,8 @@
             </div>
         </div>
         <div class="page-btns" style="flex-direction:column;gap:12px;align-items:center">
-            <button id="btnFinalAction" class="btn btn-next" style="background:#2e7d32;width:100%;max-width:320px"
-                onclick="finalAction()">✅ Finalizar</button>
+            <button id="btnFinalAction" class="btn btn-next" style="background:#2e7d32"
+                onclick="finalAction()">Concluir</button>
             <div style="display:flex;gap:12px;width:100%;justify-content:space-between"><button class="btn btn-back"
                     onclick="prevPage()">← Voltar</button><span></span></div>
         </div>
@@ -4236,7 +4236,7 @@
 
                 // Update final button for assessor
                 const btn = document.getElementById('btnFinalAction');
-                if (btn) { btn.textContent = '💾 Salvar e Aprovar'; }
+                if (btn) { btn.textContent = 'Aprovar'; }
             } catch (e) {
                 console.error('[DS-160] Auto-load error:', e);
                 document.getElementById('acc-user-email').textContent = 'Erro ao carregar';
@@ -4264,7 +4264,7 @@
                             pipeline_status: 'approved'
                         });
                     }
-                    btn.textContent = '✅ Aprovado!';
+                    btn.textContent = 'Aprovado!';
                     btn.style.background = '#16a34a';
                     // Notify parent dashboard
                     if (window.parent !== window) {
@@ -4272,14 +4272,14 @@
                     }
                 } else {
                     // Applicant: go back to gate
-                    btn.textContent = '✅ Salvo!';
+                    btn.textContent = 'Salvo!';
                     setTimeout(() => backToGate(), 1000);
                 }
             } catch (e) {
                 console.error('Final action error:', e);
                 alert('Erro ao salvar: ' + e.message);
                 btn.disabled = false;
-                btn.textContent = window._isAssessorMode ? '💾 Salvar e Aprovar' : '✅ Finalizar';
+                btn.textContent = window._isAssessorMode ? 'Aprovar' : 'Concluir';
             }
         }
 
