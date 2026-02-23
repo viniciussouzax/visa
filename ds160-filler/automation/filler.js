@@ -512,6 +512,8 @@ async function waitForPostback(page) {
 async function waitForPageReady(page, timeout = 5000) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
+        // Scroll to force lazy elements to render
+        await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); window.scrollTo(0, 0); }).catch(() => { });
         const count = await page.evaluate(() => {
             let c = 0;
             document.querySelectorAll("select, input[type='text'], input[type='radio'], textarea").forEach(el => {
@@ -559,6 +561,10 @@ async function fillPageCompletely(page, fieldMap) {
 }
 
 async function autoFillPass(page, fieldMap, passNum = 0) {
+    // Scroll page to ensure all elements are rendered (DS-160 lazy-loads some fields)
+    await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); }).catch(() => { });
+    await sleep(100);
+    await page.evaluate(() => { window.scrollTo(0, 0); }).catch(() => { });
     const fields = await discoverFields(page);
     const visible = fields.filter(f => f.visible && f.id);
     let postbackNeeded = false, filled = 0;
@@ -582,9 +588,9 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
 
         const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
         try {
-            const isVis = await loc.isVisible({ timeout: 1000 }).catch(() => false);
+            const isVis = await loc.isVisible({ timeout: 300 }).catch(() => false);
             if (!isVis) continue;
-            await loc.scrollIntoViewIfNeeded({ timeout: 1000 }).catch(() => { });
+            await loc.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
             await loc.click();
             filled++;
             postbackNeeded = true;
@@ -604,9 +610,9 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
 
             const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
             try {
-                const isVis = await loc.isVisible({ timeout: 1000 }).catch(() => false);
+                const isVis = await loc.isVisible({ timeout: 300 }).catch(() => false);
                 if (!isVis) continue;
-                await loc.scrollIntoViewIfNeeded({ timeout: 1000 }).catch(() => { });
+                await loc.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
                 if (match.type === 'select-label') {
                     await loc.selectOption({ label: match.value });
                 } else if (match.type === 'select-search') {
@@ -660,9 +666,9 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
 
         const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
         try {
-            const isVis = await loc.isVisible({ timeout: 1000 }).catch(() => false);
+            const isVis = await loc.isVisible({ timeout: 300 }).catch(() => false);
             if (!isVis) continue;
-            await loc.scrollIntoViewIfNeeded({ timeout: 1000 }).catch(() => { });
+            await loc.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
 
             switch (match.type) {
                 case 'select':
