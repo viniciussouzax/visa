@@ -5,7 +5,11 @@
     "main": "main.js",
     "scripts": {
         "start": "electron .",
+        "prebuild": "npm version patch --no-git-tag-version",
         "build": "electron-builder --win --publish never",
+        "build:minor": "npm version minor --no-git-tag-version && electron-builder --win --publish never",
+        "build:major": "npm version major --no-git-tag-version && electron-builder --win --publish never",
+        "prerelease": "npm version patch --no-git-tag-version",
         "release": "electron-builder --win --publish always",
         "install-browsers": "npx playwright install chromium"
     },

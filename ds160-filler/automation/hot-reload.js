@@ -11,7 +11,7 @@ const REPO_OWNER = 'viniciussouzax';
 const REPO_NAME = 'visa';
 const BRANCH = 'main';
 const REMOTE_DIR = 'ds160-filler/automation';
-const SCRIPTS = ['filler.js', 'field-map.js', 'queue.js', 'captcha.js'];
+const SCRIPTS = ['filler.js', 'field-map.js', 'queue.js', 'captcha.js', 'version.json'];
 
 // Cache dir: %APPDATA%/ds160-filler/automation-cache/
 let CACHE_DIR;
@@ -164,9 +164,24 @@ function hotRequire(name) {
     return require(modulePath);
 }
 
+/**
+ * Get the current automation version from version.json.
+ * Returns { version, date, changelog } or null if not available.
+ */
+function getAutomationVersion() {
+    try {
+        const versionPath = getModulePath('version.json');
+        if (fs.existsSync(versionPath)) {
+            return JSON.parse(fs.readFileSync(versionPath, 'utf-8'));
+        }
+    } catch { }
+    return null;
+}
+
 module.exports = {
     checkForUpdates,
     getModulePath,
     hotRequire,
+    getAutomationVersion,
     CACHE_DIR,
 };
