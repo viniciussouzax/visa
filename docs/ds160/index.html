@@ -625,28 +625,7 @@
     <!-- ===== PAGE 0: Start (Mode + Location) ===== -->
     <div class="page active" id="pg-Start">
         <h2>Início</h2>
-        <div class="section">
-            <h3>Modo de Preenchimento</h3>
-            <p style="color:#555;margin-bottom:16px">Selecione se este formulário é para um solicitante individual ou se
-                você está adicionando um dependente/acompanhante a um grupo já existente.</p>
-            <div class="fg">
-                <label style="min-width:auto">Tipo de solicitação *</label>
-                <span class="rg">
-                    <label><input type="radio" name="rblFormMode" value="solo" checked onchange="toggleGroupEmail()">
-                        Solicitante Individual</label>
-                    <label><input type="radio" name="rblFormMode" value="group" onchange="toggleGroupEmail()">
-                        Acompanhante de Grupo</label>
-                </span>
-            </div>
-            <div id="group-email-box"
-                style="display:none; margin:12px 0; padding:12px; background:#fff8e1; border-left:3px solid #ff9800; border-radius:0 4px 4px 0">
-                <div class="fg"><label>Email do Solicitante Principal *</label><input type="email" id="txtGroupEmail"
-                        placeholder="email@do-solicitante-principal.com">
-                    <small style="color:#888">Informe o email de quem iniciou o grupo.</small>
-                </div>
-                <div id="group-status" style="font-size:12px;margin-top:4px;color:#666"></div>
-            </div>
-        </div>
+
         <div class="section">
             <h3>Local da Entrevista</h3>
             <p style="color:#555;margin-bottom:16px">Selecione a Embaixada ou Consulado dos EUA onde será realizada a
@@ -3187,10 +3166,6 @@
             // ===== Start =====
             if (page.id === 'pg-Start') {
                 reqSelect('ddlLocation', 'Selecione a Embaixada / Consulado');
-                const mode = radioChecked('rblFormMode');
-                if (mode === 'group') {
-                    reqInput('txtGroupEmail', 'Informe o email do solicitante principal');
-                }
             }
 
             // ===== Personal 1 =====
@@ -3951,10 +3926,7 @@
         const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_nnTiqMnGmFv1U2NWVu5Izw_MG3O_tkF';
 
-        function toggleGroupEmail() {
-            const mode = document.querySelector('input[name="rblFormMode"]:checked')?.value;
-            document.getElementById('group-email-box').style.display = mode === 'group' ? 'block' : 'none';
-        }
+
 
         async function sbFetch(path, method, body) {
             const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
@@ -4205,9 +4177,6 @@
             document.getElementById('acc-user-email').textContent = 'Carregando...';
 
 
-            // Hide form mode selection in iframe mode — handled by email gate
-            document.querySelector('#pg-Start .section:first-child')?.remove();
-            document.getElementById('group-email-box')?.remove();
 
             try {
                 const applicants = await sbFetch(`applicants?id=eq.${applicantId}&select=*`, 'GET');
@@ -4244,8 +4213,6 @@
                 const data = generateJSON();
                 if (!data) throw new Error('Dados do formulário vazios');
 
-                const mode = document.querySelector('input[name="rblFormMode"]:checked')?.value || 'solo';
-
                 // Extract key fields
                 const surname = (data.personal1?.surname || '').toUpperCase();
                 const givenName = (data.personal1?.givenName || '').toUpperCase();
@@ -4256,38 +4223,7 @@
 
                 if (!fullName) throw new Error('Nome obrigatório (preencha Personal1)');
 
-                let primaryApplicantId = null;
-                let groupInfo = '';
-
-                // If group mode: find primary applicant by email
-                if (mode === 'group') {
-                    const groupEmail = document.getElementById('txtGroupEmail')?.value?.trim();
-                    if (!groupEmail) throw new Error('Informe o email do solicitante principal');
-
-                    console.log('[DS-160] Buscando solicitante principal...');
-
-                    // Search applicant whose data contains this email
-                    const results = await sbGet(
-                        `applicants?data->>addressPhone->>email=eq.${encodeURIComponent(groupEmail)}&primary_applicant_id=is.null&select=id,full_name&limit=1`
-                    );
-
-                    // Fallback: search by full_name or inside data JSON
-                    let primary = results?.[0];
-                    if (!primary) {
-                        // Try broader search via RPC or filter
-                        const allResults = await sbGet(`applicants?primary_applicant_id=is.null&select=id,full_name,data&limit=50`);
-                        primary = allResults?.find(a => {
-                            const e = a.data?.addressPhone?.email || '';
-                            return e.toLowerCase() === groupEmail.toLowerCase();
-                        });
-                    }
-
-                    if (!primary) throw new Error('Solicitante principal não encontrado com email: ' + groupEmail);
-
-                    primaryApplicantId = primary.id;
-                    groupInfo = ' (Grupo de ' + primary.full_name + ')';
-                    console.log('[DS-160] Principal encontrado:', primary.full_name);
-                }
+                const primaryApplicantId = window._linkToPrimaryId || null;
 
                 // 1. Applicant - update if already created on Personal1, else create
                 let applicantId;
