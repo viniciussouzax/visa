@@ -4216,7 +4216,7 @@
 
 
             try {
-                const applicants = await sbFetch(`applicants?id=eq.${applicantId}&select=*`, 'GET');
+                const applicants = await sbGet(`rpc/get_applicant_by_id?applicant_id=${applicantId}`);
                 if (!applicants || applicants.length === 0) {
                     document.getElementById('acc-user-email').textContent = 'Solicitante não encontrado';
                     return;
@@ -4225,10 +4225,9 @@
                 const a = applicants[0];
                 const email = a.data?.addressPhone?.email || a.data?.personal?.email || '';
                 savedApplicantId = a.id;
-                document.getElementById('acc-user-email').textContent = email || a.full_name;
 
                 // Get application ID if exists
-                const apps = await sbFetch(`applications?applicant_id=eq.${a.id}&select=id,application_id&limit=1`, 'GET');
+                const apps = await sbGet(`applications?applicant_id=eq.${a.id}&select=id,application_id&limit=1`);
                 if (apps && apps.length > 0) savedApplicationId = apps[0].id;
 
                 // Restore data
