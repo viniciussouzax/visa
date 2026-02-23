@@ -511,6 +511,23 @@ function buildDynamicFieldMap(a) {
   }
 
   // ===================================================================
+  // US CONTACT (Point of Contact in the US)
+  // ===================================================================
+  map.push(
+    { pattern: /tbxUS_POC_SURNAME$/i, value: uc.surname || uc.organization || "", type: "text" },
+    { pattern: /tbxUS_POC_GIVEN_NAME$/i, value: uc.givenName || uc.organization || "", type: "text" },
+    { pattern: /tbxUS_POC_ORGANIZATION$/i, value: uc.organization || "", type: "text" },
+    { pattern: /ddlUS_POC_REL_TO_APP$/i, value: uc.relationship || "O", type: "select" },
+    { pattern: /tbxUS_POC_ADDR_LN1$/i, value: uc.street1 || "", type: "text" },
+    { pattern: /tbxUS_POC_ADDR_LN2$/i, value: uc.street2 || "", type: "text" },
+    { pattern: /tbxUS_POC_ADDR_CITY$/i, value: uc.city || "", type: "text" },
+    { pattern: /ddlUS_POC_ADDR_STATE$/i, value: uc.state || "", type: "select" },
+    { pattern: /tbxUS_POC_ADDR_POSTAL_CD$/i, value: uc.zip || "", type: "text" },
+    { pattern: /tbxUS_POC_HOME_TEL$/i, value: ph(uc.phone || ""), type: "text" },
+    { pattern: /tbxUS_POC_EMAIL_ADDR$/i, value: uc.email || "", type: "text" },
+  );
+
+  // ===================================================================
   // PASSPORT
   // ===================================================================
   map.push(

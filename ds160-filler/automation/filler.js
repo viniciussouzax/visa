@@ -973,6 +973,66 @@ async function discoverFields(page) {
 
 async function clickNextAndWait(page) {
     const urlBefore = page.url();
+
+    // === MODAL DISMISS: Close any DS-160 modal overlays that block Next ===
+    // DS-160 uses modals like: modalNationalityWarning, modalIncompleteApp, etc.
+    // These have a modalBackground div that intercepts pointer events
+    try {
+        const modalBg = page.locator('div[id*="modalBackground"], div.modalBackground').first();
+        if (await modalBg.isVisible({ timeout: 500 }).catch(() => false)) {
+            console.log('[Filler] 🔔 Modal detectado — tentando fechar...');
+
+            // Try clicking OK/Continue/Yes buttons inside modal panels
+            const modalBtns = [
+                'div[id*="modal"] input[type="button"][value*="OK"]',
+                'div[id*="modal"] input[type="button"][value*="Yes"]',
+                'div[id*="modal"] input[type="button"][value*="Continue"]',
+                'div[id*="modal"] input[type="submit"][value*="OK"]',
+                'div[id*="modal"] a[id*="btnOk"]',
+                'div[id*="modal"] a[id*="btnYes"]',
+                // Specific known modals
+                'input[id*="btnOkWarning"]',
+                'input[id*="btnOKWarning"]',
+                'input[id*="btnContinueWarning"]',
+                'a[id*="btnOkWarning"]',
+                'a[id*="btnOKWarning"]',
+            ];
+
+            let dismissed = false;
+            for (const sel of modalBtns) {
+                const btn = page.locator(sel).first();
+                try {
+                    if (await btn.isVisible({ timeout: 500 }).catch(() => false)) {
+                        await btn.click({ force: true });
+                        console.log(`[Filler] ✅ Modal fechado via: ${sel}`);
+                        await sleep(500);
+                        await waitForPostback(page);
+                        dismissed = true;
+                        break;
+                    }
+                } catch { }
+            }
+
+            // Fallback: remove modal overlay via JavaScript
+            if (!dismissed) {
+                console.log('[Filler] ⚡ Removendo modal overlay via JS');
+                await page.evaluate(() => {
+                    document.querySelectorAll('div[id*="modalBackground"], div.modalBackground').forEach(el => {
+                        el.style.display = 'none';
+                        el.remove();
+                    });
+                    // Also hide any modal popup panels
+                    document.querySelectorAll('div[id*="modal_foreground"], div[id*="ModalPanel"]').forEach(el => {
+                        el.style.display = 'none';
+                    });
+                }).catch(() => { });
+                await sleep(300);
+            }
+        }
+    } catch (e) {
+        console.warn('[Filler] Modal check error:', e.message);
+    }
+
     const next = page.locator("input[type=submit][value*='Next']").first();
 
     // Use waitForResponse to detect navigation instead of polling
