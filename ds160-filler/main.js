@@ -93,21 +93,41 @@ app.whenReady().then(() => {
         // DEV MODE: git pull + auto-restart if automation files changed
         const { execSync } = require('child_process');
         const repoDir = path.join(__dirname, '..');
-        const GIT_CHECK_COOLDOWN = 3 * 60 * 1000; // 3 minutes
+        const GIT_CHECK_COOLDOWN = 60 * 1000; // 1 minute
+
+        console.log(`[AutoUpdate] DEV MODE ativo — repoDir: ${repoDir}`);
 
         global.smartCheckForUpdates = () => {
             const now = Date.now();
             if (now - lastUpdateCheck < GIT_CHECK_COOLDOWN) return;
             lastUpdateCheck = now;
+            console.log('[AutoUpdate] Verificando atualizações...');
 
             try {
-                // Fetch remote changes silently
-                execSync('git fetch origin main', { cwd: repoDir, stdio: 'ignore', timeout: 15000 });
+                // Fetch remote changes (git sends progress to stderr, that's OK)
+                try {
+                    execSync('git fetch origin main', { cwd: repoDir, stdio: 'pipe', timeout: 15000 });
+                } catch (fetchErr) {
+                    // git fetch sends info to stderr, check if it's a real error
+                    const stderr = fetchErr.stderr?.toString() || '';
+                    if (stderr.includes('fatal') || stderr.includes('error')) {
+                        console.warn('[AutoUpdate] git fetch falhou:', stderr);
+                        return;
+                    }
+                    // Non-fatal stderr (e.g. "From https://..." ) is OK
+                }
+                console.log('[AutoUpdate] git fetch OK');
 
                 // Check if there are differences between local and remote
-                const diff = execSync('git diff HEAD origin/main --name-only', {
-                    cwd: repoDir, encoding: 'utf-8', timeout: 10000
-                }).trim();
+                let diff = '';
+                try {
+                    diff = execSync('git diff HEAD origin/main --name-only', {
+                        cwd: repoDir, encoding: 'utf-8', timeout: 10000
+                    }).trim();
+                } catch (diffErr) {
+                    console.warn('[AutoUpdate] git diff falhou:', diffErr.message);
+                    return;
+                }
 
                 if (!diff) {
                     console.log('[AutoUpdate] Nenhuma atualização disponível');
@@ -117,7 +137,15 @@ app.whenReady().then(() => {
                 console.log('[AutoUpdate] Arquivos alterados:', diff);
 
                 // Pull changes
-                execSync('git pull origin main --ff-only', { cwd: repoDir, stdio: 'ignore', timeout: 30000 });
+                try {
+                    execSync('git pull origin main --ff-only', { cwd: repoDir, stdio: 'pipe', timeout: 30000 });
+                } catch (pullErr) {
+                    const stderr = pullErr.stderr?.toString() || '';
+                    if (stderr.includes('fatal') || stderr.includes('error') || stderr.includes('CONFLICT')) {
+                        console.warn('[AutoUpdate] git pull falhou:', stderr);
+                        return;
+                    }
+                }
                 console.log('[AutoUpdate] ✅ Git pull concluído');
 
                 // Check if automation-critical files changed
@@ -127,6 +155,7 @@ app.whenReady().then(() => {
 
                 if (automationFiles.length > 0) {
                     console.log('[AutoUpdate] 🔄 Arquivos de automação alterados — reiniciando app...');
+                    console.log('[AutoUpdate] Arquivos:', automationFiles.join(', '));
                     mainWindow?.webContents.send('automation-status', {
                         type: 'updating', message: 'Atualização detectada — reiniciando...'
                     });
@@ -146,13 +175,17 @@ app.whenReady().then(() => {
                 }
             } catch (e) {
                 console.warn('[AutoUpdate] Erro no check:', e.message);
+                if (e.stderr) console.warn('[AutoUpdate] stderr:', e.stderr.toString());
             }
         };
 
-        // Check on startup (delayed)
-        setTimeout(() => global.smartCheckForUpdates(), 10000);
+        // Check on startup (delayed 5s)
+        setTimeout(() => {
+            console.log('[AutoUpdate] Startup check...');
+            global.smartCheckForUpdates();
+        }, 5000);
 
-        // Periodic check every 3 minutes
+        // Periodic check every minute
         setInterval(() => global.smartCheckForUpdates(), GIT_CHECK_COOLDOWN);
     }
 
