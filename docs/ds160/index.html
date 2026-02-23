@@ -3932,6 +3932,27 @@
                 return v;
             }));
 
+            // Capture raw form snapshot for 100% reliable restore
+            const snapshot = { values: {}, radios: {}, checkboxes: {}, dynamicEntries: {} };
+            // All inputs, selects, textareas (by ID)
+            document.querySelectorAll('#acc-wrapper input[type="text"], #acc-wrapper input[type="hidden"], #acc-wrapper input[type="tel"], #acc-wrapper input[type="email"], #acc-wrapper input[type="number"], #acc-wrapper select, #acc-wrapper textarea').forEach(el => {
+                if (el.id && el.value && !el.disabled) snapshot.values[el.id] = el.value;
+            });
+            // Radio buttons (by name)
+            document.querySelectorAll('#acc-wrapper input[type="radio"]:checked').forEach(r => {
+                if (r.name && !r.disabled) snapshot.radios[r.name] = r.value;
+            });
+            // Checkboxes (by ID)
+            document.querySelectorAll('#acc-wrapper input[type="checkbox"]').forEach(cb => {
+                if (cb.id && cb.checked) snapshot.checkboxes[cb.id] = true;
+            });
+            // Dynamic entries count per DataList
+            document.querySelectorAll('.as[data-list]').forEach(c => {
+                const count = c.querySelectorAll('.entry').length;
+                if (count > 1) snapshot.dynamicEntries[c.dataset.list] = count;
+            });
+            clean._formSnapshot = snapshot;
+
             return clean || {};
         }
 
@@ -4085,131 +4106,75 @@
         function restoreApplicantData(data) {
             if (!data) return;
 
-            function setVal(id, value) {
-                if (!value) return;
-                const el = document.getElementById(id);
-                if (!el) return;
-                el.value = value;
-                el.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            function setRadio(name, value) {
-                if (!value) return;
-                const r = document.querySelector(`input[name="${name}"][value="${value}"]`);
-                if (r) {
-                    r.checked = true;
-                    r.dispatchEvent(new Event('change', { bubbles: true }));
+            const snap = data._formSnapshot;
+            if (snap) {
+                // Phase 1: Restore radios FIRST (opens conditional branches)
+                if (snap.radios) {
+                    Object.entries(snap.radios).forEach(([name, value]) => {
+                        if (!value || value === 'N/A') return;
+                        const r = document.querySelector(`input[name="${name}"][value="${value}"]`);
+                        if (r && !r.disabled) {
+                            r.checked = true;
+                            r.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
                 }
-            }
-            function setCheckbox(id, checked) {
-                const el = document.getElementById(id);
-                if (el && checked) {
-                    el.checked = true;
-                    el.dispatchEvent(new Event('change', { bubbles: true }));
+
+                // Phase 2: Restore checkboxes
+                if (snap.checkboxes) {
+                    Object.entries(snap.checkboxes).forEach(([id, checked]) => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.checked = checked;
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
                 }
+
+                // Phase 3: Create dynamic entries (DataList) before filling values
+                if (snap.dynamicEntries) {
+                    Object.entries(snap.dynamicEntries).forEach(([listId, count]) => {
+                        const container = document.querySelector(`.as[data-list="${listId}"]`);
+                        if (!container) return;
+                        const existing = container.querySelectorAll('.entry').length;
+                        for (let i = existing; i < count; i++) {
+                            if (typeof addEntry === 'function') addEntry(listId);
+                        }
+                    });
+                }
+
+                // Phase 4: Restore all input/select/textarea values
+                if (snap.values) {
+                    Object.entries(snap.values).forEach(([id, value]) => {
+                        if (!value || value === 'N/A') return;
+                        const el = document.getElementById(id);
+                        if (el && !el.disabled) {
+                            el.value = value;
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                }
+
+                console.log('[DS-160] Restored from snapshot:', Object.keys(snap.values || {}).length, 'fields,', Object.keys(snap.radios || {}).length, 'radios');
+                return;
             }
 
+            // Legacy fallback for data saved without snapshot
+            function setV(id, v) { if (!v) return; const el = document.getElementById(id); if (el) { el.value = v; el.dispatchEvent(new Event('change', { bubbles: true })); } }
+            function setR(name, v) { if (!v) return; const r = document.querySelector(`input[name="${name}"][value="${v}"]`); if (r) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); } }
             const p1 = data.personal1 || {};
-            setVal('tbxAPP_SURNAME', p1.surname);
-            setVal('tbxAPP_GIVEN_NAME', p1.givenName);
-            setVal('tbxAPP_FULL_NAME_NATIVE', p1.fullNameNative);
-            setVal('ddlAPP_GENDER', p1.gender);
-            setVal('ddlAPP_MARITAL_STATUS', p1.maritalStatus);
-            setVal('ddlDOBDay', p1.dobDay);
-            setVal('ddlDOBMonth', p1.dobMonth);
-            setVal('tbxDOBYear', p1.dobYear);
-            setVal('tbxAPP_POB_CITY', p1.pobCity);
-            setVal('ddlAPP_POB_CNTRY', p1.pobCountry);
-            setRadio('rblOtherNames', p1.otherNames);
-
-            const p2 = data.personal2 || {};
-            setVal('ddlAPP_NATL', p2.nationality);
-            setVal('tbxAPP_NATIONAL_ID', p2.nationalId);
-            setRadio('rblAPP_OTH_NATL_IND', p2.otherNationality);
-            setRadio('rblPermResOtherCntryInd', p2.permResident);
-
+            setV('tbxAPP_SURNAME', p1.surname); setV('tbxAPP_GIVEN_NAME', p1.givenName);
+            setV('ddlAPP_GENDER', p1.sex || p1.gender); setV('ddlAPP_MARITAL_STATUS', p1.maritalStatus);
+            if (p1.dob) { setV('ddlDOBDay', p1.dob.day); setV('ddlDOBMonth', p1.dob.month); setV('tbxDOBYear', p1.dob.year); }
+            setV('tbxAPP_POB_CITY', p1.cityOfBirth); setV('ddlAPP_POB_CNTRY', p1.countryOfBirth);
             const ap = data.addressPhone || {};
-            setVal('tbxAPP_ADDR_LN1', ap.addr1);
-            setVal('tbxAPP_ADDR_LN2', ap.addr2);
-            setVal('tbxAPP_ADDR_CITY', ap.city);
-            setVal('tbxAPP_ADDR_STATE', ap.state);
-            setVal('tbxAPP_ADDR_POSTAL_CD', ap.postalCode);
-            setVal('ddlCountry', ap.country);
-            setVal('tbxAPP_HOME_TEL', ap.phone);
-            setVal('tbxAPP_MOBILE_TEL', ap.mobilePhone);
-            setVal('tbxAPP_BUS_TEL', ap.workPhone);
-            setVal('tbxAPP_EMAIL_ADDR', ap.email);
-
+            const ha = ap.homeAddress || {};
+            setV('tbxAPP_ADDR_LN1', ha.street1); setV('tbxAPP_ADDR_CITY', ha.city);
+            setV('ddlCountry', ha.country); setV('tbxAPP_HOME_TEL', ap.phone); setV('tbxAPP_EMAIL_ADDR', ap.email);
             const pp = data.passport || {};
-            setVal('tbxPPT_NUM', pp.number);
-            setVal('ddlPPT_TYPE', pp.type);
-            setVal('ddlPPT_CNTRY', pp.country);
-            setVal('tbxPPT_BOOK_NUM', pp.bookNumber);
-            setVal('ddlPPT_ISSUEDay', pp.issueDay);
-            setVal('ddlPPT_ISSUEMonth', pp.issueMonth);
-            setVal('tbxPPT_ISSUEYear', pp.issueYear);
-            setVal('ddlPPT_EXPIREDay', pp.expireDay);
-            setVal('ddlPPT_EXPIREMonth', pp.expireMonth);
-            setVal('tbxPPT_EXPIREYear', pp.expireYear);
-
-            const tr = data.travel || {};
-            setVal('ddlTRAVEL_PURPOSE', tr.purpose);
-            setVal('ddlTRAVEL_PURPOSE_SPEC', tr.purposeSpec);
-            setVal('ddlTRAVEL_VISA_CLASS', tr.visaClass);
-
-            // Travel companions
-            const tc = data.travelCompanions || {};
-            setRadio('rblOtherPersonsTravelingInd', tc.travelingWithOthers);
-            setRadio('rblGroupTravel', tc.groupTravel);
-
-            // Previous US Travel
-            const put = data.prevUSTravel || {};
-            setRadio('rblPREV_US_TRAVEL_IND', put.previouslyInUS);
-            setRadio('rblPREV_VISA_IND', put.previousVisa);
-            setRadio('rblPREV_VISA_REFUSED_IND', put.visaRefused);
-            setRadio('rblIV_PETITION_IND', put.ivPetition);
-
-            const uc = data.usContact || {};
-            setVal('tbxUS_POC_SURNAME', uc.surname);
-            setVal('tbxUS_POC_GIVEN_NAME', uc.givenName);
-            setVal('tbxUS_POC_ORGANIZATION', uc.organization);
-            setVal('tbxUS_POC_ADDR_LN1', uc.addr1);
-            setVal('tbxUS_POC_ADDR_CITY', uc.city);
-            setVal('ddlUS_POC_ADDR_STATE', uc.state);
-            setVal('tbxUS_POC_ADDR_POSTAL_CD', uc.postalCode);
-            setVal('tbxUS_POC_HOME_TEL', uc.phone);
-            setVal('tbxUS_POC_EMAIL_ADDR', uc.email);
-            setRadio('rblUS_POC_REL', uc.relationship);
-
-            const f1 = data.family || {};
-            setVal('tbxFATHER_SURNAME', f1.fatherSurname);
-            setVal('tbxFATHER_GIVEN_NAME', f1.fatherGivenName);
-            setVal('tbxMOTHER_SURNAME', f1.motherSurname);
-            setVal('tbxMOTHER_GIVEN_NAME', f1.motherGivenName);
-            setRadio('rblFATHER_LIVE_IN_US_IND', f1.fatherInUS);
-            setRadio('rblMOTHER_LIVE_IN_US_IND', f1.motherInUS);
-
-            const sp = data.spouse || {};
-            setVal('tbxSPOUSE_SURNAME', sp.surname);
-            setVal('tbxSPOUSE_GIVEN_NAME', sp.givenName);
-
-            // Work/Education 1
-            const we1 = data.workEducation1 || {};
-            setVal('ddlPresentOccupation', we1.occupation);
-            setVal('tbxEmpSchName', we1.employerName);
-            setVal('tbxEmpSchAddr1', we1.employerAddr1);
-            setVal('tbxEmpSchCity', we1.employerCity);
-            setVal('ddlEmpSchCountry', we1.employerCountry);
-            setVal('tbxEmpSchPhone', we1.employerPhone);
-            setVal('tbxJobTitle', we1.jobTitle);
-            setVal('ddlEmpDateFromMonth', we1.startMonth);
-            setVal('tbxEmpDateFromYear', we1.startYear);
-            setVal('tbxMonthlySalary', we1.monthlySalary);
-            setVal('tbxDescribeDuties', we1.duties);
-
-            // Location
-            if (data.location) setVal('ddlLocation', data.location);
-
-            console.log('[DS-160] Data restored from applicant');
+            setV('ddlPPT_TYPE', pp.type); setV('tbxPPT_NUM', pp.number);
+            if (data.location) setV('ddlLocation', data.location);
+            console.log('[DS-160] Restored (legacy fallback)');
         }
 
         // Auto-load by ID (used by dashboard iframe)
