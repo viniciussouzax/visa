@@ -3,8 +3,8 @@ function getFiller() { return require('./filler'); }
 const path = require('path');
 
 const POLL_INTERVAL = 1800; // 30 minutes between checks
-const MAX_RETRIES = 3;
-const BACKOFF_DELAYS = [2 * 60, 5 * 60]; // 2min, 5min between retries
+const MAX_RETRIES = 5;
+const BACKOFF_DELAYS = [2 * 60, 4 * 60, 6 * 60, 8 * 60]; // 2min, 4min, 6min, 8min between retries
 const GLOBAL_PAUSE = 15 * 60; // 15min pause after 3 consecutive global errors
 const STALE_FILLING_TIMEOUT = 10 * 60; // 10min — if filling for longer, consider stale
 const RE_QUEUE_DELAY = 15 * 60; // 15min — wait before retrying after max retries exhausted
