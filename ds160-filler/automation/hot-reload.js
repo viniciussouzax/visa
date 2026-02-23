@@ -99,7 +99,7 @@ async function checkForUpdates() {
 
         // Ensure node_modules symlink exists (so cached scripts can require deps)
         const cacheNodeModules = path.join(CACHE_DIR, 'node_modules');
-        const sourceNodeModules = path.join(__dirname, 'node_modules');
+        const sourceNodeModules = path.join(__dirname, '..', 'node_modules');
         if (!fs.existsSync(cacheNodeModules) && fs.existsSync(sourceNodeModules)) {
             try {
                 fs.symlinkSync(sourceNodeModules, cacheNodeModules, 'junction');
