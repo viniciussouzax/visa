@@ -81,6 +81,15 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
         page.setDefaultNavigationTimeout(30000);
         page.on('dialog', async d => d.accept().catch(() => { }));
 
+        // Anti-detection: hide webdriver flag
+        await page.addInitScript(() => {
+            Object.defineProperty(navigator, 'webdriver', { get: () => false });
+        });
+
+        // Block unnecessary resources (analytics, tracking) for faster page loads
+        await page.route('**/{google-analytics.com,googletagmanager.com,ssl.google-analytics.com,eum.state.gov}/**', route => route.abort());
+        await page.route('**/*.{woff,woff2,ttf,otf}', route => route.abort()); // Block fonts (not needed for form filling)
+
         // Navigate to DS-160
         await page.goto('https://ceac.state.gov/GenNIV/Default.aspx', { waitUntil: 'domcontentloaded' });
         await waitForPageReady(page);
@@ -539,6 +548,9 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
             const isVis = await loc.isVisible({ timeout: 2000 }).catch(() => false);
             if (!isVis) continue;
 
+            // Scroll element into view before interacting
+            await loc.scrollIntoViewIfNeeded({ timeout: 2000 }).catch(() => { });
+
             switch (match.type) {
                 case 'text':
                     if (!field.value || field.value.trim() === '') {
@@ -640,9 +652,19 @@ async function discoverFields(page) {
 async function clickNextAndWait(page) {
     const urlBefore = page.url();
     const next = page.locator("input[type=submit][value*='Next']").first();
-    await next.click();
+
+    // Use waitForResponse to detect navigation instead of polling
+    const [response] = await Promise.all([
+        page.waitForResponse(
+            r => r.url().includes('.aspx') && r.status() === 200,
+            { timeout: 15000 }
+        ).catch(() => null),
+        next.click()
+    ]);
+
+    // Also wait for URL change as fallback
     const start = Date.now();
-    while (page.url() === urlBefore && Date.now() - start < 10000) {
+    while (page.url() === urlBefore && Date.now() - start < 5000) {
         await sleep(300);
     }
     await waitForPageReady(page);
