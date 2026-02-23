@@ -35,8 +35,9 @@ function buildDynamicFieldMap(a) {
   t.departureDate = t.departureDate || emptyDate;
   t.lengthOfStay = t.lengthOfStay || {};
   t.usAddress = t.usAddress || {};
-  t.payer = t.payer || {};
-  t.payer.address = t.payer.address || {};
+  // Payer: prefer a.payer (flat from normalizeProfile) over t.payer (nested from travel)
+  const payer = a.payer || t.payer || {};
+  payer.address = payer.address || {};
   const pp = a.passport || {};
   pp.issuanceDate = pp.issuanceDate || emptyDate;
   pp.expirationDate = pp.expirationDate || emptyDate;
@@ -237,46 +238,46 @@ function buildDynamicFieldMap(a) {
   // Who is paying
   map.push({ pattern: /ddlWhoIsPaying$/i, value: a.payingForTrip, type: "select" });
 
-  if (a.payingForTrip === "O" && a.payer) {
+  if (a.payingForTrip === "O" && payer) {
     // Other Person paying
     map.push(
-      { pattern: /tbxPayerSurname$/i, value: a.payer.surname || "", type: "text" },
-      { pattern: /tbxPayerGivenName$/i, value: a.payer.givenName || "", type: "text" },
-      { pattern: /tbxPayerPhone$/i, value: ph(a.payer.phone), type: "text" },
+      { pattern: /tbxPayerSurname$/i, value: payer.surname || "", type: "text" },
+      { pattern: /tbxPayerGivenName$/i, value: payer.givenName || "", type: "text" },
+      { pattern: /tbxPayerPhone$/i, value: ph(payer.phone), type: "text" },
     );
-    if (a.payer.email) {
-      map.push({ pattern: /tbxPAYER_EMAIL_ADDR$/i, value: a.payer.email, type: "text" });
+    if (payer.email) {
+      map.push({ pattern: /tbxPAYER_EMAIL_ADDR$/i, value: payer.email, type: "text" });
     } else {
       map.push({ pattern: /cbxDNAPAYER_EMAIL_ADDR_NA$/i, value: "", type: "checkbox-check" });
     }
-    if (a.payer.relationship) {
-      map.push({ pattern: /ddlPayerRelationship$/i, value: a.payer.relationship, type: "select" });
+    if (payer.relationship) {
+      map.push({ pattern: /ddlPayerRelationship$/i, value: payer.relationship, type: "select" });
     }
-    if (a.payer.sameAddress === 'Y' || a.payer.sameAddress === true) {
+    if (payer.sameAddress === 'Y' || payer.sameAddress === true) {
       map.push({ pattern: /rblPayerAddrSameAsInd_0$/i, value: "", type: "click" });
     } else {
       map.push(
         { pattern: /rblPayerAddrSameAsInd_1$/i, value: "", type: "click" },
-        { pattern: /tbxPayerStreetAddress1$/i, value: a.payer.street1 || "", type: "text" },
-        { pattern: /tbxPayerStreetAddress2$/i, value: a.payer.street2 || "", type: "text" },
-        { pattern: /tbxPayerCity$/i, value: a.payer.city || "", type: "text" },
-        { pattern: /tbxPayerStateProvince$/i, value: a.payer.state || "", type: "text" },
-        { pattern: /tbxPayerPostalZIPCode$/i, value: a.payer.postalCode || "", type: "text" },
-        { pattern: /ddlPayerCountry$/i, value: a.payer.country || "", type: "select-label" },
+        { pattern: /tbxPayerStreetAddress1$/i, value: payer.street1 || "", type: "text" },
+        { pattern: /tbxPayerStreetAddress2$/i, value: payer.street2 || "", type: "text" },
+        { pattern: /tbxPayerCity$/i, value: payer.city || "", type: "text" },
+        { pattern: /tbxPayerStateProvince$/i, value: payer.state || "", type: "text" },
+        { pattern: /tbxPayerPostalZIPCode$/i, value: payer.postalCode || "", type: "text" },
+        { pattern: /ddlPayerCountry$/i, value: payer.country || "", type: "select-label" },
       );
     }
-  } else if ((a.payingForTrip === "C" || a.payingForTrip === "P" || a.payingForTrip === "H") && a.payer) {
+  } else if ((a.payingForTrip === "C" || a.payingForTrip === "P" || a.payingForTrip === "H") && payer) {
     // Company / Present Employer / US Petitioner paying (all share same fields)
     map.push(
-      { pattern: /tbxPayingCompany$/i, value: a.payer.companyName || "", type: "text" },
-      { pattern: /tbxPayerPhone$/i, value: ph(a.payer.phone), type: "text" },
-      { pattern: /tbxCompanyRelation$/i, value: a.payer.companyRelation || "", type: "text" },
-      { pattern: /tbxPayerStreetAddress1$/i, value: a.payer.street1 || "", type: "text" },
-      { pattern: /tbxPayerStreetAddress2$/i, value: a.payer.street2 || "", type: "text" },
-      { pattern: /tbxPayerCity$/i, value: a.payer.city || "", type: "text" },
-      { pattern: /tbxPayerStateProvince$/i, value: a.payer.state || "", type: "text" },
-      { pattern: /tbxPayerPostalZIPCode$/i, value: a.payer.postalCode || "", type: "text" },
-      { pattern: /ddlPayerCountry$/i, value: a.payer.country || "", type: "select-label" },
+      { pattern: /tbxPayingCompany$/i, value: payer.companyName || "", type: "text" },
+      { pattern: /tbxPayerPhone$/i, value: ph(payer.phone), type: "text" },
+      { pattern: /tbxCompanyRelation$/i, value: payer.companyRelation || "", type: "text" },
+      { pattern: /tbxPayerStreetAddress1$/i, value: payer.street1 || "", type: "text" },
+      { pattern: /tbxPayerStreetAddress2$/i, value: payer.street2 || "", type: "text" },
+      { pattern: /tbxPayerCity$/i, value: payer.city || "", type: "text" },
+      { pattern: /tbxPayerStateProvince$/i, value: payer.state || "", type: "text" },
+      { pattern: /tbxPayerPostalZIPCode$/i, value: payer.postalCode || "", type: "text" },
+      { pattern: /ddlPayerCountry$/i, value: payer.country || "", type: "select-label" },
     );
   }
 
@@ -290,7 +291,7 @@ function buildDynamicFieldMap(a) {
       { pattern: /.*tbxGivenName$/i, value: a.companions[0].givenName, type: "text" },
       { pattern: /.*ddlTCRelationship$/i, value: a.companions[0].relationship, type: "select" },
     );
-    if (a.partOfGroup && a.groupName) {
+    if ((a.partOfGroup === 'Y' || a.partOfGroup === true) && a.groupName) {
       map.push(
         { pattern: /rblGroupTravel_0$/i, value: "", type: "click" },
         { pattern: /tbxGroupName$/i, value: a.groupName, type: "text" },
@@ -647,7 +648,7 @@ function buildDynamicFieldMap(a) {
       { pattern: /rblUS_IMMED_RELATIVE_IND_0$/i, value: "", type: "click" },
       { pattern: /tbxUS_REL_SURNAME$/i, value: a.immediateRelative.surname, type: "text" },
       { pattern: /tbxUS_REL_GIVEN_NAME$/i, value: a.immediateRelative.givenName, type: "text" },
-      { pattern: /ddlUS_REL_TYPE$/i, value: a.immediateRelative.relationship, type: "select" },
+      { pattern: /ddlUS_REL_TYPE$/i, value: a.immediateRelative.type || a.immediateRelative.relationship, type: "select" },
       { pattern: /ddlUS_REL_STATUS$/i, value: a.immediateRelative.status, type: "select" },
     );
   } else {

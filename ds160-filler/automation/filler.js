@@ -622,6 +622,10 @@ function normalizeProfile(data) {
         visaRefusedExplanation: prev.visaRefusedExplanation || prev.visa_refused_explanation || '',
         immigrantPetition: prev.immigrantPetition === 'Y' || prev.immigrant_petition === 'Y',
         immigrantPetitionExplanation: prev.immigrantPetitionExplanation || prev.immigrant_petition_explanation || '',
+        permanentResident: prev.permanentResident === 'Y' || prev.permanent_resident === 'Y',
+        permanentResidentExplanation: prev.permanentResidentExplanation || prev.permanent_resident_explanation || '',
+        vwpDenial: prev.vwpDenial === 'Y' || prev.vwp_denial === 'Y',
+        vwpDenialExplanation: prev.vwpDenialExplanation || prev.vwp_denial_explanation || '',
 
         // === ADDRESS & PHONE ===
         homeAddress: addr.homeAddress || addr.home_address || {},
