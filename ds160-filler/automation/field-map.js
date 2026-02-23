@@ -252,9 +252,9 @@ function buildDynamicFieldMap(a) {
     if (a.payer.relationship) {
       map.push({ pattern: /ddlPayerRelationship$/i, value: a.payer.relationship, type: "select" });
     }
-    if (a.payer.sameAddress === true) {
+    if (a.payer.sameAddress === 'Y' || a.payer.sameAddress === true) {
       map.push({ pattern: /rblPayerAddrSameAsInd_0$/i, value: "", type: "click" });
-    } else if (a.payer.sameAddress === false) {
+    } else {
       map.push(
         { pattern: /rblPayerAddrSameAsInd_1$/i, value: "", type: "click" },
         { pattern: /tbxPayerStreetAddress1$/i, value: a.payer.street1 || "", type: "text" },
@@ -581,7 +581,7 @@ function buildDynamicFieldMap(a) {
   );
 
   // Father in US
-  if (a.father.inUS) {
+  if (a.father.inUS === 'Y' || a.father.inUS === true) {
     map.push(
       { pattern: /rblFATHER_LIVE_IN_US_IND_0$/i, value: "", type: "click" },
       { pattern: /rblFATHER_US_0$/i, value: "", type: "click" },
@@ -595,7 +595,7 @@ function buildDynamicFieldMap(a) {
   }
 
   // Mother in US
-  if (a.mother.inUS) {
+  if (a.mother.inUS === 'Y' || a.mother.inUS === true) {
     map.push(
       { pattern: /rblMOTHER_LIVE_IN_US_IND_0$/i, value: "", type: "click" },
       { pattern: /rblMOTHER_US_0$/i, value: "", type: "click" },

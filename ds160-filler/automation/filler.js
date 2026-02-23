@@ -567,7 +567,20 @@ function normalizeProfile(data) {
             usAddress: trav.usAddress || trav.us_address || { street1: 'N/A', street2: '', city: 'N/A', state: 'FL', zip: '00000' }
         },
         payingForTrip: trav.whoIsPaying || trav.who_is_paying || 'S',
-        payer: trav.payer || null,
+        payer: (() => {
+            const p = trav.payer;
+            if (!p) return null;
+            const addr = p.address || {};
+            return {
+                ...p,
+                street1: p.street1 || addr.street1 || '',
+                street2: p.street2 || addr.street2 || '',
+                city: p.city || addr.city || '',
+                state: p.state || addr.state || '',
+                postalCode: p.postalCode || addr.postalCode || '',
+                country: p.country || addr.country || '',
+            };
+        })(),
 
         // === TRAVEL COMPANIONS ===
         travelingWithOthers: tc.travelingWithOthers === 'Y' || tc.traveling_with_others === 'Y',
