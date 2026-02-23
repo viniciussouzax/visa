@@ -4174,7 +4174,10 @@
             // Hide gate immediately — don't wait for fetch
             document.getElementById('email-gate').style.display = 'none';
             document.getElementById('acc-wrapper').style.display = 'block';
-            document.getElementById('acc-user-email').textContent = 'Carregando...';
+
+            // Hide nav header in iframe mode (not useful for assessor)
+            const accHeader = document.querySelector('#acc-wrapper > header');
+            if (accHeader) accHeader.style.display = 'none';
 
 
 
