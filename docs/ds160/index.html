@@ -3866,16 +3866,15 @@
                         sameCountry: radioVal('rblPREV_VISA_SAME_CNTRY_IND'),
                         tenPrint: radioVal('rblPREV_VISA_TEN_PRINT_IND'),
                         lost: radioVal('rblPREV_VISA_LOST_IND'),
+                        lostYear: val('tbxLOST_VISA_YEAR'),
+                        lostExplanation: val('tbxLOST_VISA_EXPL'),
                         cancelled: radioVal('rblPREV_VISA_CANCELLED_IND'),
+                        cancelledExplanation: val('tbxCANCELLED_VISA_EXPL'),
                     },
                     visaRefused: radioVal('rblPREV_VISA_REFUSED_IND'),
                     visaRefusedExplanation: val('tbxPREV_VISA_REFUSED_EXPL'),
                     immigrantPetition: radioVal('rblIV_PETITION_IND'),
                     immigrantPetitionExplanation: val('tbxIV_PETITION_EXPL'),
-                    permanentResident: radioVal('rblPERM_RESIDENT_IND'),
-                    permanentResidentExplanation: val('tbxPERM_RESIDENT_EXPL'),
-                    vwpDenial: radioVal('rblVWP_DENIAL_IND'),
-                    vwpDenialExplanation: val('tbxVWP_DENIAL_EXPL'),
                 },
                 // AddressPhone
                 addressPhone: {
@@ -3898,10 +3897,12 @@
                     email: val('tbxAPP_EMAIL_ADDR'),
                     additionalEmails: radioVal('rblAddEmail'),
                     additionalEmailAddresses: collectEntries('dtlAddEmail', e => entryVal(e, 'tbxAddEmailInfo')),
-                    socialMedia: { platform: val('ddlSocialMedia'), handle: val('tbxSocialMediaIdent') },
+                    socialMedia: collectEntries('dtlSocialMedia', e => ({
+                        platform: entryVal(e, 'ddlSocialMedia'), handle: entryVal(e, 'tbxSocialMediaIdent'),
+                    })),
                     additionalSocialMedia: radioVal('rblAddSocial'),
                     additionalSocialMediaAccounts: collectEntries('dtlAddSocial', e => ({
-                        platform: entryVal(e, 'ddlSocialMedia'), handle: entryVal(e, 'tbxSocialMediaIdent'),
+                        platform: entryVal(e, 'tbxAddSocialPlatform'), handle: entryVal(e, 'tbxSocialMediaIdent'),
                     })),
                 },
                 // Passport
@@ -3944,6 +3945,7 @@
                         inUS: radioVal('rblMOTHER_LIVE_IN_US_IND'), usStatus: val('ddlMOTHER_US_STATUS'),
                     },
                     immediateRelativesInUS: radioVal('rblUS_IMMED_RELATIVE_IND'),
+                    otherRelativesInUS: radioVal('rblUS_OTHER_RELATIVE_IND'),
                     relatives: collectEntries('dlUSRelatives', e => ({
                         surname: entryVal(e, 'tbxUS_REL_SURNAME'), givenName: entryVal(e, 'tbxUS_REL_GIVEN_NAME'),
                         type: entryVal(e, 'ddlUS_REL_TYPE'), status: entryVal(e, 'ddlUS_REL_STATUS'),
@@ -3962,17 +3964,42 @@
                         postalCode: val('tbxSPOUSE_ADDR_POSTAL_CD'), country: val('ddlSPOUSE_ADDR_CNTRY'),
                     },
                 },
+                // DeceasedSpouse
+                deceasedSpouse: {
+                    surname: val('tbxDECEASED_SPOUSE_SURNAME'),
+                    givenName: val('tbxDECEASED_SPOUSE_GIVEN_NAME'),
+                    dob: dateVal('ddlDECEASED_SPOUSE_DOBDay', 'ddlDECEASED_SPOUSE_DOBMonth', 'tbxDECEASED_SPOUSE_DOBYear'),
+                    nationality: val('ddlDECEASED_SPOUSE_NATL'),
+                    cityOfBirth: val('tbxDECEASED_SPOUSE_POB_CITY'),
+                    countryOfBirth: val('ddlDECEASED_SPOUSE_POB_CNTRY'),
+                },
                 // PrevSpouse
                 prevSpouse: {
                     numberOfPrevious: val('tbxNumberOfPreviousSpouses'),
-                    surname: val('tbxPREV_SPOUSE_SURNAME'), givenName: val('tbxPREV_SPOUSE_GIVEN_NAME'),
-                    dob: dateVal('ddlPREV_SPOUSE_DOBDay', 'ddlPREV_SPOUSE_DOBMonth', 'tbxPREV_SPOUSE_DOBYear'),
-                    nationality: val('ddlPREV_SPOUSE_NATL'),
-                    cityOfBirth: val('tbxPREV_SPOUSE_CITY'), countryOfBirth: val('ddlPREV_SPOUSE_CNTRY'),
-                    dateOfMarriage: dateVal('ddlDOM_DTEDay', 'ddlDOM_DTEMonth', 'tbxDOM_DTEYear'),
-                    dateMarriageEnded: dateVal('ddlDOME_DTEDay', 'ddlDOME_DTEMonth', 'tbxDOME_DTEYear'),
-                    howEnded: val('ddlHOW_MARRIAGE_ENDED'),
-                    countryTerminated: val('ddlCNTRY_MARRIAGE_TERMINATED'),
+                    spouses: collectEntries('dlPrevSpouse', e => ({
+                        surname: entryVal(e, 'tbxPREV_SPOUSE_SURNAME'),
+                        givenName: entryVal(e, 'tbxPREV_SPOUSE_GIVEN_NAME'),
+                        dob: {
+                            day: entryVal(e, 'ddlPREV_SPOUSE_DOBDay'),
+                            month: entryVal(e, 'ddlPREV_SPOUSE_DOBMonth'),
+                            year: entryVal(e, 'tbxPREV_SPOUSE_DOBYear'),
+                        },
+                        nationality: entryVal(e, 'ddlPREV_SPOUSE_NATL'),
+                        cityOfBirth: entryVal(e, 'tbxPREV_SPOUSE_CITY'),
+                        countryOfBirth: entryVal(e, 'ddlPREV_SPOUSE_CNTRY'),
+                        dateOfMarriage: {
+                            day: entryVal(e, 'ddlDOM_DTEDay'),
+                            month: entryVal(e, 'ddlDOM_DTEMonth'),
+                            year: entryVal(e, 'tbxDOM_DTEYear'),
+                        },
+                        dateMarriageEnded: {
+                            day: entryVal(e, 'ddlDOME_DTEDay'),
+                            month: entryVal(e, 'ddlDOME_DTEMonth'),
+                            year: entryVal(e, 'tbxDOME_DTEYear'),
+                        },
+                        howEnded: entryVal(e, 'tbxHOW_MARRIAGE_ENDED'),
+                        countryTerminated: entryVal(e, 'ddlCNTRY_MARRIAGE_TERMINATED'),
+                    })),
                 },
                 // WorkEducation1
                 workEducation1: {
