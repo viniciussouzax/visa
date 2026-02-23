@@ -137,26 +137,32 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
             await locSelect.selectOption(location);
             console.log(`[Filler] Location selected: ${location}`);
             await waitForPostback(page);
-            await sleep(1000); // Extra wait for potential page reload
+            await sleep(2000); // Wait for modal to appear after postback
         }
 
         // 2) Dismiss location info modal if present
         //    Some consulates (e.g. Recife/Brazil) show "Additional Location Information"
         //    modal AFTER selecting location. Must close BEFORE solving captcha.
-        const modalOverlay = page.locator('.modalBackground').first();
-        if (await modalOverlay.isVisible({ timeout: 3000 }).catch(() => false)) {
+        const modalOverlay = page.locator('.modalBackground')
+            .or(page.locator('[id*="ModalPanel"]'))
+            .or(page.locator('[id*="pnlPopup"]'))
+            .or(page.locator('[id*="pnlModal"]'))
+            .first();
+        if (await modalOverlay.isVisible({ timeout: 5000 }).catch(() => false)) {
             console.log('[Filler] Location info modal detected — clicking Close...');
             const closeBtn = page.locator('a:text("Close")')
                 .or(page.locator('a:text("close")'))
                 .or(page.locator('[id*="btnClose"]'))
                 .or(page.locator('[id*="lnkClose"]'))
                 .or(page.locator('input[value="Close"]'))
-                .or(page.locator('input[value="OK"]'));
+                .or(page.locator('input[value="OK"]'))
+                .or(page.locator('.modalPopup a'))
+                .or(page.locator('.modalPopup input[type="button"]'));
             const firstClose = closeBtn.first();
-            if (await firstClose.isVisible({ timeout: 2000 }).catch(() => false)) {
+            if (await firstClose.isVisible({ timeout: 3000 }).catch(() => false)) {
                 console.log('[Filler] Clicking modal close button');
                 await firstClose.click();
-                await sleep(1500);
+                await sleep(1000);
             }
             await modalOverlay.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => { });
             await waitForPageReady(page);
