@@ -444,6 +444,19 @@ function closeProcessModal() {
     $('process-modal-iframe').src = 'about:blank';
 }
 
+// Listen for form-approved message from iframe
+window.addEventListener('message', async (e) => {
+    if (e.data?.type === 'form-approved') {
+        closeProcessModal();
+        // Refresh the view
+        if (currentApplicant) {
+            renderApplicantDetail(currentApplicant);
+        } else {
+            renderPipeline();
+        }
+    }
+});
+
 
 // ============================================================
 // MOVE PIPELINE STATUS

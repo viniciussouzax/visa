@@ -2693,8 +2693,8 @@
             </div>
         </div>
         <div class="page-btns" style="flex-direction:column;gap:12px;align-items:center">
-            <button class="btn btn-next" style="background:#2e7d32;width:100%;max-width:320px"
-                onclick="saveToSupabase()">💾 Salvar</button>
+            <button id="btnFinalAction" class="btn btn-next" style="background:#2e7d32;width:100%;max-width:320px"
+                onclick="finalAction()">✅ Finalizar</button>
             <div style="display:flex;gap:12px;width:100%;justify-content:space-between"><button class="btn btn-back"
                     onclick="prevPage()">← Voltar</button><span></span></div>
         </div>
@@ -4172,6 +4172,8 @@
             const applicantId = params.get('id');
             if (!applicantId) return;
 
+            window._isAssessorMode = true;
+
             // Hide gate immediately — don't wait for fetch
             document.getElementById('email-gate').style.display = 'none';
             document.getElementById('acc-wrapper').style.display = 'block';
@@ -4201,6 +4203,10 @@
                 // Restore data
                 if (a.data) restoreApplicantData(a.data);
                 console.log('[DS-160] Auto-loaded applicant:', a.full_name);
+
+                // Update final button for assessor
+                const btn = document.getElementById('btnFinalAction');
+                if (btn) { btn.textContent = '💾 Salvar e Aprovar'; }
             } catch (e) {
                 console.error('[DS-160] Auto-load error:', e);
                 document.getElementById('acc-user-email').textContent = 'Erro ao carregar';
@@ -4211,6 +4217,41 @@
         document.getElementById('gate-email')?.addEventListener('keydown', e => {
             if (e.key === 'Enter') gateSearch();
         });
+
+        // Final action: Finalizar (applicant) or Save+Approve (assessor)
+        async function finalAction() {
+            const btn = document.getElementById('btnFinalAction');
+            btn.disabled = true;
+            btn.textContent = 'Salvando...';
+
+            try {
+                await saveToSupabase();
+
+                if (window._isAssessorMode) {
+                    // Assessor: approve the applicant
+                    if (savedApplicantId) {
+                        await sbFetch(`applicants?id=eq.${savedApplicantId}`, 'PATCH', {
+                            pipeline_status: 'approved'
+                        });
+                    }
+                    btn.textContent = '✅ Aprovado!';
+                    btn.style.background = '#16a34a';
+                    // Notify parent dashboard
+                    if (window.parent !== window) {
+                        window.parent.postMessage({ type: 'form-approved', applicantId: savedApplicantId }, '*');
+                    }
+                } else {
+                    // Applicant: go back to gate
+                    btn.textContent = '✅ Salvo!';
+                    setTimeout(() => backToGate(), 1000);
+                }
+            } catch (e) {
+                console.error('Final action error:', e);
+                alert('Erro ao salvar: ' + e.message);
+                btn.disabled = false;
+                btn.textContent = window._isAssessorMode ? '💾 Salvar e Aprovar' : '✅ Finalizar';
+            }
+        }
 
         async function saveToSupabase() {
             try {
