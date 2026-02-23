@@ -4085,6 +4085,9 @@
             document.getElementById('acc-wrapper').style.display = 'block';
             document.getElementById('acc-user-email').textContent = email;
 
+            // Reset check marks
+            if (window._resetChecks) window._resetChecks();
+
             // RESET form completely before loading new data
             document.querySelectorAll('#acc-wrapper input[type="text"], #acc-wrapper input[type="tel"], #acc-wrapper input[type="email"], #acc-wrapper input[type="number"], #acc-wrapper textarea').forEach(el => {
                 if (!el.disabled) el.value = '';
@@ -4682,12 +4685,12 @@
             window.showPage = function (i) {
                 // Call original
                 if (origShowPage) origShowPage(i);
-                // Find which section this page belongs to
-                if (window._PAGES_NAMES && window._PAGES_NAMES[i]) {
+                // Find which section this page belongs to (always force open)
+                if (window._PAGES_NAMES && window._PAGES_NAMES[i] && !window._skipShowPageAccordion) {
                     const pageId = 'pg-' + window._PAGES_NAMES[i];
                     const secIdx = pageToSection[pageId];
                     if (secIdx !== undefined && secIdx !== currentSectionIdx) {
-                        toggleAccordion(secIdx);
+                        toggleAccordion(secIdx, true);
                     }
                 }
             };
@@ -4696,9 +4699,10 @@
             const origNextPage = window.nextPage;
             window.nextPage = function () {
                 const prevSection = currentSectionIdx;
+                window._skipShowPageAccordion = true; // prevent showPage from toggling
                 if (origNextPage) origNextPage();
+                window._skipShowPageAccordion = false;
                 // Check if we moved to a different section
-                // Find current page's section
                 if (window._PAGES_NAMES) {
                     const activePage = document.querySelector('.page.active');
                     if (activePage) {
@@ -4734,6 +4738,10 @@
             window._markComplete = markComplete;
             window._toggleAccordion = toggleAccordion;
             window._SECTIONS = SECTIONS;
+            window._resetChecks = function () {
+                completedSections.clear();
+                document.querySelectorAll('.acc-check.done').forEach(c => c.classList.remove('done'));
+            };
 
             // Restore completion state based on mode
             window.restoreCompletionState = function (data) {
