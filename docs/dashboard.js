@@ -26,8 +26,8 @@ const STAGES = {
     new: { label: 'Novo', color: '#3b82f6' },
     review: { label: 'Revisão', color: '#f59e0b' },
     approved: { label: 'Aprovado', color: '#8b5cf6' },
-    doing: { label: 'Fazendo', color: '#f97316' },
-    done: { label: 'Feito', color: '#22c55e' },
+    doing: { label: 'Pendente', color: '#f97316' },
+    done: { label: 'Concluído', color: '#22c55e' },
     archived: { label: 'Arquivado', color: '#64748b' }
 };
 
