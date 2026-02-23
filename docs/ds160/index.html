@@ -4566,6 +4566,13 @@
             // Validate all fields before proceeding
             if (!validateFullForm()) return;
 
+            // Mark the last section (Security5) as complete
+            const curPageId = 'pg-' + (window._PAGES_NAMES?.[currentPage] || '');
+            const curSecIdx = window._pageToSection?.[curPageId];
+            if (curSecIdx !== undefined && window._markComplete) {
+                window._markComplete(curSecIdx);
+            }
+
             const btn = document.getElementById('btnFinalAction');
             btn.disabled = true;
             btn.textContent = 'Salvando...';
