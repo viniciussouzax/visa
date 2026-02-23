@@ -132,7 +132,7 @@ class QueueRunner {
     // ==============================================================
     // FILL WITH RETRY (up to MAX_RETRIES attempts)
     // ==============================================================
-    async _fillWithRetry(app, applicant, config) {
+    async _fillWithRetry(app, applicant, config, existingBrowser, existingPage) {
         const currentRetry = (app.retry_count || 0) + 1;
 
         this.emit({
@@ -162,8 +162,9 @@ class QueueRunner {
             this.consecutiveErrors = 0;
             return;
         }
-        // ⚠️ Missing data — re-queue after delay (data may be corrected)
+        // ⚠️ Missing data — close browser, re-queue (data may be corrected)
         if (result.cause === 'missing_data') {
+            if (result.browser) await result.browser.close().catch(() => { });
             console.warn(`[Queue] ⚠️ ${applicant.full_name}: dados faltantes — ${result.error}`);
             await this._logError(app, applicant, result.error, null, 'Validation', null, 'missing_data', null, result.missingFields?.map(f => `Campo faltante: ${f}`));
             await this._reQueue(app.id, result.error);
@@ -175,14 +176,13 @@ class QueueRunner {
             return;
         }
 
-        // ❌ Error — capture screenshot BEFORE closing browser
+        // ❌ Error — capture screenshot but DON'T close browser yet
         console.error(`[Queue] Error on ${applicant.full_name} (attempt ${currentRetry}):`, result.error);
 
         let screenshotUrl = null;
         let pageHtml = null;
         if (result.activePage) {
             try {
-                // Capture page HTML for debugging
                 pageHtml = await result.activePage.content().catch(() => null);
             } catch { }
             try {
@@ -208,23 +208,31 @@ class QueueRunner {
         await this._logError(app, applicant, result.error, result.stack, lastPage, result.field, result.cause, screenshotUrl, result.validationErrors, pageHtml);
         await this._updateRetry(app.id, currentRetry, lastPage, result.error);
 
-        // Close browser BEFORE retry to avoid accumulating windows
-        if (result.browser) await result.browser.close().catch(() => { });
-
         this.consecutiveErrors++;
 
-        if (currentRetry >= MAX_RETRIES) {
-            // Max retries reached — re-queue with delay (NEVER stop permanently)
-            await this._reQueue(app.id, result.error);
-            this.emit({
-                type: 'error',
-                applicantName: applicant.full_name,
-                error: `${result.error} (${MAX_RETRIES} tentativas — reagendado em ${RE_QUEUE_DELAY / 60}min)`
-            });
+        // Fatal errors — close browser, no retry possible
+        const fatalCauses = ['browser_closed', 'network_error', 'captcha_failed'];
+        if (fatalCauses.includes(result.cause) || currentRetry >= MAX_RETRIES) {
+            if (result.browser) await result.browser.close().catch(() => { });
+
+            if (currentRetry >= MAX_RETRIES) {
+                await this._reQueue(app.id, result.error);
+                this.emit({
+                    type: 'error',
+                    applicantName: applicant.full_name,
+                    error: `${result.error} (${MAX_RETRIES} tentativas — reagendado)`
+                });
+            } else {
+                this.emit({
+                    type: 'error',
+                    applicantName: applicant.full_name,
+                    error: `${result.error} (${result.cause})`
+                });
+            }
             return;
         }
 
-        // Backoff before retry
+        // ⏳ Retryable error — keep browser open, backoff then retry
         const delay = BACKOFF_DELAYS[currentRetry - 1] || BACKOFF_DELAYS[BACKOFF_DELAYS.length - 1];
         this.emit({
             type: 'retrying',
@@ -234,16 +242,20 @@ class QueueRunner {
             error: result.error
         });
 
-        // Check for update during backoff
         if (global.smartCheckForUpdates) global.smartCheckForUpdates();
         await this._waitWithCountdown(delay);
 
-        // Re-claim the same app and retry
+        // Re-claim the same app and retry (browser still open)
         if (this.running) {
             const refreshedApp = await this._getApp(app.id);
             if (refreshedApp && refreshedApp.fill_status === 'filling') {
                 await this._fillWithRetry(refreshedApp, applicant, await this._getConfig());
+            } else {
+                // App status changed (e.g. manually fixed) — close browser
+                if (result.browser) await result.browser.close().catch(() => { });
             }
+        } else {
+            if (result.browser) await result.browser.close().catch(() => { });
         }
     }
 

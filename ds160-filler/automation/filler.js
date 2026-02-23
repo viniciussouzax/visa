@@ -790,9 +790,10 @@ function normalizeProfile(data) {
         hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.hasSpecificPlans === true || trav.has_specific_plans === 'Y',
         travel: {
             arrivalDate: (() => {
-                const d = trav.arrivalDate || trav.arrival_date;
+                // Use arrivalDate if specific plans, or nonSpecificArrival otherwise
+                const d = trav.arrivalDate || trav.arrival_date || trav.nonSpecificArrival || trav.non_specific_arrival;
                 if (d && d.day && d.month && d.year) return d;
-                return null; // Missing — will be caught by validation
+                return null;
             })(),
             departureDate: trav.departureDate || trav.departure_date,
             arrivalFlight: trav.arrivalFlight || trav.arrival_flight,
