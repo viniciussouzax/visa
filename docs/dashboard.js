@@ -797,7 +797,7 @@ const copyBtn = $('btn-copy-form');
 if (copyBtn) {
     copyBtn.onclick = () => {
         const base = location.href.replace(/dashboard\.html.*$/, '');
-        const url = userCompanyShortId ? `${base}ds160?org=${userCompanyShortId}` : `${base}ds160`;
+        const url = userCompanyShortId ? `${base}ds160/index.html?org=${userCompanyShortId}` : `${base}ds160/index.html`;
         navigator.clipboard.writeText(url);
         copyBtn.textContent = 'Copiado!';
         setTimeout(() => { copyBtn.textContent = 'Copiar link do formulário'; }, 2000);
