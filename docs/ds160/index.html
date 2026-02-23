@@ -4085,6 +4085,42 @@
             document.getElementById('acc-wrapper').style.display = 'block';
             document.getElementById('acc-user-email').textContent = email;
 
+            // RESET form completely before loading new data
+            document.querySelectorAll('#acc-wrapper input[type="text"], #acc-wrapper input[type="tel"], #acc-wrapper input[type="email"], #acc-wrapper input[type="number"], #acc-wrapper textarea').forEach(el => {
+                if (!el.disabled) el.value = '';
+            });
+            document.querySelectorAll('#acc-wrapper select').forEach(el => {
+                if (!el.disabled) el.selectedIndex = 0;
+            });
+            document.querySelectorAll('#acc-wrapper input[type="radio"]').forEach(r => {
+                r.checked = false;
+            });
+            document.querySelectorAll('#acc-wrapper input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            // Close all conditional branches
+            document.querySelectorAll('#acc-wrapper .br.open').forEach(br => {
+                br.classList.remove('open');
+            });
+            // Remove extra dynamic entries (keep only first)
+            document.querySelectorAll('.as[data-list]').forEach(container => {
+                const entries = container.querySelectorAll('.entry');
+                entries.forEach((e, i) => { if (i > 0) e.remove(); });
+            });
+
+            // Re-apply security defaults
+            ['rblDisease', 'rblDisorder', 'rblDruguser', 'rblArrested', 'rblControlledSubstances',
+                'rblProstitution', 'rblMoneyLaundering', 'rblHumanTrafficking', 'rblAssistedSevereTrafficking',
+                'rblHumanTraffickingRelated', 'rblIllegalActivity', 'rblTerroristActivity', 'rblTerroristSupport',
+                'rblTerroristOrg', 'rblTerroristRel', 'rblGenocide', 'rblTorture', 'rblExViolence',
+                'rblChildSoldier', 'rblReligiousFreedom', 'rblPopulationControls', 'rblTransplant',
+                'rblRemovalHearing', 'rblImmigrationFraud', 'rblFailToAttend', 'rblVisaViolation', 'rblDeport',
+                'rblChildCustody', 'rblVotingViolation', 'rblRenounceExp', 'rblAttWoReimb'
+            ].forEach(name => {
+                const r = document.querySelector(`input[name="${name}"][value="N"]`);
+                if (r) r.checked = true;
+            });
+
             // Pre-fill email in form
             const emailField = document.getElementById('tbxAPP_EMAIL_ADDR');
             if (emailField) emailField.value = email;
