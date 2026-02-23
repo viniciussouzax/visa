@@ -533,27 +533,152 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
     const unmatched = [];
     const fieldsBeforeCount = visible.length;
 
-    // Phase 1: Batch fill ALL empty text fields in one evaluate() call
-    const textBatch = [];
+    // PRIORITY ORDER: postback triggers first, then non-postback, then text last
+    // This prevents filling text fields that get hidden/reset by postbacks
+
+    // Phase 1: Clicks/radios that trigger postback (e.g. SpecificTravel, WhoIsPaying, LostPPT)
+    for (const field of visible) {
+        if (!field.id) continue;
+        if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
+        if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
+        const match = fieldMap.find(m => m.pattern.test(field.id));
+        if (!match) continue;
+        if (match.type !== 'click') continue;
+        if (!isPostbackClick(field.id, field.type)) continue;
+        if (field.checked) continue;
+
+        const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
+        try {
+            const isVis = await loc.isVisible({ timeout: 1000 }).catch(() => false);
+            if (!isVis) continue;
+            await loc.scrollIntoViewIfNeeded({ timeout: 1000 }).catch(() => { });
+            await loc.click();
+            filled++;
+            postbackNeeded = true;
+            postbackField = field.id;
+            break; // One postback at a time
+        } catch { }
+    }
+
+    // Phase 2: Selects with postback (e.g. WhoIsPaying dropdown, ddlLocation)
+    if (!postbackNeeded) {
+        for (const field of visible) {
+            if (!field.id || field.tag !== 'select') continue;
+            if (!isPostbackSelect(field.id)) continue;
+            const match = fieldMap.find(m => m.pattern.test(field.id));
+            if (!match) continue;
+            if (!isSelectEmpty(field.value)) continue;
+
+            const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
+            try {
+                const isVis = await loc.isVisible({ timeout: 1000 }).catch(() => false);
+                if (!isVis) continue;
+                await loc.scrollIntoViewIfNeeded({ timeout: 1000 }).catch(() => { });
+                if (match.type === 'select-label') {
+                    await loc.selectOption({ label: match.value });
+                } else if (match.type === 'select-search') {
+                    const allOpts = await loc.evaluate(sel =>
+                        Array.from(sel.options).map(o => ({ v: o.value, t: o.text }))
+                    );
+                    let found = allOpts.find(o => o.t.toUpperCase().includes(match.value.toUpperCase()));
+                    if (!found) found = allOpts.find(o => o.v?.toUpperCase().includes(match.value.toUpperCase()));
+                    if (found) await loc.selectOption(found.v);
+                    else continue;
+                } else {
+                    try { await loc.selectOption(match.value); }
+                    catch { try { await loc.selectOption({ label: match.value }); } catch { continue; } }
+                }
+                filled++;
+                postbackNeeded = true;
+                postbackField = field.id;
+                break;
+            } catch { }
+        }
+    }
+
+    // If postback needed, stop here and rescan after postback
+    if (postbackNeeded) {
+        if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} campos sem match:`, unmatched.slice(0, 5).join(', '));
+        console.log(`[Filler] Pass ${passNum} — ${filled} preenchidos, ⏳ postback: ${postbackField}`);
+
+        await waitForPostback(page);
+        const fieldsAfter = await discoverFields(page);
+        const visibleAfter = fieldsAfter.filter(f => f.visible && f.id).length;
+        const delta = visibleAfter - fieldsBeforeCount;
+        if (delta !== 0) console.log(`[Filler] Postback ${postbackField}: ${delta > 0 ? '+' : ''}${delta} campos`);
+
+        return { needsRescan: true, postbackField };
+    }
+
+    // Phase 3: Non-postback selects, clicks, checkboxes
     for (const field of visible) {
         if (!field.id) continue;
         if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
         if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
         const match = fieldMap.find(m => m.pattern.test(field.id));
         if (!match) { unmatched.push(field.id + '(' + field.type + ')'); continue; }
+        if (match.type === 'text') continue; // Done in Phase 4
+        if (match.type === 'click' && field.checked) continue;
+        if ((match.type === 'select' || match.type === 'select-label' || match.type === 'select-search') && !isSelectEmpty(field.value)) continue;
+        if (match.type === 'checkbox-check' && field.checked) continue;
+
+        const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
+        try {
+            const isVis = await loc.isVisible({ timeout: 1000 }).catch(() => false);
+            if (!isVis) continue;
+            await loc.scrollIntoViewIfNeeded({ timeout: 1000 }).catch(() => { });
+
+            switch (match.type) {
+                case 'select':
+                    try { await loc.selectOption(match.value); }
+                    catch { try { await loc.selectOption({ label: match.value }); } catch { await loc.selectOption({ index: 1 }).catch(() => { }); } }
+                    filled++;
+                    break;
+                case 'select-label':
+                    await loc.selectOption({ label: match.value });
+                    filled++;
+                    break;
+                case 'select-search': {
+                    const allOpts = await loc.evaluate(sel =>
+                        Array.from(sel.options).map(o => ({ v: o.value, t: o.text }))
+                    );
+                    let found = allOpts.find(o => o.t.toUpperCase().includes(match.value.toUpperCase()));
+                    if (!found) found = allOpts.find(o => o.v?.toUpperCase().includes(match.value.toUpperCase()));
+                    if (!found) found = allOpts.find(o => o.v && o.v !== '' && o.v !== '-1' && !o.t.toUpperCase().includes('SELECT'));
+                    if (found) { await loc.selectOption(found.v); filled++; }
+                    break;
+                }
+                case 'click':
+                    await loc.click();
+                    filled++;
+                    break;
+                case 'checkbox-check':
+                    await loc.check();
+                    filled++;
+                    break;
+            }
+        } catch { }
+    }
+
+    // Phase 4: Batch fill ALL empty text fields in one evaluate() call
+    const textBatch = [];
+    for (const field of visible) {
+        if (!field.id) continue;
+        if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
+        if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
+        const match = fieldMap.find(m => m.pattern.test(field.id));
+        if (!match) continue;
         if (match.type === 'text' && (!field.value || field.value.trim() === '') && match.value != null) {
             textBatch.push({ id: field.id, value: String(match.value) });
         }
     }
 
     if (textBatch.length > 0) {
-        // Fill all text fields at once (1 browser call instead of N)
         const batchFilled = await page.evaluate((batch) => {
             let count = 0;
             batch.forEach(({ id, value }) => {
                 const el = document.getElementById(id);
                 if (el && (!el.value || el.value.trim() === '')) {
-                    // Use native setter to trigger React/ASP.NET change detection
                     const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set
                         || Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
                     if (nativeSetter) nativeSetter.call(el, value);
@@ -566,98 +691,11 @@ async function autoFillPass(page, fieldMap, passNum = 0) {
             return count;
         }, textBatch);
         filled += batchFilled;
-        console.log(`[Filler] Batch fill: ${batchFilled} text fields filled in 1 call`);
+        console.log(`[Filler] Batch fill: ${batchFilled} text fields`);
     }
 
-    // Phase 2: Handle selects, clicks, checkboxes individually (may trigger postback)
-    for (const field of visible) {
-        if (!field.id) continue;
-        if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
-        if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
-
-        const match = fieldMap.find(m => m.pattern.test(field.id));
-        if (!match) continue;
-        if (match.type === 'text') continue; // Already handled in batch
-        const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
-
-        try {
-            const isVis = await loc.isVisible({ timeout: 2000 }).catch(() => false);
-            if (!isVis) continue;
-
-            // Scroll element into view before interacting
-            await loc.scrollIntoViewIfNeeded({ timeout: 2000 }).catch(() => { });
-
-            switch (match.type) {
-                case 'select':
-                    if (isSelectEmpty(field.value)) {
-                        try { await loc.selectOption(match.value); }
-                        catch { try { await loc.selectOption({ label: match.value }); } catch { await loc.selectOption({ index: 1 }).catch(() => { }); } }
-                        filled++;
-                        if (isPostbackSelect(field.id)) { postbackNeeded = true; postbackField = field.id; }
-                    }
-                    break;
-                case 'select-label':
-                    if (isSelectEmpty(field.value)) {
-                        await loc.selectOption({ label: match.value });
-                        filled++;
-                        if (isPostbackSelect(field.id)) { postbackNeeded = true; postbackField = field.id; }
-                    }
-                    break;
-                case 'select-search': {
-                    if (!isSelectEmpty(field.value)) break;
-                    const allOpts = await loc.evaluate(sel =>
-                        Array.from(sel.options).map(o => ({ v: o.value, t: o.text }))
-                    );
-                    let found = allOpts.find(o => o.t.toUpperCase().includes(match.value.toUpperCase()));
-                    if (!found) found = allOpts.find(o => o.v?.toUpperCase().includes(match.value.toUpperCase()));
-                    if (!found) found = allOpts.find(o => o.v && o.v !== '' && o.v !== '-1' && !o.t.toUpperCase().includes('SELECT'));
-                    if (found) { await loc.selectOption(found.v); filled++; if (isPostbackSelect(field.id)) { postbackNeeded = true; postbackField = field.id; } }
-                    break;
-                }
-                case 'click':
-                    if (!field.checked) {
-                        await loc.click();
-                        filled++;
-                        if (isPostbackClick(field.id, field.type)) { postbackNeeded = true; postbackField = field.id; }
-                    }
-                    break;
-                case 'checkbox-check':
-                    if (!field.checked) { await loc.check(); filled++; }
-                    break;
-            }
-        } catch { }
-        if (postbackNeeded) break;
-    }
-
-    if (unmatched.length > 0) {
-        console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} campos sem match:`, unmatched.slice(0, 5).join(', '));
-    }
-    console.log(`[Filler] Pass ${passNum} — ${filled} preenchidos, ${visible.length} visíveis${postbackField ? `, ⏳ postback: ${postbackField}` : ''}`);
-
-    if (postbackNeeded) {
-        const urlBefore = page.url();
-        await waitForPostback(page);
-        const urlAfter = page.url();
-
-        // Detectar se o postback causou navegação inesperada
-        if (urlAfter !== urlBefore) {
-            const newPage = identifyPage(urlAfter);
-            console.warn(`[Filler] ⚠️ Postback em ${postbackField} causou NAVEGAÇÃO: ${identifyPage(urlBefore)} → ${newPage}`);
-            if (newPage === 'Unknown') {
-                console.error(`[Filler] 🔴 Página desconhecida após postback! URL: ${urlAfter}`);
-            }
-        }
-
-        // Detectar postback inesperado (campo mudou contagem de fields)
-        const fieldsAfter = await discoverFields(page);
-        const visibleAfter = fieldsAfter.filter(f => f.visible && f.id).length;
-        const delta = visibleAfter - fieldsBeforeCount;
-        if (delta !== 0) {
-            console.log(`[Filler] Postback ${postbackField}: ${delta > 0 ? '+' : ''}${delta} campos (${fieldsBeforeCount} → ${visibleAfter})`);
-        }
-
-        return { needsRescan: true, postbackField };
-    }
+    if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} sem match:`, unmatched.slice(0, 5).join(', '));
+    console.log(`[Filler] Pass ${passNum} — ${filled} preenchidos, ${visible.length} visíveis`);
     return { needsRescan: false, postbackField: null };
 }
 
