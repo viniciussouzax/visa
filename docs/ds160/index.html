@@ -3474,14 +3474,32 @@
         }
 
         // ===== SPECIFIC TRAVEL BRANCH (Y shows specific, N shows non-specific) =====
+        // Reusable: clear all inputs inside a branch element
+        function clearBranchInputs(br) {
+            if (!br) return;
+            br.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"], input[type="number"], textarea').forEach(el => { el.value = ''; });
+            br.querySelectorAll('select').forEach(el => { el.selectedIndex = 0; });
+            br.querySelectorAll('input[type="radio"]').forEach(el => { el.checked = false; });
+            br.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; });
+            br.querySelectorAll('.br.open').forEach(nested => { nested.classList.remove('open'); });
+        }
+
         function updateTravelBranch() {
             const radios = document.querySelectorAll('input[name="rblSpecificTravel"]');
             let val = '';
             radios.forEach(r => { if (r.checked) val = r.value; });
             const brY = document.getElementById('br-rblSpecificTravel');
             const brN = document.getElementById('br-rblSpecificTravel-N');
-            if (brY) brY.classList.toggle('open', val === 'Y');
-            if (brN) brN.classList.toggle('open', val === 'N');
+            if (brY) {
+                const wasOpen = brY.classList.contains('open');
+                brY.classList.toggle('open', val === 'Y');
+                if (wasOpen && val !== 'Y') clearBranchInputs(brY);
+            }
+            if (brN) {
+                const wasOpen = brN.classList.contains('open');
+                brN.classList.toggle('open', val === 'N');
+                if (wasOpen && val !== 'N') clearBranchInputs(brN);
+            }
         }
 
         // ===== N/A CHECKBOXES =====
@@ -3549,25 +3567,7 @@
                     const shouldOpen = invertedBranches.includes(branchName) ? r.value === 'N' : r.value === 'Y';
                     if (br) {
                         br.classList.toggle('open', shouldOpen);
-                        // When closing a branch, clear all its inputs to avoid stale data
-                        if (!shouldOpen) {
-                            br.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"], input[type="number"], textarea').forEach(el => {
-                                el.value = '';
-                            });
-                            br.querySelectorAll('select').forEach(el => {
-                                el.selectedIndex = 0;
-                            });
-                            br.querySelectorAll('input[type="radio"]').forEach(el => {
-                                el.checked = false;
-                            });
-                            br.querySelectorAll('input[type="checkbox"]').forEach(el => {
-                                el.checked = false;
-                            });
-                            // Also close any nested branches
-                            br.querySelectorAll('.br.open').forEach(nested => {
-                                nested.classList.remove('open');
-                            });
-                        }
+                        if (!shouldOpen) clearBranchInputs(br);
                     }
                 });
             });
