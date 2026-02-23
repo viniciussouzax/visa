@@ -386,6 +386,47 @@
             background: #047857;
         }
 
+        .btn-rm {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            margin-bottom: 10px;
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-rm:hover {
+            background: #dc2626;
+            color: #fff;
+            border-color: #dc2626;
+        }
+
+        .btn-add {
+            padding: 8px 16px;
+            margin-top: 8px;
+            background: #f0f9ff;
+            color: #3b82f6;
+            border: 1px solid #93c5fd;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-add:hover {
+            background: #3b82f6;
+            color: #fff;
+            border-color: #3b82f6;
+        }
+
         .validation-toast {
             position: fixed;
             bottom: 24px;
@@ -3607,7 +3648,7 @@
             html = html.replace(/ctl00/g, 'ctl' + padIdx);
 
             // Add remove button
-            entry.innerHTML = `<button type="button" class="btn-rm" onclick="removeEntry(this)" title="Remover">×</button>${html}`;
+            entry.innerHTML = `<button type="button" class="btn-rm" onclick="removeEntry(this)" title="Remover">🗑 REMOVER</button>${html}`;
             // Insert before the add button
             const addBtn = container.querySelector('.btn-add');
             container.insertBefore(entry, addBtn);
@@ -4229,7 +4270,19 @@
 
             const snap = data._formSnapshot;
             if (snap) {
-                // Phase 1: Restore radios FIRST (opens conditional branches)
+                // Phase 1: Create dynamic entries FIRST (so their elements exist)
+                if (snap.dynamicEntries) {
+                    Object.entries(snap.dynamicEntries).forEach(([listId, count]) => {
+                        const container = document.querySelector(`.as[data-list="${listId}"]`);
+                        if (!container) return;
+                        const existing = container.querySelectorAll('.entry').length;
+                        for (let i = existing; i < count; i++) {
+                            if (typeof addEntry === 'function') addEntry(listId);
+                        }
+                    });
+                }
+
+                // Phase 2: Restore radios (opens conditional branches in ALL entries)
                 if (snap.radios) {
                     Object.entries(snap.radios).forEach(([name, value]) => {
                         if (!value || value === 'N/A') return;
@@ -4241,25 +4294,13 @@
                     });
                 }
 
-                // Phase 2: Restore checkboxes
+                // Phase 3: Restore checkboxes
                 if (snap.checkboxes) {
                     Object.entries(snap.checkboxes).forEach(([id, checked]) => {
                         const el = document.getElementById(id);
                         if (el) {
                             el.checked = checked;
                             el.dispatchEvent(new Event('change', { bubbles: true }));
-                        }
-                    });
-                }
-
-                // Phase 3: Create dynamic entries (DataList) before filling values
-                if (snap.dynamicEntries) {
-                    Object.entries(snap.dynamicEntries).forEach(([listId, count]) => {
-                        const container = document.querySelector(`.as[data-list="${listId}"]`);
-                        if (!container) return;
-                        const existing = container.querySelectorAll('.entry').length;
-                        for (let i = existing; i < count; i++) {
-                            if (typeof addEntry === 'function') addEntry(listId);
                         }
                     });
                 }
