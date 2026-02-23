@@ -3167,6 +3167,13 @@
                     return;
                 }
             }
+            // No next page found — we're at the last section. Mark it complete.
+            const lastPageId = 'pg-' + (window._PAGES_NAMES?.[currentPage] || '');
+            const lastSecIdx = window._pageToSection?.[lastPageId];
+            if (lastSecIdx !== undefined && window._markComplete) {
+                window._markComplete(lastSecIdx);
+            }
+            autoSaveData();
         }
 
         // Silent auto-save: saves data without blocking UI
@@ -4728,6 +4735,7 @@
             // Map pageId -> sectionIdx
             const pageToSection = {};
             SECTIONS.forEach((sec, i) => sec.pages.forEach(p => { pageToSection[p] = i; }));
+            window._pageToSection = pageToSection;
 
             // Build accordion items, each wrapping the original page divs
             SECTIONS.forEach((sec, idx) => {
