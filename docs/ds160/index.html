@@ -3101,8 +3101,14 @@
             }
             // Auto-save on every page transition
             autoSaveData();
+            const prevPage = currentPage;
             for (let i = currentPage + 1; i < PAGES.length; i++) {
-                if (isPageVisible(i)) { showPage(i); return; }
+                if (isPageVisible(i)) {
+                    showPage(i);
+                    // Notify accordion of section change
+                    if (window._onSectionChange) window._onSectionChange(prevPage, currentPage);
+                    return;
+                }
             }
         }
 
@@ -3382,8 +3388,13 @@
         }
 
         function prevPage() {
+            const prev = currentPage;
             for (let i = currentPage - 1; i >= 0; i--) {
-                if (isPageVisible(i)) { showPage(i); return; }
+                if (isPageVisible(i)) {
+                    showPage(i);
+                    if (window._onSectionChange) window._onSectionChange(prev, currentPage);
+                    return;
+                }
             }
         }
         function buildNav() {
@@ -4709,64 +4720,25 @@
 
             // updateProgress removed — progress bar was removed from UI
 
-            // === INTERCEPT original navigation ===
-            // Save original showPage reference
-            if (typeof showPage === 'function') {
-                window._origShowPage = showPage;
-            }
-            // Save PAGES names
-            if (typeof PAGES !== 'undefined' && Array.isArray(PAGES)) {
-                window._PAGES_NAMES = [...PAGES];
-            }
+            // === SECTION CHANGE CALLBACK ===
+            // Called by nextPage/prevPage when navigation crosses section boundaries
+            // prevPageIdx and newPageIdx are PAGES array indexes
+            window._PAGES_NAMES = (typeof PAGES !== 'undefined' && Array.isArray(PAGES)) ? [...PAGES] : [];
+            if (typeof showPage === 'function') window._origShowPage = showPage;
 
-            // Override showPage to also open the correct accordion
-            const origShowPage = window._origShowPage;
-            window.showPage = function (i) {
-                // Call original
-                if (origShowPage) origShowPage(i);
-                // Find which section this page belongs to (always force open)
-                if (window._PAGES_NAMES && window._PAGES_NAMES[i] && !window._skipShowPageAccordion) {
-                    const pageId = 'pg-' + window._PAGES_NAMES[i];
-                    const secIdx = pageToSection[pageId];
-                    if (secIdx !== undefined && secIdx !== currentSectionIdx) {
-                        toggleAccordion(secIdx, true);
-                    }
-                }
-            };
+            window._onSectionChange = function (prevPageIdx, newPageIdx) {
+                const prevPageId = 'pg-' + (window._PAGES_NAMES[prevPageIdx] || '');
+                const newPageId = 'pg-' + (window._PAGES_NAMES[newPageIdx] || '');
+                const prevSecIdx = pageToSection[prevPageId];
+                const newSecIdx = pageToSection[newPageId];
 
-            // Override nextPage to mark section complete when moving to next section
-            const origNextPage = window.nextPage;
-            window.nextPage = function () {
-                const prevSection = currentSectionIdx;
-                window._skipShowPageAccordion = true; // prevent showPage from toggling
-                if (origNextPage) origNextPage();
-                window._skipShowPageAccordion = false;
-                // Check if we moved to a different section
-                if (window._PAGES_NAMES) {
-                    const activePage = document.querySelector('.page.active');
-                    if (activePage) {
-                        const secIdx = pageToSection[activePage.id];
-                        if (secIdx !== undefined && secIdx !== prevSection) {
-                            markComplete(prevSection);
-                            autoSavePartial(); // auto-save to DB
-                            toggleAccordion(secIdx, true);
-                            document.querySelector(`[data-section="${secIdx}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
+                if (prevSecIdx !== undefined && newSecIdx !== undefined && prevSecIdx !== newSecIdx) {
+                    // Moving forward: mark previous section complete
+                    if (newPageIdx > prevPageIdx) {
+                        markComplete(prevSecIdx);
                     }
-                }
-            };
-
-            // Override prevPage similarly
-            const origPrevPage = window.prevPage;
-            window.prevPage = function () {
-                if (origPrevPage) origPrevPage();
-                const activePage = document.querySelector('.page.active');
-                if (activePage) {
-                    const secIdx = pageToSection[activePage.id];
-                    if (secIdx !== undefined && secIdx !== currentSectionIdx) {
-                        toggleAccordion(secIdx, true);
-                        document.querySelector(`[data-section="${secIdx}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
+                    toggleAccordion(newSecIdx, true);
+                    document.querySelector(`[data-section="${newSecIdx}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             };
 
