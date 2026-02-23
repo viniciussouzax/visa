@@ -265,8 +265,11 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                 await privacyCheck.check();
             }
 
-            await page.locator("select[id$='_ddlQuestions']").selectOption({ index: 1 });
-            const secAnswer = application?.security_answer || 'BRAZIL';
+            // Select security question from settings (config.security_question = index from DB)
+            const questionIndex = parseInt(config.security_question || '1', 10);
+            await page.locator("select[id$='_ddlQuestions']").selectOption({ index: questionIndex });
+            // Security answer priority: profile > config (from settings table) > null
+            const secAnswer = profile.securityAnswer || config.security_answer || '';
             await page.locator("input[id$='_txtAnswer']").fill(secAnswer);
 
             const urlBefore = page.url();
@@ -873,21 +876,21 @@ function normalizeProfile(data) {
         nationality: g(p2, 'nationality', 'nationality') || null,
         otherNationality: p2.otherNationality === 'Y' || p2.other_nationality === 'Y',
         otherNationalityCountry: (() => {
-            const nat = g(p2, 'nationality', 'nationality') || 'BRAZIL';
+            const nat = g(p2, 'nationality', 'nationality') || null;
             const others = (p2.otherNationalities || p2.other_nationalities || [])
                 .filter(o => o.country && o.country !== nat) // exclude primary nationality
                 .filter((o, i, arr) => arr.findIndex(x => x.country === o.country) === i); // deduplicate
             return others[0]?.country;
         })(),
         otherNationalityPassport: (() => {
-            const nat = g(p2, 'nationality', 'nationality') || 'BRAZIL';
+            const nat = g(p2, 'nationality', 'nationality') || null;
             const others = (p2.otherNationalities || p2.other_nationalities || [])
                 .filter(o => o.country && o.country !== nat)
                 .filter((o, i, arr) => arr.findIndex(x => x.country === o.country) === i);
             return others[0]?.hasPassport === 'Y';
         })(),
         otherNationalityPassportNumber: (() => {
-            const nat = g(p2, 'nationality', 'nationality') || 'BRAZIL';
+            const nat = g(p2, 'nationality', 'nationality') || null;
             const others = (p2.otherNationalities || p2.other_nationalities || [])
                 .filter(o => o.country && o.country !== nat)
                 .filter((o, i, arr) => arr.findIndex(x => x.country === o.country) === i);
@@ -895,7 +898,7 @@ function normalizeProfile(data) {
         })(),
         permanentResidentOtherCountry: p2.permanentResident === 'Y' || p2.permanent_resident === 'Y',
         permanentResidentCountry: (() => {
-            const nat = g(p2, 'nationality', 'nationality') || 'BRAZIL';
+            const nat = g(p2, 'nationality', 'nationality') || null;
             const countries = (p2.permanentResidentCountries || p2.permanent_resident_countries || [])
                 .filter(c => c.country && c.country !== nat) // exclude primary nationality
                 .filter((c, i, arr) => arr.findIndex(x => x.country === c.country) === i); // deduplicate
@@ -1013,14 +1016,14 @@ function normalizeProfile(data) {
 
         // === PASSPORT ===
         passport: {
-            type: g(ppt, 'type', 'type') || 'R',
+            type: g(ppt, 'type', 'type') || null,
             typeExplanation: ppt.typeExplanation || ppt.type_explanation,
             number: g(ppt, 'number', 'number'),
             bookNumber: na(ppt.bookNumber || ppt.book_number),
-            issuingCountry: g(ppt, 'issuingCountry', 'issuing_country') || 'BRAZIL',
+            issuingCountry: g(ppt, 'issuingCountry', 'issuing_country') || null,
             issuedCity: g(ppt, 'issuedCity', 'issued_city'),
             issuedState: g(ppt, 'issuedState', 'issued_state'),
-            issuedCountry: g(ppt, 'issuedCountry', 'issued_country') || 'BRAZIL',
+            issuedCountry: g(ppt, 'issuedCountry', 'issued_country') || null,
             issuanceDate: ppt.issuanceDate || ppt.issuance_date,
             expirationDate: ppt.expirationDate || ppt.expiration_date,
             lostOrStolen: ppt.lostOrStolen === 'Y' || ppt.lost_or_stolen === 'Y',
@@ -1035,7 +1038,7 @@ function normalizeProfile(data) {
                 surname: uc.surname || '',
                 givenName: uc.givenName || uc.given_name || '',
                 organization: uc.organization || '',
-                relationship: uc.relationship || 'O',
+                relationship: uc.relationship || '',
                 street1: uc.street1 || ucAddr.street1 || '',
                 street2: uc.street2 || ucAddr.street2 || '',
                 city: uc.city || ucAddr.city || '',
@@ -1088,7 +1091,7 @@ function normalizeProfile(data) {
         })(),
 
         // === WORK / EDUCATION 1 ===
-        occupationCode: g(we1, 'occupation', 'occupation') || 'H',
+        occupationCode: g(we1, 'occupation', 'occupation') || null,
         occupationExplanation: we1.occupationExplanation || we1.occupation_explanation,
         employer: we1.employer || {},
 
@@ -1098,18 +1101,18 @@ function normalizeProfile(data) {
         hasEducation: we2.hasEducation === 'Y' || we2.has_education === 'Y',
         education: (we2.education || []).map(e => ({
             name: e.name || '',
-            street1: e.street1 || (e.city ? e.city + ' CAMPUS' : 'N/A'),
+            street1: e.street1 || '',
             city: e.city || '',
-            state: e.state || e.city || '',
-            postalCode: e.postalCode || e.postal_code || (addr.homeAddress || addr.home_address || {}).postalCode || '00000-000',
-            country: e.country || 'BRAZIL',
+            state: e.state || '',
+            postalCode: e.postalCode || e.postal_code || '',
+            country: e.country || '',
             courseOfStudy: e.courseOfStudy || e.course_of_study || e.course || '',
             startDate: e.startDate || e.start_date || { month: '', year: '' },
             endDate: e.endDate || e.end_date || { month: '', year: '' },
         })),
 
         // === WORK / EDUCATION 3 ===
-        languages: we3.languages || ['PORTUGUESE'],
+        languages: we3.languages || [],
         clanTribe: we3.clanTribe === 'Y' || we3.clan_tribe === 'Y',
         clanTribeName: we3.clanTribeName || we3.clan_tribe_name || '',
         countriesVisited: we3.countriesVisited === 'Y' || we3.countries_visited === 'Y',
@@ -1124,8 +1127,8 @@ function normalizeProfile(data) {
         insurgentOrgExplanation: we3.insurgentOrgExplanation || we3.insurgent_org_explanation || '',
 
         // === META ===
-        location: data.location || 'SPL',
-        securityAnswer: data.securityAnswer || data.security_answer || 'BRAZIL'
+        location: data.location || null,
+        securityAnswer: data.securityAnswer || data.security_answer || null
     };
 }
 

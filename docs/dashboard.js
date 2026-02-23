@@ -153,6 +153,55 @@ $('btn-back-agencies').onclick = () => {
 };
 
 // ============================================================
+// SETTINGS — Load / Save default answers
+// ============================================================
+const SETTINGS_KEYS = ['security_question', 'security_answer'];
+
+async function loadSettings() {
+    const { data, error } = await sb.from('settings').select('key_name, key_value').in('key_name', SETTINGS_KEYS);
+    if (error) { console.error('loadSettings error:', error); return; }
+    (data || []).forEach(s => {
+        if (s.key_name === 'security_question') {
+            const el = $('setting-security-question');
+            if (el) el.value = s.key_value || '4';
+        }
+        if (s.key_name === 'security_answer') {
+            const el = $('setting-security-answer');
+            if (el) el.value = s.key_value || '';
+        }
+    });
+}
+
+if ($('btn-save-settings')) {
+    $('btn-save-settings').onclick = async () => {
+        const question = $('setting-security-question')?.value || '4';
+        const answer = $('setting-security-answer')?.value || '';
+        const upserts = [
+            { key_name: 'security_question', key_value: question, description: 'Índice da pergunta de segurança DS-160' },
+            { key_name: 'security_answer', key_value: answer, description: 'Resposta padrão da pergunta de segurança' }
+        ];
+        const { error } = await sb.from('settings').upsert(upserts, { onConflict: 'key_name' });
+        const status = $('settings-status');
+        if (error) {
+            status.textContent = '❌ Erro ao salvar: ' + error.message;
+            status.style.color = 'var(--error)';
+        } else {
+            status.textContent = '✅ Configurações salvas com sucesso!';
+            status.style.color = 'var(--success)';
+        }
+        status.style.display = 'block';
+        setTimeout(() => { status.style.display = 'none'; }, 3000);
+    };
+}
+
+// Load settings when tab is opened
+const origShowMasterSub = showMasterSub;
+showMasterSub = function (tabName) {
+    origShowMasterSub(tabName);
+    if (tabName === 'settings') loadSettings();
+};
+
+// ============================================================
 // PIPELINE — LOAD STATS + LIST
 // ============================================================
 async function loadPipeline() {

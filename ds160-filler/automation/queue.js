@@ -308,7 +308,16 @@ class QueueRunner {
             .from('automation_config')
             .select('*')
             .single();
-        return data || {};
+        const config = data || {};
+
+        // Merge default settings (security_answer, security_question, etc.)
+        const { data: settings } = await this.supabase
+            .from('settings')
+            .select('key_name, key_value');
+        if (settings) {
+            settings.forEach(s => { config[s.key_name] = s.key_value; });
+        }
+        return config;
     }
 
     // ==============================================================

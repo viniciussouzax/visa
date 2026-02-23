@@ -1236,6 +1236,9 @@
                             <button class="master-tab" data-master-tab="logs"
                                 style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">
                                 Logs</button>
+                            <button class="master-tab" data-master-tab="settings"
+                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">
+                                Configurações</button>
                         </div>
 
                         <!-- Sub: Agencies List -->
@@ -1298,6 +1301,48 @@
                                     <tbody id="logs-list"></tbody>
                                 </table>
                             </div>
+                        </div>
+
+                        <!-- Sub: Settings (Configurações Padrão) -->
+                        <div class="master-sub" id="master-sub-settings">
+                            <div
+                                style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                                <div>
+                                    <h3 style="font-size:16px;font-weight:700">Respostas Padrão</h3>
+                                    <p style="color:var(--text-muted);font-size:12px;margin-top:4px">Valores utilizados
+                                        automaticamente pela automação DS-160. Edite conforme necessário.</p>
+                                </div>
+                            </div>
+
+                            <div class="config-card" style="margin-bottom:16px">
+                                <h4 style="font-size:14px;font-weight:600;margin-bottom:4px">Pergunta de Segurança</h4>
+                                <p style="color:var(--text-muted);font-size:11px;margin-bottom:12px">Qual pergunta
+                                    selecionar no DS-160 ao criar uma nova aplicação.</p>
+                                <select id="setting-security-question"
+                                    style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+                                    <option value="1">What is your mother's maiden name?</option>
+                                    <option value="2">What is the name of your first pet?</option>
+                                    <option value="3">What city were you born in?</option>
+                                    <option value="4">What is the name of your mother's mother?</option>
+                                    <option value="5">What was the make of your first car?</option>
+                                </select>
+                            </div>
+
+                            <div class="config-card" style="margin-bottom:16px">
+                                <h4 style="font-size:14px;font-weight:600;margin-bottom:4px">Resposta de Segurança</h4>
+                                <p style="color:var(--text-muted);font-size:11px;margin-bottom:12px">Resposta padrão
+                                    para a pergunta de segurança. Ex: "VO" (nome da avó materna).</p>
+                                <input type="text" id="setting-security-answer" placeholder="Ex: VO"
+                                    style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+                            </div>
+
+                            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+                                <button class="btn-sm btn-primary-sm" id="btn-save-settings"
+                                    style="padding:10px 24px;font-size:13px;font-weight:600">💾 Salvar
+                                    Configurações</button>
+                            </div>
+                            <div id="settings-status"
+                                style="margin-top:10px;font-size:12px;color:var(--success);display:none"></div>
                         </div>
                     </div>
 
