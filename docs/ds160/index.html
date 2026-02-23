@@ -3156,23 +3156,26 @@
             if (currentPage === 1 && !savedApplicantId) {
                 saveOnPersonal1Exit();
             }
+
+            // Mark current section as complete (validation passed)
+            const curPageId = 'pg-' + (window._PAGES_NAMES?.[currentPage] || '');
+            const curSecIdx = window._pageToSection?.[curPageId];
+            if (curSecIdx !== undefined && window._markComplete) {
+                window._markComplete(curSecIdx);
+            }
+
             const prevPage = currentPage;
             for (let i = currentPage + 1; i < PAGES.length; i++) {
                 if (isPageVisible(i)) {
                     showPage(i);
-                    // Notify accordion of section change (marks check FIRST)
+                    // Notify accordion of section change
                     if (window._onSectionChange) window._onSectionChange(prevPage, currentPage);
                     // Auto-save AFTER check is marked so snapshot includes it
                     autoSaveData();
                     return;
                 }
             }
-            // No next page found — we're at the last section. Mark it complete.
-            const lastPageId = 'pg-' + (window._PAGES_NAMES?.[currentPage] || '');
-            const lastSecIdx = window._pageToSection?.[lastPageId];
-            if (lastSecIdx !== undefined && window._markComplete) {
-                window._markComplete(lastSecIdx);
-            }
+            // No next page — last section, just save
             autoSaveData();
         }
 
