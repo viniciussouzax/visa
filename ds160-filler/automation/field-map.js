@@ -432,7 +432,6 @@ function buildDynamicFieldMap(a) {
     { pattern: /tbxAPP_ADDR_STATE$/i, value: addr.state, type: "text" },
     { pattern: /tbxAPP_ADDR_POSTAL_CD$/i, value: addr.postalCode, type: "text" },
     { pattern: /ddlAPP_ADDR_CNTRY$/i, value: addr.country, type: "select-label" },
-    { pattern: /ddlCountry$/i, value: addr.country, type: "select-label" },
     { pattern: /tbxAPP_HOME_TEL$/i, value: ph(a.phone), type: "text" },
     { pattern: /tbxAPP_EMAIL_ADDR$/i, value: a.email, type: "text" },
   );
@@ -563,6 +562,8 @@ function buildDynamicFieldMap(a) {
     { pattern: /tbxPPT_ISSUED_IN_CITY$/i, value: pp.issuedCity, type: "text" },
     { pattern: /tbxPPT_ISSUED_IN_STATE$/i, value: pp.issuedState, type: "text" },
     { pattern: /ddlPPT_ISSUED_IN_CNTRY$/i, value: pp.issuedCountry, type: "select-label" },
+    // ddlCountry on Passport page = "Where was passport issued - Country/Region"
+    { pattern: /ddlCountry$/i, value: pp.issuedCountry, type: "select-label" },
     // Issuance date — DS-160 uses both ddlPPT_ISSUED_DTEDay and ddlPPT_ISSUEDDay variants
     { pattern: /ddlPPT_ISSUED(_DTE)?Day$/i, value: pp.issuanceDate.day, type: "select" },
     { pattern: /ddlPPT_ISSUED(_DTE)?Month$/i, value: pp.issuanceDate.month, type: "select" },
