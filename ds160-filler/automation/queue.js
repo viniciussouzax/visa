@@ -1,6 +1,5 @@
 // Queue Runner — Resilient automation with retry, backoff, and smart updates
-const hotReload = require('./hot-reload');
-function getFiller() { return hotReload.hotRequire('filler.js'); }
+function getFiller() { return require('./filler'); }
 const path = require('path');
 
 const POLL_INTERVAL = 1800; // 30 minutes between checks
