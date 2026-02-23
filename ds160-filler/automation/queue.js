@@ -324,6 +324,13 @@ class QueueRunner {
             })
             .eq('id', app.id);
 
+        // Sync pipeline status → 'doing'
+        await this.supabase
+            .from('applicants')
+            .update({ pipeline_status: 'doing', updated_at: new Date().toISOString() })
+            .eq('id', app.applicant_id);
+        console.log('[Queue] Pipeline status → doing for', app.applicant_id);
+
         return { ...app, fill_status: 'filling' };
     }
 
@@ -349,7 +356,8 @@ class QueueRunner {
     // STATUS UPDATES
     // ==============================================================
     async _markDone(appId, applicationId, lastPage) {
-        await this.supabase
+        // Update application status
+        const { data: appData } = await this.supabase
             .from('applications')
             .update({
                 fill_status: 'filled',
@@ -358,7 +366,18 @@ class QueueRunner {
                 last_page: lastPage || null,
                 fill_error: null
             })
-            .eq('id', appId);
+            .eq('id', appId)
+            .select('applicant_id')
+            .single();
+
+        // Sync pipeline status → 'done'
+        if (appData) {
+            await this.supabase
+                .from('applicants')
+                .update({ pipeline_status: 'done', updated_at: new Date().toISOString() })
+                .eq('id', appData.applicant_id);
+            console.log('[Queue] Pipeline status → done for', appData.applicant_id);
+        }
     }
 
     async _markError(appId, errMsg) {
