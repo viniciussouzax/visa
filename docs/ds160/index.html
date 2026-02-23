@@ -4580,8 +4580,22 @@
                 });
             });
 
-            function toggleAccordion(idx) {
+            function toggleAccordion(idx, forceOpen) {
                 const items = container.querySelectorAll('.acc-item');
+                const target = items[idx];
+                if (!target) return;
+                const targetBody = target.querySelector('.acc-body');
+                const targetChevron = target.querySelector('.acc-chevron');
+                const isOpen = targetBody.classList.contains('open');
+
+                // If already open and not forced, close it
+                if (isOpen && !forceOpen) {
+                    targetBody.classList.remove('open');
+                    targetChevron.classList.remove('open');
+                    return;
+                }
+
+                // Otherwise open this one and close others
                 items.forEach((item, i) => {
                     const body = item.querySelector('.acc-body');
                     const chevron = item.querySelector('.acc-chevron');
@@ -4598,7 +4612,6 @@
                 // Show first page of this section
                 const sec = SECTIONS[idx];
                 if (sec && sec.pages.length > 0) {
-                    // Find the page index in the original PAGES array and show it
                     const pageNames = typeof _PAGES_NAMES !== 'undefined' ? _PAGES_NAMES : [];
                     const firstPageId = sec.pages[0].replace('pg-', '');
                     const pageIdx = pageNames.indexOf(firstPageId);
@@ -4657,7 +4670,7 @@
                         if (secIdx !== undefined && secIdx !== prevSection) {
                             markComplete(prevSection);
                             autoSavePartial(); // auto-save to DB
-                            toggleAccordion(secIdx);
+                            toggleAccordion(secIdx, true);
                             document.querySelector(`[data-section="${secIdx}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }
                     }
@@ -4672,14 +4685,14 @@
                 if (activePage) {
                     const secIdx = pageToSection[activePage.id];
                     if (secIdx !== undefined && secIdx !== currentSectionIdx) {
-                        toggleAccordion(secIdx);
+                        toggleAccordion(secIdx, true);
                         document.querySelector(`[data-section="${secIdx}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
                 }
             };
 
             // Show first section
-            toggleAccordion(0);
+            toggleAccordion(0, true);
 
             // Expose for use after data restore
             window._markComplete = markComplete;
