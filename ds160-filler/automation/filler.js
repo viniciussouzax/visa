@@ -19,6 +19,7 @@ const TMP = path.join(__dirname, '..', 'tmp');
  * Fill a DS-160 application using Playwright's Chromium.
  * @param {object} applicant - Row from 'applicants' table (has .data JSON)
  * @param {object} application - Row from 'applications' table
+ * @param {function} onAppId - Callback when application_id is captured (for immediate DB persist)
  * @param {object} config - From automation_config table
  * @param {string} captchaMode - 'capmonster' | 'ai_vision'
  * @param {function} onPage - Callback(pageName) for status updates
@@ -26,7 +27,7 @@ const TMP = path.join(__dirname, '..', 'tmp');
  * @param {object} [existingPage] - Reuse this page instead of creating new
  * @returns {{ success: boolean, applicationId?: string, error?: string, browser, activePage }}
  */
-async function fillApplication(applicant, application, config, captchaMode, onPage, existingBrowser, existingPage) {
+async function fillApplication(applicant, application, onAppId, config, captchaMode, onPage, existingBrowser, existingPage) {
     if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
 
     // Build field map from applicant data
@@ -381,6 +382,7 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                     if (appIdMatch) {
                         application.application_id = appIdMatch[0];
                         console.log(`[Filler] Application ID: ${appIdMatch[0]}`);
+                        if (typeof onAppId === 'function') onAppId(appIdMatch[0]);
                     }
 
                     const urlBefore2 = page.url();
@@ -434,6 +436,7 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                 if (urlAppIdMatch) {
                     application.application_id = urlAppIdMatch[1];
                     console.log(`[Filler] 🆔 Application ID (from URL): ${urlAppIdMatch[1]}`);
+                    if (typeof onAppId === 'function') onAppId(urlAppIdMatch[1]);
                 } else {
                     // Also try to read from the page header (DS-160 shows ID in top bar)
                     const headerAppId = await page.locator("span[id$='_lblAppID'], span[id$='_lblBarcode']").first().innerText().catch(() => '');
@@ -441,6 +444,7 @@ async function fillApplication(applicant, application, config, captchaMode, onPa
                     if (headerMatch) {
                         application.application_id = headerMatch[0];
                         console.log(`[Filler] 🆔 Application ID (from header): ${headerMatch[0]}`);
+                        if (typeof onAppId === 'function') onAppId(headerMatch[0]);
                     }
                 }
             }
@@ -676,6 +680,7 @@ async function waitForUrlChange(page, urlBefore, timeout = 10000) {
 
 async function fillPageCompletely(page, fieldMap) {
     await waitForPageReady(page);
+    const pageStart = Date.now();
     let pass = 0, needsRescan = true;
     const postbackLog = [];
     const addAnotherClicked = new Set(); // Track "list:idx" to prevent infinite Add Another
@@ -687,11 +692,12 @@ async function fillPageCompletely(page, fieldMap) {
         }
         pass++;
     }
+    const elapsed = ((Date.now() - pageStart) / 1000).toFixed(1);
     if (postbackLog.length > 0) {
         console.log(`[Filler] Postback triggers nesta página: ${postbackLog.join(' → ')}`);
     }
-    console.log(`[Filler] Página preenchida em ${pass} pass(es)`);
-    return { passes: pass, postbackLog };
+    console.log(`[Filler] Página preenchida em ${pass} pass(es) [${elapsed}s]`);
+    return { passes: pass, postbackLog, elapsed: parseFloat(elapsed) };
 }
 
 async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new Set()) {
@@ -829,6 +835,8 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
 
             // Find the Add Another button — DS-160 uses: btnAdd, lnkAdd, or input[type=button] near the DataList
             const addBtnSelectors = [
+                // Try custom buttonPattern from fieldMap entry
+                ...(entry.addAnother.buttonPattern ? [`input[id]:is(:visible)`, `a[id]:is(:visible)`] : []),
                 `input[id*="btnAdd"][id*="${listName}"]`,
                 `a[id*="btnAdd"][id*="${listName}"]`,
                 `input[id*="lnkAdd"][id*="${listName}"]`,
@@ -836,19 +844,42 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
             ];
 
             let clicked = false;
-            for (const sel of addBtnSelectors) {
-                const addBtn = page.locator(sel).first();
-                try {
-                    if (await addBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
-                        await addBtn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-                        await addBtn.click();
-                        console.log(`[Filler] ✅ Clicou Add Another para "${listName}" (selector: ${sel})`);
-                        await waitForPostback(page);
-                        clicked = true;
-                        break;
+
+            // First: try buttonPattern regex from entry
+            if (entry.addAnother.buttonPattern && !clicked) {
+                const allBtns = await page.locator('input[type="button"], input[type="submit"], a[id*="btn"], a[id*="lnk"]').all().catch(() => []);
+                for (const btn of allBtns) {
+                    const id = await btn.getAttribute('id').catch(() => '');
+                    if (id && entry.addAnother.buttonPattern.test(id)) {
+                        const vis = await btn.isVisible({ timeout: 500 }).catch(() => false);
+                        if (vis) {
+                            await btn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
+                            await btn.click();
+                            console.log(`[Filler] ✅ Clicou Add Another para "${listName}" via buttonPattern (${id})`);
+                            await waitForPostback(page);
+                            clicked = true;
+                            break;
+                        }
                     }
-                } catch (e) {
-                    console.warn(`[Filler] ⚠️ Add Another click falhou (${sel}):`, e.message);
+                }
+            }
+
+            // Second: try specific selectors
+            if (!clicked) {
+                for (const sel of addBtnSelectors) {
+                    const addBtn = page.locator(sel).first();
+                    try {
+                        if (await addBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+                            await addBtn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
+                            await addBtn.click();
+                            console.log(`[Filler] ✅ Clicou Add Another para "${listName}" (selector: ${sel})`);
+                            await waitForPostback(page);
+                            clicked = true;
+                            break;
+                        }
+                    } catch (e) {
+                        console.warn(`[Filler] ⚠️ Add Another click falhou (${sel}):`, e.message);
+                    }
                 }
             }
 
@@ -1116,7 +1147,11 @@ function normalizeProfile(data) {
 
         // === PERSONAL 2 ===
         nationality: g(p2, 'nationality', 'nationality') || null,
-        otherNationality: p2.otherNationality === 'Y' || p2.other_nationality === 'Y',
+        otherNationality: (() => {
+            const flag = p2.otherNationality === 'Y' || p2.other_nationality === 'Y';
+            if (!flag && (p2.otherNationalities || p2.other_nationalities || []).length > 0) return true;
+            return flag;
+        })(),
         // Full array of other nationalities (for Add Another support)
         otherNationalities: (() => {
             const nat = g(p2, 'nationality', 'nationality') || null;
@@ -1146,7 +1181,16 @@ function normalizeProfile(data) {
                 .filter((o, i, arr) => arr.findIndex(x => x.country === o.country) === i);
             return others[0]?.passportNumber;
         })(),
-        permanentResidentOtherCountry: p2.permanentResident === 'Y' || p2.permanent_resident === 'Y',
+        permanentResidentOtherCountry: (() => {
+            const flag = p2.permanentResident === 'Y' || p2.permanent_resident === 'Y'
+                || p2.permanentResidentOtherCountry === 'Y' || p2.permanent_resident_other_country === 'Y'
+                || p2.hasPermanentResident === 'Y' || p2.has_permanent_resident === 'Y';
+            // Auto-detect: if array has entries, flag should be true
+            if (!flag && (p2.permanentResidentCountries || p2.permanent_resident_countries || []).length > 0) {
+                return true;
+            }
+            return flag;
+        })(),
         // Full array of perm resident countries (for Add Another support)
         permanentResidentCountries: (() => {
             const nat = g(p2, 'nationality', 'nationality') || null;
@@ -1354,8 +1398,16 @@ function normalizeProfile(data) {
 
         // === WORK / EDUCATION 1 ===
         occupationCode: g(we1, 'occupation', 'occupation') || null,
-        occupationExplanation: we1.occupationExplanation || we1.occupation_explanation,
-        employer: we1.employer || {},
+        occupationExplanation: we1.occupationExplanation || we1.occupation_explanation || we1.specifyOther || we1.specify_other || we1.otherOccupation || we1.other_occupation || '',
+        employer: (() => {
+            const e = we1.employer || {};
+            return {
+                ...e,
+                monthlyIncome: e.monthlyIncome || e.monthlySalary || e.monthly_income || e.monthly_salary || '',
+                jobTitle: e.jobTitle || e.job_title || e.duties || '',
+                startDate: e.startDate || e.start_date || { day: '', month: '', year: '' },
+            };
+        })(),
 
         // === WORK / EDUCATION 2 ===
         hasPreviousEmployment: we2.hasPreviousEmployment === 'Y' || we2.has_previous_employment === 'Y',

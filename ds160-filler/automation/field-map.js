@@ -745,9 +745,11 @@ function buildDynamicFieldMap(a) {
   // ===================================================================
   map.push({ pattern: /ddlPresentOccupation$/i, value: a.occupationCode, type: "select" });
 
-  // Occupation explanation (for "N" = Not Employed)
+  // Occupation explanation (for "N" = Not Employed, "O" = Other, "RT" = Retired, etc.)
   if (a.occupationCode === "N") {
     map.push({ pattern: /tbxExplainOtherPresentOccupation$/i, value: a.occupationExplanation || "NOT CURRENTLY EMPLOYED", type: "text" });
+  } else if (a.occupationCode === "O" || a.occupationCode === "RT") {
+    map.push({ pattern: /tbxExplainOtherPresentOccupation$/i, value: a.occupationExplanation || "OTHER", type: "text" });
   }
 
   if (emp) {

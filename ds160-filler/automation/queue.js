@@ -155,7 +155,14 @@ class QueueRunner {
 
         let lastPage = app.last_page || '';
         const { fillApplication } = getFiller();
-        const result = await fillApplication(applicant, app, config, captchaMode, (page) => {
+        // P6: Persist application_id to DB immediately when captured
+        const onAppId = async (appId) => {
+            try {
+                await this.supabase.from('applications').update({ application_id: appId }).eq('id', app.id);
+                console.log(`[Queue] 🆔 Application ID saved to DB: ${appId}`);
+            } catch (e) { console.warn('[Queue] Failed to persist app_id:', e.message); }
+        };
+        const result = await fillApplication(applicant, app, onAppId, config, captchaMode, (page) => {
             lastPage = page;
             this.emit({ type: 'filling', applicantName: applicant.full_name, page });
         }, existingBrowser, existingPage);
@@ -217,7 +224,7 @@ class QueueRunner {
         this.consecutiveErrors++;
 
         // Fatal errors — close browser, no retry possible
-        const fatalCauses = ['browser_closed', 'network_error', 'captcha_failed'];
+        const fatalCauses = ['browser_closed', 'network_error'];
         if (fatalCauses.includes(result.cause) || currentRetry >= MAX_RETRIES) {
             if (result.browser) await result.browser.close().catch(() => { });
 
