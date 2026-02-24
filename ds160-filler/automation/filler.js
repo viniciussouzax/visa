@@ -684,6 +684,23 @@ async function fillPageCompletely(page, fieldMap) {
     let pass = 0, needsRescan = true;
     const postbackLog = [];
     const addAnotherClicked = new Set(); // Track "list:idx" to prevent infinite Add Another
+    // INSTRUMENTATION: Log all elements with "Add" in their IDs for debugging
+    try {
+        const addElements = await page.evaluate(() => {
+            const els = [];
+            document.querySelectorAll('input, a, button').forEach(el => {
+                const id = el.id || '';
+                if (/add|btn|lnk/i.test(id) && !/Help|Warning|Cancel|Modal|Language|Faq|Recover|Exit|Server|Client|Review|Navigate/i.test(id)) {
+                    els.push({ id, tag: el.tagName, type: el.type || '', value: el.value || el.textContent?.trim().slice(0, 50) || '', visible: el.offsetParent !== null });
+                }
+            });
+            return els;
+        });
+        if (addElements.length > 0) {
+            console.log(`[Filler] 🔍 Botões/links relevantes nesta página:`);
+            addElements.forEach(e => console.log(`  ${e.visible ? '👁' : '🚫'} ${e.tag}#${e.id} [${e.type}] = "${e.value}"`));
+        }
+    } catch { }
     while (needsRescan && pass < 10) {
         const result = await autoFillPass(page, fieldMap, pass, addAnotherClicked);
         needsRescan = result.needsRescan;
@@ -800,7 +817,8 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
         return { needsRescan: true, postbackField };
     }
 
-    // Phase 2.5: "Add Another" — click Add buttons when multi-entry fields are mapped but not yet on page
+    // Phase 2.5: "Add Another" — DS-160 uses <a> links with text "Add Another" and InsertButton elements
+    // Pattern: (1) Fill ctl00 fields → (2) Click "Add Another" link → postback → ctl01 appears → (3) Fill ctl01 → repeat
     // SAFETY: max 5 Add Another per list, tracked by addAnotherClicked Set
     const addAnotherEntries = fieldMap.filter(m => m.addAnother);
     if (addAnotherEntries.length > 0) {
@@ -827,60 +845,83 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
             const listClickCount = [...addAnotherClicked].filter(k => k.startsWith(listName + ':')).length;
             if (listClickCount >= 5) {
                 console.warn(`[Filler] ⚠️ Limite de Add Another atingido para "${listName}" (max 5)`);
-                addAnotherClicked.add(trackKey); // Mark as done to prevent retrying
+                addAnotherClicked.add(trackKey);
                 continue;
             }
 
             console.log(`[Filler] 📋 Add Another necessário para "${listName}" (entry idx ${entry.addAnother.idx})`);
 
-            // Find the Add Another button — DS-160 uses: btnAdd, lnkAdd, or input[type=button] near the DataList
-            const addBtnSelectors = [
-                `input[id*="btnAdd"][id*="${listName}"]`,
-                `a[id*="btnAdd"][id*="${listName}"]`,
-                `input[id*="lnkAdd"][id*="${listName}"]`,
-                `a[id*="lnkAdd"][id*="${listName}"]`,
-            ];
-
             let clicked = false;
 
-            // First: try buttonPattern regex from entry
-            if (entry.addAnother.buttonPattern && !clicked) {
-                // Only search for elements that look like Add buttons (have 'Add' in ID)
-                const allBtns = await page.locator('input[id*="Add"], a[id*="Add"], input[id*="add"], a[id*="add"]').all().catch(() => []);
-                for (const btn of allBtns) {
-                    const id = await btn.getAttribute('id').catch(() => '');
-                    // Skip Help, Warning, Cancel buttons
-                    if (!id || /Help|Warning|Cancel|Review|Modal|Navigate/i.test(id)) continue;
-                    if (entry.addAnother.buttonPattern.test(id)) {
+            // Strategy 1: Find "Add Another" link by text within or near the DataList
+            // DS-160 uses <a> tags with text "Add Another" (e.g. page.getByRole('link', { name: 'Add Another' }))
+            try {
+                // Find all "Add Another" links on the page
+                const addLinks = await page.locator(`a:has-text("Add Another")`).all().catch(() => []);
+                for (const link of addLinks) {
+                    const vis = await link.isVisible({ timeout: 500 }).catch(() => false);
+                    if (!vis) continue;
+                    // Check if this link is near our DataList (shares a parent container with listName in ID)
+                    const nearList = await link.evaluate((el, ln) => {
+                        // Walk up to find a container that contains the DataList
+                        let parent = el.parentElement;
+                        for (let i = 0; i < 10 && parent; i++) {
+                            if (parent.querySelector(`[id*="${ln}"]`)) return true;
+                            parent = parent.parentElement;
+                        }
+                        return false;
+                    }, listName).catch(() => false);
+
+                    if (nearList) {
+                        await link.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
+                        await link.click();
+                        console.log(`[Filler] ✅ Clicou "Add Another" link para "${listName}" (por texto)`);
+                        await waitForPostback(page);
+                        clicked = true;
+                        break;
+                    }
+                }
+            } catch (e) {
+                console.warn(`[Filler] ⚠️ Add Another link search falhou:`, e.message);
+            }
+
+            // Strategy 2: Find InsertButton within the DataList (for subsequent entries)
+            // Pattern: DListAlias_ctl01_InsertButtonAlias, dtlOTHER_NATL_ctl00_InsertButton...
+            if (!clicked) {
+                try {
+                    const insertBtns = await page.locator(`[id*="${listName}"][id*="InsertButton"], [id*="${listName}"][id*="btnInsert"]`).all().catch(() => []);
+                    // Click the LAST visible InsertButton (newest entry)
+                    for (let i = insertBtns.length - 1; i >= 0; i--) {
+                        const btn = insertBtns[i];
                         const vis = await btn.isVisible({ timeout: 500 }).catch(() => false);
                         if (vis) {
                             await btn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
                             await btn.click();
-                            console.log(`[Filler] ✅ Clicou Add Another para "${listName}" via buttonPattern (${id})`);
+                            const btnId = await btn.getAttribute('id').catch(() => '');
+                            console.log(`[Filler] ✅ Clicou InsertButton para "${listName}" (${btnId})`);
                             await waitForPostback(page);
                             clicked = true;
                             break;
                         }
                     }
+                } catch (e) {
+                    console.warn(`[Filler] ⚠️ InsertButton search falhou:`, e.message);
                 }
             }
 
-            // Second: try specific selectors
+            // Strategy 3: Generic "Add Another" - any visible link with that text on the page
             if (!clicked) {
-                for (const sel of addBtnSelectors) {
-                    const addBtn = page.locator(sel).first();
-                    try {
-                        if (await addBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
-                            await addBtn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-                            await addBtn.click();
-                            console.log(`[Filler] ✅ Clicou Add Another para "${listName}" (selector: ${sel})`);
-                            await waitForPostback(page);
-                            clicked = true;
-                            break;
-                        }
-                    } catch (e) {
-                        console.warn(`[Filler] ⚠️ Add Another click falhou (${sel}):`, e.message);
+                try {
+                    const genericAdd = page.getByRole('link', { name: 'Add Another' }).first();
+                    if (await genericAdd.isVisible({ timeout: 500 }).catch(() => false)) {
+                        await genericAdd.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
+                        await genericAdd.click();
+                        console.log(`[Filler] ✅ Clicou "Add Another" genérico para "${listName}"`);
+                        await waitForPostback(page);
+                        clicked = true;
                     }
+                } catch (e) {
+                    console.warn(`[Filler] ⚠️ Generic Add Another falhou:`, e.message);
                 }
             }
 
