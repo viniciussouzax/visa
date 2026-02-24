@@ -1,5 +1,5 @@
 // ============================================================
-// DS-160 IA — Dashboard Pipeline Kanban
+// DS160 EXPRESSO — Dashboard Pipeline Kanban
 // ============================================================
 
 const SB_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
