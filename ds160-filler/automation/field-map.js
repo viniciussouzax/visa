@@ -743,7 +743,7 @@ function buildDynamicFieldMap(a) {
   // ===================================================================
   // WORK / EDUCATION 1 (Current)
   // ===================================================================
-  map.push({ pattern: /ddlPresentOccupation$/i, value: a.occupationCode, type: "select-search" });
+  map.push({ pattern: /ddlPresentOccupation$/i, value: a.occupationCode, type: "select" });
 
   // Occupation explanation (for "N" = Not Employed)
   if (a.occupationCode === "N") {
