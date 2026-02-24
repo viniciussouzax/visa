@@ -428,16 +428,48 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             onPage(pageName);
             visited.push(pageName);
 
-            // Capture application_id from URL as early as possible (e.g. Personal1→Personal2)
+            // Capture application_id — prioritize ConfirmApplicationID page
             if (!application.application_id) {
-                const urlAppIdMatch = url.match(/[?&](?:c|appId|applicationId)=([A-Z]{2}\d{8,})/i)
-                    || url.match(/\/([A-Z]{2}\d{8,})\//);
-                if (urlAppIdMatch) {
-                    application.application_id = urlAppIdMatch[1];
-                    console.log(`[Filler] 🆔 Application ID (from URL): ${urlAppIdMatch[1]}`);
-                    if (typeof onAppId === 'function') onAppId(urlAppIdMatch[1]);
-                } else {
-                    // Try multiple selectors for the header Application ID display
+                // Strategy 0: ConfirmApplicationID.aspx page — the ID is displayed prominently
+                if (url.includes('ConfirmApplicationID') || url.includes('SecureQuestion')) {
+                    try {
+                        // The page title/body contains the Application ID (e.g. "AA0012345678")
+                        const title = await page.title().catch(() => '');
+                        const titleMatch = title.match(/\b([A-Z]{2}\d{8,})\b/);
+                        if (titleMatch) {
+                            application.application_id = titleMatch[1];
+                            console.log(`[Filler] 🆔 Application ID (from page title): ${titleMatch[1]}`);
+                            if (typeof onAppId === 'function') onAppId(titleMatch[1]);
+                        } else {
+                            // Search all visible text on the ConfirmApplicationID page
+                            const appIdFromPage = await page.evaluate(() => {
+                                const allText = document.body?.innerText || '';
+                                // Look for the Application ID pattern (2 letters + 8-12 digits)
+                                const m = allText.match(/\b([A-Z]{2}\d{8,12})\b/);
+                                return m ? m[1] : '';
+                            });
+                            if (appIdFromPage) {
+                                application.application_id = appIdFromPage;
+                                console.log(`[Filler] 🆔 Application ID (from ConfirmApplicationID page): ${appIdFromPage}`);
+                                if (typeof onAppId === 'function') onAppId(appIdFromPage);
+                            }
+                        }
+                    } catch (e) { console.warn('[Filler] ConfirmAppID capture error:', e.message); }
+                }
+
+                // Strategy 1: URL query parameters or path
+                if (!application.application_id) {
+                    const urlAppIdMatch = url.match(/[?&](?:c|appId|applicationId)=([A-Z]{2}\d{8,})/i)
+                        || url.match(/\/([A-Z]{2}\d{8,})\//);
+                    if (urlAppIdMatch) {
+                        application.application_id = urlAppIdMatch[1];
+                        console.log(`[Filler] 🆔 Application ID (from URL): ${urlAppIdMatch[1]}`);
+                        if (typeof onAppId === 'function') onAppId(urlAppIdMatch[1]);
+                    }
+                }
+
+                // Strategy 2: Header selectors (Application bar at top of DS-160 pages)
+                if (!application.application_id) {
                     const headerSelectors = [
                         "span[id$='_lblAppID']",
                         "span[id$='_lblBarcode']",
@@ -448,9 +480,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         "[id*='ucApplicationBar'] span",
                         "[id*='pnlAppID'] span",
                     ];
-                    let appIdFound = false;
                     for (const sel of headerSelectors) {
-                        if (appIdFound) break;
+                        if (application.application_id) break;
                         try {
                             const els = await page.locator(sel).all();
                             for (const el of els) {
@@ -460,29 +491,28 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                                     application.application_id = match[0];
                                     console.log(`[Filler] 🆔 Application ID (from header "${sel}"): ${match[0]}`);
                                     if (typeof onAppId === 'function') onAppId(match[0]);
-                                    appIdFound = true;
                                     break;
                                 }
                             }
                         } catch { }
                     }
-                    // Last resort: search all visible text on page for Application ID pattern
-                    if (!appIdFound) {
-                        try {
-                            const bodyText = await page.evaluate(() => {
-                                // Look for the Application ID in page content (usually in top bar)
-                                const allText = document.body?.innerText || '';
-                                const m = allText.match(/Application\s*(?:ID|Id|id)[:\s]*([A-Z]{2}\d{8,})/i)
-                                    || allText.match(/\b([A-Z]{2}\d{10,})\b/);
-                                return m ? m[1] || m[0] : '';
-                            });
-                            if (bodyText) {
-                                application.application_id = bodyText;
-                                console.log(`[Filler] 🆔 Application ID (from page text): ${bodyText}`);
-                                if (typeof onAppId === 'function') onAppId(bodyText);
-                            }
-                        } catch { }
-                    }
+                }
+
+                // Strategy 3: Full page text search (last resort)
+                if (!application.application_id) {
+                    try {
+                        const bodyText = await page.evaluate(() => {
+                            const allText = document.body?.innerText || '';
+                            const m = allText.match(/Application\s*(?:ID|Id|id)[:\s]*([A-Z]{2}\d{8,})/i)
+                                || allText.match(/\b([A-Z]{2}\d{10,})\b/);
+                            return m ? m[1] || m[0] : '';
+                        });
+                        if (bodyText) {
+                            application.application_id = bodyText;
+                            console.log(`[Filler] 🆔 Application ID (from page text): ${bodyText}`);
+                            if (typeof onAppId === 'function') onAppId(bodyText);
+                        }
+                    } catch { }
                 }
             }
 
