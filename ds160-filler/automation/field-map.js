@@ -45,12 +45,7 @@ function buildDynamicFieldMap(a) {
   const uc = a.usContact || {};
   const emp = a.employer || {};
   emp.startDate = emp.startDate || emptyDate;
-  const prev = a.previousEmployment?.[0] || {};
-  prev.startDate = prev.startDate || emptyDate;
-  prev.endDate = prev.endDate || emptyDate;
-  const edu = a.education?.[0] || {};
-  edu.startDate = edu.startDate || emptyDate;
-  edu.endDate = edu.endDate || emptyDate;
+  // prev and edu are now handled via forEach inside their respective sections
   const father = a.father || {};
   father.dob = father.dob || emptyDate;
   const mother = a.mother || {};
@@ -70,13 +65,22 @@ function buildDynamicFieldMap(a) {
     { pattern: /tbxAPP_FULL_NAME_NATIVE$/i, value: a.fullNameNative, type: "text" },
   );
 
-  // 2. Other Names (before Gender/MaritalStatus in official form)
+  // 2. Other Names (DListAlias) — supports multiple entries via "Add Another"
+  // Pergunta: "Have you ever used other names?" → Yes/No
+  // Respostas: otherNames[0] (ctl00), otherNames[1] (ctl01 → addAnother), ...
   if (a.otherNamesUsed && a.otherNames?.length) {
-    map.push(
-      { pattern: /rblOtherNames_0$/i, value: "", type: "click" },
-      { pattern: /DListAlias_ctl00_tbxSURNAME$/i, value: a.otherNames[0].surname, type: "text" },
-      { pattern: /DListAlias_ctl00_tbxGIVEN_NAME$/i, value: a.otherNames[0].givenName, type: "text" },
-    );
+    map.push({ pattern: /rblOtherNames_0$/i, value: "", type: "click" });
+
+    a.otherNames.forEach((entry, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = { type: "text" };
+      if (idx > 0) base.addAnother = { list: "DListAlias", idx };
+
+      map.push(
+        { pattern: new RegExp(`DListAlias_${ctl}_tbxSURNAME$`, 'i'), value: entry.surname || "", ...base },
+        { pattern: new RegExp(`DListAlias_${ctl}_tbxGIVEN_NAME$`, 'i'), value: entry.givenName || "", ...base },
+      );
+    });
   } else {
     map.push({ pattern: /rblOtherNames_1$/i, value: "", type: "click" });
   }
@@ -205,11 +209,24 @@ function buildDynamicFieldMap(a) {
   );
 
   // Specific Travel Plans
+  // Pergunta: "Do you have specific travel plans?" → Yes/No
+  // Respostas: specificLocations[0] (ctl00), specificLocations[1] (ctl01 → addAnother), ...
   if (a.hasSpecificPlans) {
     map.push(
       { pattern: /rblSpecificTravel_0$/i, value: "", type: "click" },
-      { pattern: /tbxSPECTRAVEL_LOCATION$/i, value: t.location || t.usAddress.city, type: "text" },
     );
+    // Travel Locations (dtlTravelLoc) — supports multiple entries
+    const travelLocs = a.specificLocations || [t.location || t.usAddress?.city || ''];
+    travelLocs.forEach((loc, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = { type: "text" };
+      if (idx > 0) base.addAnother = { list: "dtlTravelLoc", idx };
+      map.push({ pattern: new RegExp(`dtlTravelLoc_${ctl}_tbxSPECTRAVEL_LOCATION$`, 'i'), value: loc || "", ...base });
+    });
+    // Also push generic pattern for ctl00 fallback
+    if (travelLocs.length === 1) {
+      map.push({ pattern: /tbxSPECTRAVEL_LOCATION$/i, value: travelLocs[0] || "", type: "text" });
+    }
     if (t.arrivalFlight) map.push({ pattern: /tbxArriveFlight$/i, value: t.arrivalFlight, type: "text" });
     if (t.arrivalCity) map.push({ pattern: /tbxArriveCity$/i, value: t.arrivalCity, type: "text" });
     if (t.departureFlight) map.push({ pattern: /tbxDepartFlight$/i, value: t.departureFlight, type: "text" });
@@ -309,13 +326,24 @@ function buildDynamicFieldMap(a) {
   // ===================================================================
   // TRAVEL COMPANIONS
   // ===================================================================
+  // Travel Companions (dlTravelCompanions) — supports multiple entries
+  // Pergunta: "Are there other persons traveling with you?" → Yes/No
+  // Respostas: companions[0] (ctl00), companions[1] (ctl01 → addAnother), ...
   if (a.travelingWithOthers && a.companions?.length) {
-    map.push(
-      { pattern: /rblOtherPersonsTravelingWithYou_0$/i, value: "", type: "click" },
-      { pattern: /.*tbxSurname$/i, value: a.companions[0].surname, type: "text" },
-      { pattern: /.*tbxGivenName$/i, value: a.companions[0].givenName, type: "text" },
-      { pattern: /.*ddlTCRelationship$/i, value: a.companions[0].relationship, type: "select" },
-    );
+    map.push({ pattern: /rblOtherPersonsTravelingWithYou_0$/i, value: "", type: "click" });
+
+    a.companions.forEach((comp, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = {};
+      if (idx > 0) base.addAnother = { list: "dlTravelCompanions", idx };
+
+      map.push(
+        { pattern: new RegExp(`dlTravelCompanions_${ctl}_tbxTC_SURNAME$`, 'i'), value: comp.surname || "", type: "text", ...base },
+        { pattern: new RegExp(`dlTravelCompanions_${ctl}_tbxTC_GIVEN_NAME$`, 'i'), value: comp.givenName || "", type: "text", ...base },
+        { pattern: new RegExp(`dlTravelCompanions_${ctl}_ddlTCRelationship$`, 'i'), value: comp.relationship || "", type: "select", ...base },
+      );
+    });
+
     if ((a.partOfGroup === 'Y' || a.partOfGroup === true) && a.groupName) {
       map.push(
         { pattern: /rblGroupTravel_0$/i, value: "", type: "click" },
@@ -465,47 +493,77 @@ function buildDynamicFieldMap(a) {
     map.push({ pattern: /cbexAPP_BUS_TEL_NA$/i, value: "", type: "checkbox-check" });
   }
 
-  // Additional phones/emails
+  // Additional phones (dtlAddPhone) — supports multiple entries
+  // Pergunta: "Do you have additional phone numbers?" → Yes/No
+  // Respostas: additionalPhoneNumbers[0] (ctl00), [1] (ctl01 → addAnother), ...
   if (a.additionalPhones && a.additionalPhoneNumbers?.length) {
-    map.push(
-      { pattern: /rblAddPhone_0$/i, value: "", type: "click" },
-      { pattern: /dtlAddPhone_ctl00_tbxAddPhoneInfo$/i, value: ph(a.additionalPhoneNumbers[0]), type: "text" },
-    );
+    map.push({ pattern: /rblAddPhone_0$/i, value: "", type: "click" });
+    a.additionalPhoneNumbers.forEach((phone, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = { type: "text" };
+      if (idx > 0) base.addAnother = { list: "dtlAddPhone", idx };
+      map.push({ pattern: new RegExp(`dtlAddPhone_${ctl}_tbxAddPhoneInfo$`, 'i'), value: ph(phone), ...base });
+    });
   } else {
     map.push({ pattern: /rblAddPhone_1$/i, value: "", type: "click" });
   }
 
+  // Additional emails (dtlAddEmail) — supports multiple entries
+  // Pergunta: "Do you have additional email addresses?" → Yes/No
+  // Respostas: additionalEmailAddresses[0] (ctl00), [1] (ctl01 → addAnother), ...
   if (a.additionalEmails && a.additionalEmailAddresses?.length) {
-    map.push(
-      { pattern: /rblAddEmail_0$/i, value: "", type: "click" },
-      { pattern: /dtlAddEmail_ctl00_tbxAddEmailInfo$/i, value: a.additionalEmailAddresses[0], type: "text" },
-    );
+    map.push({ pattern: /rblAddEmail_0$/i, value: "", type: "click" });
+    a.additionalEmailAddresses.forEach((email, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = { type: "text" };
+      if (idx > 0) base.addAnother = { list: "dtlAddEmail", idx };
+      map.push({ pattern: new RegExp(`dtlAddEmail_${ctl}_tbxAddEmailInfo$`, 'i'), value: email || "", ...base });
+    });
   } else {
     map.push({ pattern: /rblAddEmail_1$/i, value: "", type: "click" });
   }
 
-  // Se a.socialMedia for array de objetos (novo padrão) acessa [0].platform, senão se for boolean falso tenta fallback
+  // Social Media (dtlSocialMedia) — supports multiple entries
+  // Pergunta: "Do you use social media?" → Yes/No
+  // Respostas: socialMedia[0] (ctl00), [1] (ctl01 → addAnother), ...
   if (a.socialMedia && a.socialMedia.length > 0) {
-    const primarySocial = a.socialMedia[0];
-    map.push(
-      { pattern: /rblAddSite_0$/i, value: "", type: "click" },
-      { pattern: /ddlSocialMedia$/i, value: primarySocial.platform, type: "select-search" },
-      { pattern: /tbxSocialMediaIdent$/i, value: primarySocial.handle, type: "text" },
-    );
+    map.push({ pattern: /rblAddSite_0$/i, value: "", type: "click" });
+    a.socialMedia.forEach((sm, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = {};
+      if (idx > 0) base.addAnother = { list: "dtlSocialMedia", idx };
+      map.push(
+        { pattern: new RegExp(`dtlSocialMedia_${ctl}_ddlSocialMedia$`, 'i'), value: sm.platform || "", type: "select-search", ...base },
+        { pattern: new RegExp(`dtlSocialMedia_${ctl}_tbxSocialMediaIdent$`, 'i'), value: sm.handle || "", type: "text", ...base },
+      );
+    });
+    // Generic fallback for ctl00
+    if (a.socialMedia.length === 1) {
+      map.push(
+        { pattern: /ddlSocialMedia$/i, value: a.socialMedia[0].platform, type: "select-search" },
+        { pattern: /tbxSocialMediaIdent$/i, value: a.socialMedia[0].handle, type: "text" },
+      );
+    }
   } else {
-    // DS-160 mandates saying "None" if there are no social medias
     map.push({ pattern: /rblAddSite_1$/i, value: "", type: "click" });
     map.push({ pattern: /cbexSOCIAL_MEDIA_PLATFORM_NA$/i, value: "", type: "checkbox-check" });
   }
 
+  // Additional Social Media (dtlAddSocial) — supports multiple entries
+  // Pergunta: "Do you have additional social media platforms?" → Yes/No
+  // Respostas: additionalSocialMediaAccounts[0] (ctl00), [1] (ctl01 → addAnother), ...
   if (a.additionalSocialMedia && a.additionalSocialMediaAccounts?.length) {
-    map.push(
-      { pattern: /rblAddSocial_0$/i, value: "", type: "click" },
-      { pattern: /dtlAddSocial_ctl00_tbxAddSocialPlat$/i, value: a.additionalSocialMediaAccounts[0].platform, type: "text" },
-      { pattern: /dtlAddSocial_ctl00_tbxAddSocialHand$/i, value: a.additionalSocialMediaAccounts[0].handle, type: "text" },
-    );
+    map.push({ pattern: /rblAddSocial_0$/i, value: "", type: "click" });
+    a.additionalSocialMediaAccounts.forEach((sm, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = {};
+      if (idx > 0) base.addAnother = { list: "dtlAddSocial", idx };
+      map.push(
+        { pattern: new RegExp(`dtlAddSocial_${ctl}_tbxAddSocialPlatform$`, 'i'), value: sm.platform || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlAddSocial_${ctl}_tbxSocialMediaIdent$`, 'i'), value: sm.handle || "", type: "text", ...base },
+      );
+    });
   } else {
-    // If we already answered Yes to the primary social media but don't have secondary ones
     map.push({ pattern: /rblAddSocial_1$/i, value: "", type: "click" });
   }
 
@@ -575,22 +633,29 @@ function buildDynamicFieldMap(a) {
     );
   }
 
-  // Lost/Stolen passport
-  if (pp.lostOrStolen && pp.lostPassport) {
-    map.push(
-      { pattern: /rblLOST_PPT_IND_0$/i, value: "", type: "click" },
-    );
-    // Lost passport number: fill input if known, otherwise mark checkbox
-    const lostNum = pp.lostPassport.number;
-    if (lostNum && lostNum !== 'N/A' && lostNum !== 'n/a' && !pp.lostPassport.numberUnknown) {
-      map.push({ pattern: /dtlLostPPT_ctl00_tbxLOST_PPT_NUM$/i, value: lostNum, type: "text" });
-    } else {
-      map.push({ pattern: /cbxLOST_PPT_NUM_UNKN_IND$/i, value: "", type: "checkbox-check" });
-    }
-    map.push(
-      { pattern: /ddlLOST_PPT_NATL$/i, value: pp.lostPassport.country, type: "select-label" },
-      { pattern: /tbxLOST_PPT_EXPL$/i, value: pp.lostPassport.explanation, type: "text" },
-    );
+  // Lost/Stolen passport (dtlLostPPT) — supports multiple entries
+  // Pergunta: "Have you ever lost a passport?" → Yes/No
+  // Respostas: lostPassports[0] (ctl00), [1] (ctl01 → addAnother), ...
+  const lostPassports = pp.lostPassports || (pp.lostPassport ? [pp.lostPassport] : []);
+  if ((pp.lostOrStolen === 'Y' || pp.lostOrStolen === true) && lostPassports.length > 0) {
+    map.push({ pattern: /rblLOST_PPT_IND_0$/i, value: "", type: "click" });
+
+    lostPassports.forEach((lp, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = {};
+      if (idx > 0) base.addAnother = { list: "dtlLostPPT", idx };
+
+      const lostNum = lp.number;
+      if (lostNum && lostNum !== 'N/A' && lostNum !== 'n/a' && !lp.numberUnknown) {
+        map.push({ pattern: new RegExp(`dtlLostPPT_${ctl}_tbxLOST_PPT_NUM$`, 'i'), value: lostNum, type: "text", ...base });
+      } else {
+        map.push({ pattern: new RegExp(`dtlLostPPT_${ctl}_cbxLOST_PPT_NUM_UNKN_IND$`, 'i'), value: "", type: "checkbox-check", ...base });
+      }
+      map.push(
+        { pattern: new RegExp(`dtlLostPPT_${ctl}_ddlLOST_PPT_NATL$`, 'i'), value: lp.country || "", type: "select-label", ...base },
+        { pattern: new RegExp(`dtlLostPPT_${ctl}_tbxLOST_PPT_EXPL$`, 'i'), value: lp.explanation || "", type: "text", ...base },
+      );
+    });
   } else {
     map.push({ pattern: /rblLOST_PPT_IND_1$/i, value: "", type: "click" });
   }
@@ -721,15 +786,25 @@ function buildDynamicFieldMap(a) {
     );
   }
 
-  // Immediate relatives in US
-  if (a.relativesInUS && a.immediateRelative) {
-    map.push(
-      { pattern: /rblUS_IMMED_RELATIVE_IND_0$/i, value: "", type: "click" },
-      { pattern: /tbxUS_REL_SURNAME$/i, value: a.immediateRelative.surname, type: "text" },
-      { pattern: /tbxUS_REL_GIVEN_NAME$/i, value: a.immediateRelative.givenName, type: "text" },
-      { pattern: /ddlUS_REL_TYPE$/i, value: a.immediateRelative.type || a.immediateRelative.relationship, type: "select" },
-      { pattern: /ddlUS_REL_STATUS$/i, value: a.immediateRelative.status, type: "select" },
-    );
+  // Immediate relatives in US (dlUSRelatives) — supports multiple entries
+  // Pergunta: "Do you have any immediate relatives in the US?" → Yes/No
+  // Respostas: relatives[0] (ctl00), relatives[1] (ctl01 → addAnother), ...
+  const usRelatives = a.relatives || (a.immediateRelative ? [a.immediateRelative] : []);
+  if ((a.relativesInUS || a.immediateRelativesInUS) && usRelatives.length > 0) {
+    map.push({ pattern: /rblUS_IMMED_RELATIVE_IND_0$/i, value: "", type: "click" });
+
+    usRelatives.forEach((rel, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = {};
+      if (idx > 0) base.addAnother = { list: "dlUSRelatives", idx };
+
+      map.push(
+        { pattern: new RegExp(`dlUSRelatives_${ctl}_tbxUS_REL_SURNAME$`, 'i'), value: rel.surname || "", type: "text", ...base },
+        { pattern: new RegExp(`dlUSRelatives_${ctl}_tbxUS_REL_GIVEN_NAME$`, 'i'), value: rel.givenName || "", type: "text", ...base },
+        { pattern: new RegExp(`dlUSRelatives_${ctl}_ddlUS_REL_TYPE$`, 'i'), value: rel.type || rel.relationship || "", type: "select", ...base },
+        { pattern: new RegExp(`dlUSRelatives_${ctl}_ddlUS_REL_STATUS$`, 'i'), value: rel.status || "", type: "select", ...base },
+      );
+    });
   } else {
     map.push({ pattern: /rblUS_IMMED_RELATIVE_IND_1$/i, value: "", type: "click" });
     // OTHER_RELATIVE only appears when IMMED=NO
@@ -793,63 +868,86 @@ function buildDynamicFieldMap(a) {
   // ===================================================================
   // WORK / EDUCATION 2 (Previous)
   // ===================================================================
-  if (a.hasPreviousEmployment && prev) {
-    map.push(
-      { pattern: /rblPreviouslyEmployed_0$/i, value: "", type: "click" },
-      { pattern: /tbEmployerName$/i, value: prev.name, type: "text" },
-      { pattern: /tbEmployerStreetAddress1$/i, value: prev.street1, type: "text" },
-      { pattern: /tbEmployerStreetAddress2$/i, value: prev.street2 || "", type: "text" },
-      { pattern: /tbEmployerCity$/i, value: prev.city, type: "text" },
-      { pattern: /tbxPREV_EMPL_ADDR_STATE$/i, value: prev.state || "", type: "text" },
-      { pattern: /tbxPREV_EMPL_ADDR_POSTAL_CD$/i, value: prev.postalCode || "", type: "text" },
-      { pattern: /dtlPrevEmpl.*DropDownList2$/i, value: prev.country, type: "select-label" },
-      { pattern: /tbEmployerPhone$/i, value: ph(prev.phone), type: "text" },
-      { pattern: /tbJobTitle$/i, value: prev.jobTitle, type: "text" },
-    );
-    // Supervisor: fill name if available, otherwise mark NA
-    if (prev.supervisorSurname) {
+  // Previous Employment (dtlPrevEmpl) — supports multiple entries
+  // Pergunta: "Were you previously employed?" → Yes/No
+  // Respostas: previousEmployment[0] (ctl00), [1] (ctl01 → addAnother), ...
+  if (a.hasPreviousEmployment && a.previousEmployment?.length > 0) {
+    map.push({ pattern: /rblPreviouslyEmployed_0$/i, value: "", type: "click" });
+
+    a.previousEmployment.forEach((prev, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = {};
+      if (idx > 0) base.addAnother = { list: "dtlPrevEmpl", idx };
+      const sd = prev.startDate || emptyDate;
+      const ed = prev.endDate || emptyDate;
+
       map.push(
-        { pattern: /.*SupervisorSurname$/i, value: prev.supervisorSurname, type: "text" },
-        { pattern: /.*SupervisorGivenName$/i, value: prev.supervisorGivenName || "", type: "text" },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbEmployerName$`, 'i'), value: prev.name || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbEmployerStreetAddress1$`, 'i'), value: prev.street1 || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbEmployerStreetAddress2$`, 'i'), value: prev.street2 || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbEmployerCity$`, 'i'), value: prev.city || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbxPREV_EMPL_ADDR_STATE$`, 'i'), value: prev.state || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbxPREV_EMPL_ADDR_POSTAL_CD$`, 'i'), value: prev.postalCode || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_DropDownList2$`, 'i'), value: prev.country || "", type: "select-label", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbEmployerPhone$`, 'i'), value: ph(prev.phone), type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbJobTitle$`, 'i'), value: prev.jobTitle || "", type: "text", ...base },
       );
-    } else {
+      // Supervisor
+      if (prev.supervisor && prev.supervisor !== 'N/A') {
+        map.push(
+          { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbSupervisorSurname$`, 'i'), value: prev.supervisor || "", type: "text", ...base },
+          { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbSupervisorGivenName$`, 'i'), value: prev.supervisorGivenName || "", type: "text", ...base },
+        );
+      } else {
+        map.push(
+          { pattern: new RegExp(`dtlPrevEmpl_${ctl}_cbxSupervisorSurname_NA$`, 'i'), value: "", type: "checkbox-check", ...base },
+          { pattern: new RegExp(`dtlPrevEmpl_${ctl}_cbxSupervisorGivenName_NA$`, 'i'), value: "", type: "checkbox-check", ...base },
+        );
+      }
       map.push(
-        { pattern: /cbxSupervisorSurname_NA$/i, value: "", type: "checkbox-check" },
-        { pattern: /cbxSupervisorGivenName_NA$/i, value: "", type: "checkbox-check" },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_ddlEmpDateFromDay$`, 'i'), value: sd.day || "1", type: "select", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_ddlEmpDateFromMonth$`, 'i'), value: sd.month || "", type: "select", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbxEmpDateFromYear$`, 'i'), value: sd.year || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_ddlEmpDateToDay$`, 'i'), value: ed.day || "1", type: "select", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_ddlEmpDateToMonth$`, 'i'), value: ed.month || "", type: "select", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbxEmpDateToYear$`, 'i'), value: ed.year || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEmpl_${ctl}_tbDescribeDuties$`, 'i'), value: prev.duties || "GENERAL DUTIES", type: "text", ...base },
       );
-    }
-    map.push(
-      { pattern: /dtlPrevEmpl.*ddlEmpDateFromDay$/i, value: "1", type: "select" },
-      { pattern: /dtlPrevEmpl.*ddlEmpDateFromMonth$/i, value: prev.startDate.month, type: "select" },
-      { pattern: /dtlPrevEmpl.*tbxEmpDateFromYear$/i, value: prev.startDate.year, type: "text" },
-      { pattern: /dtlPrevEmpl.*ddlEmpDateToDay$/i, value: "1", type: "select" },
-      { pattern: /dtlPrevEmpl.*ddlEmpDateToMonth$/i, value: prev.endDate.month, type: "select" },
-      { pattern: /dtlPrevEmpl.*tbxEmpDateToYear$/i, value: prev.endDate.year, type: "text" },
-      { pattern: /dtlPrevEmpl.*tbDescribeDuties$/i, value: prev.duties || "GENERAL DUTIES", type: "text" },
-    );
+    });
   } else {
     map.push({ pattern: /rblPreviouslyEmployed_1$/i, value: "", type: "click" });
   }
 
-  // Education
-  if (a.hasEducation && edu) {
-    map.push(
-      { pattern: /rblOtherEduc_0$/i, value: "", type: "click" },
-      { pattern: /tbxSchoolName$/i, value: edu.name, type: "text" },
-      { pattern: /tbxSchoolAddr1$/i, value: edu.street1 || edu.city || "N/A", type: "text" },
-      { pattern: /tbxSchoolAddr2$/i, value: "", type: "text" },
-      { pattern: /tbxSchoolCity$/i, value: edu.city, type: "text" },
-      { pattern: /tbxEDUC_INST_ADDR_STATE$/i, value: edu.state || edu.city || "N/A", type: "text" },
-      { pattern: /tbxEDUC_INST_POSTAL_CD$/i, value: edu.postalCode || "00000", type: "text" },
-      { pattern: /ddlSchoolCountry$/i, value: edu.country, type: "select-label" },
-      { pattern: /tbxSchoolCourseOfStudy$/i, value: edu.courseOfStudy, type: "text" },
-      { pattern: /dtlPrevEduc.*ddlSchoolFromDay$/i, value: "1", type: "select" },
-      { pattern: /dtlPrevEduc.*ddlSchoolFromMonth$/i, value: edu.startDate.month, type: "select" },
-      { pattern: /dtlPrevEduc.*tbxSchoolFromYear$/i, value: edu.startDate.year, type: "text" },
-      { pattern: /dtlPrevEduc.*ddlSchoolToDay$/i, value: "1", type: "select" },
-      { pattern: /dtlPrevEduc.*ddlSchoolToMonth$/i, value: edu.endDate.month, type: "select" },
-      { pattern: /dtlPrevEduc.*tbxSchoolToYear$/i, value: edu.endDate.year, type: "text" },
-    );
+  // Education (dtlPrevEduc) — supports multiple entries
+  // Pergunta: "Have you attended any educational institutions?" → Yes/No
+  // Respostas: education[0] (ctl00), [1] (ctl01 → addAnother), ...
+  if (a.hasEducation && a.education?.length > 0) {
+    map.push({ pattern: /rblOtherEduc_0$/i, value: "", type: "click" });
+
+    a.education.forEach((edu, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = {};
+      if (idx > 0) base.addAnother = { list: "dtlPrevEduc", idx };
+      const sd = edu.startDate || emptyDate;
+      const ed = edu.endDate || emptyDate;
+
+      map.push(
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_tbxSchoolName$`, 'i'), value: edu.name || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_tbxSchoolAddr1$`, 'i'), value: edu.street1 || edu.city || "N/A", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_tbxSchoolAddr2$`, 'i'), value: edu.street2 || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_tbxSchoolCity$`, 'i'), value: edu.city || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_tbxEDUC_INST_ADDR_STATE$`, 'i'), value: edu.state || edu.city || "N/A", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_tbxEDUC_INST_POSTAL_CD$`, 'i'), value: edu.postalCode || "00000", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_ddlSchoolCountry$`, 'i'), value: edu.country || "", type: "select-label", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_tbxSchoolCourseOfStudy$`, 'i'), value: edu.course || edu.courseOfStudy || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_ddlSchoolFromDay$`, 'i'), value: sd.day || "1", type: "select", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_ddlSchoolFromMonth$`, 'i'), value: sd.month || "", type: "select", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_tbxSchoolFromYear$`, 'i'), value: sd.year || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_ddlSchoolToDay$`, 'i'), value: ed.day || "1", type: "select", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_ddlSchoolToMonth$`, 'i'), value: ed.month || "", type: "select", ...base },
+        { pattern: new RegExp(`dtlPrevEduc_${ctl}_tbxSchoolToYear$`, 'i'), value: ed.year || "", type: "text", ...base },
+      );
+    });
   } else {
     map.push({ pattern: /rblOtherEduc_1$/i, value: "", type: "click" });
   }
@@ -857,9 +955,20 @@ function buildDynamicFieldMap(a) {
   // ===================================================================
   // WORK / EDUCATION 3 (Additional)
   // ===================================================================
-  // Languages - DataList: dtlLANGUAGES (supports Add Another)
-  // First language fills _ctl00_, additional languages need Add Another button
-  map.push({ pattern: /tbxLANGUAGE_NAME$/i, value: a.languages[0] || "PORTUGUESE", type: "text" });
+  // Languages (dtlLANGUAGES) — supports multiple entries
+  // Respostas: languages[0] (ctl00), [1] (ctl01 → addAnother), ...
+  if (a.languages?.length > 0) {
+    a.languages.forEach((lang, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = { type: "text" };
+      if (idx > 0) base.addAnother = { list: "dtlLANGUAGES", idx };
+      map.push({ pattern: new RegExp(`dtlLANGUAGES_${ctl}_tbxLANGUAGE_NAME$`, 'i'), value: lang || "", ...base });
+    });
+    // Generic fallback for ctl00
+    map.push({ pattern: /tbxLANGUAGE_NAME$/i, value: a.languages[0] || "PORTUGUESE", type: "text" });
+  } else {
+    map.push({ pattern: /tbxLANGUAGE_NAME$/i, value: "PORTUGUESE", type: "text" });
+  }
 
   // Clan/Tribe
   if (a.clanTribe) {
@@ -871,22 +980,36 @@ function buildDynamicFieldMap(a) {
     map.push({ pattern: /rblCLAN_TRIBE_IND_1$/i, value: "", type: "click" });
   }
 
-  // Countries visited
+  // Countries visited (dtlCountriesVisited) — supports multiple entries
+  // Pergunta: "Have you traveled to any countries within the last five years?" → Yes/No
+  // Respostas: countriesVisitedList[0] (ctl00), [1] (ctl01 → addAnother), ...
   if (a.countriesVisited && a.countriesVisitedList?.length) {
-    map.push(
-      { pattern: /rblCOUNTRIES_VISITED_IND_0$/i, value: "", type: "click" },
-      { pattern: /ddlCOUNTRIES_VISITED$/i, value: a.countriesVisitedList[0], type: "select-search" },
-    );
+    map.push({ pattern: /rblCOUNTRIES_VISITED_IND_0$/i, value: "", type: "click" });
+    a.countriesVisitedList.forEach((country, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = {};
+      if (idx > 0) base.addAnother = { list: "dtlCountriesVisited", idx };
+      map.push({ pattern: new RegExp(`dtlCountriesVisited_${ctl}_ddlCOUNTRIES_VISITED$`, 'i'), value: country || "", type: "select-search", ...base });
+    });
+    // Generic fallback for ctl00
+    map.push({ pattern: /ddlCOUNTRIES_VISITED$/i, value: a.countriesVisitedList[0], type: "select-search" });
   } else {
     map.push({ pattern: /rblCOUNTRIES_VISITED_IND_1$/i, value: "", type: "click" });
   }
 
-  // Organization
-  if (a.organizationMember) {
-    map.push(
-      { pattern: /rblORGANIZATION_IND_0$/i, value: "", type: "click" },
-      { pattern: /tbxORGANIZATION_NAME$/i, value: a.organizationName || "", type: "text" },
-    );
+  // Organizations (dtlORGANIZATIONS) — supports multiple entries
+  // Pergunta: "Do you belong to any organizations?" → Yes/No
+  // Respostas: organizations[0] (ctl00), [1] (ctl01 → addAnother), ...
+  if (a.organizationMember && a.organizations?.length > 0) {
+    map.push({ pattern: /rblORGANIZATION_IND_0$/i, value: "", type: "click" });
+    a.organizations.forEach((org, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = { type: "text" };
+      if (idx > 0) base.addAnother = { list: "dtlORGANIZATIONS", idx };
+      map.push({ pattern: new RegExp(`dtlORGANIZATIONS_${ctl}_tbxORGANIZATION_NAME$`, 'i'), value: org || "", ...base });
+    });
+    // Generic fallback for ctl00
+    map.push({ pattern: /tbxORGANIZATION_NAME$/i, value: a.organizations[0] || "", type: "text" });
   } else {
     map.push({ pattern: /rblORGANIZATION_IND_1$/i, value: "", type: "click" });
   }
