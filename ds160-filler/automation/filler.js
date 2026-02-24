@@ -138,7 +138,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 console.log(`[Filler] ✅ Sessão já está no ${currentPageName} — marcando como concluído`);
                 // Try to capture application_id from page
                 const headerAppId = await page.locator("span[id$='_lblAppID'], span[id$='_lblBarcode']").first().innerText().catch(() => '');
-                const appMatch = headerAppId.match(/[A-Z]{2}\d{8,}/);
+                const appMatch = headerAppId.match(/[A-Z]{2}[A-Z0-9]{8,}/);
                 if (appMatch) application.application_id = appMatch[0];
                 return { success: true, applicationId: application.application_id || null, browser, activePage: page };
             }
@@ -378,7 +378,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 if (await continueBtn.isVisible().catch(() => false)) {
                     // Capture application ID
                     const appIdText = await page.locator("span[id$='_lblAppID'], b").first().innerText().catch(() => '');
-                    const appIdMatch = appIdText.match(/[A-Z]{2}\d{8,}/);
+                    const appIdMatch = appIdText.match(/[A-Z]{2}[A-Z0-9]{8,}/);
                     if (appIdMatch) {
                         application.application_id = appIdMatch[0];
                         console.log(`[Filler] Application ID: ${appIdMatch[0]}`);
