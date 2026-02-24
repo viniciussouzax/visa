@@ -4,41 +4,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DS160 EXPRESSO</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    borderRadius: { DEFAULT: '5px' },
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
-                }
-            }
-        }
-    </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>DS160 Expresso — Dashboard</title>
+    <link rel="stylesheet" href="mosaic.css">
+    <script defer src="alpinejs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* --- Minimal CSS: only what cannot be pure Tailwind utility classes --- */
-
-        /* CSS Variables — referenced by dashboard.js inline styles */
+        /* === CSS Variables for JS inline styles (dashboard.js uses var(--*) ) === */
         :root {
-            --primary: #3b82f6;
-            --primary-light: #60a5fa;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --bg: #f8fafc;
+            --bg: #f9fafb;
             --surface: #ffffff;
-            --surface-hover: #f1f5f9;
-            --border: #e2e8f0;
-            --text: #1e293b;
-            --text-muted: #64748b;
+            --surface-hover: #f3f4f6;
+            --border: #e5e7eb;
+            --text: #1f2937;
+            --text-muted: #6b7280;
+            --accent: #8470ff;
             --success: #22c55e;
-            --warning: #f59e0b;
             --error: #ef4444;
         }
 
-        /* View / tab toggles — JS classList */
+        .dark {
+            --bg: #111827;
+            --surface: #1f2937;
+            --surface-hover: #374151;
+            --border: #374151;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        /* === Views (JS toggles .active) === */
         .view {
             display: none;
         }
@@ -47,6 +40,7 @@
             display: block;
         }
 
+        /* === Master sub-views (JS toggles .active) === */
         .master-sub {
             display: none;
         }
@@ -55,822 +49,763 @@
             display: block;
         }
 
-        /* Badge — JS generates */
+        /* === Nav items (JS toggles .active) === */
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(132, 112, 255, .12), rgba(132, 112, 255, .04));
+            color: var(--color-violet-500, #8470ff);
+        }
+
+        /* === Master tabs (JS toggles .active) === */
+        .master-tab.active {
+            border-bottom-color: var(--color-violet-500, #8470ff);
+            color: var(--color-violet-500, #8470ff);
+        }
+
+        /* === Pipeline cards (JS toggles .active) === */
+        .pipeline-card.active {
+            outline: 2px solid var(--color-violet-500, #8470ff);
+            box-shadow: 0 0 0 2px rgba(132, 112, 255, .3);
+        }
+
+        /* === Badge (used in JS template literals) === */
         .badge {
-            display: inline-flex;
-            align-items: center;
+            display: inline-block;
             padding: 2px 10px;
             border-radius: 9999px;
             font-size: 11px;
             font-weight: 600;
-            letter-spacing: .025em;
         }
 
-        /* Small action buttons — JS generates */
-        .btn-sm {
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: none;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: background .15s;
-        }
-
-        .btn-queue {
-            background: rgb(245 158 11 / .15);
-            color: #f59e0b;
-        }
-
-        .btn-queue:hover {
-            background: rgb(245 158 11 / .25);
-        }
-
-        .btn-view {
-            background: rgb(59 130 246 / .15);
-            color: #3b82f6;
-        }
-
-        .btn-view:hover {
-            background: rgb(59 130 246 / .25);
-        }
-
-        .btn-danger {
-            background: rgb(239 68 68 / .12);
-            color: #ef4444;
-            border: 1px solid rgb(239 68 68 / .25);
-        }
-
-        .btn-danger:hover {
-            background: rgb(239 68 68 / .22);
-        }
-
-        .btn-success {
-            background: rgb(34 197 94 / .12);
-            color: #22c55e;
-            border: 1px solid rgb(34 197 94 / .25);
-        }
-
-        .btn-success:hover {
-            background: rgb(34 197 94 / .22);
-        }
-
-        .btn-accent-sm {
-            background: rgb(59 130 246 / .1);
-            color: #3b82f6;
-            border: 1px solid rgb(59 130 246 / .25);
-        }
-
-        .btn-accent-sm:hover {
-            background: rgb(59 130 246 / .2);
-        }
-
-        .btn-primary-sm {
-            background: #3b82f6;
-            color: #fff;
-            border: none;
-        }
-
-        .btn-primary-sm:hover {
-            background: #2563eb;
-        }
-
-        /* Copy-link button — JS toggles .copied */
-        .btn-copy-link.copied {
-            background: rgb(34 197 94 / .12) !important;
-            border-color: #22c55e !important;
-            color: #22c55e !important;
-        }
-
-        /* Pipeline stat cards — JS toggles .active */
-        .pipeline-card.active {
-            border-color: rgb(59 130 246 / .4);
-            box-shadow: 0 0 0 3px rgb(59 130 246 / .08);
-        }
-
-        /* Nav items — JS toggles .active */
-        .nav-item.active {
-            background: rgb(59 130 246 / .15);
-            color: #93c5fd;
-            font-weight: 600;
-        }
-
-        /* Master tabs — JS toggles .active */
-        .master-tab.active {
-            color: #3b82f6 !important;
-            border-bottom-color: #3b82f6 !important;
-        }
-
-        /* App items — JS generates list items */
-        .app-item {
-            padding: 10px 16px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            transition: background .1s;
-        }
-
-        .app-item:hover {
-            background: #f1f5f9;
-        }
-
-        .app-item:last-child {
-            border-bottom: none;
-        }
-
-        /* Detail panel */
-        .detail-section {
-            padding: 16px 20px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .detail-section:last-child {
-            border-bottom: none;
-        }
-
-        .detail-field {
-            display: flex;
-            justify-content: space-between;
-            padding: 4px 0;
-            font-size: 13px;
-        }
-
-        .detail-field .label {
-            color: #64748b;
-        }
-
-        .detail-actions {
-            padding: 16px 20px;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        /* Switch toggle */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 40px;
-            height: 22px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .switch .slider {
-            position: absolute;
-            cursor: pointer;
-            inset: 0;
-            background: #475569;
-            border-radius: 22px;
-            transition: .3s;
-        }
-
-        .switch .slider:before {
-            content: "";
-            position: absolute;
-            height: 16px;
-            width: 16px;
-            left: 3px;
-            bottom: 3px;
-            background: #fff;
-            border-radius: 50%;
-            transition: .3s;
-        }
-
-        .switch input:checked+.slider {
-            background: #22c55e;
-        }
-
-        .switch input:checked+.slider:before {
-            transform: translateX(18px);
-        }
-
-        /* Toast */
-        .toast {
+        /* === Toast === */
+        #toast-container {
             position: fixed;
-            bottom: 24px;
-            right: 24px;
-            padding: 12px 20px;
-            border-radius: 12px;
-            background: #fff;
-            border: 1px solid #e2e8f0;
+            top: 16px;
+            right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            padding: 10px 18px;
+            border-radius: 8px;
             font-size: 13px;
-            z-index: 999;
-            animation: slideUp .3s ease;
+            font-weight: 500;
+            color: #fff;
+            animation: toast-in .3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+        }
+
+        .toast.info {
+            background: #3b82f6;
         }
 
         .toast.success {
-            border-left: 4px solid #22c55e;
+            background: #22c55e;
         }
 
         .toast.error {
-            border-left: 4px solid #ef4444;
+            background: #ef4444;
         }
 
-        @keyframes slideUp {
+        @keyframes toast-in {
             from {
-                transform: translateY(20px);
                 opacity: 0;
+                transform: translateY(-10px);
             }
 
             to {
-                transform: translateY(0);
                 opacity: 1;
+                transform: translateY(0);
             }
+        }
+
+        /* === Process modal overlay === */
+        #process-modal,
+        #delete-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, .5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
 
-<body class="font-sans antialiased">
+<!-- ===================== BODY ===================== -->
 
-    <!-- ==================== AUTH SCREEN ==================== -->
-    <div id="auth-screen"
-        class="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-slate-50 to-blue-50">
-        <div class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-10 shadow-xl">
-            <h1
-                class="mb-2 bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-center text-2xl font-bold text-transparent">
-                DS160 EXPRESSO</h1>
-            <p class="mb-6 text-center text-sm text-slate-500">Painel de gestão para organizações</p>
-            <div class="space-y-4">
-                <div>
-                    <label class="mb-1 block text-xs font-medium text-slate-500">Email</label>
-                    <input type="email" id="login-email" placeholder="seu@email.com"
-                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+<body class="font-inter antialiased bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-400"
+    :class="{ 'sidebar-expanded': sidebarExpanded }" x-data="{ sidebarExpanded: true, sidebarOpen: false }"
+    x-init="$watch('sidebarExpanded', value => localStorage.setItem('sidebar-expanded', value))">
+
+    <!-- ===================== AUTH SCREEN (Mosaic signin block) ===================== -->
+    <div id="auth-screen" class="fixed inset-0 z-50 bg-white dark:bg-gray-900">
+        <div class="relative flex h-full">
+
+            <!-- Content (left side) -->
+            <div class="w-full md:w-1/2">
+                <div class="min-h-[100dvh] h-full flex flex-col after:flex-1">
+
+                    <!-- Header with logo -->
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+                            <a class="block" href="#">
+                                <svg class="fill-violet-500" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+                                    <path
+                                        d="M31.956 14.8C31.372 6.92 25.08.628 17.2.044V5.76a9.04 9.04 0 0 0 9.04 9.04h5.716ZM14.8 26.24v5.716C6.92 31.372.63 25.08.044 17.2H5.76a9.04 9.04 0 0 1 9.04 9.04Zm11.44-9.04h5.716c-.584 7.88-6.876 14.172-14.756 14.756V26.24a9.04 9.04 0 0 1 9.04-9.04ZM.044 14.8C.63 6.92 6.92.628 14.8.044V5.76a9.04 9.04 0 0 1-9.04 9.04H.044Z" />
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Login form -->
+                    <div class="max-w-sm mx-auto w-full px-4 py-8">
+                        <h1 class="text-3xl text-gray-800 dark:text-gray-100 font-bold mb-6">DS160 Expresso</h1>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1" for="login-email">Email</label>
+                                <input id="login-email" class="form-input w-full" type="email"
+                                    placeholder="seu@email.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1" for="login-password">Senha</label>
+                                <input id="login-password" class="form-input w-full" type="password"
+                                    placeholder="••••••" autocomplete="on">
+                            </div>
+                        </div>
+                        <div id="login-error" class="text-sm text-red-500 mt-3"></div>
+                        <div class="flex items-center justify-between mt-6">
+                            <div class="mr-1">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Painel administrativo</span>
+                            </div>
+                            <button id="btn-login"
+                                class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white ml-3">Entrar</button>
+                        </div>
+                    </div>
+
                 </div>
-                <div>
-                    <label class="mb-1 block text-xs font-medium text-slate-500">Senha</label>
-                    <input type="password" id="login-password" placeholder="••••••••"
-                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                </div>
-                <button id="btn-login"
-                    class="w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-semibold uppercase text-white shadow-sm transition-all hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">Entrar</button>
             </div>
-            <p class="mt-3 min-h-[18px] text-center text-xs text-red-500" id="login-error"></p>
+
+            <!-- Image (right side) -->
+            <div class="hidden md:block absolute top-0 bottom-0 right-0 md:w-1/2" aria-hidden="true">
+                <img class="object-cover object-center w-full h-full" src="./images/auth-image.jpg" width="760"
+                    height="1024" alt="Authentication image">
+            </div>
+
         </div>
     </div>
 
-    <!-- ==================== APP SCREEN ==================== -->
-    <!-- Tailwind Plus: "Full-width secondary column on right" multi-column layout -->
-    <div id="app-screen" class="hidden">
+    <!-- ===================== APP SCREEN ===================== -->
+    <div id="app-screen" style="display:none" class="flex h-screen overflow-hidden">
 
-        <!-- ===== SIDEBAR — fixed left (Tailwind Plus pattern: lg:fixed lg:inset-y-0) ===== -->
-        <div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
-            <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4">
-                <!-- Brand -->
-                <div class="flex h-16 shrink-0 items-center">
-                    <span class="text-lg font-bold tracking-wide text-white">DS160 EXPRESSO</span>
+        <!-- ========== SIDEBAR (Mosaic block) ========== -->
+        <div id="sidebar"
+            class="flex flex-col lg:flex-shrink-0 lg:w-64 lg:sidebar-expanded:!w-64 2xl:w-64 transition-all duration-200 ease-in-out"
+            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-64'">
+            <div class="fixed inset-0 bg-gray-900/30 z-40 lg:hidden lg:sidebar-expanded:hidden 2xl:hidden"
+                :class="sidebarOpen ? 'block' : 'hidden'" @click="sidebarOpen = false"></div>
+
+            <div id="sidebar-panel"
+                class="fixed z-40 inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700/60 overflow-y-auto no-scrollbar shrink-0 transition-all duration-200 ease-in-out"
+                :class="sidebarOpen ? 'translate-x-0' : '-translate-x-64 lg:translate-x-0'"
+                @click.outside="sidebarOpen = false" @keydown.escape.window="sidebarOpen = false">
+                <!-- Sidebar header -->
+                <div class="flex justify-between items-center px-4 pt-5 pb-2">
+                    <a class="block" href="#">
+                        <span class="text-lg font-bold text-violet-500">DS160 Expresso</span>
+                    </a>
+                    <button class="lg:hidden text-gray-500 hover:text-gray-400"
+                        @click.stop="sidebarOpen = !sidebarOpen">
+                        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                            <path d="M10.7 18.7l1.4-1.4L7.8 13H20v-2H7.8l4.3-4.3-1.4-1.4L4 12z" />
+                        </svg>
+                    </button>
                 </div>
-                <!-- Navigation -->
-                <nav class="flex flex-1 flex-col">
-                    <ul role="list" class="flex flex-1 flex-col gap-y-7">
+
+                <!-- Nav -->
+                <nav class="mt-4 px-3">
+                    <ul class="space-y-1">
                         <li>
-                            <ul role="list" class="-mx-2 space-y-1">
-                                <li>
-                                    <div class="nav-item active group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium leading-6 text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
-                                        data-view="pipeline">Pipeline</div>
-                                </li>
-                                <li>
-                                    <div class="nav-item group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium leading-6 text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
-                                        data-view="archived">Arquivados</div>
-                                </li>
-                                <li>
-                                    <div class="nav-item group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium leading-6 text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
-                                        data-view="software">Software</div>
-                                </li>
-                                <li class="hidden" id="nav-master">
-                                    <div class="nav-item group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium leading-6 text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
-                                        data-view="master">Painel Master</div>
-                                </li>
-                            </ul>
+                            <a href="#"
+                                class="nav-item active flex items-center p-2 rounded-lg text-sm font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/20 transition"
+                                data-view="pipeline">
+                                <svg class="shrink-0 fill-current text-violet-500" width="16" height="16"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M5.936.278A7.983 7.983 0 0 1 8 0a8 8 0 1 1-8 8c0-.722.104-1.413.278-2.064a1 1 0 1 1 1.932.516A5.99 5.99 0 0 0 2 8a6 6 0 1 0 6-6c-.53 0-1.045.076-1.548.21A1 1 0 1 1 5.936.278Z" />
+                                    <path
+                                        d="M6.068 7.482A2.003 2.003 0 0 0 8 10a2 2 0 1 0-.518-3.932L3.707 2.293a1 1 0 0 0-1.414 1.414l3.775 3.775Z" />
+                                </svg>
+                                <span
+                                    class="ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Pipeline</span>
+                            </a>
                         </li>
-                        <!-- Copy form link -->
                         <li>
-                            <button
-                                class="btn-copy-link flex w-full items-center justify-center gap-2 rounded-md border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-xs font-medium uppercase text-blue-400 transition-all hover:border-blue-400 hover:bg-blue-500/20 cursor-pointer"
-                                id="btn-copy-form" title="Copiar link do formulário">Copiar link do formulário</button>
+                            <a href="#"
+                                class="nav-item flex items-center p-2 rounded-lg text-sm font-medium text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/20 transition"
+                                data-view="archived">
+                                <svg class="shrink-0 fill-current" width="16" height="16" viewBox="0 0 16 16">
+                                    <path
+                                        d="M2 0a2 2 0 0 0-2 2v2h16V2a2 2 0 0 0-2-2H2ZM0 6v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6H0Zm5 2h6a1 1 0 1 1 0 2H5a1 1 0 1 1 0-2Z" />
+                                </svg>
+                                <span
+                                    class="ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Arquivados</span>
+                            </a>
                         </li>
-                        <!-- User footer -->
-                        <li class="-mx-6 mt-auto border-t border-white/10 px-6 py-3">
-                            <div class="truncate text-xs text-gray-400" id="user-email">—</div>
-                            <div class="mt-0.5 text-[10px] text-gray-500" id="user-role-display"></div>
-                            <div class="mt-1 cursor-pointer text-[9px] text-gray-500" id="org-id-display"
-                                title="Clique para copiar"></div>
-                            <button id="btn-logout"
-                                class="mt-2 w-full cursor-pointer rounded-md border border-gray-600 bg-transparent px-3 py-1.5 text-xs font-medium uppercase text-gray-400 transition-colors hover:bg-gray-800 hover:text-white">Sair</button>
+                        <li>
+                            <a href="#"
+                                class="nav-item flex items-center p-2 rounded-lg text-sm font-medium text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/20 transition"
+                                data-view="software">
+                                <svg class="shrink-0 fill-current" width="16" height="16" viewBox="0 0 16 16">
+                                    <path
+                                        d="M3.414 2L9 7.586V16H7V8.414l-5-5V6H0V0h6v2H3.414ZM15 0v6h-2V3.414l-3.172 3.172-1.414-1.414L11.586 2H9V0h6Z" />
+                                </svg>
+                                <span
+                                    class="ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Software</span>
+                            </a>
+                        </li>
+                        <li id="nav-master" class="hidden">
+                            <a href="#"
+                                class="nav-item flex items-center p-2 rounded-lg text-sm font-medium text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/20 transition"
+                                data-view="master">
+                                <svg class="shrink-0 fill-current" width="16" height="16" viewBox="0 0 16 16">
+                                    <path
+                                        d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8Zm4 11H4V9h8v2Zm0-4H4V5h8v2Z" />
+                                </svg>
+                                <span
+                                    class="ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Master</span>
+                            </a>
                         </li>
                     </ul>
                 </nav>
+
+                <!-- Sidebar footer -->
+                <div class="mt-auto px-3 pb-4 pt-3 border-t border-gray-200 dark:border-gray-700/60">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="truncate">
+                            <span id="user-email"
+                                class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate block lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200"></span>
+                            <span id="user-role-display"
+                                class="text-[10px] font-bold text-violet-500 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200"></span>
+                        </div>
+                    </div>
+                    <div
+                        class="flex items-center gap-2 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                        <span id="org-id-display"
+                            class="text-[10px] text-gray-400 dark:text-gray-500 cursor-pointer hover:text-violet-500 transition truncate"></span>
+                    </div>
+                    <button id="btn-logout"
+                        class="btn-sm w-full mt-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Sair</button>
+                </div>
             </div>
         </div>
 
-        <!-- ===== MAIN + SECONDARY COLUMN (Tailwind Plus pattern: lg:pl-64) ===== -->
-        <div class="lg:pl-64">
-            <!-- Sticky topbar -->
-            <div
-                class="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between gap-x-4 border-b border-gray-200 bg-white px-6 shadow-sm">
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-900" id="page-title">Pipeline</h2>
-                    <p class="text-xs text-gray-500" id="page-subtitle"></p>
+        <!-- ========== CONTENT AREA ========== -->
+        <div class="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+
+            <!-- ========== HEADER (Mosaic block) ========== -->
+            <header
+                class="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700/60">
+                <div class="px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between h-16 -mb-px">
+                        <!-- Left: Hamburger + Title -->
+                        <div class="flex items-center gap-3">
+                            <button class="text-gray-500 hover:text-gray-600 lg:hidden"
+                                @click.stop="sidebarOpen = !sidebarOpen">
+                                <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                                    <path d="M3 5h18M3 12h18M3 19h18" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" />
+                                </svg>
+                            </button>
+                            <div>
+                                <h1 id="page-title" class="text-xl font-bold text-gray-800 dark:text-gray-100">Pipeline
+                                </h1>
+                                <p id="page-subtitle" class="text-xs text-gray-500 dark:text-gray-400"></p>
+                            </div>
+                        </div>
+                        <!-- Right: Actions -->
+                        <div class="flex items-center gap-2">
+                            <button id="btn-copy-form"
+                                class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 text-xs">Copiar
+                                link do formulario</button>
+                            <button id="btn-refresh"
+                                class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600">
+                                <svg class="w-4 h-4 fill-current" viewBox="0 0 16 16">
+                                    <path
+                                        d="M14.15 3.85a1 1 0 0 0-1.414-1.414L10.5 4.672V1a1 1 0 0 0-2 0v3.672L6.264 2.436a1 1 0 1 0-1.414 1.414L8 7.003l3.15-3.153ZM1 13a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H2a1 1 0 0 1-1-1Z" />
+                                </svg>
+                            </button>
+                            <!-- Dark mode toggle (Mosaic block) -->
+                            <div>
+                                <input type="checkbox" name="light-switch" id="light-switch"
+                                    class="light-switch sr-only">
+                                <label
+                                    class="flex items-center justify-center cursor-pointer w-8 h-8 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-full"
+                                    for="light-switch">
+                                    <svg class="dark:hidden fill-current text-gray-500/80" width="16" height="16"
+                                        viewBox="0 0 16 16">
+                                        <path d="M8 0a1 1 0 0 1 1 1v.5a1 1 0 1 1-2 0V1a1 1 0 0 1 1-1Z" />
+                                        <path
+                                            d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-4 2a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+                                        <path
+                                            d="M13.657 3.757a1 1 0 0 0-1.414-1.414l-.354.354a1 1 0 0 0 1.414 1.414l.354-.354ZM13.5 8a1 1 0 0 1 1-1h.5a1 1 0 1 1 0 2h-.5a1 1 0 0 1-1-1ZM13.303 11.889a1 1 0 0 0-1.414 1.414l.354.354a1 1 0 0 0 1.414-1.414l-.354-.354ZM8 13.5a1 1 0 0 1 1 1v.5a1 1 0 1 1-2 0v-.5a1 1 0 0 1 1-1ZM4.111 13.303a1 1 0 1 0-1.414-1.414l-.354.354a1 1 0 1 0 1.414 1.414l.354-.354ZM0 8a1 1 0 0 1 1-1h.5a1 1 0 0 1 0 2H1a1 1 0 0 1-1-1ZM3.757 2.343a1 1 0 1 0-1.414 1.414l.354.354A1 1 0 1 0 4.11 2.697l-.354-.354Z" />
+                                    </svg>
+                                    <svg class="hidden dark:block fill-current text-gray-400/80" width="16" height="16"
+                                        viewBox="0 0 16 16">
+                                        <path
+                                            d="M11.875 4.375a.625.625 0 1 0 1.25 0c.001-.69.56-1.249 1.25-1.25a.625.625 0 1 0 0-1.25 1.252 1.252 0 0 1-1.25-1.25.625.625 0 1 0-1.25 0 1.252 1.252 0 0 1-1.25 1.25.625.625 0 1 0 0 1.25c.69.001 1.249.56 1.25 1.25Z" />
+                                        <path
+                                            d="M7.019 1.985a1.55 1.55 0 0 0-.483-1.36 1.44 1.44 0 0 0-1.53-.277C2.056 1.553 0 4.5 0 7.9 0 12.352 3.648 16 8.1 16c3.407 0 6.246-2.058 7.51-4.963a1.446 1.446 0 0 0-.25-1.55 1.554 1.554 0 0 0-1.372-.502c-4.01.552-7.539-2.987-6.97-7ZM2 7.9C2 5.64 3.193 3.664 4.961 2.6 4.82 7.245 8.72 11.158 13.36 11.04 12.265 12.822 10.341 14 8.1 14 4.752 14 2 11.248 2 7.9Z" />
+                                    </svg>
+                                    <span class="sr-only">Modo claro/escuro</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button class="btn-sm btn-queue" id="btn-refresh">Atualizar</button>
-            </div>
+            </header>
 
-            <!-- Main + Aside flex container -->
-            <div class="flex">
-                <!-- MAIN CONTENT (primary column) -->
-                <main class="flex-1 overflow-y-auto">
-                    <div class="px-6 py-8">
+            <!-- ========== MAIN CONTENT ========== -->
+            <main class="grow">
+                <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
 
-                        <!-- ===== Pipeline View ===== -->
-                        <div class="view active" id="view-pipeline">
-                            <!-- Stats grid -->
-                            <div class="grid grid-cols-5 gap-3 mb-6" id="pipeline-cards">
-                                <div class="stat-card pipeline-card active overflow-hidden rounded-lg border border-gray-200 bg-white px-4 py-5 shadow-sm transition-all hover:shadow-md cursor-pointer"
-                                    data-filter="new">
-                                    <dt
-                                        class="truncate text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                        Novo</dt>
-                                    <dd class="mt-1 text-3xl font-bold tracking-tight text-gray-900" id="stat-new">0
-                                    </dd>
+                    <!-- ==================== VIEW: PIPELINE ==================== -->
+                    <div id="view-pipeline" class="view active">
+                        <!-- Stats cards (Mosaic grid pattern) -->
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                            <div class="pipeline-card bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-4 cursor-pointer hover:border-violet-300 dark:hover:border-violet-500/50 transition"
+                                data-filter="new">
+                                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Novo
                                 </div>
-                                <div class="stat-card pipeline-card overflow-hidden rounded-lg border border-gray-200 bg-white px-4 py-5 shadow-sm transition-all hover:shadow-md cursor-pointer"
-                                    data-filter="review">
-                                    <dt
-                                        class="truncate text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                        Revisão</dt>
-                                    <dd class="mt-1 text-3xl font-bold tracking-tight text-gray-900" id="stat-review">0
-                                    </dd>
-                                </div>
-                                <div class="stat-card pipeline-card overflow-hidden rounded-lg border border-gray-200 bg-white px-4 py-5 shadow-sm transition-all hover:shadow-md cursor-pointer"
-                                    data-filter="approved">
-                                    <dt
-                                        class="truncate text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                        Aprovado</dt>
-                                    <dd class="mt-1 text-3xl font-bold tracking-tight text-gray-900" id="stat-approved">
-                                        0</dd>
-                                </div>
-                                <div class="stat-card pipeline-card overflow-hidden rounded-lg border border-gray-200 bg-white px-4 py-5 shadow-sm transition-all hover:shadow-md cursor-pointer"
-                                    data-filter="doing">
-                                    <dt
-                                        class="truncate text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                        Pendente</dt>
-                                    <dd class="mt-1 text-3xl font-bold tracking-tight text-gray-900" id="stat-doing">0
-                                    </dd>
-                                </div>
-                                <div class="stat-card pipeline-card overflow-hidden rounded-lg border border-gray-200 bg-white px-4 py-5 shadow-sm transition-all hover:shadow-md cursor-pointer"
-                                    data-filter="done">
-                                    <dt
-                                        class="truncate text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                        Concluído</dt>
-                                    <dd class="mt-1 text-3xl font-bold tracking-tight text-gray-900" id="stat-done">0
-                                    </dd>
+                                <div class="flex items-center">
+                                    <div id="stat-new" class="text-2xl font-bold text-gray-800 dark:text-gray-100">0
+                                    </div>
+                                    <div class="w-2 h-2 rounded-full bg-blue-500 ml-auto"></div>
                                 </div>
                             </div>
-                            <!-- Search -->
-                            <div class="mb-4">
-                                <input type="text" id="search-applicants"
-                                    placeholder="Buscar por nome, passaporte ou email..."
-                                    class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                            <div class="pipeline-card bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-4 cursor-pointer hover:border-violet-300 dark:hover:border-violet-500/50 transition"
+                                data-filter="review">
+                                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">
+                                    Revisao</div>
+                                <div class="flex items-center">
+                                    <div id="stat-review" class="text-2xl font-bold text-gray-800 dark:text-gray-100">0
+                                    </div>
+                                    <div class="w-2 h-2 rounded-full bg-yellow-500 ml-auto"></div>
+                                </div>
                             </div>
-                            <!-- Table -->
-                            <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-200">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
+                            <div class="pipeline-card bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-4 cursor-pointer hover:border-violet-300 dark:hover:border-violet-500/50 transition"
+                                data-filter="approved">
+                                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">
+                                    Aprovado</div>
+                                <div class="flex items-center">
+                                    <div id="stat-approved" class="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                                        0</div>
+                                    <div class="w-2 h-2 rounded-full bg-violet-500 ml-auto"></div>
+                                </div>
+                            </div>
+                            <div class="pipeline-card bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-4 cursor-pointer hover:border-violet-300 dark:hover:border-violet-500/50 transition"
+                                data-filter="doing">
+                                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">
+                                    Pendente</div>
+                                <div class="flex items-center">
+                                    <div id="stat-doing" class="text-2xl font-bold text-gray-800 dark:text-gray-100">0
+                                    </div>
+                                    <div class="w-2 h-2 rounded-full bg-orange-500 ml-auto"></div>
+                                </div>
+                            </div>
+                            <div class="pipeline-card bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-4 cursor-pointer hover:border-violet-300 dark:hover:border-violet-500/50 transition"
+                                data-filter="done">
+                                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">
+                                    Concluido</div>
+                                <div class="flex items-center">
+                                    <div id="stat-done" class="text-2xl font-bold text-gray-800 dark:text-gray-100">0
+                                    </div>
+                                    <div class="w-2 h-2 rounded-full bg-green-500 ml-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Search + Table (Mosaic table pattern) -->
+                        <div
+                            class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60">
+                            <div class="p-4 border-b border-gray-200 dark:border-gray-700/60">
+                                <div class="relative">
+                                    <input id="search-applicants" class="form-input w-full pl-10" type="search"
+                                        placeholder="Buscar solicitante...">
+                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 fill-current text-gray-400"
+                                        width="16" height="16" viewBox="0 0 16 16">
+                                        <path
+                                            d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />
+                                        <path
+                                            d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="table-auto w-full dark:text-gray-300">
+                                    <thead
+                                        class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-200 dark:border-gray-700/60">
                                         <tr>
-                                            <th
-                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                Nome</th>
-                                            <th
-                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                Etapa</th>
-                                            <th
-                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                Progresso</th>
-                                            <th
-                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                Atualizado</th>
+                                            <th class="px-4 py-3 text-left">Nome</th>
+                                            <th class="px-4 py-3 text-left">Status</th>
+                                            <th class="px-4 py-3 text-left">Progresso</th>
+                                            <th class="px-4 py-3 text-left">Atualizado</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="pipeline-list" class="divide-y divide-gray-100 bg-white"></tbody>
+                                    <tbody id="pipeline-list"
+                                        class="text-sm divide-y divide-gray-200 dark:divide-gray-700/60">
+                                    </tbody>
                                 </table>
                             </div>
-                            <!-- Pagination -->
-                            <div class="flex items-center justify-center gap-3 py-4">
-                                <button id="app-prev" disabled
-                                    class="rounded-md bg-white px-3 py-1.5 text-xs font-medium uppercase text-gray-600 ring-1 ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">Anterior</button>
-                                <span id="app-page-info" class="text-xs text-gray-500">Página 1</span>
+                            <!-- Pagination (Mosaic pattern) -->
+                            <div
+                                class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700/60">
+                                <button id="app-prev"
+                                    class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">&lt;
+                                    Anterior</button>
+                                <span id="app-page-info" class="text-xs text-gray-400 dark:text-gray-500">Pagina
+                                    1</span>
                                 <button id="app-next"
-                                    class="rounded-md bg-white px-3 py-1.5 text-xs font-medium uppercase text-gray-600 ring-1 ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">Próxima</button>
+                                    class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Proximo
+                                    &gt;</button>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- ===== Applicant Detail View ===== -->
-                        <div class="view" id="view-applicant-detail">
-                            <div id="applicant-detail-content"></div>
-                        </div>
-
-                        <!-- ===== Archived View ===== -->
-                        <div class="view" id="view-archived">
-                            <div class="mb-5">
-                                <h3 class="text-lg font-bold text-gray-900">Solicitantes Arquivados</h3>
-                                <p class="mt-1 text-sm text-gray-500">Solicitantes que já foram concluídos e arquivados
-                                    pelo assessor.</p>
+                    <!-- ==================== VIEW: ARCHIVED ==================== -->
+                    <div id="view-archived" class="view">
+                        <div
+                            class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60">
+                            <div class="p-4 border-b border-gray-200 dark:border-gray-700/60">
+                                <div class="relative">
+                                    <input id="search-archived" class="form-input w-full pl-10" type="search"
+                                        placeholder="Buscar arquivado...">
+                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 fill-current text-gray-400"
+                                        width="16" height="16" viewBox="0 0 16 16">
+                                        <path
+                                            d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />
+                                        <path
+                                            d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z" />
+                                    </svg>
+                                </div>
                             </div>
-                            <div class="mb-4">
-                                <input type="text" id="search-archived" placeholder="Buscar por nome ou passaporte..."
-                                    class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                            </div>
-                            <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-200">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
+                            <div class="overflow-x-auto">
+                                <table class="table-auto w-full dark:text-gray-300">
+                                    <thead
+                                        class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-200 dark:border-gray-700/60">
                                         <tr>
-                                            <th
-                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                Nome</th>
-                                            <th
-                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                Passaporte</th>
-                                            <th
-                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                Arquivado em</th>
-                                            <th
-                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                Ações</th>
+                                            <th class="px-4 py-3 text-left">Nome</th>
+                                            <th class="px-4 py-3 text-left">Passaporte</th>
+                                            <th class="px-4 py-3 text-left">Atualizado</th>
+                                            <th class="px-4 py-3 text-left">Acoes</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="archived-list" class="divide-y divide-gray-100 bg-white"></tbody>
+                                    <tbody id="archived-list"
+                                        class="text-sm divide-y divide-gray-200 dark:divide-gray-700/60">
+                                    </tbody>
                                 </table>
                             </div>
-                            <div class="flex items-center justify-center gap-3 py-4">
-                                <button id="arch-prev" disabled
-                                    class="rounded-md bg-white px-3 py-1.5 text-xs font-medium uppercase text-gray-600 ring-1 ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">Anterior</button>
-                                <span id="arch-page-info" class="text-xs text-gray-500">Página 1</span>
+                            <div
+                                class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700/60">
+                                <button id="arch-prev"
+                                    class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">&lt;
+                                    Anterior</button>
+                                <span id="arch-page-info" class="text-xs text-gray-400 dark:text-gray-500">Pagina
+                                    1</span>
                                 <button id="arch-next"
-                                    class="rounded-md bg-white px-3 py-1.5 text-xs font-medium uppercase text-gray-600 ring-1 ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">Próxima</button>
+                                    class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Proximo
+                                    &gt;</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ==================== VIEW: APPLICANT DETAIL ==================== -->
+                    <div id="view-applicant-detail" class="view">
+                        <button id="btn-back-pipeline"
+                            class="btn-sm mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300"
+                            onclick="showView('pipeline');document.getElementById('page-title').textContent='Pipeline';document.getElementById('page-subtitle').textContent='';loadPipeline();">
+                            &lt; Voltar ao Pipeline
+                        </button>
+                        <div id="applicant-detail-content"></div>
+                    </div>
+
+                    <!-- ==================== VIEW: SOFTWARE ==================== -->
+                    <div id="view-software" class="view">
+                        <div class="grid sm:grid-cols-2 gap-6">
+                            <!-- Software version card -->
+                            <div
+                                class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-6">
+                                <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Software
+                                    Desktop</h2>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <span id="sw-version" class="text-2xl font-bold text-violet-500">—</span>
+                                    <span id="sw-version-date" class="text-xs text-gray-400 dark:text-gray-500"></span>
+                                </div>
+                                <p id="sw-version-notes" class="text-sm text-gray-500 dark:text-gray-400 mb-5"></p>
+                                <a id="sw-download-btn" href="#"
+                                    class="btn bg-violet-500 hover:bg-violet-600 text-white w-full text-center block">
+                                    <span>Baixar </span><span id="sw-download-version"></span>
+                                    <span id="sw-download-size" class="ml-2 text-xs opacity-70"></span>
+                                </a>
+                                <p id="sw-download-date"
+                                    class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center"></p>
+                            </div>
+                            <!-- Automation version card -->
+                            <div
+                                class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-6">
+                                <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Automacao
+                                    DS-160</h2>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <span id="sw-auto-version" class="text-2xl font-bold text-sky-500">—</span>
+                                    <span id="sw-auto-date" class="text-xs text-gray-400 dark:text-gray-500"></span>
+                                </div>
+                                <p id="sw-auto-changelog" class="text-sm text-gray-500 dark:text-gray-400"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ==================== VIEW: MASTER ==================== -->
+                    <div id="view-master" class="view">
+                        <!-- Master tabs (Mosaic tabs pattern) -->
+                        <div class="border-b border-gray-200 dark:border-gray-700/60 mb-6">
+                            <ul class="flex gap-6 -mb-px text-sm font-medium">
+                                <li><button
+                                        class="master-tab active pb-3 border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                                        data-master-tab="agencies">Organizacoes</button></li>
+                                <li><button
+                                        class="master-tab pb-3 border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                                        data-master-tab="capmonster">CapMonster</button></li>
+                                <li><button
+                                        class="master-tab pb-3 border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                                        data-master-tab="logs">Erros <span id="logs-count"
+                                            class="text-xs">(0)</span></button></li>
+                                <li><button
+                                        class="master-tab pb-3 border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                                        data-master-tab="settings">Config</button></li>
+                            </ul>
+                        </div>
+
+                        <!-- Sub: Agencies -->
+                        <div id="master-sub-agencies" class="master-sub active">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100">Organizacoes</h3>
+                                <button
+                                    onclick="document.getElementById('modal-create-agency').classList.remove('hidden')"
+                                    class="btn-sm bg-violet-500 hover:bg-violet-600 text-white">+ Nova
+                                    Organizacao</button>
+                            </div>
+                            <div id="agencies-list"
+                                class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 divide-y divide-gray-200 dark:divide-gray-700/60">
                             </div>
                         </div>
 
-                        <!-- ===== Software View ===== -->
-                        <div class="view" id="view-software">
-                            <div class="max-w-3xl">
-                                <!-- Download card -->
-                                <div
-                                    class="mb-6 overflow-hidden rounded-xl border border-blue-200/50 bg-gradient-to-br from-gray-50 to-blue-50 p-6 shadow-sm">
-                                    <div class="mb-5 flex items-center gap-4">
-                                        <div
-                                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-xl font-bold text-white shadow-lg shadow-blue-500/25">
-                                            D</div>
-                                        <div>
-                                            <h3 class="text-lg font-bold text-gray-900">DS160 EXPRESSO</h3>
-                                            <p class="text-sm text-gray-500">Software de preenchimento automático do
-                                                formulário DS-160</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-wrap items-center gap-3">
-                                        <a id="sw-download-btn" href="#" target="_blank"
-                                            class="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-6 py-2.5 text-sm font-semibold uppercase text-white no-underline shadow-sm transition-all hover:bg-blue-600">
-                                            Baixar Instalador <span id="sw-download-version"
-                                                class="text-[11px] opacity-80"></span>
-                                        </a>
-                                        <span id="sw-download-size" class="text-xs text-gray-500"></span>
-                                    </div>
-                                    <div id="sw-download-date" class="mt-3 text-[11px] text-gray-500"></div>
-                                </div>
-                                <!-- Versions -->
-                                <h4 class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-gray-500">
-                                    Versões Atuais</h4>
-                                <div class="mb-6 grid grid-cols-2 gap-4">
-                                    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                                        <div class="mb-3 flex items-center gap-2.5">
-                                            <div
-                                                class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 text-sm font-bold text-blue-500">
-                                                S</div>
-                                            <div>
-                                                <div
-                                                    class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                                                    Software</div>
-                                                <div class="text-[10px] text-gray-400">Electron App</div>
-                                            </div>
-                                        </div>
-                                        <div id="sw-version" class="mb-1 text-3xl font-extrabold text-blue-500">—</div>
-                                        <div id="sw-version-date" class="text-[11px] text-gray-500"></div>
-                                        <div id="sw-version-notes" class="mt-2 text-xs leading-relaxed text-gray-500">
-                                        </div>
-                                    </div>
-                                    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                                        <div class="mb-3 flex items-center gap-2.5">
-                                            <div
-                                                class="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10 text-sm font-bold text-green-500">
-                                                A</div>
-                                            <div>
-                                                <div
-                                                    class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                                                    Automação</div>
-                                                <div class="text-[10px] text-gray-400">Scripts de preenchimento</div>
-                                            </div>
-                                        </div>
-                                        <div id="sw-auto-version" class="mb-1 text-3xl font-extrabold text-green-500">—
-                                        </div>
-                                        <div id="sw-auto-date" class="text-[11px] text-gray-500"></div>
-                                        <div id="sw-auto-changelog" class="mt-2 text-xs leading-relaxed text-gray-500">
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Info banner -->
-                                <div class="mb-6 rounded-xl border border-blue-100 bg-blue-50 p-5">
-                                    <p class="mb-2 text-sm font-semibold text-blue-600">Como funciona?</p>
-                                    <ul class="list-disc space-y-1 pl-4 text-xs text-gray-600">
-                                        <li><strong>Software</strong> — Atualiza automaticamente quando uma nova versão
-                                            é publicada.</li>
-                                        <li><strong>Automação</strong> — Os scripts atualizam sozinhos a cada abertura,
-                                            sem reinstalar.</li>
-                                    </ul>
-                                </div>
-                                <!-- Docs placeholder -->
-                                <h4 class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-gray-500">
-                                    Documentação</h4>
-                                <div class="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
-                                    <p class="mb-1 text-sm font-semibold text-gray-800">Em breve</p>
-                                    <p class="mx-auto max-w-xs text-xs text-gray-500">Guias de uso, perguntas frequentes
-                                        e orientações serão adicionados aqui.</p>
+                        <!-- Sub: Agency Detail -->
+                        <div id="master-sub-agency-detail" class="master-sub">
+                            <button id="btn-back-agencies"
+                                class="btn-sm mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300">&lt;
+                                Voltar</button>
+                            <div id="agency-detail-content"></div>
+                        </div>
+
+                        <!-- Sub: CapMonster -->
+                        <div id="master-sub-capmonster" class="master-sub">
+                            <div
+                                class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-6 max-w-lg">
+                                <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">API Key
+                                    CapMonster</h3>
+                                <div class="space-y-3">
+                                    <input id="capmonster-key" class="form-input w-full" type="text"
+                                        placeholder="Cole a API Key aqui...">
+                                    <button id="btn-save-capmonster"
+                                        class="btn bg-violet-500 hover:bg-violet-600 text-white">Salvar</button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- ===== Master View ===== -->
-                        <div class="view" id="view-master">
-                            <div class="mb-5 flex gap-1 border-b border-gray-200">
-                                <button
-                                    class="master-tab active border-b-2 border-transparent bg-transparent px-4 py-2.5 text-sm font-medium uppercase text-gray-500 transition-all hover:text-gray-800 cursor-pointer"
-                                    data-master-tab="agencies">Organizações</button>
-                                <button
-                                    class="master-tab border-b-2 border-transparent bg-transparent px-4 py-2.5 text-sm font-medium uppercase text-gray-500 transition-all hover:text-gray-800 cursor-pointer"
-                                    data-master-tab="integrations">Integrações</button>
-                                <button
-                                    class="master-tab border-b-2 border-transparent bg-transparent px-4 py-2.5 text-sm font-medium uppercase text-gray-500 transition-all hover:text-gray-800 cursor-pointer"
-                                    data-master-tab="logs">Logs</button>
-                                <button
-                                    class="master-tab border-b-2 border-transparent bg-transparent px-4 py-2.5 text-sm font-medium uppercase text-gray-500 transition-all hover:text-gray-800 cursor-pointer"
-                                    data-master-tab="settings">Configurações</button>
+                        <!-- Sub: Logs -->
+                        <div id="master-sub-logs" class="master-sub">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100">Erros da Automacao
+                                </h3>
+                                <button id="btn-archive-logs"
+                                    class="btn-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs">Arquivar
+                                    todos</button>
                             </div>
-                            <!-- Sub: Agencies -->
-                            <div class="master-sub active" id="master-sub-agencies">
-                                <div class="mb-4 flex items-center justify-between">
-                                    <h3 class="text-base font-bold text-gray-900">Organizações Cadastradas</h3>
-                                    <button class="btn-sm btn-primary-sm"
-                                        onclick="document.getElementById('modal-create-agency').classList.remove('hidden')">+
-                                        Nova Organização</button>
-                                </div>
-                                <div class="overflow-hidden rounded-lg bg-white ring-1 ring-gray-200">
-                                    <div id="agencies-list"></div>
-                                </div>
+                            <div
+                                class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-x-auto">
+                                <table class="table-auto w-full dark:text-gray-300">
+                                    <thead
+                                        class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-200 dark:border-gray-700/60">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left">Data</th>
+                                            <th class="px-4 py-3 text-left">Causa</th>
+                                            <th class="px-4 py-3 text-left">Pagina</th>
+                                            <th class="px-4 py-3 text-left">Campo</th>
+                                            <th class="px-4 py-3 text-left">Mensagem</th>
+                                            <th class="px-4 py-3 text-center">Screenshot</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="logs-list"
+                                        class="text-sm divide-y divide-gray-200 dark:divide-gray-700/60"></tbody>
+                                </table>
                             </div>
-                            <!-- Sub: Agency detail -->
-                            <div class="master-sub" id="master-sub-agency-detail">
-                                <button
-                                    class="btn-sm mb-4 rounded-md bg-white text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50"
-                                    id="btn-back-agencies">Voltar às Agências</button>
-                                <div id="agency-detail-content"></div>
-                            </div>
-                            <!-- Sub: Integrations -->
-                            <div class="master-sub" id="master-sub-integrations">
-                                <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                                    <h3 class="mb-1 text-base font-bold text-gray-900">CapMonster Cloud</h3>
-                                    <p class="mb-3 text-xs text-gray-500">API Key para resolução automática de captchas
-                                        durante o preenchimento DS-160.</p>
-                                    <div class="flex gap-2">
-                                        <input type="password" id="capmonster-key"
-                                            placeholder="Sua Client Key do CapMonster..."
-                                            class="flex-1 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                                        <button class="btn-sm btn-primary-sm px-4"
-                                            id="btn-save-capmonster">Salvar</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Sub: Logs -->
-                            <div class="master-sub" id="master-sub-logs">
-                                <div
-                                    class="flex items-center justify-between rounded-t-xl border border-gray-200 bg-white p-5">
+                        </div>
+
+                        <!-- Sub: Settings -->
+                        <div id="master-sub-settings" class="master-sub">
+                            <div
+                                class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-6 max-w-lg">
+                                <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Pergunta de
+                                    Seguranca</h3>
+                                <div class="space-y-3">
                                     <div>
-                                        <h3 class="text-base font-bold text-gray-900">Logs de Erros <span
-                                                class="text-xs font-normal text-gray-500" id="logs-count"></span></h3>
-                                        <p class="mt-0.5 text-xs text-gray-500">Últimos 50 erros registrados durante
-                                            preenchimentos automáticos.</p>
-                                    </div>
-                                    <button class="btn-sm btn-danger" id="btn-archive-logs">Arquivar Todos</button>
-                                </div>
-                                <div class="overflow-hidden rounded-b-xl bg-white ring-1 ring-gray-200">
-                                    <table class="min-w-full divide-y divide-gray-200">
-                                        <thead class="bg-gray-50">
-                                            <tr>
-                                                <th
-                                                    class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                    Data</th>
-                                                <th
-                                                    class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                    Causa</th>
-                                                <th
-                                                    class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                    Página</th>
-                                                <th
-                                                    class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                    Campo</th>
-                                                <th
-                                                    class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                    Erro</th>
-                                                <th
-                                                    class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                                                    Screenshot</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="logs-list" class="divide-y divide-gray-100 bg-white"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <!-- Sub: Settings -->
-                            <div class="master-sub" id="master-sub-settings">
-                                <div class="mb-5">
-                                    <h3 class="text-base font-bold text-gray-900">Respostas Padrão</h3>
-                                    <p class="mt-1 text-xs text-gray-500">Valores utilizados automaticamente pela
-                                        automação DS-160.</p>
-                                </div>
-                                <div class="space-y-4">
-                                    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                                        <h4 class="mb-1 text-sm font-semibold text-gray-900">Pergunta de Segurança</h4>
-                                        <p class="mb-3 text-[11px] text-gray-500">Qual pergunta selecionar no DS-160.
-                                        </p>
-                                        <select id="setting-security-question"
-                                            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                                            <option value="1">What is your mother's maiden name?</option>
-                                            <option value="2">What is the name of your first pet?</option>
-                                            <option value="3">What city were you born in?</option>
-                                            <option value="4">What is the name of your mother's mother?</option>
-                                            <option value="5">What was the make of your first car?</option>
+                                        <label
+                                            class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Pergunta</label>
+                                        <select id="setting-security-question" class="form-select w-full">
+                                            <option value="4">Qual cidade voce nasceu?</option>
+                                            <option value="5">Nome da sua escola</option>
+                                            <option value="6">Nome da rua onde cresceu</option>
                                         </select>
                                     </div>
-                                    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                                        <h4 class="mb-1 text-sm font-semibold text-gray-900">Resposta de Segurança</h4>
-                                        <p class="mb-3 text-[11px] text-gray-500">Resposta padrão. Ex: "VO".</p>
-                                        <input type="text" id="setting-security-answer" placeholder="Ex: VO"
-                                            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                                    <div>
+                                        <label
+                                            class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Resposta
+                                            Padrao</label>
+                                        <input id="setting-security-answer" class="form-input w-full" type="text"
+                                            placeholder="Resposta padrao...">
                                     </div>
+                                    <button id="btn-save-settings"
+                                        class="btn bg-violet-500 hover:bg-violet-600 text-white">Salvar</button>
+                                    <div id="settings-status" style="display:none" class="text-sm mt-2"></div>
                                 </div>
-                                <div class="mt-5 flex justify-end">
-                                    <button class="btn-sm btn-primary-sm px-5 py-2" id="btn-save-settings">Salvar
-                                        Configurações</button>
-                                </div>
-                                <div id="settings-status" class="mt-2 hidden text-xs text-green-500"></div>
                             </div>
                         </div>
-
                     </div>
-                </main>
 
-                <!-- ===== SECONDARY COLUMN — right (Tailwind Plus pattern: aside) ===== -->
-                <!-- This aside can be shown/hidden by JS when an applicant is selected -->
-                <aside id="detail-aside" class="hidden xl:block xl:w-96 xl:shrink-0 xl:border-l xl:border-gray-200">
-                    <div class="sticky top-16 overflow-y-auto" style="max-height: calc(100vh - 4rem);">
-                        <div id="aside-detail-content" class="p-6">
-                            <!-- JS will render applicant details here -->
-                            <p class="text-center text-sm text-gray-400 py-10">Selecione um solicitante para ver os
-                                detalhes</p>
-                        </div>
-                    </div>
-                </aside>
-            </div>
+                </div>
+            </main>
         </div>
     </div>
 
-    <!-- ==================== MODALS (Tailwind Plus: simple modal pattern) ==================== -->
+    <!-- ===================== MODALS ===================== -->
 
-    <!-- Info Modal -->
-    <div class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
-        id="info-modal">
-        <div class="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-8 shadow-xl ring-1 ring-gray-200">
-            <h2 class="mb-4 text-lg font-bold text-gray-900" id="modal-title">Informações</h2>
-            <div id="modal-body" class="text-sm text-gray-600"></div>
-            <div class="mt-6 flex justify-end">
-                <button
-                    class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium uppercase text-gray-700 transition-colors hover:bg-gray-200"
-                    onclick="document.getElementById('info-modal').classList.add('hidden')">Fechar</button>
+    <!-- Info/JSON modal (Mosaic modal pattern) -->
+    <div id="info-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm"
+        onclick="if(event.target===this)this.classList.add('hidden')">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[85vh] overflow-hidden border border-gray-200 dark:border-gray-700/60"
+            onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700/60">
+                <h2 id="modal-title" class="text-lg font-bold text-gray-800 dark:text-gray-100"></h2>
+                <button id="modal-close" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path
+                            d="M18.3 5.71a1 1 0 0 0-1.42 0L12 10.59 7.12 5.71a1 1 0 0 0-1.42 1.42L10.59 12l-4.88 4.88a1 1 0 1 0 1.42 1.42L12 13.41l4.88 4.88a1 1 0 0 0 1.42-1.42L13.41 12l4.88-4.88a1 1 0 0 0 0-1.41Z" />
+                    </svg>
+                </button>
             </div>
+            <div id="modal-body" class="px-6 py-4 overflow-y-auto max-h-[65vh]"></div>
         </div>
     </div>
 
-    <!-- Modal: Create Agency -->
-    <div class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
-        id="modal-create-agency">
-        <div class="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-8 shadow-xl ring-1 ring-gray-200">
-            <h2 class="mb-5 text-lg font-bold text-gray-900">Nova Organização</h2>
-            <div class="space-y-4">
+    <!-- Process modal (iframe) -->
+    <div id="process-modal">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-[95vw] max-w-5xl h-[90vh] flex flex-col border border-gray-200 dark:border-gray-700/60"
+            onclick="event.stopPropagation()">
+            <div
+                class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700/60 shrink-0">
                 <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-500">Nome da Empresa</label>
-                    <input type="text" id="new-agency-name" placeholder="Ex: Assessoria XYZ"
-                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                </div>
-                <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-500">CNPJ</label>
-                    <input type="text" id="new-agency-cnpj" placeholder="00.000.000/0000-00"
-                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                </div>
-                <div class="flex items-center gap-2.5 py-1">
-                    <label class="text-xs text-gray-500">Status inicial:</label>
-                    <label class="flex cursor-pointer items-center gap-1.5 text-sm">
-                        <input type="checkbox" id="new-agency-active" checked class="rounded accent-blue-500"> Ativa
-                    </label>
-                </div>
-            </div>
-            <div class="mt-6 flex justify-end gap-3">
-                <button
-                    class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium uppercase text-gray-700 transition-colors hover:bg-gray-200"
-                    onclick="document.getElementById('modal-create-agency').classList.add('hidden')">Cancelar</button>
-                <button id="btn-create-agency"
-                    class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold uppercase text-white transition-colors hover:bg-blue-600">Criar
-                    Organização</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Add Assessor -->
-    <div class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
-        id="modal-add-assessor">
-        <div class="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-8 shadow-xl ring-1 ring-gray-200">
-            <h2 class="mb-5 text-lg font-bold text-gray-900">Adicionar Assessor</h2>
-            <div class="space-y-4">
-                <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-500">Nome</label>
-                    <input type="text" id="assessor-name" placeholder="Nome completo"
-                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                </div>
-                <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-500">Email</label>
-                    <input type="email" id="assessor-email" placeholder="email@exemplo.com"
-                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                </div>
-                <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-500">Senha Provisória</label>
-                    <input type="password" id="assessor-password" placeholder="Mínimo 6 caracteres"
-                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                </div>
-                <input type="hidden" id="assessor-company-id">
-            </div>
-            <div class="mt-6 flex justify-end gap-3">
-                <button
-                    class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium uppercase text-gray-700 transition-colors hover:bg-gray-200"
-                    onclick="document.getElementById('modal-add-assessor').classList.add('hidden')">Cancelar</button>
-                <button id="btn-add-assessor"
-                    class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold uppercase text-white transition-colors hover:bg-blue-600">Adicionar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Confirm Delete -->
-    <div id="delete-modal"
-        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
-        <div class="w-[90%] max-w-sm rounded-2xl bg-white p-7 text-center shadow-xl">
-            <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-                <span class="text-xl font-bold text-red-500">!</span>
-            </div>
-            <h3 class="mb-2 text-base font-bold text-gray-900">Confirmar exclusão</h3>
-            <p class="mb-5 text-sm text-gray-500">
-                Excluir <strong id="delete-modal-name" class="text-gray-800"></strong> e todos os dependentes e
-                aplicações? Esta ação não pode ser desfeita.
-            </p>
-            <div class="flex justify-center gap-3">
-                <button onclick="closeDeleteModal()"
-                    class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium uppercase text-gray-700 transition-colors hover:bg-gray-200">Cancelar</button>
-                <button onclick="confirmDelete()"
-                    class="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold uppercase text-white transition-colors hover:bg-red-600">Excluir</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: View Process (Form iframe) -->
-    <div id="process-modal"
-        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
-        <div
-            class="flex h-[calc(100vh-24px)] w-[calc(100%-24px)] max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-xl">
-            <div class="flex shrink-0 items-center justify-between border-b border-gray-200 px-5 py-3">
-                <div>
-                    <h3 id="process-modal-name" class="text-sm font-bold text-gray-900"></h3>
-                    <p id="process-modal-sub" class="mt-0.5 text-[11px] text-gray-500"></p>
+                    <h2 id="process-modal-name" class="text-lg font-bold text-gray-800 dark:text-gray-100"></h2>
+                    <div id="process-modal-sub" class="mt-1"></div>
                 </div>
                 <button onclick="closeProcessModal()"
-                    class="cursor-pointer border-none bg-transparent px-2 text-xl leading-none text-gray-400 transition-colors hover:text-gray-600">&times;</button>
+                    class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                        <path
+                            d="M18.3 5.71a1 1 0 0 0-1.42 0L12 10.59 7.12 5.71a1 1 0 0 0-1.42 1.42L10.59 12l-4.88 4.88a1 1 0 1 0 1.42 1.42L12 13.41l4.88 4.88a1 1 0 0 0 1.42-1.42L13.41 12l4.88-4.88a1 1 0 0 0 0-1.41Z" />
+                    </svg>
+                </button>
             </div>
-            <iframe id="process-modal-iframe" class="w-full flex-1 border-none" src="about:blank"></iframe>
+            <iframe id="process-modal-iframe" class="grow w-full border-0 rounded-b-2xl" src="about:blank"></iframe>
         </div>
     </div>
 
-    <!-- ==================== SCRIPTS ==================== -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <!-- Delete modal -->
+    <div id="delete-modal">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 text-center border border-gray-200 dark:border-gray-700/60"
+            onclick="event.stopPropagation()">
+            <div
+                class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6 fill-current text-red-500" viewBox="0 0 24 24">
+                    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-2h2v2Zm0-4h-2V7h2v6Z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Excluir Solicitante</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Deseja excluir <strong id="delete-modal-name"
+                    class="text-gray-800 dark:text-gray-100"></strong> e todos os dependentes?</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeDeleteModal()"
+                    class="btn bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300">Cancelar</button>
+                <button onclick="confirmDelete()" class="btn bg-red-500 hover:bg-red-600 text-white">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Agency modal -->
+    <div id="modal-create-agency"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm"
+        onclick="if(event.target===this)this.classList.add('hidden')">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4 border border-gray-200 dark:border-gray-700/60"
+            onclick="event.stopPropagation()">
+            <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Nova Organizacao</h3>
+            <div class="space-y-3">
+                <input id="new-agency-name" class="form-input w-full" type="text" placeholder="Nome da organizacao">
+                <input id="new-agency-cnpj" class="form-input w-full" type="text" placeholder="CNPJ (opcional)">
+                <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <input id="new-agency-active" class="form-checkbox" type="checkbox" checked> Ativa
+                </label>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="document.getElementById('modal-create-agency').classList.add('hidden')"
+                        class="btn bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300 flex-1">Cancelar</button>
+                    <button id="btn-create-agency" class="btn bg-violet-500 hover:bg-violet-600 text-white flex-1">Criar
+                        Organizacao</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Assessor modal -->
+    <div id="modal-add-assessor"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm"
+        onclick="if(event.target===this)this.classList.add('hidden')">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4 border border-gray-200 dark:border-gray-700/60"
+            onclick="event.stopPropagation()">
+            <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Adicionar Assessor</h3>
+            <input type="hidden" id="assessor-company-id">
+            <div class="space-y-3">
+                <input id="assessor-name" class="form-input w-full" type="text" placeholder="Nome completo">
+                <input id="assessor-email" class="form-input w-full" type="email" placeholder="Email">
+                <input id="assessor-password" class="form-input w-full" type="password"
+                    placeholder="Senha (min. 6 caracteres)">
+                <div class="flex gap-3 pt-2">
+                    <button onclick="document.getElementById('modal-add-assessor').classList.add('hidden')"
+                        class="btn bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300 flex-1">Cancelar</button>
+                    <button id="btn-add-assessor"
+                        class="btn bg-violet-500 hover:bg-violet-600 text-white flex-1">Adicionar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
     <script src="dashboard.js"></script>
 </body>
 
