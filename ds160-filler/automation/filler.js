@@ -431,20 +431,57 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             // Capture application_id from URL as early as possible (e.g. Personal1→Personal2)
             if (!application.application_id) {
                 const urlAppIdMatch = url.match(/[?&](?:c|appId|applicationId)=([A-Z]{2}\d{8,})/i)
-                    || url.match(/\/([A-Z]{2}\d{8,})\//)
-                    || url.match(/([A-Z]{2}\d{8,})/);
+                    || url.match(/\/([A-Z]{2}\d{8,})\//);
                 if (urlAppIdMatch) {
                     application.application_id = urlAppIdMatch[1];
                     console.log(`[Filler] 🆔 Application ID (from URL): ${urlAppIdMatch[1]}`);
                     if (typeof onAppId === 'function') onAppId(urlAppIdMatch[1]);
                 } else {
-                    // Also try to read from the page header (DS-160 shows ID in top bar)
-                    const headerAppId = await page.locator("span[id$='_lblAppID'], span[id$='_lblBarcode']").first().innerText().catch(() => '');
-                    const headerMatch = headerAppId.match(/[A-Z]{2}\d{8,}/);
-                    if (headerMatch) {
-                        application.application_id = headerMatch[0];
-                        console.log(`[Filler] 🆔 Application ID (from header): ${headerMatch[0]}`);
-                        if (typeof onAppId === 'function') onAppId(headerMatch[0]);
+                    // Try multiple selectors for the header Application ID display
+                    const headerSelectors = [
+                        "span[id$='_lblAppID']",
+                        "span[id$='_lblBarcode']",
+                        "span[id*='AppID']",
+                        "span[id*='Barcode']",
+                        "#ctl00_ucApplicationBar_lblAppID",
+                        "#ctl00_ucApplicationBar_lblBarcode",
+                        "[id*='ucApplicationBar'] span",
+                        "[id*='pnlAppID'] span",
+                    ];
+                    let appIdFound = false;
+                    for (const sel of headerSelectors) {
+                        if (appIdFound) break;
+                        try {
+                            const els = await page.locator(sel).all();
+                            for (const el of els) {
+                                const text = await el.innerText().catch(() => '');
+                                const match = text.match(/[A-Z]{2}\d{8,}/);
+                                if (match) {
+                                    application.application_id = match[0];
+                                    console.log(`[Filler] 🆔 Application ID (from header "${sel}"): ${match[0]}`);
+                                    if (typeof onAppId === 'function') onAppId(match[0]);
+                                    appIdFound = true;
+                                    break;
+                                }
+                            }
+                        } catch { }
+                    }
+                    // Last resort: search all visible text on page for Application ID pattern
+                    if (!appIdFound) {
+                        try {
+                            const bodyText = await page.evaluate(() => {
+                                // Look for the Application ID in page content (usually in top bar)
+                                const allText = document.body?.innerText || '';
+                                const m = allText.match(/Application\s*(?:ID|Id|id)[:\s]*([A-Z]{2}\d{8,})/i)
+                                    || allText.match(/\b([A-Z]{2}\d{10,})\b/);
+                                return m ? m[1] || m[0] : '';
+                            });
+                            if (bodyText) {
+                                application.application_id = bodyText;
+                                console.log(`[Filler] 🆔 Application ID (from page text): ${bodyText}`);
+                                if (typeof onAppId === 'function') onAppId(bodyText);
+                            }
+                        } catch { }
                     }
                 }
             }
