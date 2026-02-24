@@ -5,166 +5,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 — Acesso Negado</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: #fef2f2;
-            color: #1e293b;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .bg-pattern {
-            position: fixed;
-            inset: 0;
-            background:
-                radial-gradient(circle at 20% 30%, rgba(239, 68, 68, 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(239, 68, 68, 0.04) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.02) 0%, transparent 60%);
-            z-index: 0;
-        }
-
-        .container {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-            padding: 40px 24px;
-            max-width: 480px;
-        }
-
-
-
-
-        .code {
-            font-size: 5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1;
-            margin-bottom: 12px;
-            letter-spacing: -2px;
-        }
-
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 12px;
-        }
-
-        p {
-            font-size: 0.95rem;
-            color: #64748b;
-            line-height: 1.7;
-            margin-bottom: 32px;
-        }
-
-        .btn-back {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 28px;
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            letter-spacing: 0.3px;
-        }
-
-        .btn-back:hover {
-            background: #dc2626;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
-        }
-
-        .btn-back:active {
-            transform: translateY(0);
-        }
-
-        .btn-back svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        .footer-text {
-            margin-top: 48px;
-            font-size: 0.75rem;
-            color: #94a3b8;
-        }
-
-        .dots {
-            display: flex;
-            gap: 6px;
-            justify-content: center;
-            margin-bottom: 32px;
-        }
-
-        .dots span {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #fca5a5;
-        }
-
-        .dots span:nth-child(2) {
-            background: #ef4444;
-        }
-
-        .dots span:nth-child(3) {
-            background: #fca5a5;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // GitHub Pages 404 redirect: /visa/SHORT_ID → /visa/ds160?org=SHORT_ID
-        (function () {
-            var path = location.pathname;
-            if (path.endsWith('/')) path = path.slice(0, -1);
-            var parts = path.split('/');
-            var lastPart = parts[parts.length - 1];
-            var knownPaths = ['ds160', 'dashboard.html', 'painel.html', 'visa', 'privacy-policy.html', ''];
-            if (lastPart && knownPaths.indexOf(lastPart) === -1 && lastPart.indexOf('.') === -1) {
-                var basePath = parts.slice(0, parts.length - 1).join('/');
-                location.replace(basePath + '/ds160?org=' + lastPart);
+        tailwind.config = {
+            theme: {
+                extend: {
+                    borderRadius: { DEFAULT: '5px' },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
             }
-        })();
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+            // GitHub Pages 404 redirect: /visa/SHORT_ID → /visa/ds160?org=SHORT_ID
+            (function () {
+                var path = location.pathname;
+                if (path.endsWith('/')) path = path.slice(0, -1);
+                var parts = path.split('/');
+                var lastPart = parts[parts.length - 1];
+                var knownPaths = ['ds160', 'dashboard.html', 'painel.html', 'visa', 'privacy-policy.html', ''];
+                if (lastPart && knownPaths.indexOf(lastPart) === -1 && lastPart.indexOf('.') === -1) {
+                    var basePath = parts.slice(0, parts.length - 1).join('/');
+                    location.replace(basePath + '/ds160?org=' + lastPart);
+                }
+            })();
     </script>
 </head>
 
-<body>
-    <div class="bg-pattern"></div>
-    <div class="container">
+<body class="font-sans bg-red-50 text-slate-800 min-h-screen flex items-center justify-center overflow-hidden">
 
+    <!-- Background pattern -->
+    <div
+        class="fixed inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(239,68,68,0.06)_0%,transparent_50%),radial-gradient(circle_at_80%_70%,rgba(239,68,68,0.04)_0%,transparent_50%),radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.02)_0%,transparent_60%)]">
+    </div>
 
-        <div class="code">404</div>
+    <div class="relative z-10 text-center px-6 max-w-md">
 
-        <div class="dots">
-            <span></span><span></span><span></span>
+        <!-- 404 code -->
+        <div
+            class="text-8xl font-extrabold bg-gradient-to-br from-red-500 to-red-600 bg-clip-text text-transparent leading-none mb-3 tracking-tighter">
+            404
         </div>
 
-        <h1>Acesso Negado</h1>
-        <p>A página que você está procurando não existe, foi movida ou você não tem permissão para acessá-la.</p>
+        <!-- Dots -->
+        <div class="flex gap-1.5 justify-center mb-8">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-300"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-red-300"></span>
+        </div>
 
-        <a href="dashboard.html" class="btn-back">Voltar ao Início</a>
+        <h1 class="text-2xl font-bold text-gray-900 mb-3">Acesso Negado</h1>
+        <p class="text-sm text-slate-500 leading-relaxed mb-8">A página que você está procurando não existe, foi movida
+            ou você não tem permissão para acessá-la.</p>
 
-        <p class="footer-text">Se o problema persistir, entre em contato com o suporte.</p>
+        <a href="dashboard.html"
+            class="inline-flex items-center gap-2 px-7 py-3 bg-red-500 text-white font-semibold text-sm rounded hover:bg-red-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/30 transition-all active:translate-y-0">
+            Voltar ao Início
+        </a>
+
+        <p class="mt-12 text-xs text-slate-400">Se o problema persistir, entre em contato com o suporte.</p>
     </div>
 </body>
 

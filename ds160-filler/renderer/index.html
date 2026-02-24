@@ -4,217 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <title>DS160 EXPRESSO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    borderRadius: { DEFAULT: '5px' },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        :root {
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --primary-light: #eff6ff;
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --surface-hover: #f1f5f9;
-            --border: #e2e8f0;
-            --text: #1e293b;
-            --text-secondary: #374151;
-            --text-muted: #64748b;
-            --text-faint: #94a3b8;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --error: #ef4444;
-            --input-bg: #f8fafc;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            user-select: none;
-        }
-
-        .header {
-            background: var(--surface);
-            padding: 16px 20px;
-            text-align: center;
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            color: var(--primary);
-            border-bottom: 2px solid var(--primary);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
-        }
-
-        .content {
-            flex: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        /* Login Section */
-        #login-section {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        #main-section {
-            display: none;
-            flex-direction: column;
-            gap: 14px;
-            flex: 1;
-        }
-
-        label {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 2px;
-            font-weight: 500;
-        }
-
-        input[type="email"],
-        input[type="password"] {
-            width: 100%;
-            padding: 10px 14px;
-            border-radius: 5px;
-            border: 1px solid var(--border);
-            background: var(--input-bg);
-            color: var(--text);
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, .1);
-        }
-
-        .checkbox-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .checkbox-row input[type="checkbox"] {
-            accent-color: var(--primary);
-        }
-
-        button {
-            padding: 10px 20px;
-            border-radius: 5px;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            letter-spacing: 0.3px;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-
-        .btn-refresh {
-            background: var(--surface);
-            color: var(--primary);
-            border: 1px solid var(--primary);
-        }
-
-        .btn-refresh:hover {
-            background: var(--primary-light);
-        }
-
-        .btn-update {
-            background: var(--surface);
-            color: var(--warning);
-            border: 1px solid var(--warning);
-            font-size: 12px;
-            padding: 8px 16px;
-        }
-
-        .btn-update:hover {
-            background: #fffbeb;
-        }
-
-        .btn-update:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Status */
-        .status-card {
-            background: var(--surface);
-            border-radius: 5px;
-            padding: 14px;
-            border: 1px solid var(--border);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
-        }
-
-        .status-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-
-        .status-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .status-label {
-            color: var(--text-muted);
-        }
-
-        .status-value {
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 6px;
-        }
-
-        .dot-green {
-            background: var(--success);
-        }
-
-        .dot-yellow {
-            background: var(--warning);
-            animation: pulse-dot 1.5s infinite;
-        }
-
-        .dot-gray {
-            background: var(--text-faint);
-        }
-
-        .dot-red {
-            background: var(--error);
-        }
-
         @keyframes pulse-dot {
 
             0%,
@@ -227,147 +30,98 @@
             }
         }
 
-        .timer-badge {
-            background: var(--primary-light);
-            color: var(--primary);
-            padding: 2px 8px;
-            border-radius: 5px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .error {
-            color: var(--error);
-            font-size: 12px;
-            text-align: center;
-        }
-
-        .log {
-            font-size: 11px;
-            color: var(--text-faint);
-            margin-top: auto;
-            max-height: 100px;
-            overflow-y: auto;
-            font-family: 'SF Mono', 'Consolas', monospace;
-            line-height: 1.5;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 5px;
-            padding: 8px 10px;
-        }
-
-        /* Footer / Support */
-        .footer {
-            padding: 12px 20px;
-            text-align: center;
-            font-size: 11px;
-            color: var(--text-faint);
-            border-top: 1px solid var(--border);
-            background: var(--surface);
-        }
-
-        .footer a {
-            color: #25d366;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
-        }
-
-        .user-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .user-bar span {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 200px;
-        }
-
-        .btn-logout {
-            background: none;
-            border: none;
-            color: var(--error);
-            font-size: 11px;
-            cursor: pointer;
-            padding: 4px 8px;
-        }
-
-        .btn-logout:hover {
-            color: #dc2626;
+        .animate-pulse-dot {
+            animation: pulse-dot 1.5s infinite;
         }
     </style>
 </head>
 
-<body>
-    <div class="header">DS160 EXPRESSO</div>
-    <div class="content">
+<body class="font-sans bg-slate-50 text-slate-800 h-screen flex flex-col select-none">
+
+    <!-- Header -->
+    <div
+        class="bg-white px-5 py-4 text-center text-lg font-bold tracking-wide text-blue-500 border-b-2 border-blue-500 shadow-sm">
+        DS160 EXPRESSO
+    </div>
+
+    <div class="flex-1 p-5 flex flex-col gap-3.5">
 
         <!-- LOGIN -->
-        <div id="login-section">
+        <div id="login-section" class="flex flex-col gap-3">
             <div>
-                <label>Email</label>
-                <input type="email" id="email" placeholder="seu@email.com">
+                <label class="text-xs font-medium text-slate-500 mb-0.5 block">Email</label>
+                <input type="email" id="email" placeholder="seu@email.com"
+                    class="w-full px-3.5 py-2.5 rounded border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/10">
             </div>
             <div>
-                <label>Senha</label>
-                <input type="password" id="password" placeholder="••••••••">
+                <label class="text-xs font-medium text-slate-500 mb-0.5 block">Senha</label>
+                <input type="password" id="password" placeholder="••••••••"
+                    class="w-full px-3.5 py-2.5 rounded border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/10">
             </div>
-            <div class="checkbox-row">
-                <input type="checkbox" id="remember" checked>
-                <label for="remember" style="color:var(--text-secondary);margin:0;cursor:pointer">Lembrar meu
-                    login</label>
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+                <input type="checkbox" id="remember" checked class="accent-blue-500">
+                <label for="remember" class="text-slate-600 cursor-pointer">Lembrar meu login</label>
             </div>
-            <button class="btn-primary" id="btn-login">Entrar</button>
-            <p class="error" id="login-error"></p>
+            <button
+                class="btn-primary bg-blue-500 text-white py-2.5 px-5 rounded text-sm font-semibold transition-all hover:bg-blue-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/30"
+                id="btn-login">Entrar</button>
+            <p class="error text-red-500 text-xs text-center" id="login-error"></p>
         </div>
 
         <!-- MAIN -->
-        <div id="main-section">
-            <div class="user-bar">
-                <span id="user-email">—</span>
-                <button class="btn-logout" id="btn-logout">Sair</button>
+        <div id="main-section" class="hidden flex-col gap-3.5 flex-1">
+            <!-- User bar -->
+            <div class="flex justify-between items-center text-xs text-slate-500">
+                <span id="user-email" class="overflow-hidden text-ellipsis whitespace-nowrap max-w-[200px]">—</span>
+                <button
+                    class="btn-logout bg-transparent border-none text-red-500 text-[11px] cursor-pointer px-2 py-1 hover:text-red-600"
+                    id="btn-logout">Sair</button>
             </div>
 
-            <div class="status-card">
-                <div class="status-row">
-                    <span class="status-label">Status</span>
-                    <span class="status-value" id="status-text"><span class="dot dot-green"></span>Ativo</span>
+            <!-- Status card -->
+            <div class="bg-white rounded border border-slate-200 p-3.5 shadow-sm">
+                <div class="flex justify-between mb-2 text-[13px]">
+                    <span class="text-slate-500">Status</span>
+                    <span class="font-semibold text-slate-800" id="status-text">
+                        <span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1.5"></span>Ativo
+                    </span>
                 </div>
-                <div class="status-row">
-                    <span class="status-label">Fila</span>
-                    <span class="status-value" id="queue-count">—</span>
+                <div class="flex justify-between mb-2 text-[13px]">
+                    <span class="text-slate-500">Fila</span>
+                    <span class="font-semibold text-slate-800" id="queue-count">—</span>
                 </div>
-                <div class="status-row">
-                    <span class="status-label">Atual</span>
-                    <span class="status-value" id="current-task">—</span>
+                <div class="flex justify-between mb-2 text-[13px]">
+                    <span class="text-slate-500">Atual</span>
+                    <span class="font-semibold text-slate-800" id="current-task">—</span>
                 </div>
-                <div class="status-row">
-                    <span class="status-label">Página</span>
-                    <span class="status-value" id="current-page">—</span>
+                <div class="flex justify-between mb-2 text-[13px]">
+                    <span class="text-slate-500">Página</span>
+                    <span class="font-semibold text-slate-800" id="current-page">—</span>
                 </div>
-                <div class="status-row" id="timer-row" style="display:none;">
-                    <span class="status-label">Próxima verificação</span>
-                    <span class="timer-badge" id="timer-text">—</span>
+                <div class="flex justify-between text-[13px]" id="timer-row" style="display:none;">
+                    <span class="text-slate-500">Próxima verificação</span>
+                    <span class="bg-blue-50 text-blue-500 px-2 py-0.5 rounded text-xs font-semibold"
+                        id="timer-text">—</span>
                 </div>
             </div>
 
-            <button class="btn-refresh" id="btn-refresh">Verificar fila agora</button>
-            <button class="btn-update" id="btn-update">Fechar e Atualizar</button>
+            <!-- Buttons -->
+            <button
+                class="btn-refresh bg-white text-blue-500 border border-blue-500 py-2.5 px-5 rounded text-sm font-semibold transition-all hover:bg-blue-50"
+                id="btn-refresh">Verificar fila agora</button>
+            <button
+                class="btn-update bg-white text-amber-500 border border-amber-500 py-2 px-4 rounded text-xs font-semibold transition-all hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                id="btn-update">Fechar e Atualizar</button>
 
-            <div class="log" id="log"></div>
+            <!-- Log -->
+            <div class="log mt-auto max-h-[100px] overflow-y-auto font-mono text-[11px] text-slate-400 leading-normal bg-white border border-slate-200 rounded p-2"
+                id="log"></div>
         </div>
     </div>
 
-    <div class="footer">
-        Suporte: <span style="color:#25d366;font-weight:600">WhatsApp +55 11 98894-5503</span>
+    <!-- Footer -->
+    <div class="py-3 px-5 text-center text-[11px] text-slate-400 border-t border-slate-200 bg-white">
+        Suporte: <span class="text-green-500 font-semibold">WhatsApp +55 11 98894-5503</span>
     </div>
 
     <script src="renderer.js"></script>

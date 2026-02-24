@@ -5,490 +5,371 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Política de Privacidade</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: #f8fafc;
-            color: #374151;
-            line-height: 1.8;
-            font-size: 15px;
-        }
-
-        .container {
-            max-width: 740px;
-            margin: 0 auto;
-            padding: 60px 24px 100px;
-        }
-
-        h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 6px;
-            letter-spacing: -0.02em;
-        }
-
-        .effective {
-            font-size: 0.875rem;
-            color: #94a3b8;
-            margin-bottom: 48px;
-        }
-
-        h2 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #111827;
-            margin-top: 44px;
-            margin-bottom: 14px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        h3 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #1f2937;
-            margin-top: 24px;
-            margin-bottom: 8px;
-        }
-
-        p {
-            margin-bottom: 14px;
-        }
-
-        ul,
-        ol {
-            margin: 10px 0 16px 0;
-            padding-left: 24px;
-        }
-
-        ul {
-            list-style: none;
-        }
-
-        ol {
-            list-style: none;
-            counter-reset: item;
-        }
-
-        ol>li {
-            counter-increment: item;
-            position: relative;
-            padding-left: 20px;
-            margin-bottom: 10px;
-        }
-
-        ol>li::before {
-            content: counter(item, lower-alpha) ")";
-            position: absolute;
-            left: 0;
-            color: #3b82f6;
-            font-weight: 600;
-        }
-
-        ul li {
-            position: relative;
-            padding-left: 16px;
-            margin-bottom: 8px;
-        }
-
-        ul li::before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            color: #3b82f6;
-            font-weight: bold;
-        }
-
-        strong,
-        b {
-            color: #111827;
-            font-weight: 600;
-        }
-
-        a {
-            color: #1d4ed8;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        a:hover {
-            color: #3b82f6;
-            text-decoration: underline;
-        }
-
-        .highlight {
-            background: #eff6ff;
-            border-left: 3px solid #3b82f6;
-            padding: 16px 20px;
-            border-radius: 0 5px 5px 0;
-            margin: 20px 0;
-            color: #1e3a5f;
-        }
-
-        .definitions {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 5px;
-            padding: 24px;
-            margin: 20px 0;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
-        }
-
-        .definitions p {
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .definitions p:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-
-        .card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 5px;
-            padding: 24px;
-            margin: 20px 0;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
-        }
-
-        .footer {
-            margin-top: 64px;
-            padding-top: 24px;
-            border-top: 1px solid #e2e8f0;
-            font-size: 0.85rem;
-            color: #94a3b8;
-            text-align: center;
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                padding: 40px 16px 60px;
-            }
-
-            h1 {
-                font-size: 1.6rem;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    borderRadius: { DEFAULT: '5px' },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
             }
         }
-    </style>
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
-<body>
-    <div class="container">
-        <h1>Política de Privacidade</h1>
-        <p class="effective">Data de vigência: 24 de fevereiro de 2026</p>
+<body class="font-sans bg-slate-50 text-gray-700 leading-relaxed text-[15px]">
+    <div class="max-w-[740px] mx-auto px-6 pt-16 pb-24">
+        <h1 class="text-3xl font-bold text-gray-900 mb-1 tracking-tight">Política de Privacidade</h1>
+        <p class="text-sm text-slate-400 mb-12">Data de vigência: 24 de fevereiro de 2026</p>
 
-        <!-- ========== INTRODUÇÃO ========== -->
-        <h2>Introdução</h2>
-        <p>Bem-vindo ao nosso serviço. Esta Política de Privacidade rege o uso do nosso serviço de preenchimento
-            automatizado do formulário DS-160 (doravante denominado "Serviço") e explica como coletamos, protegemos e
-            utilizamos as informações resultantes do uso do Serviço.</p>
-        <p>Utilizamos seus dados exclusivamente para fornecer e aprimorar o Serviço. Ao utilizá-lo, você concorda com a
-            coleta e o uso de informações conforme descrito nesta política. Salvo definição em contrário neste
-            documento, os termos aqui utilizados possuem os mesmos significados atribuídos nos nossos Termos de Uso.</p>
-        <p>Nossos Termos de Uso ("Termos") regem todo o uso do Serviço e, juntamente com esta Política de Privacidade,
-            constituem o acordo integral entre você e nós ("Acordo").</p>
+        <!-- INTRODUÇÃO -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Introdução</h2>
+        <p class="mb-3.5">Bem-vindo ao nosso serviço. Esta Política de Privacidade rege o uso do nosso serviço de
+            preenchimento automatizado do formulário DS-160 (doravante denominado "Serviço") e explica como coletamos,
+            protegemos e utilizamos as informações resultantes do uso do Serviço.</p>
+        <p class="mb-3.5">Utilizamos seus dados exclusivamente para fornecer e aprimorar o Serviço. Ao utilizá-lo, você
+            concorda com a coleta e o uso de informações conforme descrito nesta política. Salvo definição em contrário
+            neste documento, os termos aqui utilizados possuem os mesmos significados atribuídos nos nossos Termos de
+            Uso.</p>
+        <p class="mb-3.5">Nossos Termos de Uso ("Termos") regem todo o uso do Serviço e, juntamente com esta Política de
+            Privacidade, constituem o acordo integral entre você e nós ("Acordo").</p>
 
-        <!-- ========== DEFINIÇÕES ========== -->
-        <h2>Definições</h2>
-        <div class="definitions">
-            <p><strong>SERVIÇO</strong> significa o software e plataforma de preenchimento automatizado do formulário
-                DS-160 operada por nós.</p>
-            <p><strong>DADOS PESSOAIS</strong> são dados relativos a uma pessoa natural identificada ou identificável a
-                partir desses dados (ou a partir desses e de outras informações em nossa posse ou que possam vir a estar
-                em nossa posse).</p>
-            <p><strong>DADOS SENSÍVEIS</strong> são dados pessoais que revelam origem racial ou étnica, estado de saúde,
-                dados biométricos, dados de documentos de identificação como passaportes e vistos, e informações
-                familiares detalhadas.</p>
-            <p><strong>DADOS DE USO</strong> são dados coletados automaticamente, gerados pelo uso do Serviço ou pela
-                própria infraestrutura do Serviço (por exemplo, duração de uma sessão, endereço IP).</p>
-            <p><strong>COOKIES</strong> são pequenos arquivos armazenados no seu dispositivo (computador ou dispositivo
-                móvel).</p>
-            <p><strong>CONTROLADOR DE DADOS</strong> significa a pessoa natural ou jurídica que (sozinha ou em conjunto
-                com outras) determina as finalidades e os meios de tratamento de quaisquer dados pessoais. Para efeitos
-                desta Política de Privacidade, somos o Controlador dos seus dados.</p>
-            <p><strong>OPERADORES DE DADOS</strong> (ou Prestadores de Serviço) significa qualquer pessoa natural ou
-                jurídica que processa dados em nome do Controlador de Dados. Podemos utilizar serviços de diversos
-                Operadores para processar seus dados de forma mais eficiente.</p>
-            <p><strong>TITULAR DOS DADOS</strong> é qualquer pessoa natural que é o sujeito dos Dados Pessoais.</p>
-            <p><strong>USUÁRIO</strong> é a pessoa que utiliza nosso Serviço. O Usuário corresponde ao Titular dos Dados
-                ou ao representante autorizado que insere os dados em nome do Titular.</p>
-            <p><strong>CEAC</strong> significa o Consular Electronic Application Center, do Departamento de Estado dos
-                EUA, acessível em ceac.state.gov, onde o formulário DS-160 é oficialmente preenchido e submetido.</p>
+        <!-- DEFINIÇÕES -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Definições</h2>
+        <div class="bg-white border border-slate-200 rounded p-6 my-5 shadow-sm divide-y divide-slate-100">
+            <p class="pb-2.5 mb-2.5"><strong class="text-gray-900 font-semibold">SERVIÇO</strong> significa o software e
+                plataforma de preenchimento automatizado do formulário DS-160 operada por nós.</p>
+            <p class="pb-2.5 mb-2.5 pt-2.5"><strong class="text-gray-900 font-semibold">DADOS PESSOAIS</strong> são
+                dados relativos a uma pessoa natural identificada ou identificável a partir desses dados (ou a partir
+                desses e de outras informações em nossa posse ou que possam vir a estar em nossa posse).</p>
+            <p class="pb-2.5 mb-2.5 pt-2.5"><strong class="text-gray-900 font-semibold">DADOS SENSÍVEIS</strong> são
+                dados pessoais que revelam origem racial ou étnica, estado de saúde, dados biométricos, dados de
+                documentos de identificação como passaportes e vistos, e informações familiares detalhadas.</p>
+            <p class="pb-2.5 mb-2.5 pt-2.5"><strong class="text-gray-900 font-semibold">DADOS DE USO</strong> são dados
+                coletados automaticamente, gerados pelo uso do Serviço ou pela própria infraestrutura do Serviço (por
+                exemplo, duração de uma sessão, endereço IP).</p>
+            <p class="pb-2.5 mb-2.5 pt-2.5"><strong class="text-gray-900 font-semibold">COOKIES</strong> são pequenos
+                arquivos armazenados no seu dispositivo (computador ou dispositivo móvel).</p>
+            <p class="pb-2.5 mb-2.5 pt-2.5"><strong class="text-gray-900 font-semibold">CONTROLADOR DE DADOS</strong>
+                significa a pessoa natural ou jurídica que (sozinha ou em conjunto com outras) determina as finalidades
+                e os meios de tratamento de quaisquer dados pessoais. Para efeitos desta Política de Privacidade, somos
+                o Controlador dos seus dados.</p>
+            <p class="pb-2.5 mb-2.5 pt-2.5"><strong class="text-gray-900 font-semibold">OPERADORES DE DADOS</strong> (ou
+                Prestadores de Serviço) significa qualquer pessoa natural ou jurídica que processa dados em nome do
+                Controlador de Dados. Podemos utilizar serviços de diversos Operadores para processar seus dados de
+                forma mais eficiente.</p>
+            <p class="pb-2.5 mb-2.5 pt-2.5"><strong class="text-gray-900 font-semibold">TITULAR DOS DADOS</strong> é
+                qualquer pessoa natural que é o sujeito dos Dados Pessoais.</p>
+            <p class="pb-2.5 mb-2.5 pt-2.5"><strong class="text-gray-900 font-semibold">USUÁRIO</strong> é a pessoa que
+                utiliza nosso Serviço. O Usuário corresponde ao Titular dos Dados ou ao representante autorizado que
+                insere os dados em nome do Titular.</p>
+            <p class="pt-2.5"><strong class="text-gray-900 font-semibold">CEAC</strong> significa o Consular Electronic
+                Application Center, do Departamento de Estado dos EUA, acessível em ceac.state.gov, onde o formulário
+                DS-160 é oficialmente preenchido e submetido.</p>
         </div>
 
-        <!-- ========== COLETA ========== -->
-        <h2>Coleta e Uso de Informações</h2>
-        <p>Coletamos diferentes tipos de informações para diversas finalidades, com o objetivo de fornecer e aprimorar o
-            Serviço.</p>
+        <!-- COLETA -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Coleta e Uso de
+            Informações</h2>
+        <p class="mb-3.5">Coletamos diferentes tipos de informações para diversas finalidades, com o objetivo de
+            fornecer e aprimorar o Serviço.</p>
 
-        <h3>Dados Pessoais e Sensíveis</h3>
-        <p>Para executar o preenchimento do formulário DS-160, coletamos as seguintes categorias de informações
-            pessoalmente identificáveis ("Dados Pessoais"), incluindo dados considerados sensíveis pela legislação de
-            proteção de dados:</p>
-        <div class="card">
-            <ol>
-                <li><strong>Dados de identificação:</strong> nome completo, nome na escrita nativa, outros nomes
-                    utilizados (apelidos, nome de solteira, nomes profissionais), data de nascimento, sexo, estado
-                    civil, cidade e país de nascimento, nacionalidade</li>
-                <li><strong>Dados de documentos:</strong> número do passaporte, número do livro do passaporte, país
-                    emissor, local de emissão, datas de emissão e validade, histórico de passaportes perdidos ou
-                    roubados</li>
-                <li><strong>Dados de contato:</strong> endereço residencial completo, endereço de correspondência,
-                    telefone principal, telefone secundário, telefone comercial, endereço de e-mail, identificadores de
-                    redes sociais</li>
-                <li><strong>Dados familiares:</strong> informações do pai (nome, data de nascimento, status nos EUA),
-                    informações da mãe (nome, data de nascimento, status nos EUA), informações do cônjuge ou ex-cônjuge
-                    (nome, data de nascimento, nacionalidade, endereço), parentes imediatos nos EUA</li>
-                <li><strong>Dados profissionais e educacionais:</strong> ocupação atual, nome e endereço do empregador,
-                    cargo, data de início, salário mensal, descrição de funções, empregos anteriores, histórico
-                    educacional, idiomas falados, filiação a organizações</li>
-                <li><strong>Dados de viagem:</strong> propósito da viagem, datas de chegada e duração pretendida,
-                    endereço nos EUA, pessoa/entidade pagadora da viagem, companheiros de viagem, histórico de visitas
-                    anteriores aos EUA, histórico de vistos anteriores</li>
-                <li><strong>Dados de segurança:</strong> respostas às perguntas de segurança do formulário DS-160
-                    (informações médicas, antecedentes criminais, informações de imigração), resposta à pergunta de
-                    segurança para recuperação da aplicação</li>
-                <li><strong>Dados de acesso:</strong> endereço de e-mail de login, credenciais de autenticação</li>
+        <h3 class="text-[15px] font-semibold text-gray-800 mt-6 mb-2">Dados Pessoais e Sensíveis</h3>
+        <p class="mb-3.5">Para executar o preenchimento do formulário DS-160, coletamos as seguintes categorias de
+            informações pessoalmente identificáveis ("Dados Pessoais"), incluindo dados considerados sensíveis pela
+            legislação de proteção de dados:</p>
+        <div class="bg-white border border-slate-200 rounded p-6 my-5 shadow-sm">
+            <ol class="list-none space-y-2.5 counter-reset-item">
+                <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">a)</span> <strong
+                        class="text-gray-900 font-semibold">Dados de identificação:</strong> nome completo, nome na
+                    escrita nativa, outros nomes utilizados, data de nascimento, sexo, estado civil, cidade e país de
+                    nascimento, nacionalidade</li>
+                <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">b)</span> <strong
+                        class="text-gray-900 font-semibold">Dados de documentos:</strong> número do passaporte, número
+                    do livro do passaporte, país emissor, local de emissão, datas de emissão e validade, histórico de
+                    passaportes perdidos ou roubados</li>
+                <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">c)</span> <strong
+                        class="text-gray-900 font-semibold">Dados de contato:</strong> endereço residencial completo,
+                    endereço de correspondência, telefone principal, telefone secundário, telefone comercial, endereço
+                    de e-mail, identificadores de redes sociais</li>
+                <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">d)</span> <strong
+                        class="text-gray-900 font-semibold">Dados familiares:</strong> informações do pai, da mãe, do
+                    cônjuge ou ex-cônjuge, parentes imediatos nos EUA</li>
+                <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">e)</span> <strong
+                        class="text-gray-900 font-semibold">Dados profissionais e educacionais:</strong> ocupação atual,
+                    nome e endereço do empregador, cargo, data de início, salário mensal, descrição de funções, empregos
+                    anteriores, histórico educacional, idiomas falados, filiação a organizações</li>
+                <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">f)</span> <strong
+                        class="text-gray-900 font-semibold">Dados de viagem:</strong> propósito da viagem, datas de
+                    chegada e duração, endereço nos EUA, pessoa/entidade pagadora, companheiros de viagem, histórico de
+                    visitas e vistos anteriores</li>
+                <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">g)</span> <strong
+                        class="text-gray-900 font-semibold">Dados de segurança:</strong> respostas às perguntas de
+                    segurança do formulário DS-160 (informações médicas, antecedentes criminais, informações de
+                    imigração)</li>
+                <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">h)</span> <strong
+                        class="text-gray-900 font-semibold">Dados de acesso:</strong> endereço de e-mail de login,
+                    credenciais de autenticação</li>
             </ol>
         </div>
 
-        <div class="highlight">
-            <strong>Nota importante:</strong> Esses dados são fornecidos exclusivamente por você ou por um representante
-            legalmente autorizado (como uma agência de viagens ou assessoria de vistos). Ao inserir dados de terceiros
-            no Serviço, você declara possuir autorização expressa do titular para tal finalidade.
+        <div class="bg-blue-50 border-l-[3px] border-blue-500 py-4 px-5 rounded-r my-5 text-blue-900">
+            <strong class="font-semibold">Nota importante:</strong> Esses dados são fornecidos exclusivamente por você
+            ou por um representante legalmente autorizado. Ao inserir dados de terceiros no Serviço, você declara
+            possuir autorização expressa do titular para tal finalidade.
         </div>
 
-        <h3>Dados de Uso</h3>
-        <p>Podemos coletar informações que seu navegador envia sempre que você acessa o Serviço ("Dados de Uso"). Esses
-            dados podem incluir o endereço IP do computador, tipo e versão do navegador, páginas do Serviço que você
-            visita, data e hora da visita, tempo gasto nessas páginas, identificadores únicos de dispositivo e outros
-            dados de diagnóstico.</p>
+        <h3 class="text-[15px] font-semibold text-gray-800 mt-6 mb-2">Dados de Uso</h3>
+        <p class="mb-3.5">Podemos coletar informações que seu navegador envia sempre que você acessa o Serviço ("Dados
+            de Uso"). Esses dados podem incluir o endereço IP do computador, tipo e versão do navegador, páginas do
+            Serviço que você visita, data e hora da visita, tempo gasto nessas páginas, identificadores únicos de
+            dispositivo e outros dados de diagnóstico.</p>
 
-        <h3>Cookies e Tecnologias de Rastreamento</h3>
-        <p>Utilizamos cookies e tecnologias similares para manter o funcionamento do Serviço. Cookies são arquivos com
-            uma pequena quantidade de dados que podem incluir um identificador anônimo único. São enviados ao seu
-            navegador a partir do site e armazenados no seu dispositivo.</p>
-        <p>Você pode instruir seu navegador a recusar todos os cookies ou indicar quando um cookie está sendo enviado.
-            No entanto, se não aceitar cookies, poderá não conseguir utilizar algumas partes do Serviço.</p>
-        <p>Tipos de cookies que utilizamos:</p>
-        <ol>
-            <li><strong>Cookies de Sessão:</strong> utilizados para operar o Serviço e manter sua autenticação</li>
-            <li><strong>Cookies de Preferência:</strong> utilizados para lembrar suas configurações e preferências</li>
-            <li><strong>Cookies de Segurança:</strong> utilizados para fins de segurança e integridade do Serviço</li>
+        <h3 class="text-[15px] font-semibold text-gray-800 mt-6 mb-2">Cookies e Tecnologias de Rastreamento</h3>
+        <p class="mb-3.5">Utilizamos cookies e tecnologias similares para manter o funcionamento do Serviço. Você pode
+            instruir seu navegador a recusar todos os cookies. No entanto, se não aceitar cookies, poderá não conseguir
+            utilizar algumas partes do Serviço.</p>
+        <p class="mb-3.5">Tipos de cookies que utilizamos:</p>
+        <ol class="list-none space-y-2.5 ml-0 mb-4">
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">a)</span> <strong
+                    class="text-gray-900 font-semibold">Cookies de Sessão:</strong> utilizados para operar o Serviço e
+                manter sua autenticação</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">b)</span> <strong
+                    class="text-gray-900 font-semibold">Cookies de Preferência:</strong> utilizados para lembrar suas
+                configurações e preferências</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">c)</span> <strong
+                    class="text-gray-900 font-semibold">Cookies de Segurança:</strong> utilizados para fins de segurança
+                e integridade do Serviço</li>
         </ol>
-        <p><strong>Não utilizamos cookies de publicidade, rastreamento ou analytics de terceiros.</strong></p>
+        <p class="mb-3.5"><strong class="text-gray-900 font-semibold">Não utilizamos cookies de publicidade,
+                rastreamento ou analytics de terceiros.</strong></p>
 
-        <!-- ========== USO DOS DADOS ========== -->
-        <h2>Uso dos Dados</h2>
-        <p>Utilizamos os dados coletados para as seguintes finalidades:</p>
-        <ol>
-            <li>Preencher automaticamente o formulário DS-160 no site oficial do CEAC (ceac.state.gov) em nome do
-                titular</li>
-            <li>Armazenar temporariamente os dados para permitir retomada do preenchimento em caso de interrupção
-                técnica, timeout de sessão ou necessidade de correção</li>
-            <li>Fornecer suporte ao cliente e resolver problemas técnicos</li>
-            <li>Manter registros de log para auditoria e diagnóstico de erros</li>
-            <li>Notificá-lo sobre o status do preenchimento, conclusão ou erros</li>
-            <li>Cumprir obrigações legais e contratuais</li>
-            <li>Aprimorar a qualidade, segurança e confiabilidade do Serviço</li>
+        <!-- USO -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Uso dos Dados</h2>
+        <p class="mb-3.5">Utilizamos os dados coletados para as seguintes finalidades:</p>
+        <ol class="list-none space-y-2.5 ml-0 mb-4">
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">a)</span> Preencher
+                automaticamente o formulário DS-160 no site oficial do CEAC (ceac.state.gov) em nome do titular</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">b)</span> Armazenar
+                temporariamente os dados para permitir retomada do preenchimento em caso de interrupção</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">c)</span> Fornecer
+                suporte ao cliente e resolver problemas técnicos</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">d)</span> Manter
+                registros de log para auditoria e diagnóstico de erros</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">e)</span> Notificá-lo
+                sobre o status do preenchimento, conclusão ou erros</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">f)</span> Cumprir
+                obrigações legais e contratuais</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">g)</span> Aprimorar a
+                qualidade, segurança e confiabilidade do Serviço</li>
         </ol>
 
-        <div class="highlight">
-            <strong>Compromisso:</strong> Seus dados <strong>não são vendidos</strong>, compartilhados com terceiros
-            para fins de marketing, publicidade ou prospecção comercial, nem utilizados para qualquer finalidade além
-            daquelas descritas nesta política.
+        <div class="bg-blue-50 border-l-[3px] border-blue-500 py-4 px-5 rounded-r my-5 text-blue-900">
+            <strong class="font-semibold">Compromisso:</strong> Seus dados <strong class="font-semibold">não são
+                vendidos</strong>, compartilhados com terceiros para fins de marketing, publicidade ou prospecção
+            comercial, nem utilizados para qualquer finalidade além daquelas descritas nesta política.
         </div>
 
-        <!-- ========== COMPARTILHAMENTO ========== -->
-        <h2>Compartilhamento de Dados</h2>
-        <p>Podemos compartilhar informações pessoais que coletamos, ou que você nos fornece, exclusivamente nas
-            seguintes situações:</p>
+        <!-- COMPARTILHAMENTO -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Compartilhamento de
+            Dados</h2>
+        <p class="mb-3.5">Podemos compartilhar informações pessoais que coletamos, ou que você nos fornece,
+            exclusivamente nas seguintes situações:</p>
 
-        <h3>Envio ao CEAC (Departamento de Estado dos EUA)</h3>
-        <p>A finalidade principal do Serviço é preencher o formulário DS-160 no site oficial ceac.state.gov. Ao utilizar
-            o Serviço, seus dados pessoais são inseridos automaticamente nos campos do formulário oficial, ficando
-            sujeitos à política de privacidade do Departamento de Estado dos Estados Unidos.</p>
+        <h3 class="text-[15px] font-semibold text-gray-800 mt-6 mb-2">Envio ao CEAC (Departamento de Estado dos EUA)
+        </h3>
+        <p class="mb-3.5">A finalidade principal do Serviço é preencher o formulário DS-160 no site oficial
+            ceac.state.gov. Ao utilizar o Serviço, seus dados pessoais são inseridos automaticamente nos campos do
+            formulário oficial, ficando sujeitos à política de privacidade do Departamento de Estado dos Estados Unidos.
+        </p>
 
-        <h3>Prestadores de Serviço</h3>
-        <p>Podemos empregar empresas e indivíduos terceirizados para facilitar o Serviço ("Prestadores de Serviço"),
-            incluindo provedores de infraestrutura (hospedagem, banco de dados, resolução de captcha). Esses terceiros
-            têm acesso aos seus Dados Pessoais apenas para realizar tarefas em nosso nome e são obrigados a não
-            divulgá-los ou utilizá-los para qualquer outra finalidade.</p>
+        <h3 class="text-[15px] font-semibold text-gray-800 mt-6 mb-2">Prestadores de Serviço</h3>
+        <p class="mb-3.5">Podemos empregar empresas e indivíduos terceirizados para facilitar o Serviço, incluindo
+            provedores de infraestrutura. Esses terceiros têm acesso aos seus Dados Pessoais apenas para realizar
+            tarefas em nosso nome e são obrigados a não divulgá-los.</p>
 
-        <h3>Cumprimento Legal</h3>
-        <p>Sob determinadas circunstâncias, podemos ser obrigados a divulgar seus Dados Pessoais caso exigido por lei ou
-            em resposta a solicitações válidas de autoridades públicas.</p>
+        <h3 class="text-[15px] font-semibold text-gray-800 mt-6 mb-2">Cumprimento Legal</h3>
+        <p class="mb-3.5">Sob determinadas circunstâncias, podemos ser obrigados a divulgar seus Dados Pessoais caso
+            exigido por lei ou em resposta a solicitações válidas de autoridades públicas.</p>
 
-        <h3>Transação Comercial</h3>
-        <p>Se a empresa ou seus ativos forem envolvidos em fusão, aquisição ou venda, seus Dados Pessoais poderão ser
-            transferidos ao adquirente, mantendo-se a vigência desta Política de Privacidade.</p>
+        <h3 class="text-[15px] font-semibold text-gray-800 mt-6 mb-2">Transação Comercial</h3>
+        <p class="mb-3.5">Se a empresa ou seus ativos forem envolvidos em fusão, aquisição ou venda, seus Dados Pessoais
+            poderão ser transferidos ao adquirente, mantendo-se a vigência desta Política de Privacidade.</p>
 
-        <!-- ========== SEGURANÇA ========== -->
-        <h2>Segurança dos Dados</h2>
-        <p>A segurança dos seus dados é extremamente importante para nós, especialmente considerando a natureza sensível
-            das informações de visto e passaporte. Implementamos as seguintes medidas:</p>
-        <ol>
-            <li><strong>Criptografia em trânsito:</strong> todas as comunicações entre seu navegador e nossos servidores
+        <!-- SEGURANÇA -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Segurança dos Dados
+        </h2>
+        <p class="mb-3.5">A segurança dos seus dados é extremamente importante para nós. Implementamos as seguintes
+            medidas:</p>
+        <ol class="list-none space-y-2.5 ml-0 mb-4">
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">a)</span> <strong
+                    class="text-gray-900 font-semibold">Criptografia em trânsito:</strong> todas as comunicações
                 utilizam protocolo TLS/HTTPS</li>
-            <li><strong>Criptografia em repouso:</strong> os dados armazenados são protegidos por criptografia no banco
-                de dados</li>
-            <li><strong>Isolamento por organização:</strong> controles de acesso por linha (Row Level Security) garantem
-                que os dados de cada organização/empresa são acessíveis apenas por seus membros autorizados</li>
-            <li><strong>Autenticação segura:</strong> acesso ao Serviço requer autenticação com credenciais válidas</li>
-            <li><strong>Sem armazenamento local:</strong> dados sensíveis não são armazenados localmente no dispositivo
-                do operador além do estritamente necessário para a sessão de preenchimento</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">b)</span> <strong
+                    class="text-gray-900 font-semibold">Criptografia em repouso:</strong> os dados armazenados são
+                protegidos por criptografia no banco de dados</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">c)</span> <strong
+                    class="text-gray-900 font-semibold">Isolamento por organização:</strong> controles de acesso por
+                linha (Row Level Security) garantem isolamento entre organizações</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">d)</span> <strong
+                    class="text-gray-900 font-semibold">Autenticação segura:</strong> acesso ao Serviço requer
+                autenticação com credenciais válidas</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">e)</span> <strong
+                    class="text-gray-900 font-semibold">Sem armazenamento local:</strong> dados sensíveis não são
+                armazenados localmente além do necessário para a sessão</li>
         </ol>
-        <p>Embora nos esforcemos para utilizar meios comercialmente aceitáveis para proteger seus Dados Pessoais, nenhum
-            método de transmissão pela Internet ou método de armazenamento eletrônico é 100% seguro. Não podemos
-            garantir segurança absoluta.</p>
+        <p class="mb-3.5">Embora nos esforcemos para utilizar meios comercialmente aceitáveis para proteger seus Dados
+            Pessoais, nenhum método de transmissão pela Internet é 100% seguro.</p>
 
-        <!-- ========== RETENÇÃO ========== -->
-        <h2>Retenção de Dados</h2>
-        <p>Reteremos seus Dados Pessoais apenas pelo tempo necessário para as finalidades estabelecidas nesta Política
-            de Privacidade:</p>
-        <ul>
-            <li><strong>Dados do formulário DS-160:</strong> mantidos enquanto o processo de visto estiver em andamento
-                ou pelo período necessário para eventuais reenvios ou correções</li>
-            <li><strong>Dados de log e auditoria:</strong> mantidos por até 90 dias para fins de diagnóstico e suporte
-                técnico</li>
-            <li><strong>Dados de conta:</strong> mantidos enquanto sua conta estiver ativa</li>
+        <!-- RETENÇÃO -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Retenção de Dados
+        </h2>
+        <p class="mb-3.5">Reteremos seus Dados Pessoais apenas pelo tempo necessário para as finalidades estabelecidas
+            nesta Política:</p>
+        <ul class="list-none space-y-2 ml-0 mb-4">
+            <li class="relative pl-4"><span class="absolute left-0 text-blue-500 font-bold">•</span> <strong
+                    class="text-gray-900 font-semibold">Dados do formulário DS-160:</strong> mantidos enquanto o
+                processo de visto estiver em andamento</li>
+            <li class="relative pl-4"><span class="absolute left-0 text-blue-500 font-bold">•</span> <strong
+                    class="text-gray-900 font-semibold">Dados de log e auditoria:</strong> mantidos por até 90 dias</li>
+            <li class="relative pl-4"><span class="absolute left-0 text-blue-500 font-bold">•</span> <strong
+                    class="text-gray-900 font-semibold">Dados de conta:</strong> mantidos enquanto sua conta estiver
+                ativa</li>
         </ul>
-        <p>Após a conclusão do processo, cancelamento da conta ou a pedido do titular, os dados são <strong>excluídos
-                permanentemente</strong> de nossos servidores. Reteremos e utilizaremos seus Dados Pessoais na medida
-            necessária para cumprir obrigações legais, resolver disputas e fazer cumprir nossos acordos.</p>
+        <p class="mb-3.5">Após a conclusão do processo, cancelamento da conta ou a pedido do titular, os dados são
+            <strong class="text-gray-900 font-semibold">excluídos permanentemente</strong> de nossos servidores.</p>
 
-        <!-- ========== TRANSFERÊNCIA ========== -->
-        <h2>Transferência de Dados</h2>
-        <p>Suas informações, incluindo Dados Pessoais, podem ser transferidas para — e mantidas em — servidores
-            localizados fora do seu estado, província, país ou outra jurisdição, onde as leis de proteção de dados podem
-            diferir das de sua jurisdição.</p>
-        <p>Se você está localizado fora dos Estados Unidos e opta por nos fornecer informações, saiba que transferimos
-            os dados, incluindo Dados Pessoais, para os Estados Unidos e os processamos lá. Seu consentimento com esta
-            Política de Privacidade, seguido pelo envio de tais informações, representa sua concordância com essa
-            transferência.</p>
-        <p>Tomaremos todas as medidas razoavelmente necessárias para garantir que seus dados sejam tratados de forma
-            segura e de acordo com esta Política de Privacidade. Nenhuma transferência de seus Dados Pessoais será
-            realizada para uma organização ou país a menos que existam controles adequados, incluindo a segurança dos
-            seus dados e outras informações pessoais.</p>
+        <!-- TRANSFERÊNCIA -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Transferência de
+            Dados</h2>
+        <p class="mb-3.5">Suas informações, incluindo Dados Pessoais, podem ser transferidas para — e mantidas em —
+            servidores localizados fora do seu estado, província, país ou outra jurisdição, onde as leis de proteção de
+            dados podem diferir das de sua jurisdição.</p>
+        <p class="mb-3.5">Se você está localizado fora dos Estados Unidos e opta por nos fornecer informações, saiba que
+            transferimos os dados para os Estados Unidos e os processamos lá. Seu consentimento com esta Política,
+            seguido pelo envio de tais informações, representa sua concordância com essa transferência.</p>
 
-        <!-- ========== LGPD ========== -->
-        <h2>Seus Direitos sob a Lei Geral de Proteção de Dados (LGPD)</h2>
-        <p>Se você é residente do Brasil, possui os seguintes direitos garantidos pela Lei nº 13.709/2018 (LGPD):</p>
-        <ol>
-            <li><strong>Confirmação e acesso:</strong> confirmar a existência de tratamento e acessar seus dados
+        <!-- LGPD -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Seus Direitos sob a
+            Lei Geral de Proteção de Dados (LGPD)</h2>
+        <p class="mb-3.5">Se você é residente do Brasil, possui os seguintes direitos garantidos pela Lei nº 13.709/2018
+            (LGPD):</p>
+        <ol class="list-none space-y-2.5 ml-0 mb-4">
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">a)</span> <strong
+                    class="text-gray-900 font-semibold">Confirmação e acesso:</strong> confirmar a existência de
+                tratamento e acessar seus dados pessoais</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">b)</span> <strong
+                    class="text-gray-900 font-semibold">Correção:</strong> solicitar a correção de dados incompletos,
+                inexatos ou desatualizados</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">c)</span> <strong
+                    class="text-gray-900 font-semibold">Anonimização, bloqueio ou eliminação:</strong> solicitar a
+                anonimização, bloqueio ou eliminação de dados desnecessários ou excessivos</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">d)</span> <strong
+                    class="text-gray-900 font-semibold">Portabilidade:</strong> solicitar a portabilidade dos dados a
+                outro fornecedor</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">e)</span> <strong
+                    class="text-gray-900 font-semibold">Eliminação:</strong> solicitar a eliminação dos dados pessoais
+                tratados com base no consentimento</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">f)</span> <strong
+                    class="text-gray-900 font-semibold">Informação sobre compartilhamento:</strong> obter informações
+                sobre as entidades com as quais compartilhamos dados</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">g)</span> <strong
+                    class="text-gray-900 font-semibold">Revogação do consentimento:</strong> revogar o consentimento a
+                qualquer momento</li>
+        </ol>
+        <p class="mb-3.5">Para exercer qualquer desses direitos, entre em contato conosco pelo e-mail indicado na seção
+            "Contato".</p>
+
+        <!-- GDPR -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Seus Direitos sob o
+            GDPR</h2>
+        <p class="mb-3.5">Se você é residente da União Europeia (UE) ou do Espaço Econômico Europeu (EEE), possui
+            direitos de proteção de dados cobertos pelo GDPR. Consulte <a
+                href="https://eur-lex.europa.eu/eli/reg/2016/679/oj" target="_blank" rel="noopener"
+                class="text-blue-700 hover:text-blue-500 hover:underline transition-colors">eur-lex.europa.eu</a>.</p>
+        <ol class="list-none space-y-2.5 ml-0 mb-4">
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">a)</span> <strong
+                    class="text-gray-900 font-semibold">Acesso, atualização ou exclusão</strong> das informações que
+                temos sobre você</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">b)</span> <strong
+                    class="text-gray-900 font-semibold">Retificação</strong> de informações imprecisas ou incompletas
+            </li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">c)</span> <strong
+                    class="text-gray-900 font-semibold">Objeção</strong> ao processamento dos seus Dados Pessoais</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">d)</span> <strong
+                    class="text-gray-900 font-semibold">Restrição</strong> do processamento das suas informações
                 pessoais</li>
-            <li><strong>Correção:</strong> solicitar a correção de dados incompletos, inexatos ou desatualizados</li>
-            <li><strong>Anonimização, bloqueio ou eliminação:</strong> solicitar a anonimização, bloqueio ou eliminação
-                de dados desnecessários, excessivos ou tratados em desconformidade com a Lei</li>
-            <li><strong>Portabilidade:</strong> solicitar a portabilidade dos dados a outro fornecedor de serviço</li>
-            <li><strong>Eliminação:</strong> solicitar a eliminação dos dados pessoais tratados com base no
-                consentimento</li>
-            <li><strong>Informação sobre compartilhamento:</strong> obter informações sobre as entidades públicas e
-                privadas com as quais realizamos compartilhamento de dados</li>
-            <li><strong>Revogação do consentimento:</strong> revogar o consentimento a qualquer momento, mediante
-                manifestação expressa</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">e)</span> <strong
+                    class="text-gray-900 font-semibold">Portabilidade</strong> dos dados em formato estruturado e
+                legível por máquina</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">f)</span> <strong
+                    class="text-gray-900 font-semibold">Retirada de consentimento</strong> a qualquer momento</li>
         </ol>
-        <p>Para exercer qualquer desses direitos, entre em contato conosco através do e-mail indicado na seção "Contato"
-            desta política. Podemos solicitar verificação de identidade antes de atender à solicitação.</p>
 
-        <!-- ========== GDPR ========== -->
-        <h2>Seus Direitos sob o Regulamento Geral de Proteção de Dados (GDPR)</h2>
-        <p>Se você é residente da União Europeia (UE) ou do Espaço Econômico Europeu (EEE), possui direitos específicos
-            de proteção de dados cobertos pelo GDPR. Para mais informações, consulte <a
-                href="https://eur-lex.europa.eu/eli/reg/2016/679/oj" target="_blank"
-                rel="noopener">https://eur-lex.europa.eu/eli/reg/2016/679/oj</a>.</p>
-        <p>Em determinadas circunstâncias, você possui os seguintes direitos:</p>
-        <ol>
-            <li><strong>Acesso, atualização ou exclusão:</strong> direito de acessar, atualizar ou solicitar a exclusão
-                das informações que temos sobre você</li>
-            <li><strong>Retificação:</strong> direito de ter suas informações retificadas caso sejam imprecisas ou
-                incompletas</li>
-            <li><strong>Objeção:</strong> direito de se opor ao processamento dos seus Dados Pessoais</li>
-            <li><strong>Restrição:</strong> direito de solicitar a restrição do processamento das suas informações
-                pessoais</li>
-            <li><strong>Portabilidade:</strong> direito de receber uma cópia dos seus Dados Pessoais em formato
-                estruturado, legível por máquina e de uso comum</li>
-            <li><strong>Retirada de consentimento:</strong> direito de retirar o consentimento a qualquer momento quando
-                o processamento se baseia em consentimento</li>
+        <!-- CalOPPA -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Seus Direitos sob o
+            CalOPPA</h2>
+        <p class="mb-3.5">Em conformidade com o California Privacy Protection Act, concordamos com o seguinte:</p>
+        <ol class="list-none space-y-2.5 ml-0 mb-4">
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">a)</span> Os usuários
+                podem visitar nosso site de forma anônima</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">b)</span> O link desta
+                Política inclui a palavra "Privacidade" e é facilmente encontrado</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">c)</span> Os usuários
+                serão notificados sobre quaisquer alterações nesta Política</li>
+            <li class="relative pl-5"><span class="absolute left-0 text-blue-500 font-semibold">d)</span> Os usuários
+                podem solicitar alterações em suas informações por e-mail</li>
         </ol>
-        <p>Observe que podemos solicitar verificação de identidade antes de atender a tais solicitações. Você também tem
-            o direito de apresentar reclamação a uma Autoridade de Proteção de Dados sobre nossa coleta e uso dos seus
-            Dados Pessoais.</p>
+        <p class="mb-3.5"><strong class="text-gray-900 font-semibold">Política sobre sinais "Do Not Track":</strong>
+            Respeitamos os sinais Do Not Track e não rastreamos, instalamos cookies de terceiros ou utilizamos
+            publicidade quando um mecanismo Do Not Track está ativo.</p>
 
-        <!-- ========== CalOPPA ========== -->
-        <h2>Seus Direitos sob o California Privacy Protection Act (CalOPPA)</h2>
-        <p>O CalOPPA é a primeira lei estadual nos EUA a exigir que sites comerciais e serviços online publiquem uma
-            política de privacidade. A abrangência da lei se estende além da Califórnia para exigir que qualquer pessoa
-            ou empresa que opere sites coletando informações pessoalmente identificáveis de consumidores californianos
-            publique uma política de privacidade em destaque.</p>
-        <p>Em conformidade com o CalOPPA, concordamos com o seguinte:</p>
-        <ol>
-            <li>Os usuários podem visitar nosso site de forma anônima</li>
-            <li>O link desta Política de Privacidade inclui a palavra "Privacidade" e pode ser facilmente encontrado na
-                página inicial do nosso site</li>
-            <li>Os usuários serão notificados sobre quaisquer alterações nesta Política de Privacidade</li>
-            <li>Os usuários podem solicitar alterações em suas informações pessoais entrando em contato conosco por
-                e-mail</li>
-        </ol>
-        <p><strong>Política sobre sinais "Do Not Track":</strong> Respeitamos os sinais Do Not Track e não rastreamos,
-            instalamos cookies de terceiros ou utilizamos publicidade quando um mecanismo Do Not Track está ativo no
-            navegador.</p>
-
-        <!-- ========== PRESTADORES ========== -->
-        <h2>Prestadores de Serviço</h2>
-        <p>Podemos empregar empresas e indivíduos terceirizados para facilitar o Serviço ("Prestadores de Serviço"),
-            realizar serviços relacionados em nosso nome ou nos auxiliar na análise de como o Serviço é utilizado. Esses
+        <!-- PRESTADORES -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Prestadores de
+            Serviço</h2>
+        <p class="mb-3.5">Podemos empregar empresas e indivíduos terceirizados para facilitar o Serviço, realizar
+            serviços relacionados em nosso nome ou nos auxiliar na análise de como o Serviço é utilizado. Esses
             terceiros têm acesso aos seus Dados Pessoais apenas para realizar tarefas em nosso nome e são obrigados
             contratualmente a não divulgar ou utilizar esses dados para qualquer outro fim.</p>
 
-        <!-- ========== LINKS ========== -->
-        <h2>Links para Outros Sites</h2>
-        <p>Nosso Serviço interage diretamente com o site oficial do CEAC (ceac.state.gov) para o preenchimento do
-            formulário DS-160. Os dados inseridos nesse site são regidos pela política de privacidade do Departamento de
-            Estado dos EUA. Recomendamos fortemente que você consulte a política de privacidade do site ceac.state.gov.
+        <!-- LINKS -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Links para Outros
+            Sites</h2>
+        <p class="mb-3.5">Nosso Serviço interage diretamente com o site oficial do CEAC (ceac.state.gov) para o
+            preenchimento do formulário DS-160. Os dados inseridos nesse site são regidos pela política de privacidade
+            do Departamento de Estado dos EUA.</p>
+        <p class="mb-3.5">Não temos controle e não assumimos responsabilidade pelo conteúdo, políticas de privacidade ou
+            práticas de sites de terceiros.</p>
+
+        <!-- MENORES -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Menores de Idade
+        </h2>
+        <p class="mb-3.5">Nosso Serviço não é destinado ao uso direto por menores de 18 anos. Os dados de menores
+            inseridos no Serviço são de responsabilidade exclusiva do responsável legal que realiza o preenchimento.</p>
+        <p class="mb-3.5">Se tomarmos conhecimento de que coletamos Dados Pessoais de menores sem verificação de
+            consentimento dos responsáveis, tomaremos medidas para remover essas informações de nossos servidores.</p>
+
+        <!-- ALTERAÇÕES -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Alterações nesta
+            Política</h2>
+        <p class="mb-3.5">Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre
+            quaisquer alterações publicando a nova Política nesta página.</p>
+        <p class="mb-3.5">Informaremos por e-mail e/ou por aviso em destaque no Serviço antes que a alteração entre em
+            vigor, atualizando a "Data de vigência" no topo desta Política.</p>
+
+        <!-- CONTATO -->
+        <h2 class="text-lg font-semibold text-gray-900 mt-11 mb-3.5 pb-2 border-b border-slate-200">Contato</h2>
+        <p class="mb-3.5">Se você tiver dúvidas sobre esta Política de Privacidade, desejar exercer seus direitos como
+            titular de dados ou necessitar de qualquer esclarecimento, entre em contato:</p>
+        <p class="mb-3.5"><strong class="text-gray-900 font-semibold">E-mail:</strong> <a
+                href="mailto:contato@seudominio.com"
+                class="text-blue-700 hover:text-blue-500 hover:underline transition-colors">contato@seudominio.com</a>
         </p>
-        <p>Não temos controle e não assumimos responsabilidade pelo conteúdo, políticas de privacidade ou práticas de
-            sites de terceiros.</p>
 
-        <!-- ========== MENORES ========== -->
-        <h2>Menores de Idade</h2>
-        <p>Nosso Serviço não é destinado ao uso direto por menores de 18 anos ("Menores"). Não coletamos
-            intencionalmente informações pessoais diretamente de Menores sem a supervisão de um responsável legal.</p>
-        <p>Os dados de menores de idade inseridos no Serviço são de responsabilidade exclusiva do pai, mãe, responsável
-            legal ou representante autorizado que realiza o preenchimento. Ao inserir dados de um menor, o responsável
-            declara possuir autoridade legal para tal.</p>
-        <p>Se tomarmos conhecimento de que coletamos Dados Pessoais de menores sem verificação de consentimento dos
-            responsáveis, tomaremos medidas para remover essas informações de nossos servidores.</p>
-
-        <!-- ========== ALTERAÇÕES ========== -->
-        <h2>Alterações nesta Política de Privacidade</h2>
-        <p>Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre quaisquer alterações
-            publicando a nova Política de Privacidade nesta página.</p>
-        <p>Informaremos por e-mail e/ou por aviso em destaque no Serviço antes que a alteração entre em vigor,
-            atualizando a "Data de vigência" no topo desta Política de Privacidade.</p>
-        <p>Recomendamos que você revise esta Política de Privacidade periodicamente. As alterações entram em vigor
-            quando publicadas nesta página.</p>
-
-        <!-- ========== CONTATO ========== -->
-        <h2>Contato</h2>
-        <p>Se você tiver dúvidas sobre esta Política de Privacidade, desejar exercer seus direitos como titular de dados
-            ou necessitar de qualquer esclarecimento, entre em contato conosco:</p>
-        <p><strong>E-mail:</strong> <a href="mailto:contato@seudominio.com">contato@seudominio.com</a></p>
-
-        <div class="footer">
+        <div class="mt-16 pt-6 border-t border-slate-200 text-center text-sm text-slate-400">
             <p>© 2026 — Todos os direitos reservados.</p>
         </div>
     </div>
