@@ -1344,6 +1344,14 @@ function normalizeProfile(data) {
                 return { street1: ua.street1 || '', street2: ua.street2 || '', city: ua.city || '', state: ua.state || '', zip: ua.zip || ua.postalCode || '' };
             })()
         },
+        // Specific locations array for dtlTravelLoc addAnother support
+        specificLocations: (() => {
+            const locs = trav.specificLocations || trav.specific_locations;
+            if (Array.isArray(locs) && locs.length) return locs;
+            const single = trav.specificLocation || trav.specific_location;
+            if (single) return [single];
+            return [];
+        })(),
         payingForTrip: trav.whoIsPaying || trav.who_is_paying || null,
         payer: (() => {
             const p = trav.payer;
@@ -1434,6 +1442,8 @@ function normalizeProfile(data) {
             issuanceDate: ppt.issuanceDate || ppt.issuance_date,
             expirationDate: ppt.expirationDate || ppt.expiration_date,
             lostOrStolen: ppt.lostOrStolen === 'Y' || ppt.lost_or_stolen === 'Y',
+            lostPassports: ppt.lostPassports || ppt.lost_passports || [],
+            // Legacy single-entry fallback
             lostPassport: (ppt.lostPassports || ppt.lost_passports || [])[0] || null,
         },
 
@@ -1465,6 +1475,8 @@ function normalizeProfile(data) {
         mother: fam1.mother || {},
         spouse: fam2 || {},
         relativesInUS: fam1.immediateRelativesInUS === 'Y' || fam1.relatives_in_us === 'Y',
+        relatives: fam1.relatives || [],
+        // Legacy single-entry fallback
         immediateRelative: (fam1.relatives || [])[0] || null,
         otherRelativesInUS: fam1.otherRelativesInUS === 'Y' || fam1.other_relatives_in_us === 'Y',
 
@@ -1537,6 +1549,8 @@ function normalizeProfile(data) {
         countriesVisited: we3.countriesVisited === 'Y' || we3.countries_visited === 'Y',
         countriesVisitedList: we3.countriesVisitedList || we3.countries_visited_list || [],
         organizationMember: we3.organizationMember === 'Y' || we3.organization_member === 'Y',
+        organizations: we3.organizations || [],
+        // Legacy single-entry fallback
         organizationName: (we3.organizations || [])[0] || '',
         specializedSkills: we3.specializedSkills === 'Y' || we3.specialized_skills === 'Y',
         specializedSkillsExplanation: we3.specializedSkillsExplanation || we3.specialized_skills_explanation || '',
