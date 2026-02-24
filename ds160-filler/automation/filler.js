@@ -835,8 +835,6 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
 
             // Find the Add Another button — DS-160 uses: btnAdd, lnkAdd, or input[type=button] near the DataList
             const addBtnSelectors = [
-                // Try custom buttonPattern from fieldMap entry
-                ...(entry.addAnother.buttonPattern ? [`input[id]:is(:visible)`, `a[id]:is(:visible)`] : []),
                 `input[id*="btnAdd"][id*="${listName}"]`,
                 `a[id*="btnAdd"][id*="${listName}"]`,
                 `input[id*="lnkAdd"][id*="${listName}"]`,
@@ -847,10 +845,13 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
 
             // First: try buttonPattern regex from entry
             if (entry.addAnother.buttonPattern && !clicked) {
-                const allBtns = await page.locator('input[type="button"], input[type="submit"], a[id*="btn"], a[id*="lnk"]').all().catch(() => []);
+                // Only search for elements that look like Add buttons (have 'Add' in ID)
+                const allBtns = await page.locator('input[id*="Add"], a[id*="Add"], input[id*="add"], a[id*="add"]').all().catch(() => []);
                 for (const btn of allBtns) {
                     const id = await btn.getAttribute('id').catch(() => '');
-                    if (id && entry.addAnother.buttonPattern.test(id)) {
+                    // Skip Help, Warning, Cancel buttons
+                    if (!id || /Help|Warning|Cancel|Review|Modal|Navigate/i.test(id)) continue;
+                    if (entry.addAnother.buttonPattern.test(id)) {
                         const vis = await btn.isVisible({ timeout: 500 }).catch(() => false);
                         if (vis) {
                             await btn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
