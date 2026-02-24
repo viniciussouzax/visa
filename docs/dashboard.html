@@ -5,13 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DS160 EXPRESSO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    borderRadius: { DEFAULT: '5px' },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        button {
-            text-transform: uppercase;
-        }
+        /* --- Minimal CSS: only what Tailwind utility classes cannot cover --- */
 
+        /* CSS Variables — referenced by dashboard.js inline styles */
         :root {
             --primary: #3b82f6;
             --primary-light: #60a5fa;
@@ -28,491 +38,13 @@
             --error: #ef4444;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
-
-        /* ========== AUTH ========== */
-        #auth-screen {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 50%, #eff6ff 100%);
-        }
-
-        .auth-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 40px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .1);
-        }
-
-        .auth-card h1 {
-            font-size: 24px;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .auth-card p {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 24px;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px 16px;
-            background: #f8fafc;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--text);
-            font-size: 14px;
-            outline: none;
-            transition: border-color .2s;
-        }
-
-        .form-group input:focus {
-            border-color: var(--accent);
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border-radius: 10px;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all .2s;
-            width: 100%;
-        }
-
-        .btn-accent {
-            background: var(--accent);
-            color: white;
-        }
-
-        .btn-accent:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, .3);
-        }
-
-        .error-msg {
-            color: var(--error);
-            font-size: 12px;
-            text-align: center;
-            margin-top: 12px;
-            min-height: 18px;
-        }
-
-        /* ========== APP LAYOUT ========== */
-        #app-screen {
-            display: none;
-            height: 100vh;
-        }
-
-        .app-layout {
-            display: flex;
-            height: 100%;
-        }
-
-        .sidebar {
-            width: 250px;
-            background: #1e293b;
-            border-right: 1px solid #334155;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
-
-        .sidebar-brand {
-            padding: 20px;
-            font-size: 18px;
-            font-weight: 700;
-            border-bottom: 1px solid #334155;
-            color: #f1f5f9;
-        }
-
-        .sidebar-nav {
-            flex: 1;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            overflow-y: auto;
-        }
-
-        .nav-item {
-            padding: 10px 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #94a3b8;
-            transition: all .15s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .nav-item:hover {
-            background: #334155;
-            color: #e2e8f0;
-        }
-
-        .nav-item.active {
-            background: rgba(59, 130, 246, .2);
-            color: #60a5fa;
-            font-weight: 600;
-        }
-
-        .nav-item.hidden {
-            display: none;
-        }
-
-        .nav-separator {
-            height: 1px;
-            background: var(--border);
-            margin: 8px 0;
-        }
-
-        .sidebar-footer {
-            padding: 16px;
-            border-top: 1px solid #334155;
-            font-size: 12px;
-            color: #94a3b8;
-        }
-
-        .sidebar-footer button {
-            background: none;
-            border: 1px solid #475569;
-            color: #94a3b8;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-top: 8px;
-            width: 100%;
-        }
-
-        .sidebar-footer button:hover {
-            background: #334155;
-            color: #e2e8f0;
-        }
-
-        .btn-copy-link {
-            background: rgba(59, 130, 246, .1) !important;
-            border: 1px solid rgba(59, 130, 246, .3) !important;
-            color: var(--accent) !important;
-            display: flex !important;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            font-weight: 500;
-            transition: all .2s;
-        }
-
-        .btn-copy-link:hover {
-            background: rgba(59, 130, 246, .2) !important;
-            border-color: var(--accent) !important;
-        }
-
-        .btn-copy-link.copied {
-            background: rgba(34, 197, 94, .15) !important;
-            border-color: var(--success) !important;
-            color: var(--success) !important;
-        }
-
-        /* Main */
-        .main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .topbar {
-            height: 60px;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .topbar h2 {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .topbar-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px;
-        }
-
-        /* Views */
+        /* View / tab toggles — JS classList.add/remove('active') */
         .view {
             display: none;
         }
 
         .view.active {
             display: block;
-        }
-
-        /* Table */
-        .table-container {
-            background: var(--surface);
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            overflow: hidden;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        table th {
-            text-align: left;
-            padding: 14px 16px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            background: #f8fafc;
-            border-bottom: 1px solid var(--border);
-        }
-
-        td {
-            padding: 12px 16px;
-            font-size: 13px;
-            border-bottom: 1px solid #f1f5f9;
-            transition: background .15s;
-        }
-
-        tr:hover td {
-            background: #f1f5f9;
-        }
-
-        tbody tr:nth-child(even) td {
-            background: #fafbfc;
-        }
-
-        tbody tr:nth-child(even):hover td {
-            background: rgba(30, 41, 59, .5);
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        tr.selected td {
-            background: rgba(59, 130, 246, .08) !important;
-            border-left: 3px solid var(--accent);
-        }
-
-        /* Badges */
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .badge-draft {
-            background: rgba(148, 163, 184, .2);
-            color: #94a3b8;
-        }
-
-        .badge-queued {
-            background: rgba(245, 158, 11, .2);
-            color: #f59e0b;
-        }
-
-        .badge-filling {
-            background: rgba(59, 130, 246, .2);
-            color: #3b82f6;
-        }
-
-        .badge-filled {
-            background: rgba(34, 197, 94, .2);
-            color: #22c55e;
-        }
-
-        .badge-error {
-            background: rgba(239, 68, 68, .2);
-            color: #ef4444;
-        }
-
-        .badge-pending {
-            background: rgba(245, 158, 11, .2);
-            color: #f59e0b;
-        }
-
-        .badge-in_progress {
-            background: rgba(59, 130, 246, .2);
-            color: #3b82f6;
-        }
-
-        .badge-completed {
-            background: rgba(34, 197, 94, .2);
-            color: #22c55e;
-        }
-
-        /* Buttons */
-        .btn-sm {
-            padding: 6px 14px;
-            border-radius: 6px;
-            border: none;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all .15s;
-        }
-
-        .btn-queue {
-            background: rgba(245, 158, 11, .2);
-            color: #f59e0b;
-        }
-
-        .btn-queue:hover {
-            background: rgba(245, 158, 11, .3);
-        }
-
-        .btn-view {
-            background: rgba(59, 130, 246, .2);
-            color: #3b82f6;
-        }
-
-        .btn-view:hover {
-            background: rgba(59, 130, 246, .3);
-        }
-
-        .btn-danger {
-            background: rgba(239, 68, 68, .15);
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, .3);
-        }
-
-        .btn-danger:hover {
-            background: rgba(239, 68, 68, .25);
-        }
-
-        .btn-success {
-            background: rgba(34, 197, 94, .15);
-            color: #22c55e;
-            border: 1px solid rgba(34, 197, 94, .3);
-        }
-
-        .btn-success:hover {
-            background: rgba(34, 197, 94, .25);
-        }
-
-        .btn-accent-sm {
-            background: rgba(59, 130, 246, .1);
-            color: var(--accent);
-            border: 1px solid rgba(59, 130, 246, .3);
-        }
-
-        .btn-accent-sm:hover {
-            background: rgba(59, 130, 246, .2);
-        }
-
-        .btn-primary-sm {
-            background: var(--accent);
-            color: white;
-            border: none;
-        }
-
-        .btn-primary-sm:hover {
-            background: var(--accent-hover);
-        }
-
-        /* Stats cards */
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px 24px;
-            position: relative;
-            overflow: hidden;
-            transition: transform .2s, box-shadow .2s;
-        }
-
-        .pipeline-card {
-            cursor: pointer;
-        }
-
-        .pipeline-card.active {
-            border-color: rgba(59, 130, 246, .4);
-            box-shadow: 0 0 20px rgba(59, 130, 246, .1);
-        }
-
-        .pipeline-card.active::before {
-            width: 5px;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, .08);
-        }
-
-        /* Master Tabs */
-        .master-tab.active {
-            color: var(--accent) !important;
-            border-bottom-color: var(--accent) !important;
-        }
-
-        .master-tab:hover {
-            color: var(--text) !important;
         }
 
         .master-sub {
@@ -523,168 +55,140 @@
             display: block;
         }
 
-        .stat-card .label {
+        /* Badge — JS generates: <span class="badge" style="background:..;color:.."> */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 10px;
+            border-radius: 9999px;
             font-size: 11px;
-            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: .025em;
+        }
+
+        /* Small action buttons — JS generates: <button class="btn-sm btn-view"> */
+        .btn-sm {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
             text-transform: uppercase;
-            letter-spacing: .8px;
+            transition: background .15s;
+        }
+
+        .btn-queue {
+            background: rgb(245 158 11 / .15);
+            color: #f59e0b;
+        }
+
+        .btn-queue:hover {
+            background: rgb(245 158 11 / .25);
+        }
+
+        .btn-view {
+            background: rgb(59 130 246 / .15);
+            color: #3b82f6;
+        }
+
+        .btn-view:hover {
+            background: rgb(59 130 246 / .25);
+        }
+
+        .btn-danger {
+            background: rgb(239 68 68 / .12);
+            color: #ef4444;
+            border: 1px solid rgb(239 68 68 / .25);
+        }
+
+        .btn-danger:hover {
+            background: rgb(239 68 68 / .22);
+        }
+
+        .btn-success {
+            background: rgb(34 197 94 / .12);
+            color: #22c55e;
+            border: 1px solid rgb(34 197 94 / .25);
+        }
+
+        .btn-success:hover {
+            background: rgb(34 197 94 / .22);
+        }
+
+        .btn-accent-sm {
+            background: rgb(59 130 246 / .1);
+            color: #3b82f6;
+            border: 1px solid rgb(59 130 246 / .25);
+        }
+
+        .btn-accent-sm:hover {
+            background: rgb(59 130 246 / .2);
+        }
+
+        .btn-primary-sm {
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+        }
+
+        .btn-primary-sm:hover {
+            background: #2563eb;
+        }
+
+        /* Copy-link button — JS toggles .copied */
+        .btn-copy-link.copied {
+            background: rgb(34 197 94 / .12) !important;
+            border-color: #22c55e !important;
+            color: #22c55e !important;
+        }
+
+        /* Pipeline stat cards — JS toggles .active */
+        .pipeline-card.active {
+            border-color: rgb(59 130 246 / .4);
+            box-shadow: 0 0 0 3px rgb(59 130 246 / .08);
+        }
+
+        /* Nav items — JS toggles .active */
+        .nav-item.active {
+            background: rgb(59 130 246 / .15);
+            color: #93c5fd;
             font-weight: 600;
         }
 
-        .stat-card .value {
-            font-size: 32px;
-            font-weight: 700;
-            margin-top: 6px;
-            line-height: 1;
+        /* Master tabs — JS toggles .active */
+        .master-tab.active {
+            color: #3b82f6 !important;
+            border-bottom-color: #3b82f6 !important;
         }
 
-        .stat-card .value.accent {
-            color: var(--accent);
-        }
-
-        .stat-card .value.success {
-            color: var(--success);
-        }
-
-        .stat-card .value.warning {
-            color: var(--warning);
-        }
-
-        /* Config / Cards */
-        .config-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 16px;
-        }
-
-        .config-card h3 {
-            font-size: 16px;
-            margin-bottom: 16px;
-        }
-
-        .copy-link {
-            background: #f1f5f9;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px 14px;
-            color: var(--accent);
-            font-size: 13px;
-            font-family: monospace;
-            word-break: break-all;
-            cursor: pointer;
-        }
-
-        .copy-link:hover {
-            border-color: var(--accent);
-        }
-
-        /* Search bar */
-        .search-bar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-            align-items: center;
-        }
-
-        .search-bar input {
-            flex: 1;
+        /* App items — JS generates list items */
+        .app-item {
             padding: 10px 16px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 14px;
-            outline: none;
-        }
-
-        .search-bar input:focus {
-            border-color: var(--accent);
-        }
-
-        .search-bar input::placeholder {
-            color: var(--text-muted);
-        }
-
-        /* Pagination */
-        .pagination {
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 12px;
-            padding: 16px;
-        }
-
-        .pagination button {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            padding: 6px 14px;
-            border-radius: 6px;
+            justify-content: space-between;
             cursor: pointer;
-            font-size: 13px;
+            transition: background .1s;
         }
 
-        .pagination button:hover {
-            background: var(--surface-hover);
-            color: var(--text);
+        .app-item:hover {
+            background: #f1f5f9;
         }
 
-        .pagination button:disabled {
-            opacity: .4;
-            cursor: not-allowed;
+        .app-item:last-child {
+            border-bottom: none;
         }
 
-        .pagination span {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        /* Detail Panel (split layout) */
-        .split-layout {
-            display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 24px;
-            min-height: 0;
-        }
-
-        .split-layout.no-detail {
-            grid-template-columns: 1fr;
-        }
-
-        .detail-panel {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            max-height: calc(100vh - 160px);
-            overflow-y: auto;
-        }
-
-        .detail-panel h3 {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            font-size: 15px;
-            margin: 0;
-        }
-
+        /* Detail panel — JS generates detail views */
         .detail-section {
             padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid #e2e8f0;
         }
 
         .detail-section:last-child {
             border-bottom: none;
-        }
-
-        .detail-section h4 {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: .5px;
-            margin-bottom: 10px;
         }
 
         .detail-field {
@@ -695,7 +199,7 @@
         }
 
         .detail-field .label {
-            color: var(--text-muted);
+            color: #64748b;
         }
 
         .detail-actions {
@@ -705,78 +209,7 @@
             flex-wrap: wrap;
         }
 
-        /* App list items */
-        .app-item {
-            padding: 10px 16px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            transition: background .1s;
-        }
-
-        .app-item:hover {
-            background: var(--surface-hover);
-        }
-
-        .app-item:last-child {
-            border-bottom: none;
-        }
-
-        /* Master grid */
-        .master-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        .master-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .master-card-header {
-            padding: 14px 20px;
-            border-bottom: 1px solid var(--border);
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .master-card-body {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .master-form {
-            padding: 16px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .master-form input {
-            padding: 10px 14px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 13px;
-            outline: none;
-        }
-
-        .master-form input:focus {
-            border-color: var(--accent);
-        }
-
-        /* Switch toggle */
+        /* Switch toggle — requires pseudo-element */
         .switch {
             position: relative;
             display: inline-block;
@@ -793,55 +226,52 @@
         .switch .slider {
             position: absolute;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #475569;
-            transition: .3s;
+            inset: 0;
+            background: #475569;
             border-radius: 22px;
+            transition: .3s;
         }
 
         .switch .slider:before {
-            position: absolute;
             content: "";
+            position: absolute;
             height: 16px;
             width: 16px;
             left: 3px;
             bottom: 3px;
-            background-color: white;
-            transition: .3s;
+            background: #fff;
             border-radius: 50%;
+            transition: .3s;
         }
 
         .switch input:checked+.slider {
-            background-color: var(--success);
+            background: #22c55e;
         }
 
         .switch input:checked+.slider:before {
             transform: translateX(18px);
         }
 
-        /* Toast */
+        /* Toast — JS creates dynamically */
         .toast {
             position: fixed;
             bottom: 24px;
             right: 24px;
             padding: 12px 20px;
-            border-radius: 10px;
-            background: var(--surface);
-            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
             font-size: 13px;
-            animation: slideUp .3s ease;
             z-index: 999;
+            animation: slideUp .3s ease;
         }
 
         .toast.success {
-            border-left: 4px solid var(--success);
+            border-left: 4px solid #22c55e;
         }
 
         .toast.error {
-            border-left: 4px solid var(--error);
+            border-left: 4px solid #ef4444;
         }
 
         @keyframes slideUp {
@@ -856,352 +286,292 @@
             }
         }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, .6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-overlay.hidden {
-            display: none;
-        }
-
-        .modal {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 28px;
-            width: 100%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal h2 {
-            font-size: 18px;
-            margin-bottom: 20px;
-        }
-
-        .modal-info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .modal-info-item {
-            background: var(--bg);
-            border-radius: 8px;
-            padding: 12px;
-        }
-
-        .modal-info-item .label {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-
-        .modal-info-item .value {
-            font-size: 14px;
-            font-weight: 500;
-            word-break: break-all;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .modal-actions button {
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: none;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
+        /* Responsive */
         @media (max-width: 768px) {
-            .sidebar {
-                display: none;
+            .sidebar-panel {
+                display: none !important;
             }
-
-            .stats {
-                grid-template-columns: repeat(3, 1fr);
-            }
-
-            .split-layout {
-                grid-template-columns: 1fr;
-            }
-
-            .master-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Software page */
-        .software-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-        }
-
-        .download-card {
-            background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
-            border: 1px solid rgba(59, 130, 246, .2);
-        }
-
-        .software-section {
-            margin-bottom: 8px;
         }
     </style>
 </head>
 
-<body>
+<body class="font-sans bg-slate-50 text-slate-800 min-h-screen antialiased">
 
-    <!-- AUTH SCREEN -->
-    <div id="auth-screen">
-        <div class="auth-card">
-            <h1>DS160 EXPRESSO</h1>
-            <p>Painel de gestão para organizações</p>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="login-email" placeholder="seu@email.com">
+    <!-- ==================== AUTH SCREEN ==================== -->
+    <div id="auth-screen"
+        class="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-50">
+        <div class="bg-white border border-slate-200 rounded-2xl p-10 w-full max-w-sm shadow-xl">
+            <h1
+                class="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+                DS160 EXPRESSO</h1>
+            <p class="text-center text-slate-500 text-sm mb-6">Painel de gestão para organizações</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Email</label>
+                    <input type="email" id="login-email" placeholder="seu@email.com"
+                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Senha</label>
+                    <input type="password" id="login-password" placeholder="••••••••"
+                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                </div>
+                <button id="btn-login"
+                    class="w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 transition-all uppercase">Entrar</button>
             </div>
-            <div class="form-group">
-                <label>Senha</label>
-                <input type="password" id="login-password" placeholder="••••••••">
-            </div>
-            <button class="btn btn-accent" id="btn-login">Entrar</button>
-            <div class="error-msg" id="login-error"></div>
+            <p class="text-red-500 text-xs text-center mt-3 min-h-[18px]" id="login-error"></p>
         </div>
     </div>
 
-    <!-- APP SCREEN -->
-    <div id="app-screen">
-        <div class="app-layout">
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <div class="sidebar-brand">DS160 EXPRESSO</div>
-                <div class="sidebar-nav">
-                    <div class="nav-item active" data-view="pipeline">Pipeline</div>
-                    <div class="nav-item" data-view="archived">Arquivados</div>
-                    <div class="nav-item" data-view="software">Software</div>
-                    <div class="nav-separator"></div>
-                    <div class="nav-item hidden" id="nav-master" data-view="master">Painel Master</div>
+    <!-- ==================== APP SCREEN ==================== -->
+    <div id="app-screen" class="hidden h-screen">
+        <div class="flex h-full">
+
+            <!-- ===== Sidebar (Tailwind UI: dark sidebar pattern) ===== -->
+            <div class="sidebar-panel flex w-64 flex-col bg-gray-900">
+                <!-- Brand -->
+                <div class="flex h-16 shrink-0 items-center px-6 border-b border-white/10">
+                    <span class="text-lg font-bold text-white tracking-wide">DS160 EXPRESSO</span>
                 </div>
-                <div style="padding: 8px 12px;">
-                    <button class="btn-copy-link" id="btn-copy-form" title="Copiar link do formulário">Copiar link do
-                        formulário</button>
+                <!-- Navigation -->
+                <nav class="flex flex-1 flex-col px-4 py-4 gap-1 overflow-y-auto">
+                    <div class="nav-item active group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
+                        data-view="pipeline">Pipeline</div>
+                    <div class="nav-item group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
+                        data-view="archived">Arquivados</div>
+                    <div class="nav-item group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
+                        data-view="software">Software</div>
+                    <div class="h-px bg-white/10 my-2"></div>
+                    <div class="nav-item hidden group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
+                        id="nav-master" data-view="master">Painel Master</div>
+                </nav>
+                <!-- Copy form link -->
+                <div class="px-4 py-2">
+                    <button
+                        class="btn-copy-link flex w-full items-center justify-center gap-2 rounded-md bg-blue-500/10 border border-blue-500/20 px-3 py-2 text-xs font-medium text-blue-400 hover:bg-blue-500/20 hover:border-blue-400 transition-all cursor-pointer uppercase"
+                        id="btn-copy-form" title="Copiar link do formulário">Copiar link do formulário</button>
                 </div>
-                <div class="sidebar-footer">
-                    <div id="user-email">—</div>
-                    <div style="font-size:10px;margin-top:2px;color:var(--text-muted)" id="user-role-display"></div>
-                    <div style="font-size:9px;margin-top:4px;color:var(--text-muted);cursor:pointer" id="org-id-display"
+                <!-- Footer -->
+                <div class="p-4 border-t border-white/10">
+                    <div class="text-xs text-gray-400 truncate" id="user-email">—</div>
+                    <div class="text-[10px] mt-0.5 text-gray-500" id="user-role-display"></div>
+                    <div class="text-[9px] mt-1 text-gray-500 cursor-pointer" id="org-id-display"
                         title="Clique para copiar"></div>
-                    <button id="btn-logout">Sair</button>
+                    <button id="btn-logout"
+                        class="mt-2 w-full rounded-md border border-gray-600 bg-transparent px-3 py-1.5 text-xs font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer uppercase">Sair</button>
                 </div>
             </div>
 
-            <!-- Main -->
-            <div class="main">
-                <div class="topbar">
+            <!-- ===== Main content ===== -->
+            <div class="flex flex-1 flex-col overflow-hidden">
+                <!-- Topbar -->
+                <div class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6">
                     <div>
-                        <h2 id="page-title">Pipeline</h2>
-                        <div id="page-subtitle" style="font-size:12px;color:var(--text-muted);margin-top:2px"></div>
+                        <h2 class="text-lg font-semibold text-slate-900" id="page-title">Pipeline</h2>
+                        <p class="text-xs text-slate-500 mt-0.5" id="page-subtitle"></p>
                     </div>
-                    <div class="topbar-actions">
-                        <button class="btn-sm btn-queue" id="btn-refresh" style="padding:8px 16px">Atualizar</button>
-                    </div>
+                    <button class="btn-sm btn-queue" id="btn-refresh">Atualizar</button>
                 </div>
-                <div class="content">
 
-                    <!-- Pipeline View -->
+                <!-- Content area -->
+                <main class="flex-1 overflow-y-auto p-6 bg-slate-50">
+
+                    <!-- ===== Pipeline View ===== -->
                     <div class="view active" id="view-pipeline">
-                        <div class="stats" id="pipeline-cards">
-                            <div class="stat-card pipeline-card active" data-filter="new">
-                                <div class="label">NOVO</div>
-                                <div class="value" id="stat-new">0</div>
+                        <!-- Stats grid (Tailwind UI: stats pattern) -->
+                        <div class="grid grid-cols-5 gap-3 mb-5" id="pipeline-cards">
+                            <div class="stat-card pipeline-card active overflow-hidden rounded-lg bg-white border border-slate-200 px-4 py-5 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                                data-filter="new">
+                                <dt class="truncate text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                    Novo</dt>
+                                <dd class="mt-1 text-3xl font-bold tracking-tight text-slate-900" id="stat-new">0</dd>
                             </div>
-                            <div class="stat-card pipeline-card" data-filter="review">
-                                <div class="label">REVISÃO</div>
-                                <div class="value" id="stat-review">0</div>
+                            <div class="stat-card pipeline-card overflow-hidden rounded-lg bg-white border border-slate-200 px-4 py-5 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                                data-filter="review">
+                                <dt class="truncate text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                    Revisão</dt>
+                                <dd class="mt-1 text-3xl font-bold tracking-tight text-slate-900" id="stat-review">0
+                                </dd>
                             </div>
-                            <div class="stat-card pipeline-card" data-filter="approved">
-                                <div class="label">APROVADO</div>
-                                <div class="value" id="stat-approved">0</div>
+                            <div class="stat-card pipeline-card overflow-hidden rounded-lg bg-white border border-slate-200 px-4 py-5 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                                data-filter="approved">
+                                <dt class="truncate text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                    Aprovado</dt>
+                                <dd class="mt-1 text-3xl font-bold tracking-tight text-slate-900" id="stat-approved">0
+                                </dd>
                             </div>
-                            <div class="stat-card pipeline-card" data-filter="doing">
-                                <div class="label">PENDENTE</div>
-                                <div class="value" id="stat-doing">0</div>
+                            <div class="stat-card pipeline-card overflow-hidden rounded-lg bg-white border border-slate-200 px-4 py-5 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                                data-filter="doing">
+                                <dt class="truncate text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                    Pendente</dt>
+                                <dd class="mt-1 text-3xl font-bold tracking-tight text-slate-900" id="stat-doing">0</dd>
                             </div>
-                            <div class="stat-card pipeline-card" data-filter="done">
-                                <div class="label">CONCLUÍDO</div>
-                                <div class="value" id="stat-done">0</div>
+                            <div class="stat-card pipeline-card overflow-hidden rounded-lg bg-white border border-slate-200 px-4 py-5 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                                data-filter="done">
+                                <dt class="truncate text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                    Concluído</dt>
+                                <dd class="mt-1 text-3xl font-bold tracking-tight text-slate-900" id="stat-done">0</dd>
                             </div>
                         </div>
-                        <div class="search-bar">
+
+                        <!-- Search -->
+                        <div class="mb-4">
                             <input type="text" id="search-applicants"
-                                placeholder="Buscar por nome, passaporte ou email...">
+                                placeholder="Buscar por nome, passaporte ou email..."
+                                class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
                         </div>
-                        <div class="table-container">
-                            <table>
-                                <thead>
+
+                        <!-- Table (Tailwind UI: simple table pattern) -->
+                        <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200">
+                            <table class="min-w-full divide-y divide-slate-200">
+                                <thead class="bg-slate-50">
                                     <tr>
-                                        <th>Nome</th>
-                                        <th>Etapa</th>
-                                        <th>Progresso</th>
-                                        <th>Atualizado</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                            Nome</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                            Etapa</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                            Progresso</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                            Atualizado</th>
                                     </tr>
                                 </thead>
-                                <tbody id="pipeline-list"></tbody>
+                                <tbody id="pipeline-list" class="divide-y divide-slate-100 bg-white"></tbody>
                             </table>
                         </div>
-                        <div class="pagination">
-                            <button id="app-prev" disabled>← Anterior</button>
-                            <span id="app-page-info">Página 1</span>
-                            <button id="app-next">Próxima →</button>
+
+                        <!-- Pagination -->
+                        <div class="flex items-center justify-center gap-3 py-4">
+                            <button id="app-prev" disabled
+                                class="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed uppercase">Anterior</button>
+                            <span id="app-page-info" class="text-xs text-slate-500">Página 1</span>
+                            <button id="app-next"
+                                class="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed uppercase">Próxima</button>
                         </div>
                     </div>
 
-                    <!-- Applicant Detail View (full page) -->
+                    <!-- ===== Applicant Detail View ===== -->
                     <div class="view" id="view-applicant-detail">
                         <div id="applicant-detail-content"></div>
                     </div>
 
-                    <!-- Archived View -->
+                    <!-- ===== Archived View ===== -->
                     <div class="view" id="view-archived">
-                        <div style="margin-bottom:20px">
-                            <h3 style="font-size:18px;font-weight:700;margin-bottom:12px">Solicitantes Arquivados
-                            </h3>
-                            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Solicitantes que já
-                                foram concluídos e arquivados pelo assessor.</p>
+                        <div class="mb-5">
+                            <h3 class="text-lg font-bold text-slate-900">Solicitantes Arquivados</h3>
+                            <p class="text-sm text-slate-500 mt-1">Solicitantes que já foram concluídos e arquivados
+                                pelo assessor.</p>
                         </div>
-                        <div class="search-bar">
-                            <input type="text" id="search-archived" placeholder="Buscar por nome ou passaporte...">
+                        <div class="mb-4">
+                            <input type="text" id="search-archived" placeholder="Buscar por nome ou passaporte..."
+                                class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
                         </div>
-                        <div class="table-container">
-                            <table>
-                                <thead>
+                        <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200">
+                            <table class="min-w-full divide-y divide-slate-200">
+                                <thead class="bg-slate-50">
                                     <tr>
-                                        <th>Nome</th>
-                                        <th>Passaporte</th>
-                                        <th>Arquivado em</th>
-                                        <th>Ações</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                            Nome</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                            Passaporte</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                            Arquivado em</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                            Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody id="archived-list"></tbody>
+                                <tbody id="archived-list" class="divide-y divide-slate-100 bg-white"></tbody>
                             </table>
                         </div>
-                        <div class="pagination">
-                            <button id="arch-prev" disabled>← Anterior</button>
-                            <span id="arch-page-info">Página 1</span>
-                            <button id="arch-next">Próxima →</button>
+                        <div class="flex items-center justify-center gap-3 py-4">
+                            <button id="arch-prev" disabled
+                                class="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed uppercase">Anterior</button>
+                            <span id="arch-page-info" class="text-xs text-slate-500">Página 1</span>
+                            <button id="arch-next"
+                                class="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed uppercase">Próxima</button>
                         </div>
                     </div>
 
-
-                    <!-- Software View -->
+                    <!-- ===== Software View ===== -->
                     <div class="view" id="view-software">
-                        <div style="max-width:800px">
-
-                            <!-- Download Section -->
-                            <div class="software-section">
-                                <div class="software-card download-card">
-                                    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-                                        <div
-                                            style="width:52px;height:52px;background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">
-                                            ⬇️</div>
-                                        <div>
-                                            <h3 style="font-size:18px;font-weight:700;margin-bottom:2px">DS-160 Filler
-                                            </h3>
-                                            <p style="font-size:13px;color:var(--text-muted)">Software de preenchimento
-                                                automático do formulário DS-160</p>
-                                        </div>
-                                    </div>
-                                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                                        <a id="sw-download-btn" href="#" target="_blank" class="btn btn-accent"
-                                            style="width:auto;display:inline-flex;align-items:center;gap:8px;padding:12px 28px;text-decoration:none">
-                                            ⬇ Baixar Instalador
-                                            <span id="sw-download-version" style="font-size:11px;opacity:.8"></span>
-                                        </a>
-                                        <span id="sw-download-size"
-                                            style="font-size:12px;color:var(--text-muted)"></span>
-                                    </div>
-                                    <div id="sw-download-date"
-                                        style="font-size:11px;color:var(--text-muted);margin-top:12px"></div>
-                                </div>
-                            </div>
-
-                            <!-- Versions Section -->
-                            <h3
-                                style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin:28px 0 12px;font-weight:600">
-                                Versões Atuais</h3>
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px">
-                                <!-- Software Version -->
-                                <div class="software-card">
-                                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-                                        <div
-                                            style="width:36px;height:36px;background:rgba(59,130,246,.12);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px">
-                                            📦</div>
-                                        <div>
-                                            <div
-                                                style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600">
-                                                Software</div>
-                                            <div style="font-size:10px;color:var(--text-muted)">Electron App</div>
-                                        </div>
-                                    </div>
-                                    <div id="sw-version"
-                                        style="font-size:28px;font-weight:800;color:var(--accent);margin-bottom:6px">—
-                                    </div>
-                                    <div id="sw-version-date" style="font-size:11px;color:var(--text-muted)"></div>
-                                    <div id="sw-version-notes"
-                                        style="font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.5">
-                                    </div>
-                                </div>
-                                <!-- Automation Version -->
-                                <div class="software-card">
-                                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-                                        <div
-                                            style="width:36px;height:36px;background:rgba(34,197,94,.12);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px">
-                                            🤖</div>
-                                        <div>
-                                            <div
-                                                style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600">
-                                                Automação</div>
-                                            <div style="font-size:10px;color:var(--text-muted)">Scripts de preenchimento
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div id="sw-auto-version"
-                                        style="font-size:28px;font-weight:800;color:var(--success);margin-bottom:6px">—
-                                    </div>
-                                    <div id="sw-auto-date" style="font-size:11px;color:var(--text-muted)"></div>
-                                    <div id="sw-auto-changelog"
-                                        style="font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.5">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Info Banner -->
+                        <div class="max-w-3xl">
+                            <!-- Download card -->
                             <div
-                                style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:12px;padding:16px 20px;margin-bottom:28px">
-                                <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:6px">💡
-                                    Como funciona?</div>
-                                <ul
-                                    style="font-size:12px;color:var(--text-muted);margin:0;padding-left:18px;line-height:1.8">
+                                class="mb-6 overflow-hidden rounded-xl bg-gradient-to-br from-slate-50 to-blue-50 border border-blue-200/50 p-6 shadow-sm">
+                                <div class="flex items-center gap-4 mb-5">
+                                    <div
+                                        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-xl font-bold text-white shadow-lg shadow-blue-500/25">
+                                        D</div>
+                                    <div>
+                                        <h3 class="text-lg font-bold text-slate-900">DS160 EXPRESSO</h3>
+                                        <p class="text-sm text-slate-500">Software de preenchimento automático do
+                                            formulário DS-160</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <a id="sw-download-btn" href="#" target="_blank"
+                                        class="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-all no-underline uppercase">
+                                        Baixar Instalador <span id="sw-download-version"
+                                            class="text-[11px] opacity-80"></span>
+                                    </a>
+                                    <span id="sw-download-size" class="text-xs text-slate-500"></span>
+                                </div>
+                                <div id="sw-download-date" class="text-[11px] text-slate-500 mt-3"></div>
+                            </div>
+
+                            <!-- Versions -->
+                            <h4 class="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mb-3">Versões
+                                Atuais</h4>
+                            <div class="grid grid-cols-2 gap-4 mb-6">
+                                <div class="rounded-xl bg-white border border-slate-200 p-5 shadow-sm">
+                                    <div class="flex items-center gap-2.5 mb-3">
+                                        <div
+                                            class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 text-sm font-bold text-blue-500">
+                                            S</div>
+                                        <div>
+                                            <div
+                                                class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                                Software</div>
+                                            <div class="text-[10px] text-slate-400">Electron App</div>
+                                        </div>
+                                    </div>
+                                    <div id="sw-version" class="text-3xl font-extrabold text-blue-500 mb-1">—</div>
+                                    <div id="sw-version-date" class="text-[11px] text-slate-500"></div>
+                                    <div id="sw-version-notes" class="text-xs text-slate-500 mt-2 leading-relaxed">
+                                    </div>
+                                </div>
+                                <div class="rounded-xl bg-white border border-slate-200 p-5 shadow-sm">
+                                    <div class="flex items-center gap-2.5 mb-3">
+                                        <div
+                                            class="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10 text-sm font-bold text-green-500">
+                                            A</div>
+                                        <div>
+                                            <div
+                                                class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                                Automação</div>
+                                            <div class="text-[10px] text-slate-400">Scripts de preenchimento</div>
+                                        </div>
+                                    </div>
+                                    <div id="sw-auto-version" class="text-3xl font-extrabold text-green-500 mb-1">—
+                                    </div>
+                                    <div id="sw-auto-date" class="text-[11px] text-slate-500"></div>
+                                    <div id="sw-auto-changelog" class="text-xs text-slate-500 mt-2 leading-relaxed">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Info banner -->
+                            <div class="rounded-xl bg-blue-50 border border-blue-100 p-5 mb-6">
+                                <p class="text-sm font-semibold text-blue-600 mb-2">Como funciona?</p>
+                                <ul class="text-xs text-slate-600 pl-4 space-y-1 list-disc">
                                     <li><strong>Software</strong> — Atualiza automaticamente quando uma nova versão é
                                         publicada. Basta abrir o app.</li>
                                     <li><strong>Automação</strong> — Os scripts de preenchimento atualizam sozinhos a
@@ -1209,278 +579,281 @@
                                 </ul>
                             </div>
 
-                            <!-- Documentation Section -->
-                            <h3
-                                style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin:0 0 12px;font-weight:600">
-                                Documentação</h3>
-                            <div class="software-card" style="text-align:center;padding:40px 20px">
-                                <div style="font-size:36px;margin-bottom:12px;opacity:.4">📖</div>
-                                <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Em breve
-                                </div>
-                                <p style="font-size:12px;color:var(--text-muted);max-width:300px;margin:0 auto">Guias de
-                                    uso, perguntas frequentes e orientações serão adicionados aqui.</p>
+                            <!-- Docs placeholder -->
+                            <h4 class="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mb-3">
+                                Documentação</h4>
+                            <div class="rounded-xl bg-white border border-slate-200 p-10 shadow-sm text-center">
+                                <p class="text-sm font-semibold text-slate-800 mb-1">Em breve</p>
+                                <p class="text-xs text-slate-500 max-w-xs mx-auto">Guias de uso, perguntas frequentes e
+                                    orientações serão adicionados aqui.</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Master View -->
+                    <!-- ===== Master View ===== -->
                     <div class="view" id="view-master">
-                        <!-- Master Tabs -->
-                        <div
-                            style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
-                            <button class="master-tab active" data-master-tab="agencies"
-                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">
-                                Organizações</button>
-                            <button class="master-tab" data-master-tab="integrations"
-                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">
-                                Integrações</button>
-                            <button class="master-tab" data-master-tab="logs"
-                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">
-                                Logs</button>
-                            <button class="master-tab" data-master-tab="settings"
-                                style="padding:10px 20px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .2s">
-                                Configurações</button>
+                        <!-- Tabs -->
+                        <div class="flex gap-1 mb-5 border-b border-slate-200">
+                            <button
+                                class="master-tab px-4 py-2.5 bg-transparent border-none text-sm font-medium text-slate-500 cursor-pointer border-b-2 border-transparent hover:text-slate-800 transition-all uppercase active"
+                                data-master-tab="agencies">Organizações</button>
+                            <button
+                                class="master-tab px-4 py-2.5 bg-transparent border-none text-sm font-medium text-slate-500 cursor-pointer border-b-2 border-transparent hover:text-slate-800 transition-all uppercase"
+                                data-master-tab="integrations">Integrações</button>
+                            <button
+                                class="master-tab px-4 py-2.5 bg-transparent border-none text-sm font-medium text-slate-500 cursor-pointer border-b-2 border-transparent hover:text-slate-800 transition-all uppercase"
+                                data-master-tab="logs">Logs</button>
+                            <button
+                                class="master-tab px-4 py-2.5 bg-transparent border-none text-sm font-medium text-slate-500 cursor-pointer border-b-2 border-transparent hover:text-slate-800 transition-all uppercase"
+                                data-master-tab="settings">Configurações</button>
                         </div>
 
-                        <!-- Sub: Agencies List -->
+                        <!-- Sub: Agencies list -->
                         <div class="master-sub active" id="master-sub-agencies">
-                            <div
-                                style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-                                <h3 style="font-size:16px;font-weight:700">Organizações Cadastradas</h3>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-base font-bold text-slate-900">Organizações Cadastradas</h3>
                                 <button class="btn-sm btn-primary-sm"
-                                    onclick="document.getElementById('modal-create-agency').classList.remove('hidden')"
-                                    style="padding:8px 18px;font-size:13px">+ Nova Organização</button>
+                                    onclick="document.getElementById('modal-create-agency').classList.remove('hidden')">+
+                                    Nova Organização</button>
                             </div>
-                            <div class="config-card" style="padding:0;overflow:hidden">
+                            <div class="overflow-hidden rounded-lg bg-white ring-1 ring-slate-200">
                                 <div id="agencies-list"></div>
                             </div>
                         </div>
 
-                        <!-- Sub: Agency Detail -->
+                        <!-- Sub: Agency detail -->
                         <div class="master-sub" id="master-sub-agency-detail">
-                            <button class="btn-sm" id="btn-back-agencies"
-                                style="margin-bottom:16px;padding:8px 16px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;cursor:pointer">←
-                                Voltar às Agências</button>
+                            <button
+                                class="btn-sm mb-4 rounded-md bg-white ring-1 ring-slate-300 text-slate-700 hover:bg-slate-50"
+                                id="btn-back-agencies">Voltar às Agências</button>
                             <div id="agency-detail-content"></div>
                         </div>
 
                         <!-- Sub: Integrations -->
                         <div class="master-sub" id="master-sub-integrations">
-                            <div class="config-card">
-                                <h3>CapMonster Cloud</h3>
-                                <p style="color:var(--text-muted);font-size:12px;margin-bottom:12px">API Key para
-                                    resolução automática de captchas durante o preenchimento DS-160.</p>
-                                <div style="display:flex;gap:8px">
+                            <div class="rounded-xl bg-white border border-slate-200 p-6 shadow-sm">
+                                <h3 class="text-base font-bold text-slate-900 mb-1">CapMonster Cloud</h3>
+                                <p class="text-xs text-slate-500 mb-3">API Key para resolução automática de captchas
+                                    durante o preenchimento DS-160.</p>
+                                <div class="flex gap-2">
                                     <input type="password" id="capmonster-key"
                                         placeholder="Sua Client Key do CapMonster..."
-                                        style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
-                                    <button class="btn-sm btn-primary-sm" id="btn-save-capmonster"
-                                        style="padding:10px 16px">Salvar</button>
+                                        class="flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                                    <button class="btn-sm btn-primary-sm px-4" id="btn-save-capmonster">Salvar</button>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Sub: Logs -->
                         <div class="master-sub" id="master-sub-logs">
-                            <div class="config-card"
-                                style="margin-bottom:0;display:flex;justify-content:space-between;align-items:center">
+                            <div
+                                class="flex items-center justify-between rounded-t-xl bg-white border border-slate-200 p-5">
                                 <div>
-                                    <h3>Logs de Erros <span
-                                            style="font-size:12px;color:var(--text-muted);font-weight:400"
-                                            id="logs-count"></span></h3>
-                                    <p style="color:var(--text-muted);font-size:12px">Últimos 50 erros registrados
-                                        durante preenchimentos automáticos.</p>
+                                    <h3 class="text-base font-bold text-slate-900">Logs de Erros <span
+                                            class="text-xs text-slate-500 font-normal" id="logs-count"></span></h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Últimos 50 erros registrados durante
+                                        preenchimentos automáticos.</p>
                                 </div>
-                                <button class="btn-sm" style="background:rgba(239,68,68,.15);color:#ef4444;border:none"
-                                    id="btn-archive-logs">Arquivar Todos</button>
+                                <button class="btn-sm btn-danger" id="btn-archive-logs">Arquivar Todos</button>
                             </div>
-                            <div class="table-container" style="border-top:none;border-radius:0 0 12px 12px">
-                                <table>
-                                    <thead>
+                            <div class="overflow-hidden rounded-b-xl bg-white ring-1 ring-slate-200 ring-t-0">
+                                <table class="min-w-full divide-y divide-slate-200">
+                                    <thead class="bg-slate-50">
                                         <tr>
-                                            <th>Data</th>
-                                            <th>Causa</th>
-                                            <th>Página</th>
-                                            <th>Campo</th>
-                                            <th>Erro</th>
-                                            <th>Screenshot</th>
+                                            <th
+                                                class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                                Data</th>
+                                            <th
+                                                class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                                Causa</th>
+                                            <th
+                                                class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                                Página</th>
+                                            <th
+                                                class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                                Campo</th>
+                                            <th
+                                                class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                                Erro</th>
+                                            <th
+                                                class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                                Screenshot</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="logs-list"></tbody>
+                                    <tbody id="logs-list" class="divide-y divide-slate-100 bg-white"></tbody>
                                 </table>
                             </div>
                         </div>
 
-                        <!-- Sub: Settings (Configurações Padrão) -->
+                        <!-- Sub: Settings -->
                         <div class="master-sub" id="master-sub-settings">
-                            <div
-                                style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-                                <div>
-                                    <h3 style="font-size:16px;font-weight:700">Respostas Padrão</h3>
-                                    <p style="color:var(--text-muted);font-size:12px;margin-top:4px">Valores utilizados
-                                        automaticamente pela automação DS-160. Edite conforme necessário.</p>
+                            <div class="mb-5">
+                                <h3 class="text-base font-bold text-slate-900">Respostas Padrão</h3>
+                                <p class="text-xs text-slate-500 mt-1">Valores utilizados automaticamente pela automação
+                                    DS-160. Edite conforme necessário.</p>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="rounded-xl bg-white border border-slate-200 p-5 shadow-sm">
+                                    <h4 class="text-sm font-semibold text-slate-900 mb-1">Pergunta de Segurança</h4>
+                                    <p class="text-[11px] text-slate-500 mb-3">Qual pergunta selecionar no DS-160 ao
+                                        criar uma nova aplicação.</p>
+                                    <select id="setting-security-question"
+                                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                                        <option value="1">What is your mother's maiden name?</option>
+                                        <option value="2">What is the name of your first pet?</option>
+                                        <option value="3">What city were you born in?</option>
+                                        <option value="4">What is the name of your mother's mother?</option>
+                                        <option value="5">What was the make of your first car?</option>
+                                    </select>
+                                </div>
+                                <div class="rounded-xl bg-white border border-slate-200 p-5 shadow-sm">
+                                    <h4 class="text-sm font-semibold text-slate-900 mb-1">Resposta de Segurança</h4>
+                                    <p class="text-[11px] text-slate-500 mb-3">Resposta padrão para a pergunta de
+                                        segurança. Ex: "VO" (nome da avó materna).</p>
+                                    <input type="text" id="setting-security-answer" placeholder="Ex: VO"
+                                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
                                 </div>
                             </div>
-
-                            <div class="config-card" style="margin-bottom:16px">
-                                <h4 style="font-size:14px;font-weight:600;margin-bottom:4px">Pergunta de Segurança</h4>
-                                <p style="color:var(--text-muted);font-size:11px;margin-bottom:12px">Qual pergunta
-                                    selecionar no DS-160 ao criar uma nova aplicação.</p>
-                                <select id="setting-security-question"
-                                    style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
-                                    <option value="1">What is your mother's maiden name?</option>
-                                    <option value="2">What is the name of your first pet?</option>
-                                    <option value="3">What city were you born in?</option>
-                                    <option value="4">What is the name of your mother's mother?</option>
-                                    <option value="5">What was the make of your first car?</option>
-                                </select>
-                            </div>
-
-                            <div class="config-card" style="margin-bottom:16px">
-                                <h4 style="font-size:14px;font-weight:600;margin-bottom:4px">Resposta de Segurança</h4>
-                                <p style="color:var(--text-muted);font-size:11px;margin-bottom:12px">Resposta padrão
-                                    para a pergunta de segurança. Ex: "VO" (nome da avó materna).</p>
-                                <input type="text" id="setting-security-answer" placeholder="Ex: VO"
-                                    style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
-                            </div>
-
-                            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
-                                <button class="btn-sm btn-primary-sm" id="btn-save-settings"
-                                    style="padding:10px 24px;font-size:13px;font-weight:600">💾 Salvar
+                            <div class="flex justify-end mt-5">
+                                <button class="btn-sm btn-primary-sm px-5 py-2" id="btn-save-settings">Salvar
                                     Configurações</button>
                             </div>
-                            <div id="settings-status"
-                                style="margin-top:10px;font-size:12px;color:var(--success);display:none"></div>
+                            <div id="settings-status" class="mt-2 text-xs text-green-500 hidden"></div>
                         </div>
                     </div>
 
-
-                </div>
+                </main>
             </div>
         </div>
     </div>
 
+    <!-- ==================== MODALS ==================== -->
 
-    <!-- Info Modal -->
-    <div class="modal-overlay hidden" id="info-modal">
-        <div class="modal">
-            <h2 id="modal-title">Informações</h2>
-            <div id="modal-body"></div>
-            <div class="modal-actions">
-                <button style="background:var(--surface-hover);color:var(--text)"
+    <!-- Info Modal (Tailwind UI: simple modal pattern) -->
+    <div class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
+        id="info-modal">
+        <div
+            class="modal relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200">
+            <h2 class="text-lg font-bold text-slate-900 mb-4" id="modal-title">Informações</h2>
+            <div id="modal-body" class="text-sm text-slate-600"></div>
+            <div class="mt-6 flex justify-end">
+                <button
+                    class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors uppercase"
                     onclick="document.getElementById('info-modal').classList.add('hidden')">Fechar</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Create Agency -->
-    <div class="modal-overlay hidden" id="modal-create-agency">
-        <div class="modal">
-            <h2>Nova Organização</h2>
-            <div style="margin:16px 0;display:grid;gap:12px">
+    <div class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
+        id="modal-create-agency">
+        <div
+            class="modal relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200">
+            <h2 class="text-lg font-bold text-slate-900 mb-5">Nova Organização</h2>
+            <div class="space-y-4">
                 <div>
-                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Nome da
-                        Empresa</label>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Nome da Empresa</label>
                     <input type="text" id="new-agency-name" placeholder="Ex: Assessoria XYZ"
-                        style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box">
+                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
                 </div>
                 <div>
-                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">CNPJ</label>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">CNPJ</label>
                     <input type="text" id="new-agency-cnpj" placeholder="00.000.000/0000-00"
-                        style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box">
+                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
                 </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:8px 0">
-                    <label style="font-size:12px;color:var(--text-muted)">Status inicial:</label>
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
-                        <input type="checkbox" id="new-agency-active" checked style="accent-color:var(--accent)"> Ativa
+                <div class="flex items-center gap-2.5 py-1">
+                    <label class="text-xs text-slate-500">Status inicial:</label>
+                    <label class="flex items-center gap-1.5 cursor-pointer text-sm">
+                        <input type="checkbox" id="new-agency-active" checked class="accent-blue-500 rounded"> Ativa
                     </label>
                 </div>
             </div>
-            <div class="modal-actions">
-                <button style="background:var(--surface-hover);color:var(--text)"
+            <div class="mt-6 flex justify-end gap-3">
+                <button
+                    class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors uppercase"
                     onclick="document.getElementById('modal-create-agency').classList.add('hidden')">Cancelar</button>
-                <button id="btn-create-agency" style="background:var(--accent);color:#fff">Criar Organização</button>
+                <button id="btn-create-agency"
+                    class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 transition-colors uppercase">Criar
+                    Organização</button>
             </div>
         </div>
     </div>
 
-
     <!-- Modal: Add Assessor -->
-    <div class="modal-overlay hidden" id="modal-add-assessor">
-        <div class="modal">
-            <h2>Adicionar Assessor</h2>
-            <div style="margin:16px 0;display:grid;gap:12px">
+    <div class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
+        id="modal-add-assessor">
+        <div
+            class="modal relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200">
+            <h2 class="text-lg font-bold text-slate-900 mb-5">Adicionar Assessor</h2>
+            <div class="space-y-4">
                 <div>
-                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Nome</label>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Nome</label>
                     <input type="text" id="assessor-name" placeholder="Nome completo"
-                        style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box">
+                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
                 </div>
                 <div>
-                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Email</label>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Email</label>
                     <input type="email" id="assessor-email" placeholder="email@exemplo.com"
-                        style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box">
+                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
                 </div>
                 <div>
-                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Senha
-                        Provisória</label>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Senha Provisória</label>
                     <input type="password" id="assessor-password" placeholder="Mínimo 6 caracteres"
-                        style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box">
+                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
                 </div>
                 <input type="hidden" id="assessor-company-id">
             </div>
-            <div class="modal-actions">
-                <button style="background:var(--surface-hover);color:var(--text)"
+            <div class="mt-6 flex justify-end gap-3">
+                <button
+                    class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors uppercase"
                     onclick="document.getElementById('modal-add-assessor').classList.add('hidden')">Cancelar</button>
-                <button id="btn-add-assessor" style="background:var(--accent);color:#fff">Adicionar</button>
+                <button id="btn-add-assessor"
+                    class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 transition-colors uppercase">Adicionar</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Confirm Delete -->
     <div id="delete-modal"
-        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center">
-        <div
-            style="background:var(--surface);border-radius:16px;padding:28px;max-width:400px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)">
-            <div
-                style="width:48px;height:48px;border-radius:50%;background:rgba(239,68,68,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-                <span style="font-size:22px;color:#ef4444;font-weight:700">!</span>
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
+        <div class="w-[90%] max-w-sm rounded-2xl bg-white p-7 text-center shadow-xl">
+            <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+                <span class="text-xl font-bold text-red-500">!</span>
             </div>
-            <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--text)">Confirmar exclusão</h3>
-            <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">
-                Excluir <strong id="delete-modal-name" style="color:var(--text)"></strong> e todos os dependentes e
+            <h3 class="text-base font-bold text-slate-900 mb-2">Confirmar exclusão</h3>
+            <p class="text-sm text-slate-500 mb-5">
+                Excluir <strong id="delete-modal-name" class="text-slate-800"></strong> e todos os dependentes e
                 aplicações? Esta ação não pode ser desfeita.
             </p>
-            <div style="display:flex;gap:10px;justify-content:center">
+            <div class="flex justify-center gap-3">
                 <button onclick="closeDeleteModal()"
-                    style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-size:13px">Cancelar</button>
+                    class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors uppercase">Cancelar</button>
                 <button onclick="confirmDelete()"
-                    style="padding:8px 20px;border-radius:8px;border:none;background:#ef4444;color:#fff;cursor:pointer;font-size:13px;font-weight:600">Excluir</button>
+                    class="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 transition-colors uppercase">Excluir</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: View Process (Form iframe) -->
     <div id="process-modal"
-        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center">
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
         <div
-            style="background:var(--surface);border-radius:12px;width:calc(100% - 24px);max-width:720px;height:calc(100vh - 24px);display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden">
-            <div
-                style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+            class="flex flex-col w-[calc(100%-24px)] max-w-3xl h-[calc(100vh-24px)] rounded-xl bg-white shadow-xl overflow-hidden">
+            <div class="flex items-center justify-between shrink-0 border-b border-slate-200 px-5 py-3">
                 <div>
-                    <h3 id="process-modal-name" style="font-size:15px;font-weight:700;color:var(--text);margin:0"></h3>
-                    <div id="process-modal-sub" style="font-size:11px;color:var(--text-muted);margin-top:1px"></div>
+                    <h3 id="process-modal-name" class="text-sm font-bold text-slate-900"></h3>
+                    <p id="process-modal-sub" class="text-[11px] text-slate-500 mt-0.5"></p>
                 </div>
                 <button onclick="closeProcessModal()"
-                    style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted);padding:4px 8px;line-height:1">&times;</button>
+                    class="text-xl text-slate-400 hover:text-slate-600 transition-colors cursor-pointer bg-transparent border-none leading-none px-2">&times;</button>
             </div>
-            <iframe id="process-modal-iframe" style="flex:1;border:none;width:100%" src="about:blank"></iframe>
+            <iframe id="process-modal-iframe" class="flex-1 border-none w-full" src="about:blank"></iframe>
         </div>
     </div>
 
-    <!-- Supabase SDK -->
+    <!-- ==================== SCRIPTS ==================== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="dashboard.js"></script>
-
 </body>
 
 </html>

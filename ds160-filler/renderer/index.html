@@ -36,7 +36,7 @@
     </style>
 </head>
 
-<body class="font-sans bg-slate-50 text-slate-800 h-screen flex flex-col select-none">
+<body class="font-sans bg-slate-50 text-slate-800 h-screen flex flex-col select-none antialiased">
 
     <!-- Header -->
     <div
@@ -49,23 +49,22 @@
         <!-- LOGIN -->
         <div id="login-section" class="flex flex-col gap-3">
             <div>
-                <label class="text-xs font-medium text-slate-500 mb-0.5 block">Email</label>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Email</label>
                 <input type="email" id="email" placeholder="seu@email.com"
-                    class="w-full px-3.5 py-2.5 rounded border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/10">
+                    class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
             </div>
             <div>
-                <label class="text-xs font-medium text-slate-500 mb-0.5 block">Senha</label>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Senha</label>
                 <input type="password" id="password" placeholder="••••••••"
-                    class="w-full px-3.5 py-2.5 rounded border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/10">
+                    class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
             </div>
             <div class="flex items-center gap-2 text-xs text-slate-500">
-                <input type="checkbox" id="remember" checked class="accent-blue-500">
+                <input type="checkbox" id="remember" checked class="accent-blue-500 rounded">
                 <label for="remember" class="text-slate-600 cursor-pointer">Lembrar meu login</label>
             </div>
-            <button
-                class="btn-primary bg-blue-500 text-white py-2.5 px-5 rounded text-sm font-semibold transition-all hover:bg-blue-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/30"
-                id="btn-login">Entrar</button>
-            <p class="error text-red-500 text-xs text-center" id="login-error"></p>
+            <button id="btn-login"
+                class="w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-all uppercase">Entrar</button>
+            <p class="text-red-500 text-xs text-center" id="login-error"></p>
         </div>
 
         <!-- MAIN -->
@@ -73,13 +72,12 @@
             <!-- User bar -->
             <div class="flex justify-between items-center text-xs text-slate-500">
                 <span id="user-email" class="overflow-hidden text-ellipsis whitespace-nowrap max-w-[200px]">—</span>
-                <button
-                    class="btn-logout bg-transparent border-none text-red-500 text-[11px] cursor-pointer px-2 py-1 hover:text-red-600"
-                    id="btn-logout">Sair</button>
+                <button id="btn-logout"
+                    class="bg-transparent border-none text-red-500 text-[11px] cursor-pointer px-2 py-1 hover:text-red-600 uppercase">Sair</button>
             </div>
 
             <!-- Status card -->
-            <div class="bg-white rounded border border-slate-200 p-3.5 shadow-sm">
+            <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200 p-4">
                 <div class="flex justify-between mb-2 text-[13px]">
                     <span class="text-slate-500">Status</span>
                     <span class="font-semibold text-slate-800" id="status-text">
@@ -100,21 +98,21 @@
                 </div>
                 <div class="flex justify-between text-[13px]" id="timer-row" style="display:none;">
                     <span class="text-slate-500">Próxima verificação</span>
-                    <span class="bg-blue-50 text-blue-500 px-2 py-0.5 rounded text-xs font-semibold"
+                    <span class="bg-blue-50 text-blue-500 px-2 py-0.5 rounded-md text-xs font-semibold"
                         id="timer-text">—</span>
                 </div>
             </div>
 
             <!-- Buttons -->
-            <button
-                class="btn-refresh bg-white text-blue-500 border border-blue-500 py-2.5 px-5 rounded text-sm font-semibold transition-all hover:bg-blue-50"
-                id="btn-refresh">Verificar fila agora</button>
-            <button
-                class="btn-update bg-white text-amber-500 border border-amber-500 py-2 px-4 rounded text-xs font-semibold transition-all hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                id="btn-update">Fechar e Atualizar</button>
+            <button id="btn-refresh"
+                class="w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-blue-500 ring-1 ring-blue-500 hover:bg-blue-50 transition-all uppercase">Verificar
+                fila agora</button>
+            <button id="btn-update"
+                class="w-full rounded-lg bg-white px-4 py-2 text-xs font-semibold text-amber-500 ring-1 ring-amber-500 hover:bg-amber-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase">Fechar
+                e Atualizar</button>
 
             <!-- Log -->
-            <div class="log mt-auto max-h-[100px] overflow-y-auto font-mono text-[11px] text-slate-400 leading-normal bg-white border border-slate-200 rounded p-2"
+            <div class="mt-auto max-h-[100px] overflow-y-auto font-mono text-[11px] text-slate-400 leading-normal overflow-hidden rounded-lg bg-white ring-1 ring-slate-200 p-2"
                 id="log"></div>
         </div>
     </div>
