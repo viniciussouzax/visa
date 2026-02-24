@@ -1,22 +1,177 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 
 <head>
-    <meta charset="utf-8">
-    <title>Redirecionando...</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 — Acesso Negado</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #fef2f2;
+            color: #1e293b;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(239, 68, 68, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(239, 68, 68, 0.04) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.02) 0%, transparent 60%);
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 40px 24px;
+            max-width: 480px;
+        }
+
+        .icon-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 32px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow:
+                0 0 0 8px rgba(239, 68, 68, 0.06),
+                0 0 0 16px rgba(239, 68, 68, 0.03),
+                0 20px 40px rgba(239, 68, 68, 0.1);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .icon-container svg {
+            width: 56px;
+            height: 56px;
+            color: #ef4444;
+        }
+
+        .code {
+            font-size: 5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+            margin-bottom: 12px;
+            letter-spacing: -2px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 12px;
+        }
+
+        p {
+            font-size: 0.95rem;
+            color: #64748b;
+            line-height: 1.7;
+            margin-bottom: 32px;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-back:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-back:active {
+            transform: translateY(0);
+        }
+
+        .btn-back svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .footer-text {
+            margin-top: 48px;
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .dots {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+
+        .dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #fca5a5;
+        }
+
+        .dots span:nth-child(2) {
+            background: #ef4444;
+        }
+
+        .dots span:nth-child(3) {
+            background: #fca5a5;
+        }
+    </style>
     <script>
         // GitHub Pages 404 redirect: /visa/SHORT_ID → /visa/ds160?org=SHORT_ID
         (function () {
             var path = location.pathname;
-            // Remove trailing slash
             if (path.endsWith('/')) path = path.slice(0, -1);
-            // Get the last segment (should be the short_id)
             var parts = path.split('/');
             var lastPart = parts[parts.length - 1];
-            // If it's not a known file/path, treat it as a short_id
-            var knownPaths = ['ds160', 'dashboard.html', 'painel.html', 'visa', ''];
+            var knownPaths = ['ds160', 'dashboard.html', 'painel.html', 'visa', 'privacy-policy.html', ''];
             if (lastPart && knownPaths.indexOf(lastPart) === -1 && lastPart.indexOf('.') === -1) {
-                // Build base path (everything except the last part)
                 var basePath = parts.slice(0, parts.length - 1).join('/');
                 location.replace(basePath + '/ds160?org=' + lastPart);
             }
@@ -25,7 +180,35 @@
 </head>
 
 <body>
-    <p>Redirecionando...</p>
+    <div class="bg-pattern"></div>
+    <div class="container">
+        <div class="icon-container">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+        </div>
+
+        <div class="code">404</div>
+
+        <div class="dots">
+            <span></span><span></span><span></span>
+        </div>
+
+        <h1>Acesso Negado</h1>
+        <p>A página que você está procurando não existe, foi movida ou você não tem permissão para acessá-la.</p>
+
+        <a href="/" class="btn-back">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            Voltar ao Início
+        </a>
+
+        <p class="footer-text">Se o problema persistir, entre em contato com o suporte.</p>
+    </div>
 </body>
 
 </html>
