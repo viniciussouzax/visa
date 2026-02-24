@@ -925,6 +925,23 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                 continue;
             }
 
+            // Wait for the target field to appear by detecting new fields on page
+            // This is more reliable than fixed timeouts — we check for actual DOM changes
+            try {
+                const targetIdx = entry.addAnother.idx;
+                const targetCtl = `_ctl${String(targetIdx).padStart(2, '0')}_`;
+                // Wait up to 8s for the new entry's fields to appear
+                for (let wait = 0; wait < 16; wait++) {
+                    await sleep(500);
+                    const newFields = await discoverFields(page);
+                    const hasTarget = newFields.some(f => f.id && f.id.includes(listName) && f.id.includes(targetCtl) && f.visible);
+                    if (hasTarget) {
+                        console.log(`[Filler] ✅ Novo entry (${targetCtl}) detectado para "${listName}"`);
+                        break;
+                    }
+                }
+            } catch { }
+
             return { needsRescan: true, postbackField: `AddAnother:${listName}` };
         }
     }
