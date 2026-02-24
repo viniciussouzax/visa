@@ -146,6 +146,12 @@ app.whenReady().then(() => {
 
                 console.log('[AutoUpdate] Arquivos alterados:', diff);
 
+                // Save HEAD before pull to detect if pull actually brought new code
+                let headBefore = '';
+                try {
+                    headBefore = execSync('git rev-parse HEAD', { cwd: repoDir, encoding: 'utf-8', timeout: 5000 }).trim();
+                } catch { }
+
                 // Pull changes
                 try {
                     execSync('git pull origin main --ff-only', { cwd: repoDir, stdio: 'pipe', timeout: 30000 });
@@ -157,6 +163,18 @@ app.whenReady().then(() => {
                     }
                 }
                 console.log('[AutoUpdate] ✅ Git pull concluído');
+
+                // Check if HEAD actually changed (pull brought new code)
+                let headAfter = '';
+                try {
+                    headAfter = execSync('git rev-parse HEAD', { cwd: repoDir, encoding: 'utf-8', timeout: 5000 }).trim();
+                } catch { }
+
+                if (headBefore && headAfter && headBefore === headAfter) {
+                    // HEAD didn't change — pull didn't bring new code (we're ahead of remote or already up-to-date)
+                    console.log('[AutoUpdate] HEAD não mudou após pull — nenhum código novo recebido, sem restart');
+                    return;
+                }
 
                 // Check if automation-critical files changed
                 const automationFiles = diff.split('\n').filter(f =>
