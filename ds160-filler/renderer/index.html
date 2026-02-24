@@ -5,6 +5,26 @@
     <meta charset="UTF-8">
     <title>DS-160 Filler</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --primary-light: #eff6ff;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --surface-hover: #f1f5f9;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-secondary: #374151;
+            --text-muted: #64748b;
+            --text-faint: #94a3b8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --input-bg: #f8fafc;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,9 +32,9 @@
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -22,13 +42,15 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #16213e, #0f3460);
+            background: var(--surface);
             padding: 16px 20px;
             text-align: center;
             font-size: 18px;
             font-weight: 700;
-            letter-spacing: 1px;
-            border-bottom: 2px solid #e94560;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
         }
 
         .content {
@@ -55,25 +77,27 @@
 
         label {
             font-size: 13px;
-            color: #aaa;
+            color: var(--text-muted);
             margin-bottom: 2px;
+            font-weight: 500;
         }
 
         input[type="email"],
         input[type="password"] {
             width: 100%;
             padding: 10px 14px;
-            border-radius: 8px;
-            border: 1px solid #333;
-            background: #16213e;
-            color: #fff;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--text);
             font-size: 14px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         input:focus {
-            border-color: #e94560;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, .1);
         }
 
         .checkbox-row {
@@ -81,54 +105,55 @@
             align-items: center;
             gap: 8px;
             font-size: 13px;
-            color: #aaa;
+            color: var(--text-muted);
         }
 
         .checkbox-row input[type="checkbox"] {
-            accent-color: #e94560;
+            accent-color: var(--primary);
         }
 
         button {
             padding: 10px 20px;
-            border-radius: 8px;
+            border-radius: 5px;
             border: none;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #e94560, #c62a47);
+            background: var(--primary);
             color: white;
         }
 
         .btn-primary:hover {
+            background: var(--primary-hover);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         .btn-refresh {
-            background: #16213e;
-            color: #e94560;
-            border: 1px solid #e94560;
+            background: var(--surface);
+            color: var(--primary);
+            border: 1px solid var(--primary);
         }
 
         .btn-refresh:hover {
-            background: #1e293b;
+            background: var(--primary-light);
         }
 
         .btn-update {
-            background: #16213e;
-            color: #f39c12;
-            border: 1px solid #f39c12;
+            background: var(--surface);
+            color: var(--warning);
+            border: 1px solid var(--warning);
             font-size: 12px;
             padding: 8px 16px;
         }
 
         .btn-update:hover {
-            background: #1e293b;
+            background: #fffbeb;
         }
 
         .btn-update:disabled {
@@ -138,10 +163,11 @@
 
         /* Status */
         .status-card {
-            background: #16213e;
-            border-radius: 10px;
+            background: var(--surface);
+            border-radius: 5px;
             padding: 14px;
-            border: 1px solid #333;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
         }
 
         .status-row {
@@ -156,11 +182,12 @@
         }
 
         .status-label {
-            color: #888;
+            color: var(--text-muted);
         }
 
         .status-value {
             font-weight: 600;
+            color: var(--text);
         }
 
         .dot {
@@ -172,20 +199,20 @@
         }
 
         .dot-green {
-            background: #2ecc71;
+            background: var(--success);
         }
 
         .dot-yellow {
-            background: #f39c12;
+            background: var(--warning);
             animation: pulse-dot 1.5s infinite;
         }
 
         .dot-gray {
-            background: #666;
+            background: var(--text-faint);
         }
 
         .dot-red {
-            background: #e74c3c;
+            background: var(--error);
         }
 
         @keyframes pulse-dot {
@@ -201,28 +228,32 @@
         }
 
         .timer-badge {
-            background: rgba(233, 69, 96, 0.15);
-            color: #e94560;
+            background: var(--primary-light);
+            color: var(--primary);
             padding: 2px 8px;
-            border-radius: 10px;
+            border-radius: 5px;
             font-size: 12px;
             font-weight: 600;
         }
 
         .error {
-            color: #e74c3c;
+            color: var(--error);
             font-size: 12px;
             text-align: center;
         }
 
         .log {
             font-size: 11px;
-            color: #666;
+            color: var(--text-faint);
             margin-top: auto;
             max-height: 100px;
             overflow-y: auto;
-            font-family: monospace;
+            font-family: 'SF Mono', 'Consolas', monospace;
             line-height: 1.5;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 8px 10px;
         }
 
         /* Footer / Support */
@@ -230,8 +261,9 @@
             padding: 12px 20px;
             text-align: center;
             font-size: 11px;
-            color: #555;
-            border-top: 1px solid #222;
+            color: var(--text-faint);
+            border-top: 1px solid var(--border);
+            background: var(--surface);
         }
 
         .footer a {
@@ -249,7 +281,7 @@
             justify-content: space-between;
             align-items: center;
             font-size: 12px;
-            color: #666;
+            color: var(--text-muted);
         }
 
         .user-bar span {
@@ -262,10 +294,14 @@
         .btn-logout {
             background: none;
             border: none;
-            color: #e94560;
+            color: var(--error);
             font-size: 11px;
             cursor: pointer;
             padding: 4px 8px;
+        }
+
+        .btn-logout:hover {
+            color: #dc2626;
         }
     </style>
 </head>
@@ -286,7 +322,8 @@
             </div>
             <div class="checkbox-row">
                 <input type="checkbox" id="remember" checked>
-                <label for="remember" style="color:#ccc;margin:0;cursor:pointer">Lembrar meu login</label>
+                <label for="remember" style="color:var(--text-secondary);margin:0;cursor:pointer">Lembrar meu
+                    login</label>
             </div>
             <button class="btn-primary" id="btn-login">Entrar</button>
             <p class="error" id="login-error"></p>
