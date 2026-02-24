@@ -684,23 +684,6 @@ async function fillPageCompletely(page, fieldMap) {
     let pass = 0, needsRescan = true;
     const postbackLog = [];
     const addAnotherClicked = new Set(); // Track "list:idx" to prevent infinite Add Another
-    // INSTRUMENTATION: Log all elements with "Add" in their IDs for debugging
-    try {
-        const addElements = await page.evaluate(() => {
-            const els = [];
-            document.querySelectorAll('input, a, button').forEach(el => {
-                const id = el.id || '';
-                if (/add|btn|lnk/i.test(id) && !/Help|Warning|Cancel|Modal|Language|Faq|Recover|Exit|Server|Client|Review|Navigate/i.test(id)) {
-                    els.push({ id, tag: el.tagName, type: el.type || '', value: el.value || el.textContent?.trim().slice(0, 50) || '', visible: el.offsetParent !== null });
-                }
-            });
-            return els;
-        });
-        if (addElements.length > 0) {
-            console.log(`[Filler] 🔍 Botões/links relevantes nesta página:`);
-            addElements.forEach(e => console.log(`  ${e.visible ? '👁' : '🚫'} ${e.tag}#${e.id} [${e.type}] = "${e.value}"`));
-        }
-    } catch { }
     while (needsRescan && pass < 10) {
         const result = await autoFillPass(page, fieldMap, pass, addAnotherClicked);
         needsRescan = result.needsRescan;
@@ -885,29 +868,7 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                 console.warn(`[Filler] ⚠️ Add Another link search falhou:`, e.message);
             }
 
-            // Strategy 2: Find InsertButton within the DataList (for subsequent entries)
-            // Pattern: DListAlias_ctl01_InsertButtonAlias, dtlOTHER_NATL_ctl00_InsertButton...
-            if (!clicked) {
-                try {
-                    const insertBtns = await page.locator(`[id*="${listName}"][id*="InsertButton"], [id*="${listName}"][id*="btnInsert"]`).all().catch(() => []);
-                    // Click the LAST visible InsertButton (newest entry)
-                    for (let i = insertBtns.length - 1; i >= 0; i--) {
-                        const btn = insertBtns[i];
-                        const vis = await btn.isVisible({ timeout: 500 }).catch(() => false);
-                        if (vis) {
-                            await btn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-                            await btn.click();
-                            const btnId = await btn.getAttribute('id').catch(() => '');
-                            console.log(`[Filler] ✅ Clicou InsertButton para "${listName}" (${btnId})`);
-                            await waitForPostback(page);
-                            clicked = true;
-                            break;
-                        }
-                    }
-                } catch (e) {
-                    console.warn(`[Filler] ⚠️ InsertButton search falhou:`, e.message);
-                }
-            }
+
 
             // Strategy 3: Generic "Add Another" - any visible link with that text on the page
             if (!clicked) {
@@ -938,26 +899,7 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
         }
     }
 
-    // Phase 2.6: Click InsertButton to confirm/save DataList entries
-    // In DS-160, after clicking "Add Another" and filling a new entry,
-    // InsertButtonAlias must be clicked to save it before adding another or clicking Next
-    if (!postbackNeeded && passNum > 0) {
-        try {
-            const insertBtns = await page.locator('[id*="InsertButton"]').all().catch(() => []);
-            for (const btn of insertBtns) {
-                const vis = await btn.isVisible({ timeout: 300 }).catch(() => false);
-                if (!vis) continue;
-                const btnId = await btn.getAttribute('id').catch(() => '');
-                // Skip if it's not in a DataList (must contain _ctl in ID)
-                if (!btnId || !/_ctl\d+_/i.test(btnId)) continue;
-                await btn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-                await btn.click();
-                console.log(`[Filler] ✅ InsertButton clicked to save entry: ${btnId}`);
-                await waitForPostback(page);
-                return { needsRescan: true, postbackField: `InsertButton:${btnId}` };
-            }
-        } catch { }
-    }
+
 
     // Phase 3: Non-postback selects, clicks, checkboxes
     for (const field of visible) {
