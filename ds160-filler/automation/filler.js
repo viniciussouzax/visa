@@ -800,8 +800,11 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
         return { needsRescan: true, postbackField };
     }
 
-    // Phase 2.5: "Add Another" — DS-160 uses <a> links with text "Add Another" and InsertButton elements
-    // Pattern: (1) Fill ctl00 fields → (2) Click "Add Another" link → postback → ctl01 appears → (3) Fill ctl01 → repeat
+    // Phase 2.5: "Add Another" — DS-160 DataList multi-entry mechanism
+    // Based on real DS-160 behavior (3 tested patterns):
+    // - Other Names: Fill ctl00 → "Add Another" link → Fill ctl01 → InsertButton ctl01 → Fill ctl02
+    // - Other Nationalities: Fill ctl00 → "Add Another" link → Fill ctl01 → InsertButton ctl01 → Fill ctl02
+    // - Permanent Resident: Fill ctl00 → InsertButton ctl00 → Fill ctl01 → InsertButton ctl01 → Fill ctl02
     // SAFETY: max 5 Add Another per list, tracked by addAnotherClicked Set
     const addAnotherEntries = fieldMap.filter(m => m.addAnother);
     if (addAnotherEntries.length > 0) {
@@ -810,7 +813,6 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
         for (const entry of addAnotherEntries) {
             const listName = entry.addAnother.list;
             const trackKey = `${listName}:${entry.addAnother.idx}`;
-            // Skip if already clicked for this list+idx
             if (addAnotherClicked.has(trackKey)) continue;
             const fieldExists = visible.some(f => f.id && entry.pattern.test(f.id));
             if (!fieldExists) {
@@ -820,11 +822,9 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
             }
         }
 
-        // Click "Add Another" for the first pending list
         for (const [listName, entry] of Object.entries(pendingByList)) {
             const trackKey = `${listName}:${entry.addAnother.idx}`;
 
-            // Safety limit: max 5 Add Another per list
             const listClickCount = [...addAnotherClicked].filter(k => k.startsWith(listName + ':')).length;
             if (listClickCount >= 5) {
                 console.warn(`[Filler] ⚠️ Limite de Add Another atingido para "${listName}" (max 5)`);
@@ -832,21 +832,30 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                 continue;
             }
 
+            // Check if the PREVIOUS entry's fields are filled (guard against clicking InsertButton on empty entries)
+            // For idx=1, check ctl00; for idx=2, check ctl01; etc.
+            const prevIdx = entry.addAnother.idx - 1;
+            const prevCtl = `_ctl${String(prevIdx).padStart(2, '0')}_`;
+            const prevFieldsFilled = visible.some(f => f.id && f.id.includes(listName) && f.id.includes(prevCtl) &&
+                ((f.tag === 'select' && !isSelectEmpty(f.value)) || (f.tag === 'input' && f.value && f.value.trim())));
+
+            if (!prevFieldsFilled) {
+                // Previous entry fields are empty — they need to be filled first by Phase 3/4
+                // Don't click Add Another or InsertButton yet
+                continue;
+            }
+
             console.log(`[Filler] 📋 Add Another necessário para "${listName}" (entry idx ${entry.addAnother.idx})`);
 
             let clicked = false;
 
-            // Strategy 1: Find "Add Another" link by text within or near the DataList
-            // DS-160 uses <a> tags with text "Add Another" (e.g. page.getByRole('link', { name: 'Add Another' }))
+            // Strategy 1: Find "Add Another" link by text near the DataList
             try {
-                // Find all "Add Another" links on the page
                 const addLinks = await page.locator(`a:has-text("Add Another")`).all().catch(() => []);
                 for (const link of addLinks) {
                     const vis = await link.isVisible({ timeout: 500 }).catch(() => false);
                     if (!vis) continue;
-                    // Check if this link is near our DataList (shares a parent container with listName in ID)
                     const nearList = await link.evaluate((el, ln) => {
-                        // Walk up to find a container that contains the DataList
                         let parent = el.parentElement;
                         for (let i = 0; i < 10 && parent; i++) {
                             if (parent.querySelector(`[id*="${ln}"]`)) return true;
@@ -868,9 +877,32 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                 console.warn(`[Filler] ⚠️ Add Another link search falhou:`, e.message);
             }
 
+            // Strategy 2: InsertButton within the DataList
+            // Permanent Resident uses InsertButton directly (no "Add Another" link)
+            // Other lists use InsertButton for ctl01+ entries
+            if (!clicked) {
+                try {
+                    const insertBtns = await page.locator(`[id*="${listName}"][id*="InsertButton"]`).all().catch(() => []);
+                    // Click the LAST visible InsertButton (the one for the most recent entry)
+                    for (let i = insertBtns.length - 1; i >= 0; i--) {
+                        const btn = insertBtns[i];
+                        const vis = await btn.isVisible({ timeout: 500 }).catch(() => false);
+                        if (vis) {
+                            await btn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
+                            await btn.click();
+                            const btnId = await btn.getAttribute('id').catch(() => '');
+                            console.log(`[Filler] ✅ Clicou InsertButton para "${listName}" (${btnId})`);
+                            await waitForPostback(page);
+                            clicked = true;
+                            break;
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`[Filler] ⚠️ InsertButton search falhou:`, e.message);
+                }
+            }
 
-
-            // Strategy 3: Generic "Add Another" - any visible link with that text on the page
+            // Strategy 3: Generic "Add Another" link (last resort)
             if (!clicked) {
                 try {
                     const genericAdd = page.getByRole('link', { name: 'Add Another' }).first();
@@ -886,15 +918,13 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                 }
             }
 
-            // Mark as clicked regardless (prevent infinite retry)
             addAnotherClicked.add(trackKey);
 
             if (!clicked) {
-                console.error(`[Filler] ❌ Add Another button não encontrado para "${listName}" — pulando`);
-                continue; // Try next list instead of returning
+                console.error(`[Filler] ❌ Add Another/InsertButton não encontrado para "${listName}" — pulando`);
+                continue;
             }
 
-            // Only one Add Another per pass (it causes postback)
             return { needsRescan: true, postbackField: `AddAnother:${listName}` };
         }
     }
