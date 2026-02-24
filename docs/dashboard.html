@@ -19,7 +19,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* --- Minimal CSS: only what Tailwind utility classes cannot cover --- */
+        /* --- Minimal CSS: only what cannot be pure Tailwind utility classes --- */
 
         /* CSS Variables — referenced by dashboard.js inline styles */
         :root {
@@ -38,7 +38,7 @@
             --error: #ef4444;
         }
 
-        /* View / tab toggles — JS classList.add/remove('active') */
+        /* View / tab toggles — JS classList */
         .view {
             display: none;
         }
@@ -55,7 +55,7 @@
             display: block;
         }
 
-        /* Badge — JS generates: <span class="badge" style="background:..;color:.."> */
+        /* Badge — JS generates */
         .badge {
             display: inline-flex;
             align-items: center;
@@ -66,7 +66,7 @@
             letter-spacing: .025em;
         }
 
-        /* Small action buttons — JS generates: <button class="btn-sm btn-view"> */
+        /* Small action buttons — JS generates */
         .btn-sm {
             padding: 6px 12px;
             border-radius: 6px;
@@ -181,7 +181,7 @@
             border-bottom: none;
         }
 
-        /* Detail panel — JS generates detail views */
+        /* Detail panel */
         .detail-section {
             padding: 16px 20px;
             border-bottom: 1px solid #e2e8f0;
@@ -209,7 +209,7 @@
             flex-wrap: wrap;
         }
 
-        /* Switch toggle — requires pseudo-element */
+        /* Switch toggle */
         .switch {
             position: relative;
             display: inline-block;
@@ -252,7 +252,7 @@
             transform: translateX(18px);
         }
 
-        /* Toast — JS creates dynamically */
+        /* Toast */
         .toast {
             position: fixed;
             bottom: 24px;
@@ -285,569 +285,587 @@
                 opacity: 1;
             }
         }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar-panel {
-                display: none !important;
-            }
-        }
     </style>
 </head>
 
-<body class="font-sans bg-slate-50 text-slate-800 min-h-screen antialiased">
+<body class="font-sans antialiased">
 
     <!-- ==================== AUTH SCREEN ==================== -->
     <div id="auth-screen"
-        class="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-50">
-        <div class="bg-white border border-slate-200 rounded-2xl p-10 w-full max-w-sm shadow-xl">
+        class="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-slate-50 to-blue-50">
+        <div class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-10 shadow-xl">
             <h1
-                class="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+                class="mb-2 bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-center text-2xl font-bold text-transparent">
                 DS160 EXPRESSO</h1>
-            <p class="text-center text-slate-500 text-sm mb-6">Painel de gestão para organizações</p>
+            <p class="mb-6 text-center text-sm text-slate-500">Painel de gestão para organizações</p>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Email</label>
+                    <label class="mb-1 block text-xs font-medium text-slate-500">Email</label>
                     <input type="email" id="login-email" placeholder="seu@email.com"
-                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Senha</label>
+                    <label class="mb-1 block text-xs font-medium text-slate-500">Senha</label>
                     <input type="password" id="login-password" placeholder="••••••••"
-                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 </div>
                 <button id="btn-login"
-                    class="w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 transition-all uppercase">Entrar</button>
+                    class="w-full rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-semibold uppercase text-white shadow-sm transition-all hover:bg-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">Entrar</button>
             </div>
-            <p class="text-red-500 text-xs text-center mt-3 min-h-[18px]" id="login-error"></p>
+            <p class="mt-3 min-h-[18px] text-center text-xs text-red-500" id="login-error"></p>
         </div>
     </div>
 
     <!-- ==================== APP SCREEN ==================== -->
-    <div id="app-screen" class="hidden h-screen">
-        <div class="flex h-full">
+    <!-- Tailwind Plus: "Full-width secondary column on right" multi-column layout -->
+    <div id="app-screen" class="hidden">
 
-            <!-- ===== Sidebar (Tailwind UI: dark sidebar pattern) ===== -->
-            <div class="sidebar-panel flex w-64 flex-col bg-gray-900">
+        <!-- ===== SIDEBAR — fixed left (Tailwind Plus pattern: lg:fixed lg:inset-y-0) ===== -->
+        <div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
+            <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4">
                 <!-- Brand -->
-                <div class="flex h-16 shrink-0 items-center px-6 border-b border-white/10">
-                    <span class="text-lg font-bold text-white tracking-wide">DS160 EXPRESSO</span>
+                <div class="flex h-16 shrink-0 items-center">
+                    <span class="text-lg font-bold tracking-wide text-white">DS160 EXPRESSO</span>
                 </div>
                 <!-- Navigation -->
-                <nav class="flex flex-1 flex-col px-4 py-4 gap-1 overflow-y-auto">
-                    <div class="nav-item active group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
-                        data-view="pipeline">Pipeline</div>
-                    <div class="nav-item group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
-                        data-view="archived">Arquivados</div>
-                    <div class="nav-item group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
-                        data-view="software">Software</div>
-                    <div class="h-px bg-white/10 my-2"></div>
-                    <div class="nav-item hidden group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
-                        id="nav-master" data-view="master">Painel Master</div>
+                <nav class="flex flex-1 flex-col">
+                    <ul role="list" class="flex flex-1 flex-col gap-y-7">
+                        <li>
+                            <ul role="list" class="-mx-2 space-y-1">
+                                <li>
+                                    <div class="nav-item active group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium leading-6 text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
+                                        data-view="pipeline">Pipeline</div>
+                                </li>
+                                <li>
+                                    <div class="nav-item group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium leading-6 text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
+                                        data-view="archived">Arquivados</div>
+                                </li>
+                                <li>
+                                    <div class="nav-item group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium leading-6 text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
+                                        data-view="software">Software</div>
+                                </li>
+                                <li class="hidden" id="nav-master">
+                                    <div class="nav-item group flex gap-x-3 rounded-md px-3 py-2 text-sm font-medium leading-6 text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
+                                        data-view="master">Painel Master</div>
+                                </li>
+                            </ul>
+                        </li>
+                        <!-- Copy form link -->
+                        <li>
+                            <button
+                                class="btn-copy-link flex w-full items-center justify-center gap-2 rounded-md border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-xs font-medium uppercase text-blue-400 transition-all hover:border-blue-400 hover:bg-blue-500/20 cursor-pointer"
+                                id="btn-copy-form" title="Copiar link do formulário">Copiar link do formulário</button>
+                        </li>
+                        <!-- User footer -->
+                        <li class="-mx-6 mt-auto border-t border-white/10 px-6 py-3">
+                            <div class="truncate text-xs text-gray-400" id="user-email">—</div>
+                            <div class="mt-0.5 text-[10px] text-gray-500" id="user-role-display"></div>
+                            <div class="mt-1 cursor-pointer text-[9px] text-gray-500" id="org-id-display"
+                                title="Clique para copiar"></div>
+                            <button id="btn-logout"
+                                class="mt-2 w-full cursor-pointer rounded-md border border-gray-600 bg-transparent px-3 py-1.5 text-xs font-medium uppercase text-gray-400 transition-colors hover:bg-gray-800 hover:text-white">Sair</button>
+                        </li>
+                    </ul>
                 </nav>
-                <!-- Copy form link -->
-                <div class="px-4 py-2">
-                    <button
-                        class="btn-copy-link flex w-full items-center justify-center gap-2 rounded-md bg-blue-500/10 border border-blue-500/20 px-3 py-2 text-xs font-medium text-blue-400 hover:bg-blue-500/20 hover:border-blue-400 transition-all cursor-pointer uppercase"
-                        id="btn-copy-form" title="Copiar link do formulário">Copiar link do formulário</button>
+            </div>
+        </div>
+
+        <!-- ===== MAIN + SECONDARY COLUMN (Tailwind Plus pattern: lg:pl-64) ===== -->
+        <div class="lg:pl-64">
+            <!-- Sticky topbar -->
+            <div
+                class="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between gap-x-4 border-b border-gray-200 bg-white px-6 shadow-sm">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900" id="page-title">Pipeline</h2>
+                    <p class="text-xs text-gray-500" id="page-subtitle"></p>
                 </div>
-                <!-- Footer -->
-                <div class="p-4 border-t border-white/10">
-                    <div class="text-xs text-gray-400 truncate" id="user-email">—</div>
-                    <div class="text-[10px] mt-0.5 text-gray-500" id="user-role-display"></div>
-                    <div class="text-[9px] mt-1 text-gray-500 cursor-pointer" id="org-id-display"
-                        title="Clique para copiar"></div>
-                    <button id="btn-logout"
-                        class="mt-2 w-full rounded-md border border-gray-600 bg-transparent px-3 py-1.5 text-xs font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer uppercase">Sair</button>
-                </div>
+                <button class="btn-sm btn-queue" id="btn-refresh">Atualizar</button>
             </div>
 
-            <!-- ===== Main content ===== -->
-            <div class="flex flex-1 flex-col overflow-hidden">
-                <!-- Topbar -->
-                <div class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6">
-                    <div>
-                        <h2 class="text-lg font-semibold text-slate-900" id="page-title">Pipeline</h2>
-                        <p class="text-xs text-slate-500 mt-0.5" id="page-subtitle"></p>
-                    </div>
-                    <button class="btn-sm btn-queue" id="btn-refresh">Atualizar</button>
-                </div>
+            <!-- Main + Aside flex container -->
+            <div class="flex">
+                <!-- MAIN CONTENT (primary column) -->
+                <main class="flex-1 overflow-y-auto">
+                    <div class="px-6 py-8">
 
-                <!-- Content area -->
-                <main class="flex-1 overflow-y-auto p-6 bg-slate-50">
-
-                    <!-- ===== Pipeline View ===== -->
-                    <div class="view active" id="view-pipeline">
-                        <!-- Stats grid (Tailwind UI: stats pattern) -->
-                        <div class="grid grid-cols-5 gap-3 mb-5" id="pipeline-cards">
-                            <div class="stat-card pipeline-card active overflow-hidden rounded-lg bg-white border border-slate-200 px-4 py-5 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                                data-filter="new">
-                                <dt class="truncate text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                                    Novo</dt>
-                                <dd class="mt-1 text-3xl font-bold tracking-tight text-slate-900" id="stat-new">0</dd>
-                            </div>
-                            <div class="stat-card pipeline-card overflow-hidden rounded-lg bg-white border border-slate-200 px-4 py-5 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                                data-filter="review">
-                                <dt class="truncate text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                                    Revisão</dt>
-                                <dd class="mt-1 text-3xl font-bold tracking-tight text-slate-900" id="stat-review">0
-                                </dd>
-                            </div>
-                            <div class="stat-card pipeline-card overflow-hidden rounded-lg bg-white border border-slate-200 px-4 py-5 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                                data-filter="approved">
-                                <dt class="truncate text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                                    Aprovado</dt>
-                                <dd class="mt-1 text-3xl font-bold tracking-tight text-slate-900" id="stat-approved">0
-                                </dd>
-                            </div>
-                            <div class="stat-card pipeline-card overflow-hidden rounded-lg bg-white border border-slate-200 px-4 py-5 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                                data-filter="doing">
-                                <dt class="truncate text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                                    Pendente</dt>
-                                <dd class="mt-1 text-3xl font-bold tracking-tight text-slate-900" id="stat-doing">0</dd>
-                            </div>
-                            <div class="stat-card pipeline-card overflow-hidden rounded-lg bg-white border border-slate-200 px-4 py-5 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                                data-filter="done">
-                                <dt class="truncate text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                                    Concluído</dt>
-                                <dd class="mt-1 text-3xl font-bold tracking-tight text-slate-900" id="stat-done">0</dd>
-                            </div>
-                        </div>
-
-                        <!-- Search -->
-                        <div class="mb-4">
-                            <input type="text" id="search-applicants"
-                                placeholder="Buscar por nome, passaporte ou email..."
-                                class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
-                        </div>
-
-                        <!-- Table (Tailwind UI: simple table pattern) -->
-                        <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200">
-                            <table class="min-w-full divide-y divide-slate-200">
-                                <thead class="bg-slate-50">
-                                    <tr>
-                                        <th
-                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                            Nome</th>
-                                        <th
-                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                            Etapa</th>
-                                        <th
-                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                            Progresso</th>
-                                        <th
-                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                            Atualizado</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="pipeline-list" class="divide-y divide-slate-100 bg-white"></tbody>
-                            </table>
-                        </div>
-
-                        <!-- Pagination -->
-                        <div class="flex items-center justify-center gap-3 py-4">
-                            <button id="app-prev" disabled
-                                class="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed uppercase">Anterior</button>
-                            <span id="app-page-info" class="text-xs text-slate-500">Página 1</span>
-                            <button id="app-next"
-                                class="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed uppercase">Próxima</button>
-                        </div>
-                    </div>
-
-                    <!-- ===== Applicant Detail View ===== -->
-                    <div class="view" id="view-applicant-detail">
-                        <div id="applicant-detail-content"></div>
-                    </div>
-
-                    <!-- ===== Archived View ===== -->
-                    <div class="view" id="view-archived">
-                        <div class="mb-5">
-                            <h3 class="text-lg font-bold text-slate-900">Solicitantes Arquivados</h3>
-                            <p class="text-sm text-slate-500 mt-1">Solicitantes que já foram concluídos e arquivados
-                                pelo assessor.</p>
-                        </div>
-                        <div class="mb-4">
-                            <input type="text" id="search-archived" placeholder="Buscar por nome ou passaporte..."
-                                class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
-                        </div>
-                        <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200">
-                            <table class="min-w-full divide-y divide-slate-200">
-                                <thead class="bg-slate-50">
-                                    <tr>
-                                        <th
-                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                            Nome</th>
-                                        <th
-                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                            Passaporte</th>
-                                        <th
-                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                            Arquivado em</th>
-                                        <th
-                                            class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                            Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="archived-list" class="divide-y divide-slate-100 bg-white"></tbody>
-                            </table>
-                        </div>
-                        <div class="flex items-center justify-center gap-3 py-4">
-                            <button id="arch-prev" disabled
-                                class="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed uppercase">Anterior</button>
-                            <span id="arch-page-info" class="text-xs text-slate-500">Página 1</span>
-                            <button id="arch-next"
-                                class="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed uppercase">Próxima</button>
-                        </div>
-                    </div>
-
-                    <!-- ===== Software View ===== -->
-                    <div class="view" id="view-software">
-                        <div class="max-w-3xl">
-                            <!-- Download card -->
-                            <div
-                                class="mb-6 overflow-hidden rounded-xl bg-gradient-to-br from-slate-50 to-blue-50 border border-blue-200/50 p-6 shadow-sm">
-                                <div class="flex items-center gap-4 mb-5">
-                                    <div
-                                        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-xl font-bold text-white shadow-lg shadow-blue-500/25">
-                                        D</div>
-                                    <div>
-                                        <h3 class="text-lg font-bold text-slate-900">DS160 EXPRESSO</h3>
-                                        <p class="text-sm text-slate-500">Software de preenchimento automático do
-                                            formulário DS-160</p>
-                                    </div>
+                        <!-- ===== Pipeline View ===== -->
+                        <div class="view active" id="view-pipeline">
+                            <!-- Stats grid -->
+                            <div class="grid grid-cols-5 gap-3 mb-6" id="pipeline-cards">
+                                <div class="stat-card pipeline-card active overflow-hidden rounded-lg border border-gray-200 bg-white px-4 py-5 shadow-sm transition-all hover:shadow-md cursor-pointer"
+                                    data-filter="new">
+                                    <dt
+                                        class="truncate text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                        Novo</dt>
+                                    <dd class="mt-1 text-3xl font-bold tracking-tight text-gray-900" id="stat-new">0
+                                    </dd>
                                 </div>
-                                <div class="flex items-center gap-3 flex-wrap">
-                                    <a id="sw-download-btn" href="#" target="_blank"
-                                        class="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-all no-underline uppercase">
-                                        Baixar Instalador <span id="sw-download-version"
-                                            class="text-[11px] opacity-80"></span>
-                                    </a>
-                                    <span id="sw-download-size" class="text-xs text-slate-500"></span>
+                                <div class="stat-card pipeline-card overflow-hidden rounded-lg border border-gray-200 bg-white px-4 py-5 shadow-sm transition-all hover:shadow-md cursor-pointer"
+                                    data-filter="review">
+                                    <dt
+                                        class="truncate text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                        Revisão</dt>
+                                    <dd class="mt-1 text-3xl font-bold tracking-tight text-gray-900" id="stat-review">0
+                                    </dd>
                                 </div>
-                                <div id="sw-download-date" class="text-[11px] text-slate-500 mt-3"></div>
-                            </div>
-
-                            <!-- Versions -->
-                            <h4 class="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mb-3">Versões
-                                Atuais</h4>
-                            <div class="grid grid-cols-2 gap-4 mb-6">
-                                <div class="rounded-xl bg-white border border-slate-200 p-5 shadow-sm">
-                                    <div class="flex items-center gap-2.5 mb-3">
-                                        <div
-                                            class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 text-sm font-bold text-blue-500">
-                                            S</div>
-                                        <div>
-                                            <div
-                                                class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                                Software</div>
-                                            <div class="text-[10px] text-slate-400">Electron App</div>
-                                        </div>
-                                    </div>
-                                    <div id="sw-version" class="text-3xl font-extrabold text-blue-500 mb-1">—</div>
-                                    <div id="sw-version-date" class="text-[11px] text-slate-500"></div>
-                                    <div id="sw-version-notes" class="text-xs text-slate-500 mt-2 leading-relaxed">
-                                    </div>
+                                <div class="stat-card pipeline-card overflow-hidden rounded-lg border border-gray-200 bg-white px-4 py-5 shadow-sm transition-all hover:shadow-md cursor-pointer"
+                                    data-filter="approved">
+                                    <dt
+                                        class="truncate text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                        Aprovado</dt>
+                                    <dd class="mt-1 text-3xl font-bold tracking-tight text-gray-900" id="stat-approved">
+                                        0</dd>
                                 </div>
-                                <div class="rounded-xl bg-white border border-slate-200 p-5 shadow-sm">
-                                    <div class="flex items-center gap-2.5 mb-3">
-                                        <div
-                                            class="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10 text-sm font-bold text-green-500">
-                                            A</div>
-                                        <div>
-                                            <div
-                                                class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                                Automação</div>
-                                            <div class="text-[10px] text-slate-400">Scripts de preenchimento</div>
-                                        </div>
-                                    </div>
-                                    <div id="sw-auto-version" class="text-3xl font-extrabold text-green-500 mb-1">—
-                                    </div>
-                                    <div id="sw-auto-date" class="text-[11px] text-slate-500"></div>
-                                    <div id="sw-auto-changelog" class="text-xs text-slate-500 mt-2 leading-relaxed">
-                                    </div>
+                                <div class="stat-card pipeline-card overflow-hidden rounded-lg border border-gray-200 bg-white px-4 py-5 shadow-sm transition-all hover:shadow-md cursor-pointer"
+                                    data-filter="doing">
+                                    <dt
+                                        class="truncate text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                        Pendente</dt>
+                                    <dd class="mt-1 text-3xl font-bold tracking-tight text-gray-900" id="stat-doing">0
+                                    </dd>
+                                </div>
+                                <div class="stat-card pipeline-card overflow-hidden rounded-lg border border-gray-200 bg-white px-4 py-5 shadow-sm transition-all hover:shadow-md cursor-pointer"
+                                    data-filter="done">
+                                    <dt
+                                        class="truncate text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                        Concluído</dt>
+                                    <dd class="mt-1 text-3xl font-bold tracking-tight text-gray-900" id="stat-done">0
+                                    </dd>
                                 </div>
                             </div>
-
-                            <!-- Info banner -->
-                            <div class="rounded-xl bg-blue-50 border border-blue-100 p-5 mb-6">
-                                <p class="text-sm font-semibold text-blue-600 mb-2">Como funciona?</p>
-                                <ul class="text-xs text-slate-600 pl-4 space-y-1 list-disc">
-                                    <li><strong>Software</strong> — Atualiza automaticamente quando uma nova versão é
-                                        publicada. Basta abrir o app.</li>
-                                    <li><strong>Automação</strong> — Os scripts de preenchimento atualizam sozinhos a
-                                        cada abertura, sem reinstalar.</li>
-                                </ul>
+                            <!-- Search -->
+                            <div class="mb-4">
+                                <input type="text" id="search-applicants"
+                                    placeholder="Buscar por nome, passaporte ou email..."
+                                    class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             </div>
-
-                            <!-- Docs placeholder -->
-                            <h4 class="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mb-3">
-                                Documentação</h4>
-                            <div class="rounded-xl bg-white border border-slate-200 p-10 shadow-sm text-center">
-                                <p class="text-sm font-semibold text-slate-800 mb-1">Em breve</p>
-                                <p class="text-xs text-slate-500 max-w-xs mx-auto">Guias de uso, perguntas frequentes e
-                                    orientações serão adicionados aqui.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ===== Master View ===== -->
-                    <div class="view" id="view-master">
-                        <!-- Tabs -->
-                        <div class="flex gap-1 mb-5 border-b border-slate-200">
-                            <button
-                                class="master-tab px-4 py-2.5 bg-transparent border-none text-sm font-medium text-slate-500 cursor-pointer border-b-2 border-transparent hover:text-slate-800 transition-all uppercase active"
-                                data-master-tab="agencies">Organizações</button>
-                            <button
-                                class="master-tab px-4 py-2.5 bg-transparent border-none text-sm font-medium text-slate-500 cursor-pointer border-b-2 border-transparent hover:text-slate-800 transition-all uppercase"
-                                data-master-tab="integrations">Integrações</button>
-                            <button
-                                class="master-tab px-4 py-2.5 bg-transparent border-none text-sm font-medium text-slate-500 cursor-pointer border-b-2 border-transparent hover:text-slate-800 transition-all uppercase"
-                                data-master-tab="logs">Logs</button>
-                            <button
-                                class="master-tab px-4 py-2.5 bg-transparent border-none text-sm font-medium text-slate-500 cursor-pointer border-b-2 border-transparent hover:text-slate-800 transition-all uppercase"
-                                data-master-tab="settings">Configurações</button>
-                        </div>
-
-                        <!-- Sub: Agencies list -->
-                        <div class="master-sub active" id="master-sub-agencies">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-base font-bold text-slate-900">Organizações Cadastradas</h3>
-                                <button class="btn-sm btn-primary-sm"
-                                    onclick="document.getElementById('modal-create-agency').classList.remove('hidden')">+
-                                    Nova Organização</button>
-                            </div>
-                            <div class="overflow-hidden rounded-lg bg-white ring-1 ring-slate-200">
-                                <div id="agencies-list"></div>
-                            </div>
-                        </div>
-
-                        <!-- Sub: Agency detail -->
-                        <div class="master-sub" id="master-sub-agency-detail">
-                            <button
-                                class="btn-sm mb-4 rounded-md bg-white ring-1 ring-slate-300 text-slate-700 hover:bg-slate-50"
-                                id="btn-back-agencies">Voltar às Agências</button>
-                            <div id="agency-detail-content"></div>
-                        </div>
-
-                        <!-- Sub: Integrations -->
-                        <div class="master-sub" id="master-sub-integrations">
-                            <div class="rounded-xl bg-white border border-slate-200 p-6 shadow-sm">
-                                <h3 class="text-base font-bold text-slate-900 mb-1">CapMonster Cloud</h3>
-                                <p class="text-xs text-slate-500 mb-3">API Key para resolução automática de captchas
-                                    durante o preenchimento DS-160.</p>
-                                <div class="flex gap-2">
-                                    <input type="password" id="capmonster-key"
-                                        placeholder="Sua Client Key do CapMonster..."
-                                        class="flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
-                                    <button class="btn-sm btn-primary-sm px-4" id="btn-save-capmonster">Salvar</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Sub: Logs -->
-                        <div class="master-sub" id="master-sub-logs">
-                            <div
-                                class="flex items-center justify-between rounded-t-xl bg-white border border-slate-200 p-5">
-                                <div>
-                                    <h3 class="text-base font-bold text-slate-900">Logs de Erros <span
-                                            class="text-xs text-slate-500 font-normal" id="logs-count"></span></h3>
-                                    <p class="text-xs text-slate-500 mt-0.5">Últimos 50 erros registrados durante
-                                        preenchimentos automáticos.</p>
-                                </div>
-                                <button class="btn-sm btn-danger" id="btn-archive-logs">Arquivar Todos</button>
-                            </div>
-                            <div class="overflow-hidden rounded-b-xl bg-white ring-1 ring-slate-200 ring-t-0">
-                                <table class="min-w-full divide-y divide-slate-200">
-                                    <thead class="bg-slate-50">
+                            <!-- Table -->
+                            <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-200">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
                                         <tr>
                                             <th
-                                                class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                                Data</th>
+                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                Nome</th>
                                             <th
-                                                class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                                Causa</th>
+                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                Etapa</th>
                                             <th
-                                                class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                                Página</th>
+                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                Progresso</th>
                                             <th
-                                                class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                                Campo</th>
-                                            <th
-                                                class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                                Erro</th>
-                                            <th
-                                                class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                                Screenshot</th>
+                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                Atualizado</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="logs-list" class="divide-y divide-slate-100 bg-white"></tbody>
+                                    <tbody id="pipeline-list" class="divide-y divide-gray-100 bg-white"></tbody>
                                 </table>
                             </div>
+                            <!-- Pagination -->
+                            <div class="flex items-center justify-center gap-3 py-4">
+                                <button id="app-prev" disabled
+                                    class="rounded-md bg-white px-3 py-1.5 text-xs font-medium uppercase text-gray-600 ring-1 ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">Anterior</button>
+                                <span id="app-page-info" class="text-xs text-gray-500">Página 1</span>
+                                <button id="app-next"
+                                    class="rounded-md bg-white px-3 py-1.5 text-xs font-medium uppercase text-gray-600 ring-1 ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">Próxima</button>
+                            </div>
                         </div>
 
-                        <!-- Sub: Settings -->
-                        <div class="master-sub" id="master-sub-settings">
+                        <!-- ===== Applicant Detail View ===== -->
+                        <div class="view" id="view-applicant-detail">
+                            <div id="applicant-detail-content"></div>
+                        </div>
+
+                        <!-- ===== Archived View ===== -->
+                        <div class="view" id="view-archived">
                             <div class="mb-5">
-                                <h3 class="text-base font-bold text-slate-900">Respostas Padrão</h3>
-                                <p class="text-xs text-slate-500 mt-1">Valores utilizados automaticamente pela automação
-                                    DS-160. Edite conforme necessário.</p>
+                                <h3 class="text-lg font-bold text-gray-900">Solicitantes Arquivados</h3>
+                                <p class="mt-1 text-sm text-gray-500">Solicitantes que já foram concluídos e arquivados
+                                    pelo assessor.</p>
                             </div>
-                            <div class="space-y-4">
-                                <div class="rounded-xl bg-white border border-slate-200 p-5 shadow-sm">
-                                    <h4 class="text-sm font-semibold text-slate-900 mb-1">Pergunta de Segurança</h4>
-                                    <p class="text-[11px] text-slate-500 mb-3">Qual pergunta selecionar no DS-160 ao
-                                        criar uma nova aplicação.</p>
-                                    <select id="setting-security-question"
-                                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
-                                        <option value="1">What is your mother's maiden name?</option>
-                                        <option value="2">What is the name of your first pet?</option>
-                                        <option value="3">What city were you born in?</option>
-                                        <option value="4">What is the name of your mother's mother?</option>
-                                        <option value="5">What was the make of your first car?</option>
-                                    </select>
+                            <div class="mb-4">
+                                <input type="text" id="search-archived" placeholder="Buscar por nome ou passaporte..."
+                                    class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                            </div>
+                            <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-200">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th
+                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                Nome</th>
+                                            <th
+                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                Passaporte</th>
+                                            <th
+                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                Arquivado em</th>
+                                            <th
+                                                class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="archived-list" class="divide-y divide-gray-100 bg-white"></tbody>
+                                </table>
+                            </div>
+                            <div class="flex items-center justify-center gap-3 py-4">
+                                <button id="arch-prev" disabled
+                                    class="rounded-md bg-white px-3 py-1.5 text-xs font-medium uppercase text-gray-600 ring-1 ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">Anterior</button>
+                                <span id="arch-page-info" class="text-xs text-gray-500">Página 1</span>
+                                <button id="arch-next"
+                                    class="rounded-md bg-white px-3 py-1.5 text-xs font-medium uppercase text-gray-600 ring-1 ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">Próxima</button>
+                            </div>
+                        </div>
+
+                        <!-- ===== Software View ===== -->
+                        <div class="view" id="view-software">
+                            <div class="max-w-3xl">
+                                <!-- Download card -->
+                                <div
+                                    class="mb-6 overflow-hidden rounded-xl border border-blue-200/50 bg-gradient-to-br from-gray-50 to-blue-50 p-6 shadow-sm">
+                                    <div class="mb-5 flex items-center gap-4">
+                                        <div
+                                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-xl font-bold text-white shadow-lg shadow-blue-500/25">
+                                            D</div>
+                                        <div>
+                                            <h3 class="text-lg font-bold text-gray-900">DS160 EXPRESSO</h3>
+                                            <p class="text-sm text-gray-500">Software de preenchimento automático do
+                                                formulário DS-160</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-3">
+                                        <a id="sw-download-btn" href="#" target="_blank"
+                                            class="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-6 py-2.5 text-sm font-semibold uppercase text-white no-underline shadow-sm transition-all hover:bg-blue-600">
+                                            Baixar Instalador <span id="sw-download-version"
+                                                class="text-[11px] opacity-80"></span>
+                                        </a>
+                                        <span id="sw-download-size" class="text-xs text-gray-500"></span>
+                                    </div>
+                                    <div id="sw-download-date" class="mt-3 text-[11px] text-gray-500"></div>
                                 </div>
-                                <div class="rounded-xl bg-white border border-slate-200 p-5 shadow-sm">
-                                    <h4 class="text-sm font-semibold text-slate-900 mb-1">Resposta de Segurança</h4>
-                                    <p class="text-[11px] text-slate-500 mb-3">Resposta padrão para a pergunta de
-                                        segurança. Ex: "VO" (nome da avó materna).</p>
-                                    <input type="text" id="setting-security-answer" placeholder="Ex: VO"
-                                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                                <!-- Versions -->
+                                <h4 class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-gray-500">
+                                    Versões Atuais</h4>
+                                <div class="mb-6 grid grid-cols-2 gap-4">
+                                    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                                        <div class="mb-3 flex items-center gap-2.5">
+                                            <div
+                                                class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 text-sm font-bold text-blue-500">
+                                                S</div>
+                                            <div>
+                                                <div
+                                                    class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                                    Software</div>
+                                                <div class="text-[10px] text-gray-400">Electron App</div>
+                                            </div>
+                                        </div>
+                                        <div id="sw-version" class="mb-1 text-3xl font-extrabold text-blue-500">—</div>
+                                        <div id="sw-version-date" class="text-[11px] text-gray-500"></div>
+                                        <div id="sw-version-notes" class="mt-2 text-xs leading-relaxed text-gray-500">
+                                        </div>
+                                    </div>
+                                    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                                        <div class="mb-3 flex items-center gap-2.5">
+                                            <div
+                                                class="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10 text-sm font-bold text-green-500">
+                                                A</div>
+                                            <div>
+                                                <div
+                                                    class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                                    Automação</div>
+                                                <div class="text-[10px] text-gray-400">Scripts de preenchimento</div>
+                                            </div>
+                                        </div>
+                                        <div id="sw-auto-version" class="mb-1 text-3xl font-extrabold text-green-500">—
+                                        </div>
+                                        <div id="sw-auto-date" class="text-[11px] text-gray-500"></div>
+                                        <div id="sw-auto-changelog" class="mt-2 text-xs leading-relaxed text-gray-500">
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Info banner -->
+                                <div class="mb-6 rounded-xl border border-blue-100 bg-blue-50 p-5">
+                                    <p class="mb-2 text-sm font-semibold text-blue-600">Como funciona?</p>
+                                    <ul class="list-disc space-y-1 pl-4 text-xs text-gray-600">
+                                        <li><strong>Software</strong> — Atualiza automaticamente quando uma nova versão
+                                            é publicada.</li>
+                                        <li><strong>Automação</strong> — Os scripts atualizam sozinhos a cada abertura,
+                                            sem reinstalar.</li>
+                                    </ul>
+                                </div>
+                                <!-- Docs placeholder -->
+                                <h4 class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-gray-500">
+                                    Documentação</h4>
+                                <div class="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+                                    <p class="mb-1 text-sm font-semibold text-gray-800">Em breve</p>
+                                    <p class="mx-auto max-w-xs text-xs text-gray-500">Guias de uso, perguntas frequentes
+                                        e orientações serão adicionados aqui.</p>
                                 </div>
                             </div>
-                            <div class="flex justify-end mt-5">
-                                <button class="btn-sm btn-primary-sm px-5 py-2" id="btn-save-settings">Salvar
-                                    Configurações</button>
+                        </div>
+
+                        <!-- ===== Master View ===== -->
+                        <div class="view" id="view-master">
+                            <div class="mb-5 flex gap-1 border-b border-gray-200">
+                                <button
+                                    class="master-tab active border-b-2 border-transparent bg-transparent px-4 py-2.5 text-sm font-medium uppercase text-gray-500 transition-all hover:text-gray-800 cursor-pointer"
+                                    data-master-tab="agencies">Organizações</button>
+                                <button
+                                    class="master-tab border-b-2 border-transparent bg-transparent px-4 py-2.5 text-sm font-medium uppercase text-gray-500 transition-all hover:text-gray-800 cursor-pointer"
+                                    data-master-tab="integrations">Integrações</button>
+                                <button
+                                    class="master-tab border-b-2 border-transparent bg-transparent px-4 py-2.5 text-sm font-medium uppercase text-gray-500 transition-all hover:text-gray-800 cursor-pointer"
+                                    data-master-tab="logs">Logs</button>
+                                <button
+                                    class="master-tab border-b-2 border-transparent bg-transparent px-4 py-2.5 text-sm font-medium uppercase text-gray-500 transition-all hover:text-gray-800 cursor-pointer"
+                                    data-master-tab="settings">Configurações</button>
                             </div>
-                            <div id="settings-status" class="mt-2 text-xs text-green-500 hidden"></div>
+                            <!-- Sub: Agencies -->
+                            <div class="master-sub active" id="master-sub-agencies">
+                                <div class="mb-4 flex items-center justify-between">
+                                    <h3 class="text-base font-bold text-gray-900">Organizações Cadastradas</h3>
+                                    <button class="btn-sm btn-primary-sm"
+                                        onclick="document.getElementById('modal-create-agency').classList.remove('hidden')">+
+                                        Nova Organização</button>
+                                </div>
+                                <div class="overflow-hidden rounded-lg bg-white ring-1 ring-gray-200">
+                                    <div id="agencies-list"></div>
+                                </div>
+                            </div>
+                            <!-- Sub: Agency detail -->
+                            <div class="master-sub" id="master-sub-agency-detail">
+                                <button
+                                    class="btn-sm mb-4 rounded-md bg-white text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50"
+                                    id="btn-back-agencies">Voltar às Agências</button>
+                                <div id="agency-detail-content"></div>
+                            </div>
+                            <!-- Sub: Integrations -->
+                            <div class="master-sub" id="master-sub-integrations">
+                                <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                                    <h3 class="mb-1 text-base font-bold text-gray-900">CapMonster Cloud</h3>
+                                    <p class="mb-3 text-xs text-gray-500">API Key para resolução automática de captchas
+                                        durante o preenchimento DS-160.</p>
+                                    <div class="flex gap-2">
+                                        <input type="password" id="capmonster-key"
+                                            placeholder="Sua Client Key do CapMonster..."
+                                            class="flex-1 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                                        <button class="btn-sm btn-primary-sm px-4"
+                                            id="btn-save-capmonster">Salvar</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Sub: Logs -->
+                            <div class="master-sub" id="master-sub-logs">
+                                <div
+                                    class="flex items-center justify-between rounded-t-xl border border-gray-200 bg-white p-5">
+                                    <div>
+                                        <h3 class="text-base font-bold text-gray-900">Logs de Erros <span
+                                                class="text-xs font-normal text-gray-500" id="logs-count"></span></h3>
+                                        <p class="mt-0.5 text-xs text-gray-500">Últimos 50 erros registrados durante
+                                            preenchimentos automáticos.</p>
+                                    </div>
+                                    <button class="btn-sm btn-danger" id="btn-archive-logs">Arquivar Todos</button>
+                                </div>
+                                <div class="overflow-hidden rounded-b-xl bg-white ring-1 ring-gray-200">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th
+                                                    class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                    Data</th>
+                                                <th
+                                                    class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                    Causa</th>
+                                                <th
+                                                    class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                    Página</th>
+                                                <th
+                                                    class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                    Campo</th>
+                                                <th
+                                                    class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                    Erro</th>
+                                                <th
+                                                    class="px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                                    Screenshot</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="logs-list" class="divide-y divide-gray-100 bg-white"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Sub: Settings -->
+                            <div class="master-sub" id="master-sub-settings">
+                                <div class="mb-5">
+                                    <h3 class="text-base font-bold text-gray-900">Respostas Padrão</h3>
+                                    <p class="mt-1 text-xs text-gray-500">Valores utilizados automaticamente pela
+                                        automação DS-160.</p>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                                        <h4 class="mb-1 text-sm font-semibold text-gray-900">Pergunta de Segurança</h4>
+                                        <p class="mb-3 text-[11px] text-gray-500">Qual pergunta selecionar no DS-160.
+                                        </p>
+                                        <select id="setting-security-question"
+                                            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                                            <option value="1">What is your mother's maiden name?</option>
+                                            <option value="2">What is the name of your first pet?</option>
+                                            <option value="3">What city were you born in?</option>
+                                            <option value="4">What is the name of your mother's mother?</option>
+                                            <option value="5">What was the make of your first car?</option>
+                                        </select>
+                                    </div>
+                                    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                                        <h4 class="mb-1 text-sm font-semibold text-gray-900">Resposta de Segurança</h4>
+                                        <p class="mb-3 text-[11px] text-gray-500">Resposta padrão. Ex: "VO".</p>
+                                        <input type="text" id="setting-security-answer" placeholder="Ex: VO"
+                                            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                                    </div>
+                                </div>
+                                <div class="mt-5 flex justify-end">
+                                    <button class="btn-sm btn-primary-sm px-5 py-2" id="btn-save-settings">Salvar
+                                        Configurações</button>
+                                </div>
+                                <div id="settings-status" class="mt-2 hidden text-xs text-green-500"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </main>
+
+                <!-- ===== SECONDARY COLUMN — right (Tailwind Plus pattern: aside) ===== -->
+                <!-- This aside can be shown/hidden by JS when an applicant is selected -->
+                <aside id="detail-aside" class="hidden xl:block xl:w-96 xl:shrink-0 xl:border-l xl:border-gray-200">
+                    <div class="sticky top-16 overflow-y-auto" style="max-height: calc(100vh - 4rem);">
+                        <div id="aside-detail-content" class="p-6">
+                            <!-- JS will render applicant details here -->
+                            <p class="text-center text-sm text-gray-400 py-10">Selecione um solicitante para ver os
+                                detalhes</p>
                         </div>
                     </div>
-
-                </main>
+                </aside>
             </div>
         </div>
     </div>
 
-    <!-- ==================== MODALS ==================== -->
+    <!-- ==================== MODALS (Tailwind Plus: simple modal pattern) ==================== -->
 
-    <!-- Info Modal (Tailwind UI: simple modal pattern) -->
-    <div class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
+    <!-- Info Modal -->
+    <div class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
         id="info-modal">
-        <div
-            class="modal relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200">
-            <h2 class="text-lg font-bold text-slate-900 mb-4" id="modal-title">Informações</h2>
-            <div id="modal-body" class="text-sm text-slate-600"></div>
+        <div class="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-8 shadow-xl ring-1 ring-gray-200">
+            <h2 class="mb-4 text-lg font-bold text-gray-900" id="modal-title">Informações</h2>
+            <div id="modal-body" class="text-sm text-gray-600"></div>
             <div class="mt-6 flex justify-end">
                 <button
-                    class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors uppercase"
+                    class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium uppercase text-gray-700 transition-colors hover:bg-gray-200"
                     onclick="document.getElementById('info-modal').classList.add('hidden')">Fechar</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Create Agency -->
-    <div class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
+    <div class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
         id="modal-create-agency">
-        <div
-            class="modal relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200">
-            <h2 class="text-lg font-bold text-slate-900 mb-5">Nova Organização</h2>
+        <div class="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-8 shadow-xl ring-1 ring-gray-200">
+            <h2 class="mb-5 text-lg font-bold text-gray-900">Nova Organização</h2>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Nome da Empresa</label>
+                    <label class="mb-1 block text-xs font-medium text-gray-500">Nome da Empresa</label>
                     <input type="text" id="new-agency-name" placeholder="Ex: Assessoria XYZ"
-                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">CNPJ</label>
+                    <label class="mb-1 block text-xs font-medium text-gray-500">CNPJ</label>
                     <input type="text" id="new-agency-cnpj" placeholder="00.000.000/0000-00"
-                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 </div>
                 <div class="flex items-center gap-2.5 py-1">
-                    <label class="text-xs text-slate-500">Status inicial:</label>
-                    <label class="flex items-center gap-1.5 cursor-pointer text-sm">
-                        <input type="checkbox" id="new-agency-active" checked class="accent-blue-500 rounded"> Ativa
+                    <label class="text-xs text-gray-500">Status inicial:</label>
+                    <label class="flex cursor-pointer items-center gap-1.5 text-sm">
+                        <input type="checkbox" id="new-agency-active" checked class="rounded accent-blue-500"> Ativa
                     </label>
                 </div>
             </div>
             <div class="mt-6 flex justify-end gap-3">
                 <button
-                    class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors uppercase"
+                    class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium uppercase text-gray-700 transition-colors hover:bg-gray-200"
                     onclick="document.getElementById('modal-create-agency').classList.add('hidden')">Cancelar</button>
                 <button id="btn-create-agency"
-                    class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 transition-colors uppercase">Criar
+                    class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold uppercase text-white transition-colors hover:bg-blue-600">Criar
                     Organização</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Add Assessor -->
-    <div class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
+    <div class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
         id="modal-add-assessor">
-        <div
-            class="modal relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200">
-            <h2 class="text-lg font-bold text-slate-900 mb-5">Adicionar Assessor</h2>
+        <div class="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-8 shadow-xl ring-1 ring-gray-200">
+            <h2 class="mb-5 text-lg font-bold text-gray-900">Adicionar Assessor</h2>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Nome</label>
+                    <label class="mb-1 block text-xs font-medium text-gray-500">Nome</label>
                     <input type="text" id="assessor-name" placeholder="Nome completo"
-                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Email</label>
+                    <label class="mb-1 block text-xs font-medium text-gray-500">Email</label>
                     <input type="email" id="assessor-email" placeholder="email@exemplo.com"
-                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Senha Provisória</label>
+                    <label class="mb-1 block text-xs font-medium text-gray-500">Senha Provisória</label>
                     <input type="password" id="assessor-password" placeholder="Mínimo 6 caracteres"
-                        class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 </div>
                 <input type="hidden" id="assessor-company-id">
             </div>
             <div class="mt-6 flex justify-end gap-3">
                 <button
-                    class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors uppercase"
+                    class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium uppercase text-gray-700 transition-colors hover:bg-gray-200"
                     onclick="document.getElementById('modal-add-assessor').classList.add('hidden')">Cancelar</button>
                 <button id="btn-add-assessor"
-                    class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 transition-colors uppercase">Adicionar</button>
+                    class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold uppercase text-white transition-colors hover:bg-blue-600">Adicionar</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Confirm Delete -->
     <div id="delete-modal"
-        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
+        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
         <div class="w-[90%] max-w-sm rounded-2xl bg-white p-7 text-center shadow-xl">
             <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
                 <span class="text-xl font-bold text-red-500">!</span>
             </div>
-            <h3 class="text-base font-bold text-slate-900 mb-2">Confirmar exclusão</h3>
-            <p class="text-sm text-slate-500 mb-5">
-                Excluir <strong id="delete-modal-name" class="text-slate-800"></strong> e todos os dependentes e
+            <h3 class="mb-2 text-base font-bold text-gray-900">Confirmar exclusão</h3>
+            <p class="mb-5 text-sm text-gray-500">
+                Excluir <strong id="delete-modal-name" class="text-gray-800"></strong> e todos os dependentes e
                 aplicações? Esta ação não pode ser desfeita.
             </p>
             <div class="flex justify-center gap-3">
                 <button onclick="closeDeleteModal()"
-                    class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors uppercase">Cancelar</button>
+                    class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium uppercase text-gray-700 transition-colors hover:bg-gray-200">Cancelar</button>
                 <button onclick="confirmDelete()"
-                    class="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 transition-colors uppercase">Excluir</button>
+                    class="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold uppercase text-white transition-colors hover:bg-red-600">Excluir</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: View Process (Form iframe) -->
     <div id="process-modal"
-        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
+        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
         <div
-            class="flex flex-col w-[calc(100%-24px)] max-w-3xl h-[calc(100vh-24px)] rounded-xl bg-white shadow-xl overflow-hidden">
-            <div class="flex items-center justify-between shrink-0 border-b border-slate-200 px-5 py-3">
+            class="flex h-[calc(100vh-24px)] w-[calc(100%-24px)] max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-xl">
+            <div class="flex shrink-0 items-center justify-between border-b border-gray-200 px-5 py-3">
                 <div>
-                    <h3 id="process-modal-name" class="text-sm font-bold text-slate-900"></h3>
-                    <p id="process-modal-sub" class="text-[11px] text-slate-500 mt-0.5"></p>
+                    <h3 id="process-modal-name" class="text-sm font-bold text-gray-900"></h3>
+                    <p id="process-modal-sub" class="mt-0.5 text-[11px] text-gray-500"></p>
                 </div>
                 <button onclick="closeProcessModal()"
-                    class="text-xl text-slate-400 hover:text-slate-600 transition-colors cursor-pointer bg-transparent border-none leading-none px-2">&times;</button>
+                    class="cursor-pointer border-none bg-transparent px-2 text-xl leading-none text-gray-400 transition-colors hover:text-gray-600">&times;</button>
             </div>
-            <iframe id="process-modal-iframe" class="flex-1 border-none w-full" src="about:blank"></iframe>
+            <iframe id="process-modal-iframe" class="w-full flex-1 border-none" src="about:blank"></iframe>
         </div>
     </div>
 
