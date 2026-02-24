@@ -938,6 +938,27 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
         }
     }
 
+    // Phase 2.6: Click InsertButton to confirm/save DataList entries
+    // In DS-160, after clicking "Add Another" and filling a new entry,
+    // InsertButtonAlias must be clicked to save it before adding another or clicking Next
+    if (!postbackNeeded && passNum > 0) {
+        try {
+            const insertBtns = await page.locator('[id*="InsertButton"]').all().catch(() => []);
+            for (const btn of insertBtns) {
+                const vis = await btn.isVisible({ timeout: 300 }).catch(() => false);
+                if (!vis) continue;
+                const btnId = await btn.getAttribute('id').catch(() => '');
+                // Skip if it's not in a DataList (must contain _ctl in ID)
+                if (!btnId || !/_ctl\d+_/i.test(btnId)) continue;
+                await btn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
+                await btn.click();
+                console.log(`[Filler] ✅ InsertButton clicked to save entry: ${btnId}`);
+                await waitForPostback(page);
+                return { needsRescan: true, postbackField: `InsertButton:${btnId}` };
+            }
+        } catch { }
+    }
+
     // Phase 3: Non-postback selects, clicks, checkboxes
     for (const field of visible) {
         if (!field.id) continue;
