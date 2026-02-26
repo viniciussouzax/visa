@@ -292,3 +292,24 @@
     color: var(--text) !important;
     background: var(--surface-hover) !important;
 }
+
+/* Drag & Drop */
+.pipeline-item.dragging {
+    opacity: 0.4;
+    transform: scale(0.98);
+}
+
+.pipeline-item.drag-over-top {
+    border-top: 2px solid #3b82f6 !important;
+    margin-top: -1px;
+}
+
+.pipeline-item.drag-over-bottom {
+    border-bottom: 2px solid #3b82f6 !important;
+    margin-bottom: -1px;
+}
+
+.drag-handle {
+    touch-action: none;
+    user-select: none;
+}

@@ -1,9 +1,10 @@
 // ============================================================
-// DS160 EXPRESSO — Pipeline Page JS
+// DS160 EXPRESSO — Pipeline Page JS (with Drag & Drop)
 // ============================================================
 let currentPage = 1;
 let searchQuery = '';
 let currentFilter = '';
+let draggedEl = null;
 
 // ============================================================
 // INIT
@@ -82,7 +83,10 @@ async function loadPipelineList() {
     if (userCompanyId) query = query.eq('company_id', userCompanyId);
     if (searchQuery) query = query.or(`full_name.ilike.%${searchQuery}%,passport_number.ilike.%${searchQuery}%`);
 
-    query = query.order('updated_at', { ascending: false }).range(from, to);
+    // Order: priority DESC (emergency first), then sort_order ASC (manual order)
+    query = query.order('fill_priority', { ascending: false })
+        .order('sort_order', { ascending: true })
+        .range(from, to);
     const { data: applicants, error } = await query;
     if (error) { toast('Erro: ' + error.message, 'error'); return; }
 
@@ -126,14 +130,23 @@ async function loadPipelineList() {
         const fillBadge = fStage && fillStatus !== 'pending'
             ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${fStage.color}15;color:${fStage.color};font-weight:600"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${fStage.color};margin-right:4px;vertical-align:middle"></span>${fStage.label}</span>` : '';
 
-        return `<a href="applicant.html?id=${a.id}" class="block bg-white dark:bg-gray-800 shadow-xs rounded-xl px-5 py-4 cursor-pointer hover:shadow-md transition">
+        return `<div class="pipeline-item bg-white dark:bg-gray-800 shadow-xs rounded-xl px-5 py-4 hover:shadow-md transition"
+                     data-id="${a.id}" draggable="true">
             <div class="md:flex justify-between items-center space-y-4 md:space-y-0 space-x-2">
                 <div class="flex items-start space-x-3 md:space-x-4">
-                    <div class="w-9 h-9 shrink-0 mt-1 rounded-full flex items-center justify-center text-xs font-bold" style="background:${avatarBg};color:${stage.color}">${initials}</div>
-                    <div>
-                        <div class="inline-flex font-semibold text-gray-800 dark:text-gray-100">${a.full_name}</div>
-                        ${email ? `<div class="text-sm text-gray-500 dark:text-gray-400">${email}</div>` : ''}
+                    <div class="drag-handle shrink-0 mt-1 cursor-grab active:cursor-grabbing flex items-center text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 mr-1" title="Arrastar para reordenar">
+                        <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+                            <circle cx="3" cy="2" r="1.5"/><circle cx="9" cy="2" r="1.5"/>
+                            <circle cx="3" cy="6" r="1.5"/><circle cx="9" cy="6" r="1.5"/>
+                            <circle cx="3" cy="10" r="1.5"/><circle cx="9" cy="10" r="1.5"/>
+                            <circle cx="3" cy="14" r="1.5"/><circle cx="9" cy="14" r="1.5"/>
+                        </svg>
                     </div>
+                    <div class="w-9 h-9 shrink-0 mt-1 rounded-full flex items-center justify-center text-xs font-bold" style="background:${avatarBg};color:${stage.color}">${initials}</div>
+                    <a href="applicant.html?id=${a.id}" class="block">
+                        <div class="inline-flex font-semibold text-gray-800 dark:text-gray-100 hover:text-violet-500 transition">${a.full_name}</div>
+                        ${email ? `<div class="text-sm text-gray-500 dark:text-gray-400">${email}</div>` : ''}
+                    </a>
                 </div>
                 <div class="flex items-center space-x-3 pl-10 md:pl-0">
                     ${prioBadge}
@@ -143,14 +156,101 @@ async function loadPipelineList() {
                     <span class="text-sm font-bold" style="color:${progressColor}">${doneProcesses}/${totalProcesses}</span>
                 </div>
             </div>
-        </a>`;
+        </div>`;
     }).join('') || '<div class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">Nenhum solicitante nesta etapa</div>';
+
+    // Setup drag and drop
+    setupDragAndDrop();
 
     const hasMore = (applicants || []).length === PAGE_SIZE;
     const paginationEl = $('pagination-container');
     if (paginationEl) paginationEl.classList.toggle('hidden', currentPage <= 1 && !hasMore);
     if ($('app-prev')) $('app-prev').disabled = currentPage <= 1;
     if ($('app-next')) $('app-next').disabled = !hasMore;
+}
+
+// ============================================================
+// DRAG & DROP
+// ============================================================
+function setupDragAndDrop() {
+    const container = $('pipeline-list');
+    const items = container.querySelectorAll('.pipeline-item');
+
+    items.forEach(item => {
+        // Only initiate drag from handle
+        const handle = item.querySelector('.drag-handle');
+
+        handle.addEventListener('mousedown', () => {
+            item.setAttribute('draggable', 'true');
+        });
+
+        item.addEventListener('dragstart', e => {
+            draggedEl = item;
+            item.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', item.dataset.id);
+        });
+
+        item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+            container.querySelectorAll('.pipeline-item').forEach(el => {
+                el.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+            draggedEl = null;
+            // Save new order
+            saveSortOrder();
+        });
+
+        item.addEventListener('dragover', e => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (item === draggedEl) return;
+
+            // Determine if cursor is in top or bottom half
+            const rect = item.getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
+            const isAbove = e.clientY < midY;
+
+            item.classList.toggle('drag-over-top', isAbove);
+            item.classList.toggle('drag-over-bottom', !isAbove);
+        });
+
+        item.addEventListener('dragleave', () => {
+            item.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        item.addEventListener('drop', e => {
+            e.preventDefault();
+            if (!draggedEl || item === draggedEl) return;
+
+            const rect = item.getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
+            const isAbove = e.clientY < midY;
+
+            if (isAbove) {
+                container.insertBefore(draggedEl, item);
+            } else {
+                container.insertBefore(draggedEl, item.nextSibling);
+            }
+
+            item.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+    });
+}
+
+async function saveSortOrder() {
+    const items = $('pipeline-list').querySelectorAll('.pipeline-item');
+    const updates = [];
+    items.forEach((item, index) => {
+        updates.push({ id: item.dataset.id, sort_order: index + 1 });
+    });
+
+    // Batch update
+    const promises = updates.map(u =>
+        sb.from('applicants').update({ sort_order: u.sort_order }).eq('id', u.id)
+    );
+    await Promise.all(promises);
+    toast('Ordem atualizada', 'success');
 }
 
 // ============================================================
