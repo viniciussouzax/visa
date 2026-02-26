@@ -3366,15 +3366,48 @@
                 reqInput('tbxAPP_ADDR_LN1', 'Endereço é obrigatório');
                 reqInput('tbxAPP_ADDR_CITY', 'Cidade é obrigatória');
                 reqSelect('ddlCountry', 'Selecione o país');
+                // Mailing address
+                reqRadio('rblMailingAddrSame', 'Informe se endereço de correspondência é o mesmo');
+                if (radioChecked('rblMailingAddrSame') === 'N') {
+                    reqInput('tbxMAILING_ADDR_LN1', 'Endereço de correspondência é obrigatório');
+                    reqInput('tbxMAILING_ADDR_CITY', 'Cidade de correspondência é obrigatória');
+                    reqSelect('ddlMailCountry', 'Selecione o país de correspondência');
+                }
                 reqInput('tbxAPP_HOME_TEL', 'Telefone é obrigatório');
-                reqInput('tbxAPP_EMAIL_ADDR', 'Email é obrigatório');
                 reqRadio('rblAddPhone', 'Informe se possui outro telefone');
-                reqRadio('rblAddEmail', 'Informe se possui outro email');
-                reqRadio('rblAddSocial', 'Informe se possui outra rede social');
-                // Validate email format
+                if (radioChecked('rblAddPhone') === 'Y') {
+                    page.querySelectorAll('.as[data-list="dtlAddPhone"] .entry').forEach(entry => {
+                        const ph = entry.querySelector('[id*="tbxAddPhoneInfo"]');
+                        if (ph && !ph.value.trim()) { markError(ph, 'Telefone adicional é obrigatório'); errors++; }
+                    });
+                }
+                reqInput('tbxAPP_EMAIL_ADDR', 'Email é obrigatório');
                 const emailVal = val('tbxAPP_EMAIL_ADDR');
                 if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
                     markError(document.getElementById('tbxAPP_EMAIL_ADDR'), 'Email inválido'); errors++;
+                }
+                reqRadio('rblAddEmail', 'Informe se possui outro email');
+                if (radioChecked('rblAddEmail') === 'Y') {
+                    page.querySelectorAll('.as[data-list="dtlAddEmail"] .entry').forEach(entry => {
+                        const em = entry.querySelector('[id*="tbxAddEmailInfo"]');
+                        if (em && !em.value.trim()) { markError(em, 'Email adicional é obrigatório'); errors++; }
+                    });
+                }
+                // Social media (always visible)
+                page.querySelectorAll('.as[data-list="dtlSocialMedia"] .entry').forEach(entry => {
+                    const plat = entry.querySelector('[id*="ddlSocialMedia"]');
+                    if (plat && !plat.value) { markError(plat, 'Selecione a plataforma de rede social'); errors++; }
+                    const handle = entry.querySelector('[id*="tbxSocialMediaIdent"]');
+                    if (handle && !handle.value.trim()) { markError(handle, 'Identificador de rede social é obrigatório'); errors++; }
+                });
+                reqRadio('rblAddSocial', 'Informe se possui outra rede social');
+                if (radioChecked('rblAddSocial') === 'Y') {
+                    page.querySelectorAll('.as[data-list="dtlAddSocial"] .entry').forEach(entry => {
+                        const pl = entry.querySelector('[id*="tbxAddSocialPlatform"]');
+                        if (pl && !pl.value.trim()) { markError(pl, 'Plataforma adicional é obrigatória'); errors++; }
+                        const hd = entry.querySelector('[id*="tbxSocialMediaIdent"]');
+                        if (hd && !hd.value.trim()) { markError(hd, 'Identificador adicional é obrigatório'); errors++; }
+                    });
                 }
             }
 
@@ -3390,6 +3423,14 @@
                 reqSelect('ddlPPT_EXPIREMonth', 'Selecione o mês de expiração');
                 reqInput('tbxPPT_EXPIREYear', 'Informe o ano de expiração');
                 reqRadio('rblLOST_PPT_IND', 'Informe se já perdeu ou teve passaporte roubado');
+                if (radioChecked('rblLOST_PPT_IND') === 'Y') {
+                    page.querySelectorAll('.as[data-list="dtlLostPPT"] .entry').forEach(entry => {
+                        const expl = entry.querySelector('[id*="tbxLOST_PPT_EXPL"]');
+                        if (expl && !expl.value.trim()) { markError(expl, 'Explicação é obrigatória'); errors++; }
+                        const cntry = entry.querySelector('[id*="ddlLOST_PPT_NATL"]');
+                        if (cntry && !cntry.value) { markError(cntry, 'Selecione o país do passaporte'); errors++; }
+                    });
+                }
                 // Validate year formats
                 const issYr = val('tbxPPT_ISSUEYear');
                 if (issYr && (issYr.length !== 4 || isNaN(issYr))) { markError(document.getElementById('tbxPPT_ISSUEYear'), 'Ano deve ter 4 dígitos'); errors++; }
@@ -3402,15 +3443,18 @@
                 reqRadio('rblSpecificTravel', 'Selecione se possui planos específicos');
                 const hasSpecific = radioChecked('rblSpecificTravel');
                 if (hasSpecific === 'Y') {
-                    // Specific travel: arrival date required
                     reqSelect('ddlARRIVAL_US_DTEDay', 'Selecione o dia de chegada');
                     reqSelect('ddlARRIVAL_US_DTEMonth', 'Selecione o mês de chegada');
                     reqInput('tbxARRIVAL_US_DTEYear', 'Informe o ano de chegada');
                     reqSelect('ddlDEPARTURE_US_DTEDay', 'Selecione o dia de partida');
                     reqSelect('ddlDEPARTURE_US_DTEMonth', 'Selecione o mês de partida');
                     reqInput('tbxDEPARTURE_US_DTEYear', 'Informe o ano de partida');
+                    // Validate travel location entries
+                    page.querySelectorAll('.as[data-list="dtlTravelLoc"] .entry').forEach(entry => {
+                        const loc = entry.querySelector('[id*="tbxSPECTRAVEL_LOCATION"]');
+                        if (loc && !loc.value.trim()) { markError(loc, 'Local de viagem é obrigatório'); errors++; }
+                    });
                 } else if (hasSpecific === 'N') {
-                    // Non-specific: intended arrival + length of stay
                     reqSelect('ddlARRIVAL_US_NSDTEDay', 'Selecione o dia de chegada');
                     reqSelect('ddlARRIVAL_US_NSDTEMonth', 'Selecione o mês de chegada');
                     reqInput('tbxARRIVAL_US_NSDTEYear', 'Informe o ano de chegada');
@@ -3423,6 +3467,18 @@
                 reqSelect('ddlTravelState', 'Selecione o estado nos EUA');
                 // Payer
                 reqSelect('ddlWhoIsPaying', 'Selecione quem pagará pela viagem');
+                const payer = val('ddlWhoIsPaying');
+                if (payer === 'OTH' || payer === 'USP') {
+                    reqInput('tbxPayerSurname', 'Sobrenome do pagador é obrigatório');
+                    reqInput('tbxPayerGivenName', 'Nome do pagador é obrigatório');
+                    reqInput('tbxPayerPhone', 'Telefone do pagador é obrigatório');
+                    reqSelect('ddlPayerRelationship', 'Selecione a relação com o pagador');
+                }
+                if (payer === 'COM' || payer === 'EMP' || payer === 'USE') {
+                    reqInput('tbxPayingCompany', 'Nome da empresa/organização é obrigatório');
+                    reqInput('tbxPayerPhoneC', 'Telefone da empresa é obrigatório');
+                    reqInput('tbxCompanyRelation', 'Relação com a empresa é obrigatória');
+                }
             }
 
             // ===== US Contact =====
@@ -3445,14 +3501,23 @@
 
             // ===== Family =====
             if (page.id === 'pg-Family1') {
-                reqInput('tbxFATHER_SURNAME', 'Sobrenome do pai é obrigatório');
-                reqInput('tbxFATHER_GIVEN_NAME', 'Nome do pai é obrigatório');
-                reqInput('tbxMOTHER_SURNAME', 'Sobrenome da mãe é obrigatório');
-                reqInput('tbxMOTHER_GIVEN_NAME', 'Nome da mãe é obrigatório');
+                const fSurnNA = document.getElementById('cbxFATHER_SURNAME_UNK_IND');
+                if (!fSurnNA?.checked) reqInput('tbxFATHER_SURNAME', 'Sobrenome do pai é obrigatório');
+                const fGivenNA = document.getElementById('cbxFATHER_GIVEN_NAME_UNK_IND');
+                if (!fGivenNA?.checked) reqInput('tbxFATHER_GIVEN_NAME', 'Nome do pai é obrigatório');
+                const mSurnNA = document.getElementById('cbxMOTHER_SURNAME_UNK_IND');
+                if (!mSurnNA?.checked) reqInput('tbxMOTHER_SURNAME', 'Sobrenome da mãe é obrigatório');
+                const mGivenNA = document.getElementById('cbxMOTHER_GIVEN_NAME_UNK_IND');
+                if (!mGivenNA?.checked) reqInput('tbxMOTHER_GIVEN_NAME', 'Nome da mãe é obrigatório');
                 reqRadio('rblFATHER_LIVE_IN_US_IND', 'Informe se o pai reside nos EUA');
+                if (radioChecked('rblFATHER_LIVE_IN_US_IND') === 'Y') {
+                    reqSelect('ddlFATHER_US_STATUS', 'Selecione o status do pai nos EUA');
+                }
                 reqRadio('rblMOTHER_LIVE_IN_US_IND', 'Informe se a mãe reside nos EUA');
+                if (radioChecked('rblMOTHER_LIVE_IN_US_IND') === 'Y') {
+                    reqSelect('ddlMOTHER_US_STATUS', 'Selecione o status da mãe nos EUA');
+                }
                 reqRadio('rblUS_IMMED_RELATIVE_IND', 'Informe se possui parente imediato nos EUA');
-                // Validate US relative entries if branch is open
                 if (radioChecked('rblUS_IMMED_RELATIVE_IND') === 'Y') {
                     page.querySelectorAll('#br-rblUS_IMMED_RELATIVE_IND .entry').forEach(entry => {
                         const sn = entry.querySelector('[id*="tbxUS_REL_SURNAME"]');
@@ -3465,11 +3530,29 @@
                         if (st && !st.value) { markError(st, 'Selecione o status do parente'); errors++; }
                     });
                 }
+                reqRadio('rblUS_OTHER_RELATIVE_IND', 'Informe se possui outro parente nos EUA');
             }
 
             // ===== Work/Education =====
             if (page.id === 'pg-WorkEducation1') {
                 reqSelect('ddlAPP_OCCUPATION', 'Selecione a ocupação');
+                const occ = val('ddlAPP_OCCUPATION');
+                // Specify Other branch
+                if (occ === 'O') {
+                    reqInput('tbxOtherOccupation', 'Especifique a ocupação');
+                }
+                // Employer/School section (hidden for RT=Retired, H=Homemaker, U=Unemployed)
+                if (occ && occ !== 'RT' && occ !== 'H' && occ !== 'U' && occ !== 'N') {
+                    reqInput('tbxEmpSchName', 'Nome do empregador/escola é obrigatório');
+                    reqInput('tbxEmpSchAddr1', 'Endereço do empregador é obrigatório');
+                    reqInput('tbxEmpSchCity', 'Cidade do empregador é obrigatória');
+                    reqInput('tbxWORK_EDUC_TEL', 'Telefone do empregador é obrigatório');
+                    reqSelect('ddlEmpSchCountry', 'Selecione o país do empregador');
+                    reqSelect('ddlEmpDateFromDay', 'Selecione o dia de início');
+                    reqSelect('ddlEmpDateFromMonth', 'Selecione o mês de início');
+                    reqInput('tbxEmpDateFromYear', 'Informe o ano de início');
+                    reqInput('tbxDescribeDuties', 'Descreva suas funções');
+                }
             }
 
             // ===== TravelCompanions =====
@@ -3477,7 +3560,9 @@
                 reqRadio('rblOtherPersonsTravelingWithYou', 'Selecione Sim ou Não');
                 if (radioChecked('rblOtherPersonsTravelingWithYou') === 'Y') {
                     reqRadio('rblGroupTravel', 'Informe se viaja em grupo');
-                    // Validate companion entries if not group travel
+                    if (radioChecked('rblGroupTravel') === 'Y') {
+                        reqInput('tbxGroupName', 'Nome do grupo é obrigatório');
+                    }
                     if (radioChecked('rblGroupTravel') === 'N') {
                         page.querySelectorAll('#br-groupNo .entry').forEach(entry => {
                             const sn = entry.querySelector('[id*="tbxTC_SURNAME"]');
@@ -3495,7 +3580,25 @@
             if (page.id === 'pg-PreviousUSTravel') {
                 reqRadio('rblPREV_US_TRAVEL_IND', 'Informe se já esteve nos EUA');
                 if (radioChecked('rblPREV_US_TRAVEL_IND') === 'Y') {
+                    // Validate previous US visit entries
+                    page.querySelectorAll('.as[data-list="dtlPREV_US_VISIT"] .entry').forEach(entry => {
+                        const yr = entry.querySelector('[id*="tbxPREV_US_VISIT_DTEYear"]');
+                        if (yr && !yr.value.trim()) { markError(yr, 'Ano da visita é obrigatório'); errors++; }
+                        const los = entry.querySelector('[id*="tbxPREV_US_VISIT_LOS"]');
+                        if (los && !los.value.trim()) { markError(los, 'Tempo de permanência é obrigatório'); errors++; }
+                        const loscd = entry.querySelector('[id*="ddlPREV_US_VISIT_LOS_CD"]');
+                        if (loscd && !loscd.value) { markError(loscd, 'Selecione o período'); errors++; }
+                    });
                     reqRadio('rblPREV_US_DRIVER_LIC_IND', 'Informe se possui carteira de motorista dos EUA');
+                    if (radioChecked('rblPREV_US_DRIVER_LIC_IND') === 'Y') {
+                        page.querySelectorAll('.as[data-list="dtlUS_DRIVER_LICENSE"] .entry').forEach(entry => {
+                            const lic = entry.querySelector('[id*="tbxUS_DRIVER_LICENSE"]');
+                            const licNA = entry.querySelector('[id*="cbxDNA"]');
+                            if (lic && !lic.value.trim() && !licNA?.checked) { markError(lic, 'Nº da carteira é obrigatório'); errors++; }
+                            const st = entry.querySelector('[id*="ddlUS_DRIVER_LICENSE_STATE"]');
+                            if (st && !st.value) { markError(st, 'Selecione o estado da carteira'); errors++; }
+                        });
+                    }
                 }
                 reqRadio('rblPREV_VISA_IND', 'Informe se já obteve visto americano');
                 if (radioChecked('rblPREV_VISA_IND') === 'Y') {
@@ -3509,6 +3612,44 @@
                 reqRadio('rblIV_PETITION_IND', 'Informe se houve petição de imigrante');
             }
 
+            // ===== DeceasedSpouse =====
+            if (page.id === 'pg-DeceasedSpouse') {
+                reqInput('tbxDECEASED_SPOUSE_SURNAME', 'Sobrenome do cônjuge falecido é obrigatório');
+                reqInput('tbxDECEASED_SPOUSE_GIVEN_NAME', 'Nome do cônjuge falecido é obrigatório');
+                reqSelect('ddlDECEASED_SPOUSE_DOBDay', 'Selecione o dia de nascimento');
+                reqSelect('ddlDECEASED_SPOUSE_DOBMonth', 'Selecione o mês de nascimento');
+                reqInput('tbxDECEASED_SPOUSE_DOBYear', 'Informe o ano de nascimento');
+                reqSelect('ddlDECEASED_SPOUSE_NATL', 'Selecione a nacionalidade');
+                reqSelect('ddlDECEASED_SPOUSE_POB_CNTRY', 'Selecione o país de nascimento');
+                const dcYr = val('tbxDECEASED_SPOUSE_DOBYear');
+                if (dcYr && (dcYr.length !== 4 || isNaN(dcYr))) {
+                    markError(document.getElementById('tbxDECEASED_SPOUSE_DOBYear'), 'Ano deve ter 4 dígitos'); errors++;
+                }
+            }
+
+            // ===== PrevSpouse =====
+            if (page.id === 'pg-PrevSpouse') {
+                reqInput('tbxNumberOfPreviousSpouses', 'Informe o número de ex-cônjuges');
+                page.querySelectorAll('.as[data-list="dlPrevSpouse"] .entry').forEach(entry => {
+                    const sn = entry.querySelector('[id*="tbxPREV_SPOUSE_SURNAME"]');
+                    if (sn && !sn.value.trim()) { markError(sn, 'Sobrenome do ex-cônjuge é obrigatório'); errors++; }
+                    const gn = entry.querySelector('[id*="tbxPREV_SPOUSE_GIVEN_NAME"]');
+                    if (gn && !gn.value.trim()) { markError(gn, 'Nome do ex-cônjuge é obrigatório'); errors++; }
+                    const nat = entry.querySelector('[id*="ddlPREV_SPOUSE_NATL"]');
+                    if (nat && !nat.value) { markError(nat, 'Selecione a nacionalidade do ex-cônjuge'); errors++; }
+                    const cntry = entry.querySelector('[id*="ddlPREV_SPOUSE_CNTRY"]');
+                    if (cntry && !cntry.value) { markError(cntry, 'Selecione o país de nascimento do ex-cônjuge'); errors++; }
+                    const domYr = entry.querySelector('[id*="tbxDOM_DTEYear"]');
+                    if (domYr && !domYr.value.trim()) { markError(domYr, 'Ano do casamento é obrigatório'); errors++; }
+                    const domeYr = entry.querySelector('[id*="tbxDOME_DTEYear"]');
+                    if (domeYr && !domeYr.value.trim()) { markError(domeYr, 'Ano do fim do casamento é obrigatório'); errors++; }
+                    const how = entry.querySelector('[id*="tbxHOW_MARRIAGE_ENDED"]');
+                    if (how && !how.value.trim()) { markError(how, 'Informe como o casamento terminou'); errors++; }
+                    const endCntry = entry.querySelector('[id*="ddlCNTRY_MARRIAGE_TERMINATED"]');
+                    if (endCntry && !endCntry.value) { markError(endCntry, 'Selecione o país onde o casamento foi encerrado'); errors++; }
+                });
+            }
+
             // ===== Family2 (Cônjuge) =====
             if (page.id === 'pg-Family2') {
                 reqInput('tbxSpouseSurname', 'Sobrenome do cônjuge é obrigatório');
@@ -3519,6 +3660,12 @@
                 reqSelect('ddlSpouseNatDropDownList', 'Selecione a nacionalidade do cônjuge');
                 reqSelect('ddlSpousePOBCountry', 'Selecione o país de nascimento do cônjuge');
                 reqSelect('ddlSpouseAddressType', 'Selecione o tipo de endereço do cônjuge');
+                // Spouse address branch (when type=O)
+                if (val('ddlSpouseAddressType') === 'O') {
+                    reqInput('tbxSPOUSE_ADDR_LN1', 'Endereço do cônjuge é obrigatório');
+                    reqInput('tbxSPOUSE_ADDR_CITY', 'Cidade do cônjuge é obrigatória');
+                    reqSelect('ddlSPOUSE_ADDR_CNTRY', 'Selecione o país do cônjuge');
+                }
                 // Year format
                 const spouseYr = val('tbxSpouseDOBYear');
                 if (spouseYr && (spouseYr.length !== 4 || isNaN(spouseYr))) {
