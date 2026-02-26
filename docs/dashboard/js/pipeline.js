@@ -115,8 +115,8 @@ async function loadPipelineList() {
             <span></span><span></span>
             <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Solicitante</span>
             <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Prioridade</span>
-            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Status</span>
             <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Etapa</span>
+            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Status</span>
             <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;text-align:center">Proc.</span>
         </div>` : '';
 
@@ -159,8 +159,8 @@ async function loadPipelineList() {
                 ${email ? `<div style="font-size:12px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${email}</div>` : ''}
             </a>
             <div>${prioBadge}</div>
-            <div>${fillBadge}</div>
             <div><span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${stage.color}15;color:${stage.color};font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${stage.color};flex-shrink:0"></span>${stage.label}</span></div>
+            <div>${fillBadge}</div>
             <div style="text-align:center"><span style="font-size:13px;font-weight:700;color:${progressColor}">${doneProcesses}/${totalProcesses}</span></div>
         </div>`;
     }).join('') || '<div class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">Nenhum solicitante nesta etapa</div>';
