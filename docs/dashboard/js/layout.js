@@ -26,10 +26,10 @@ function renderLayout() {
     if (!sidebarEl) return;
 
     const navItems = [
-        { view: 'pipeline', label: 'Solicitante', href: 'index.html', icon: '<path d="M5.936.278A7.983 7.983 0 0 1 8 0a8 8 0 1 1-8 8c0-.722.104-1.413.278-2.064a1 1 0 1 1 1.932.516A5.99 5.99 0 0 0 2 8a6 6 0 1 0 6-6c-.53 0-1.045.076-1.548.21A1 1 0 1 1 5.936.278Z" /><path d="M6.068 7.482A2.003 2.003 0 0 0 8 10a2 2 0 1 0-.518-3.932L3.707 2.293a1 1 0 0 0-1.414 1.414l3.775 3.775Z" />' },
-        { view: 'archived', label: 'Arquivados', href: 'archived.html', icon: '<path d="M2 0a2 2 0 0 0-2 2v2h16V2a2 2 0 0 0-2-2H2ZM0 6v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6H0Zm5 2h6a1 1 0 1 1 0 2H5a1 1 0 1 1 0-2Z" />' },
-        { view: 'software', label: 'Software', href: 'software.html', icon: '<path d="M3.414 2L9 7.586V16H7V8.414l-5-5V6H0V0h6v2H3.414ZM15 0v6h-2V3.414l-3.172 3.172-1.414-1.414L11.586 2H9V0h6Z" />' },
-        { view: 'master', label: 'Master', href: 'master.html', masterOnly: true, icon: '<path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8Zm4 11H4V9h8v2Zm0-4H4V5h8v2Z" />' }
+        { view: 'pipeline', label: 'Solicitante', href: 'index.html' },
+        { view: 'archived', label: 'Arquivados', href: 'archived.html' },
+        { view: 'software', label: 'Software', href: 'software.html' },
+        { view: 'master', label: 'Master', href: 'master.html', masterOnly: true }
     ];
 
     sidebarEl.innerHTML = `
@@ -57,8 +57,7 @@ function renderLayout() {
             ? 'nav-item active flex items-center p-2 rounded-lg text-sm font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/20 transition'
             : 'nav-item flex items-center p-2 rounded-lg text-sm font-medium text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/20 transition';
         return `<li><a href="${n.href}" class="${cls}">
-                            <svg class="shrink-0 fill-current ${isActive ? 'text-violet-500' : ''}" width="16" height="16" viewBox="0 0 16 16">${n.icon}</svg>
-                            <span class="ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">${n.label}</span>
+                            <span class="lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">${n.label}</span>
                         </a></li>`;
     }).join('')}
                 </ul>
