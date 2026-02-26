@@ -3457,6 +3457,9 @@
             // ===== TravelCompanions =====
             if (page.id === 'pg-TravelCompanions') {
                 reqRadio('rblOtherPersonsTravelingWithYou', 'Selecione Sim ou Não');
+                if (radioChecked('rblOtherPersonsTravelingWithYou') === 'Y') {
+                    reqRadio('rblGroupTravel', 'Informe se viaja em grupo');
+                }
             }
 
             // ===== PreviousUSTravel =====
@@ -3497,11 +3500,35 @@
             // ===== WorkEducation2 =====
             if (page.id === 'pg-WorkEducation2') {
                 reqRadio('rblPreviouslyEmployed', 'Informe se já trabalhou antes');
+                // Validate entries if branch is open
+                if (radioChecked('rblPreviouslyEmployed') === 'Y') {
+                    page.querySelectorAll('#br-rblPreviouslyEmployed .entry').forEach(entry => {
+                        const emp = entry.querySelector('[id*="tbEmployerName"]');
+                        if (emp && !emp.value.trim()) { markError(emp, 'Nome do empregador é obrigatório'); errors++; }
+                        const city = entry.querySelector('[id*="tbEmployerCity"]');
+                        if (city && !city.value.trim()) { markError(city, 'Cidade do empregador é obrigatória'); errors++; }
+                        const title = entry.querySelector('[id*="tbJobTitle"]');
+                        if (title && !title.value.trim()) { markError(title, 'Cargo é obrigatório'); errors++; }
+                    });
+                }
                 reqRadio('rblOtherEduc', 'Informe se frequentou outra escola');
+                // Validate education entries if branch is open
+                if (radioChecked('rblOtherEduc') === 'Y') {
+                    page.querySelectorAll('#br-rblOtherEduc .entry').forEach(entry => {
+                        const school = entry.querySelector('[id*="tbxSchoolName"]');
+                        if (school && !school.value.trim()) { markError(school, 'Nome da escola é obrigatório'); errors++; }
+                    });
+                }
             }
 
             // ===== WorkEducation3 =====
             if (page.id === 'pg-WorkEducation3') {
+                // Idiomas (sempre visível, obrigatório pelo menos 1)
+                const langEntries = page.querySelectorAll('.as[data-list="dtlLANGUAGES"] .entry');
+                langEntries.forEach(entry => {
+                    const lang = entry.querySelector('[id*="tbxLANGUAGE_NAME"]');
+                    if (lang && !lang.value.trim()) { markError(lang, 'Idioma é obrigatório'); errors++; }
+                });
                 reqRadio('rblCLAN_TRIBE_IND', 'Informe se pertence a clã/tribo');
                 reqRadio('rblCOUNTRIES_VISITED_IND', 'Informe se visitou outros países');
                 reqRadio('rblORGANIZATION_IND', 'Informe se é membro de organizações');
