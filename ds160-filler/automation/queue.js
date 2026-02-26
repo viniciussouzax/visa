@@ -504,7 +504,7 @@ class QueueRunner {
         }).eq('id', applicantId);
 
         const priority = app.fill_priority || 0;
-        const priorityLabel = priority >= 3 ? '🚨 EMERGÊNCIA' : priority >= 2 ? '⚡ URGENTE' : '📋 Normal';
+        const priorityLabel = priority >= 3 ? '🚨 III - EMERGÊNCIA' : priority >= 2 ? '⚡ II - URGÊNCIA' : 'I - Indefinido';
         console.log(`[Queue] Claimed ${app.id} → doing (${priorityLabel})`);
 
         return { ...app, fill_status: 'filling' };

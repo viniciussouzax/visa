@@ -45,10 +45,10 @@ const FILL_STAGES = {
 };
 
 const PRIORITIES = {
-    0: { label: '—', icon: '', color: '#6b7280' },
-    1: { label: 'Normal', icon: '📋', color: '#3b82f6' },
-    2: { label: 'Urgente', icon: '⚡', color: '#f97316' },
-    3: { label: 'Emergência', icon: '🚨', color: '#ef4444' },
+    0: { label: 'I - Indefinido', icon: '', color: '#6b7280' },
+    1: { label: 'I - Indefinido', icon: '', color: '#6b7280' },
+    2: { label: 'II - Urgência', icon: '⚡', color: '#f97316' },
+    3: { label: 'III - Emergência', icon: '🚨', color: '#ef4444' },
 };
 
 const PAGE_SIZE = 25;

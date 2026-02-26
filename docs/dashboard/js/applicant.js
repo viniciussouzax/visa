@@ -114,10 +114,10 @@ async function openApplicantDetail(id) {
                     ${pApp ? `<button onclick="event.stopPropagation();viewAppDetails('${p.id}')" style="font-size:13px;padding:8px 14px;background:#fff;border:1px solid #d1d5db;border-radius:5px;cursor:pointer;color:#374151;font-weight:500;transition:all .2s;font-family:inherit">Detalhes</button>` : ''}
                     <select onclick="event.stopPropagation()" onchange="if(this.value!==''){setPriority('${p.id}',this.value,'${id}')}"
                         style="font-size:13px;padding:8px 14px;background:${pPrio.color}08;color:${pPrio.color};border:1px solid #d1d5db;border-radius:5px;cursor:pointer;outline:none;font-weight:500;font-family:inherit">
-                        <option value="">${pPrio.icon} ${(p.fill_priority || 0) >= 1 ? pPrio.label : 'Prioridade'}</option>
-                        <option value="1">📋 Normal</option>
-                        <option value="2">⚡ Urgente</option>
-                        <option value="3">🚨 Emergência</option>
+                        <option value="">${pPrio.icon} ${(p.fill_priority || 0) >= 2 ? pPrio.label : 'Prioridade'}</option>
+                        <option value="0">I - Indefinido</option>
+                        <option value="2">⚡ II - Urgência</option>
+                        <option value="3">🚨 III - Emergência</option>
                     </select>
                     <select onclick="event.stopPropagation()" onchange="if(this.value){movePipeline('${p.id}',this.value,'${id}')}"
                         style="font-size:13px;padding:8px 14px;background:${pStage.color}08;color:${pStage.color};border:1px solid #d1d5db;border-radius:5px;cursor:pointer;outline:none;font-weight:600;font-family:inherit">
