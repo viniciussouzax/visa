@@ -1,0 +1,173 @@
+/* ============================================================
+   DS160 EXPRESSO — Dashboard CSS (shared)
+   ============================================================ */
+:root {
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --surface-hover: #f3f4f6;
+    --border: #e5e7eb;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --primary: #3b82f6;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --error: #ef4444;
+}
+
+.dark {
+    --bg: #111827;
+    --surface: #1f2937;
+    --surface-hover: #374151;
+    --border: #374151;
+    --text: #f3f4f6;
+    --text-muted: #9ca3af;
+}
+
+/* Toast */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    background: #1f2937;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity .3s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+    pointer-events: none;
+}
+
+.toast-success { background: #22c55e; }
+.toast-error   { background: #ef4444; }
+.toast-info    { background: #3b82f6; }
+
+/* Master tabs */
+.master-tab.active {
+    border-bottom-color: #3b82f6;
+    color: #3b82f6;
+}
+
+/* Pipeline cards */
+.pipeline-card.active {
+    outline: 2px solid #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, .3);
+}
+
+/* Badge */
+.badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+/* Skeleton loader animation */
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(.4, 0, .6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: .5; }
+}
+
+/* View system */
+.view        { display: none; }
+.view.active { display: block; animation: fadeIn .3s ease-out; }
+.master-sub        { display: none; }
+.master-sub.active { display: block; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Process modal overlay */
+#process-modal,
+#delete-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0, 0, 0, .5);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Form inputs */
+.form-input:focus,
+.form-textarea:focus,
+.form-multiselect:focus,
+.form-select:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .1) !important;
+}
+
+.dark .form-input,
+.dark .form-textarea,
+.dark .form-multiselect,
+.dark .form-select {
+    background: rgba(17, 24, 39, .3) !important;
+    border-color: rgba(55, 65, 81, .6) !important;
+    color: #f3f4f6 !important;
+}
+
+.dark .form-input:focus,
+.dark .form-textarea:focus,
+.dark .form-select:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .15) !important;
+}
+
+/* Radio & checkbox */
+.form-checkbox:checked,
+.form-radio:checked {
+    background-color: #3b82f6 !important;
+    border-color: transparent !important;
+}
+
+.form-checkbox:focus-visible,
+.form-radio:focus-visible {
+    --tw-ring-color: rgba(59, 130, 246, .5) !important;
+}
+
+/* Buttons — primary blue */
+.bg-violet-500 { background-color: #3b82f6 !important; }
+.bg-violet-600, .hover\:bg-violet-600:hover { background-color: #2563eb !important; }
+.text-violet-500 { color: #3b82f6 !important; }
+.hover\:text-violet-600:hover { color: #2563eb !important; }
+.dark .hover\:text-violet-400:hover { color: #60a5fa !important; }
+.bg-violet-100 { background-color: #dbeafe !important; }
+.dark .bg-violet-500\/20 { background-color: rgba(59, 130, 246, .2) !important; }
+
+/* Border-radius consistency */
+.rounded-xl { border-radius: 5px !important; }
+.rounded-lg { border-radius: 5px !important; }
+.rounded-r-2xl { border-radius: 0 5px 5px 0 !important; }
+.rounded-full { border-radius: 9999px !important; }
+
+/* Cards shadow */
+.shadow-xs { box-shadow: 0 1px 2px rgba(0, 0, 0, .05) !important; }
+
+/* Btn base */
+.btn, .btn-lg, .btn-sm, .btn-xs {
+    border-radius: 5px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.01em !important;
+}
+
+.btn { padding: 12px 24px !important; font-size: 14px !important; }
+.btn-sm { padding: 8px 14px !important; font-size: 13px !important; }
+
+/* Nav item active state */
+.nav-item.active {
+    color: var(--text) !important;
+    background: var(--surface-hover) !important;
+}

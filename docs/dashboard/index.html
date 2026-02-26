@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS160 Expresso — Pipeline</title>
+    <link rel="stylesheet" href="../mosaic.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script defer src="../alpinejs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="font-inter antialiased bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-400"
+    :class="{ 'sidebar-expanded': sidebarExpanded }" x-data="{ sidebarExpanded: true, sidebarOpen: false }"
+    x-init="$watch('sidebarExpanded', value => localStorage.setItem('sidebar-expanded', value))">
+
+    <div class="flex h-[100dvh] overflow-hidden">
+        <!-- Sidebar -->
+        <div id="sidebar-container"></div>
+
+        <!-- Content Area -->
+        <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+            <!-- Header -->
+            <div id="header-container"></div>
+
+            <!-- Main Content -->
+            <main class="grow">
+                <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
+                    <div
+                        class="flex flex-col space-y-10 sm:flex-row sm:space-x-6 sm:space-y-0 md:flex-col md:space-x-0 md:space-y-10 xl:flex-row xl:space-x-6 xl:space-y-0 mt-2">
+
+                        <!-- Sidebar (stats) -->
+                        <div class="space-y-4">
+                            <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl p-5 min-w-60">
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="text-sm text-gray-800 dark:text-gray-100 font-semibold mb-3">
+                                            Aplicações</div>
+                                        <ul class="space-y-2">
+                                            <li><label
+                                                    class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
+                                                    data-filter="new">
+                                                    <div class="w-2 h-2 rounded-full mr-3 shrink-0"
+                                                        style="background:#3b82f6"></div>
+                                                    <span
+                                                        class="text-sm text-gray-600 dark:text-gray-300 font-medium">Novos</span>
+                                                    <span id="stat-new"
+                                                        class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                </label></li>
+                                            <li><label
+                                                    class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
+                                                    data-filter="review">
+                                                    <div class="w-2 h-2 rounded-full mr-3 shrink-0"
+                                                        style="background:#f59e0b"></div>
+                                                    <span
+                                                        class="text-sm text-gray-600 dark:text-gray-300 font-medium">Revisões</span>
+                                                    <span id="stat-review"
+                                                        class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                </label></li>
+                                            <li><label
+                                                    class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
+                                                    data-filter="approved">
+                                                    <div class="w-2 h-2 rounded-full mr-3 shrink-0"
+                                                        style="background:#6366f1"></div>
+                                                    <span
+                                                        class="text-sm text-gray-600 dark:text-gray-300 font-medium">Aprovados</span>
+                                                    <span id="stat-approved"
+                                                        class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                </label></li>
+                                            <li><label
+                                                    class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
+                                                    data-filter="doing">
+                                                    <div class="w-2 h-2 rounded-full mr-3 shrink-0"
+                                                        style="background:#f97316"></div>
+                                                    <span
+                                                        class="text-sm text-gray-600 dark:text-gray-300 font-medium">Pendentes</span>
+                                                    <span id="stat-doing"
+                                                        class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                </label></li>
+                                            <li><label
+                                                    class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
+                                                    data-filter="done">
+                                                    <div class="w-2 h-2 rounded-full mr-3 shrink-0"
+                                                        style="background:#22c55e"></div>
+                                                    <span
+                                                        class="text-sm text-gray-600 dark:text-gray-300 font-medium">Concluídos</span>
+                                                    <span id="stat-done"
+                                                        class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                </label></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content (search + list + pagination) -->
+                        <div class="w-full">
+                            <!-- Search modal -->
+                            <div x-data="{ searchOpen: false }"
+                                @open-search.window="searchOpen = true; $nextTick(() => { $refs.searchInput.focus(); });">
+                                <div class="fixed inset-0 bg-gray-900/30 z-50 transition-opacity" x-show="searchOpen"
+                                    x-transition:enter="transition ease-out duration-200"
+                                    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                                    x-transition:leave="transition ease-out duration-100"
+                                    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                    aria-hidden="true" x-cloak></div>
+                                <div id="search-modal"
+                                    class="fixed inset-0 z-50 overflow-hidden flex items-start top-20 mb-4 justify-center px-4 sm:px-6"
+                                    role="dialog" aria-modal="true" x-show="searchOpen"
+                                    x-transition:enter="transition ease-in-out duration-200"
+                                    x-transition:enter-start="opacity-0 translate-y-4"
+                                    x-transition:enter-end="opacity-100 translate-y-0"
+                                    x-transition:leave="transition ease-in-out duration-200"
+                                    x-transition:leave-start="opacity-100 translate-y-0"
+                                    x-transition:leave-end="opacity-0 translate-y-4" x-cloak>
+                                    <div class="bg-white dark:bg-gray-800 border border-transparent dark:border-gray-700/60 overflow-auto max-w-2xl w-full max-h-full rounded-lg shadow-lg"
+                                        @click.outside="searchOpen = false" @keydown.escape.window="searchOpen = false">
+                                        <form class="border-b border-gray-200 dark:border-gray-700/60"
+                                            onsubmit="event.preventDefault();">
+                                            <div class="relative">
+                                                <label for="search-applicants" class="sr-only">Buscar</label>
+                                                <input id="search-applicants"
+                                                    class="w-full dark:text-gray-300 bg-white dark:bg-gray-800 border-0 focus:ring-transparent placeholder-gray-400 dark:placeholder-gray-500 appearance-none py-3 pl-10 pr-4"
+                                                    type="search"
+                                                    placeholder="Buscar solicitante por nome ou passaporte…"
+                                                    x-ref="searchInput" />
+                                                <button class="absolute inset-0 right-auto group" type="submit"
+                                                    aria-label="Search">
+                                                    <svg class="shrink-0 fill-current text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 ml-4 mr-2"
+                                                        width="16" height="16" viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />
+                                                        <path
+                                                            d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </form>
+                                        <div class="py-4 px-2">
+                                            <div class="mb-3 last:mb-0">
+                                                <div
+                                                    class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase px-2 mb-2">
+                                                    Resultados</div>
+                                                <ul id="search-results-list" class="text-sm">
+                                                    <li
+                                                        class="px-2 py-1 text-gray-400 dark:text-gray-500 text-xs italic">
+                                                        Digite para buscar…</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pipeline list -->
+                            <div id="pipeline-list" class="space-y-2"></div>
+
+                            <!-- Pagination -->
+                            <div id="pagination-container" class="mt-6 hidden">
+                                <div class="flex justify-center">
+                                    <nav class="flex" role="navigation" aria-label="Navegação">
+                                        <div class="mr-2">
+                                            <button id="app-prev"
+                                                class="inline-flex items-center justify-center rounded-lg leading-5 px-2.5 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-300 dark:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed shadow-xs">
+                                                <span class="sr-only">Anterior</span>
+                                                <svg class="fill-current" width="16" height="16" viewBox="0 0 16 16">
+                                                    <path d="M9.4 13.4l1.4-1.4-4-4 4-4-1.4-1.4L4 8z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="ml-2">
+                                            <button id="app-next"
+                                                class="inline-flex items-center justify-center rounded-lg leading-5 px-2.5 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 border border-gray-200 dark:border-gray-700/60 text-violet-500 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed">
+                                                <span class="sr-only">Próximo</span>
+                                                <svg class="fill-current" width="16" height="16" viewBox="0 0 16 16">
+                                                    <path d="M6.6 13.4L5.2 12l4-4-4-4 1.4-1.4L12 8z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Process modal (iframe) -->
+    <div id="process-modal">
+        <div style="width:95vw;max-width:680px;height:90vh"
+            class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl flex flex-col border border-gray-200 dark:border-gray-700/60"
+            onclick="event.stopPropagation()">
+            <div
+                class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700/60 shrink-0">
+                <div>
+                    <h2 id="process-modal-name" class="text-lg font-bold text-gray-800 dark:text-gray-100"></h2>
+                    <div id="process-modal-sub" class="mt-1"></div>
+                </div>
+                <button onclick="closeProcessModal()"
+                    class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                        <path
+                            d="M18.3 5.71a1 1 0 0 0-1.42 0L12 10.59 7.12 5.71a1 1 0 0 0-1.42 1.42L10.59 12l-4.88 4.88a1 1 0 1 0 1.42 1.42L12 13.41l4.88 4.88a1 1 0 0 0 1.42-1.42L13.41 12l4.88-4.88a1 1 0 0 0 0-1.41Z" />
+                    </svg>
+                </button>
+            </div>
+            <iframe id="process-modal-iframe" class="grow w-full border-0 rounded-b-2xl" src="about:blank"></iframe>
+        </div>
+    </div>
+
+    <!-- Info/JSON modal -->
+    <div id="info-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm"
+        onclick="if(event.target===this)this.classList.add('hidden')">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[85vh] overflow-hidden border border-gray-200 dark:border-gray-700/60"
+            onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700/60">
+                <h2 id="modal-title" class="text-lg font-bold text-gray-800 dark:text-gray-100"></h2>
+                <button id="modal-close" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path
+                            d="M18.3 5.71a1 1 0 0 0-1.42 0L12 10.59 7.12 5.71a1 1 0 0 0-1.42 1.42L10.59 12l-4.88 4.88a1 1 0 1 0 1.42 1.42L12 13.41l4.88 4.88a1 1 0 0 0 1.42-1.42L13.41 12l4.88-4.88a1 1 0 0 0 0-1.41Z" />
+                    </svg>
+                </button>
+            </div>
+            <div id="modal-body" class="px-6 py-4 overflow-y-auto max-h-[65vh]"></div>
+        </div>
+    </div>
+
+    <!-- Delete modal -->
+    <div id="delete-modal">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 text-center border border-gray-200 dark:border-gray-700/60"
+            onclick="event.stopPropagation()">
+            <div
+                class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6 fill-current text-red-500" viewBox="0 0 24 24">
+                    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-2h2v2Zm0-4h-2V7h2v6Z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Excluir Solicitante</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Deseja excluir <strong id="delete-modal-name"
+                    class="text-gray-800 dark:text-gray-100"></strong> e todos os dependentes?</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeDeleteModal()"
+                    class="btn bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300">Cancelar</button>
+                <button onclick="confirmDelete()" class="btn bg-red-500 hover:bg-red-600 text-white">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+
+    <script src="../js/main.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/pipeline.js"></script>
+</body>
+
+</html>

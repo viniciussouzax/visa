@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS160 Expresso — Software</title>
+    <link rel="stylesheet" href="../mosaic.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script defer src="../alpinejs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="font-inter antialiased bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-400"
+    :class="{ 'sidebar-expanded': sidebarExpanded }" x-data="{ sidebarExpanded: true, sidebarOpen: false }"
+    x-init="$watch('sidebarExpanded', value => localStorage.setItem('sidebar-expanded', value))">
+
+    <div class="flex h-[100dvh] overflow-hidden">
+        <div id="sidebar-container"></div>
+        <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+            <div id="header-container"></div>
+            <main class="grow">
+                <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
+                    <div class="grid grid-cols-12 gap-6">
+                        <!-- Desktop App -->
+                        <div class="col-span-full xl:col-span-6 bg-white dark:bg-gray-800 shadow-xs rounded-xl">
+                            <div class="p-5">
+                                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">Software Desktop
+                                </h2>
+                                <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">Última versão do aplicativo
+                                    Electron</div>
+                                <div class="space-y-3">
+                                    <div>
+                                        <div
+                                            class="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
+                                            Versão</div>
+                                        <div id="sw-version"
+                                            class="text-2xl font-bold text-gray-800 dark:text-gray-100">—</div>
+                                        <div id="sw-version-date" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        </div>
+                                    </div>
+                                    <div id="sw-version-notes" class="text-sm text-gray-500 dark:text-gray-400"></div>
+                                    <div class="pt-3 border-t border-gray-200 dark:border-gray-700/60">
+                                        <a id="sw-download-btn" href="#"
+                                            class="inline-flex items-center gap-2 btn bg-violet-500 hover:bg-violet-600 text-white text-sm"
+                                            target="_blank">
+                                            <svg class="w-4 h-4 fill-current" viewBox="0 0 16 16">
+                                                <path
+                                                    d="M15 15H1a1 1 0 0 1 0-2h14a1 1 0 0 1 0 2ZM8 10a1 1 0 0 1-.7-.3L3.3 5.7a1 1 0 0 1 1.4-1.4L7 6.6V1a1 1 0 0 1 2 0v5.6l2.3-2.3a1 1 0 0 1 1.4 1.4l-4 4A1 1 0 0 1 8 10Z" />
+                                            </svg>
+                                            Download
+                                        </a>
+                                        <div class="mt-2 space-x-3 text-xs">
+                                            <span id="sw-download-version"
+                                                class="text-gray-500 dark:text-gray-400"></span>
+                                            <span id="sw-download-size" class="text-gray-400 dark:text-gray-500"></span>
+                                            <span id="sw-download-date" class="text-gray-400 dark:text-gray-500"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Automation -->
+                        <div class="col-span-full xl:col-span-6 bg-white dark:bg-gray-800 shadow-xs rounded-xl">
+                            <div class="p-5">
+                                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">Automação DS-160
+                                </h2>
+                                <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">Scripts de preenchimento
+                                    automático</div>
+                                <div class="space-y-3">
+                                    <div>
+                                        <div
+                                            class="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
+                                            Versão</div>
+                                        <div id="sw-auto-version"
+                                            class="text-2xl font-bold text-gray-800 dark:text-gray-100">—</div>
+                                        <div id="sw-auto-date" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        </div>
+                                    </div>
+                                    <div id="sw-auto-changelog" class="text-sm text-gray-500 dark:text-gray-400"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Copy form link -->
+                        <div class="col-span-full bg-white dark:bg-gray-800 shadow-xs rounded-xl">
+                            <div class="p-5">
+                                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Link do Formulário
+                                </h2>
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <button id="btn-copy-form"
+                                        class="btn-sm bg-violet-500 hover:bg-violet-600 text-white text-xs">Copiar link
+                                        do formulário</button>
+                                    <span id="org-id-display"
+                                        class="text-xs text-gray-400 dark:text-gray-500 font-mono cursor-pointer hover:text-violet-500 transition"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/software.js"></script>
+</body>
+
+</html>

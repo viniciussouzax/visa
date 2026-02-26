@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS160 Expresso — Master</title>
+    <link rel="stylesheet" href="../mosaic.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script defer src="../alpinejs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="font-inter antialiased bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-400"
+    :class="{ 'sidebar-expanded': sidebarExpanded }" x-data="{ sidebarExpanded: true, sidebarOpen: false }"
+    x-init="$watch('sidebarExpanded', value => localStorage.setItem('sidebar-expanded', value))">
+
+    <div class="flex h-[100dvh] overflow-hidden">
+        <div id="sidebar-container"></div>
+        <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+            <div id="header-container"></div>
+            <main class="grow">
+                <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
+                    <!-- Master Tabs -->
+                    <div class="relative mb-8">
+                        <div class="absolute bottom-0 w-full h-px bg-gray-200 dark:bg-gray-700/60"></div>
+                        <ul
+                            class="relative text-sm font-medium flex flex-nowrap -mx-4 sm:-mx-6 lg:-mx-8 overflow-x-scroll no-scrollbar">
+                            <li
+                                class="mr-6 last:mr-0 first:pl-4 sm:first:pl-6 lg:first:pl-8 last:pr-4 sm:last:pr-6 lg:last:pr-8">
+                                <button
+                                    class="master-tab active block pb-3 text-violet-500 whitespace-nowrap border-b-2 border-transparent"
+                                    data-master-tab="agencies">Organizações</button>
+                            </li>
+                            <li
+                                class="mr-6 last:mr-0 first:pl-4 sm:first:pl-6 lg:first:pl-8 last:pr-4 sm:last:pr-6 lg:last:pr-8">
+                                <button
+                                    class="master-tab block pb-3 text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 whitespace-nowrap border-b-2 border-transparent"
+                                    data-master-tab="capmonster">CapMonster</button>
+                            </li>
+                            <li
+                                class="mr-6 last:mr-0 first:pl-4 sm:first:pl-6 lg:first:pl-8 last:pr-4 sm:last:pr-6 lg:last:pr-8">
+                                <button
+                                    class="master-tab block pb-3 text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 whitespace-nowrap border-b-2 border-transparent"
+                                    data-master-tab="logs">
+                                    Erros <span id="logs-badge"
+                                        class="text-xs bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold rounded-full px-2 py-0.5 ml-1">0</span>
+                                </button>
+                            </li>
+                            <li
+                                class="mr-6 last:mr-0 first:pl-4 sm:first:pl-6 lg:first:pl-8 last:pr-4 sm:last:pr-6 lg:last:pr-8">
+                                <button
+                                    class="master-tab block pb-3 text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 whitespace-nowrap border-b-2 border-transparent"
+                                    data-master-tab="settings">Configurações</button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Sub-views -->
+                    <!-- Agencies -->
+                    <div id="master-sub-agencies" class="master-sub active">
+                        <div class="sm:flex sm:justify-between sm:items-center mb-5">
+                            <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100">Organizações</h2>
+                            <button onclick="$('modal-create-agency').classList.remove('hidden')"
+                                class="btn-sm bg-violet-500 hover:bg-violet-600 text-white text-xs mt-2 sm:mt-0">+ Nova
+                                Organização</button>
+                        </div>
+                        <div id="agencies-list" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Agency Detail -->
+                    <div id="master-sub-agency-detail" class="master-sub">
+                        <button id="btn-back-agencies"
+                            class="text-sm text-violet-500 hover:text-violet-600 font-medium mb-4">&larr;
+                            Voltar</button>
+                        <div id="agency-detail-content"></div>
+                    </div>
+
+                    <!-- CapMonster -->
+                    <div id="master-sub-capmonster" class="master-sub">
+                        <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl p-5 max-w-lg">
+                            <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">CapMonster API Key</h2>
+                            <div class="space-y-3">
+                                <input id="capmonster-key" class="form-input w-full font-mono text-sm" type="text"
+                                    placeholder="Sua API Key do CapMonster...">
+                                <button id="btn-save-capmonster"
+                                    class="btn-sm bg-violet-500 hover:bg-violet-600 text-white text-xs">Salvar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logs -->
+                    <div id="master-sub-logs" class="master-sub">
+                        <div class="sm:flex sm:justify-between sm:items-center mb-5">
+                            <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100">Erros Ativos (<span
+                                    id="logs-count">0</span>)</h2>
+                            <button id="btn-archive-logs"
+                                class="btn-sm bg-red-500 hover:bg-red-600 text-white text-xs mt-2 sm:mt-0">Arquivar
+                                Todos</button>
+                        </div>
+                        <div id="logs-list" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Settings -->
+                    <div id="master-sub-settings" class="master-sub">
+                        <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl p-5 max-w-lg">
+                            <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Configurações Padrão
+                            </h2>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Pergunta de Segurança (índice)</label>
+                                    <select id="setting-security-question" class="form-select w-full">
+                                        <option value="4">4 — What city were your parents married?</option>
+                                        <option value="0">0 — What is your mother's maiden name?</option>
+                                        <option value="1">1 — What is your father's middle name?</option>
+                                        <option value="2">2 — In what city were you born?</option>
+                                        <option value="3">3 — What high school did you attend?</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Resposta Padrão</label>
+                                    <input id="setting-security-answer" class="form-input w-full" type="text"
+                                        placeholder="Resposta...">
+                                </div>
+                                <button id="btn-save-settings"
+                                    class="btn-sm bg-violet-500 hover:bg-violet-600 text-white text-xs">Salvar
+                                    Configurações</button>
+                                <div id="settings-status" class="text-sm mt-2" style="display:none"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Create Agency Modal -->
+    <div id="modal-create-agency"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm"
+        onclick="if(event.target===this)this.classList.add('hidden')">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 border border-gray-200 dark:border-gray-700/60"
+            onclick="event.stopPropagation()">
+            <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Nova Organização</h2>
+            <div class="space-y-3">
+                <div><label class="block text-sm font-medium mb-1">Nome</label><input id="new-agency-name"
+                        class="form-input w-full" type="text" placeholder="Nome da organização"></div>
+                <div><label class="block text-sm font-medium mb-1">CNPJ (opcional)</label><input id="new-agency-cnpj"
+                        class="form-input w-full" type="text" placeholder="00.000.000/0000-00"></div>
+                <div class="flex items-center gap-2"><input id="new-agency-active" class="form-checkbox" type="checkbox"
+                        checked><label class="text-sm">Ativa</label></div>
+                <div class="flex gap-3 justify-end pt-2">
+                    <button onclick="$('modal-create-agency').classList.add('hidden')"
+                        class="btn-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300">Cancelar</button>
+                    <button id="btn-create-agency" class="btn-sm bg-violet-500 hover:bg-violet-600 text-white">Criar
+                        Organização</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Assessor Modal -->
+    <div id="modal-add-assessor"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm"
+        onclick="if(event.target===this)this.classList.add('hidden')">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 border border-gray-200 dark:border-gray-700/60"
+            onclick="event.stopPropagation()">
+            <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Adicionar Assessor</h2>
+            <input type="hidden" id="assessor-company-id">
+            <div class="space-y-3">
+                <div><label class="block text-sm font-medium mb-1">Nome</label><input id="assessor-name"
+                        class="form-input w-full" type="text" placeholder="Nome completo"></div>
+                <div><label class="block text-sm font-medium mb-1">Email</label><input id="assessor-email"
+                        class="form-input w-full" type="email" placeholder="email@exemplo.com"></div>
+                <div><label class="block text-sm font-medium mb-1">Senha</label><input id="assessor-password"
+                        class="form-input w-full" type="password" placeholder="Mínimo 6 caracteres"></div>
+                <div class="flex gap-3 justify-end pt-2">
+                    <button onclick="$('modal-add-assessor').classList.add('hidden')"
+                        class="btn-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300">Cancelar</button>
+                    <button id="btn-add-assessor"
+                        class="btn-sm bg-violet-500 hover:bg-violet-600 text-white">Adicionar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/master.js"></script>
+</body>
+
+</html>

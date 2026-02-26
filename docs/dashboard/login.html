@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS160 Expresso — Login</title>
+    <link rel="stylesheet" href="../mosaic.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="font-inter antialiased bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400">
+
+    <div class="fixed inset-0 z-50 bg-white dark:bg-gray-900">
+        <div class="relative flex h-full">
+            <!-- Content (left side) -->
+            <div class="w-full md:w-1/2">
+                <div class="min-h-[100dvh] h-full flex flex-col after:flex-1">
+                    <!-- Header with logo -->
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+                            <a class="block" href="#">
+                                <svg class="fill-violet-500" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+                                    <path
+                                        d="M31.956 14.8C31.372 6.92 25.08.628 17.2.044V5.76a9.04 9.04 0 0 0 9.04 9.04h5.716ZM14.8 26.24v5.716C6.92 31.372.63 25.08.044 17.2H5.76a9.04 9.04 0 0 1 9.04 9.04Zm11.44-9.04h5.716c-.584 7.88-6.876 14.172-14.756 14.756V26.24a9.04 9.04 0 0 1 9.04-9.04ZM.044 14.8C.63 6.92 6.92.628 14.8.044V5.76a9.04 9.04 0 0 1-9.04 9.04H.044Z" />
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Login form -->
+                    <div class="max-w-sm mx-auto w-full px-4 py-8">
+                        <h1 class="text-3xl text-gray-800 dark:text-gray-100 font-bold mb-6">DS160 Expresso</h1>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1" for="login-email">Email</label>
+                                <input id="login-email" class="form-input w-full" type="email"
+                                    placeholder="seu@email.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1" for="login-password">Senha</label>
+                                <input id="login-password" class="form-input w-full" type="password"
+                                    placeholder="••••••" autocomplete="on">
+                            </div>
+                        </div>
+                        <div id="login-error" class="text-sm text-red-500 mt-3"></div>
+                        <div class="flex items-center justify-between mt-6">
+                            <div class="mr-1">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Painel administrativo</span>
+                            </div>
+                            <button id="btn-login"
+                                class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white ml-3">Entrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Image (right side) -->
+            <div class="hidden md:block absolute top-0 bottom-0 right-0 md:w-1/2" aria-hidden="true">
+                <img class="object-cover object-center w-full h-full" src="../images/auth-image.jpg" width="760"
+                    height="1024" alt="Authentication image">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SB_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
+        const sb = supabase.createClient(SB_URL, SB_KEY);
+        const $ = id => document.getElementById(id);
+
+        // Check if already logged in
+        (async () => {
+            const { data: { session } } = await sb.auth.getSession();
+            if (session) { window.location.href = 'index.html'; return; }
+        })();
+
+        $('btn-login').onclick = async () => {
+            const email = $('login-email').value.trim();
+            const pass = $('login-password').value;
+            $('login-error').textContent = '';
+            const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+            if (error) { $('login-error').textContent = error.message; return; }
+            window.location.href = 'index.html';
+        };
+
+        // Allow Enter key to submit
+        $('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-login').click(); });
+        $('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') $('login-password').focus(); });
+    </script>
+</body>
+
+</html>
