@@ -6,6 +6,14 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const $ = id => document.getElementById(id);
 
+// Inject page loader
+(function () {
+    const loader = document.createElement('div');
+    loader.id = 'page-loader';
+    loader.innerHTML = '<div class="spinner"></div>';
+    document.body.prepend(loader);
+})();
+
 // ============================================================
 // STATE
 // ============================================================
@@ -72,6 +80,11 @@ function showSkeleton(containerId, count = 3) {
             </div>
         </div>`
     ).join('');
+}
+
+function hideLoader() {
+    const loader = $('page-loader');
+    if (loader) loader.classList.add('hidden');
 }
 
 // ============================================================

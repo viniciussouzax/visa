@@ -11,6 +11,7 @@ let archivedSearch = '';
     showSkeleton('archived-list');
     await loadArchived();
     setupArchivedListeners();
+    hideLoader();
 })();
 
 function setupArchivedListeners() {

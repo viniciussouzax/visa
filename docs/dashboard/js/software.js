@@ -11,6 +11,7 @@ const GH_BRANCH = 'main';
     renderLayout();
     await loadSoftwareInfo();
     setupSoftwareListeners();
+    hideLoader();
 })();
 
 function setupSoftwareListeners() {

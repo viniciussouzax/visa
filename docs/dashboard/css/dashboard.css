@@ -1,6 +1,49 @@
 /* ============================================================
    DS160 EXPRESSO — Dashboard CSS (shared)
    ============================================================ */
+
+/* Page loader */
+#page-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f9fafb;
+    transition: opacity .4s ease, visibility .4s ease;
+}
+
+.dark #page-loader {
+    background: #111827;
+}
+
+#page-loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+#page-loader .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+}
+
+.dark #page-loader .spinner {
+    border-color: #374151;
+    border-top-color: #3b82f6;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 :root {
     --bg: #f9fafb;
     --surface: #ffffff;
@@ -41,9 +84,17 @@
     pointer-events: none;
 }
 
-.toast-success { background: #22c55e; }
-.toast-error   { background: #ef4444; }
-.toast-info    { background: #3b82f6; }
+.toast-success {
+    background: #22c55e;
+}
+
+.toast-error {
+    background: #ef4444;
+}
+
+.toast-info {
+    background: #3b82f6;
+}
 
 /* Master tabs */
 .master-tab.active {
@@ -72,19 +123,45 @@
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50%      { opacity: .5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .5;
+    }
 }
 
 /* View system */
-.view        { display: none; }
-.view.active { display: block; animation: fadeIn .3s ease-out; }
-.master-sub        { display: none; }
-.master-sub.active { display: block; }
+.view {
+    display: none;
+}
+
+.view.active {
+    display: block;
+    animation: fadeIn .3s ease-out;
+}
+
+.master-sub {
+    display: none;
+}
+
+.master-sub.active {
+    display: block;
+}
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Process modal overlay */
@@ -138,33 +215,77 @@
 }
 
 /* Buttons — primary blue */
-.bg-violet-500 { background-color: #3b82f6 !important; }
-.bg-violet-600, .hover\:bg-violet-600:hover { background-color: #2563eb !important; }
-.text-violet-500 { color: #3b82f6 !important; }
-.hover\:text-violet-600:hover { color: #2563eb !important; }
-.dark .hover\:text-violet-400:hover { color: #60a5fa !important; }
-.bg-violet-100 { background-color: #dbeafe !important; }
-.dark .bg-violet-500\/20 { background-color: rgba(59, 130, 246, .2) !important; }
+.bg-violet-500 {
+    background-color: #3b82f6 !important;
+}
+
+.bg-violet-600,
+.hover\:bg-violet-600:hover {
+    background-color: #2563eb !important;
+}
+
+.text-violet-500 {
+    color: #3b82f6 !important;
+}
+
+.hover\:text-violet-600:hover {
+    color: #2563eb !important;
+}
+
+.dark .hover\:text-violet-400:hover {
+    color: #60a5fa !important;
+}
+
+.bg-violet-100 {
+    background-color: #dbeafe !important;
+}
+
+.dark .bg-violet-500\/20 {
+    background-color: rgba(59, 130, 246, .2) !important;
+}
 
 /* Border-radius consistency */
-.rounded-xl { border-radius: 5px !important; }
-.rounded-lg { border-radius: 5px !important; }
-.rounded-r-2xl { border-radius: 0 5px 5px 0 !important; }
-.rounded-full { border-radius: 9999px !important; }
+.rounded-xl {
+    border-radius: 5px !important;
+}
+
+.rounded-lg {
+    border-radius: 5px !important;
+}
+
+.rounded-r-2xl {
+    border-radius: 0 5px 5px 0 !important;
+}
+
+.rounded-full {
+    border-radius: 9999px !important;
+}
 
 /* Cards shadow */
-.shadow-xs { box-shadow: 0 1px 2px rgba(0, 0, 0, .05) !important; }
+.shadow-xs {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .05) !important;
+}
 
 /* Btn base */
-.btn, .btn-lg, .btn-sm, .btn-xs {
+.btn,
+.btn-lg,
+.btn-sm,
+.btn-xs {
     border-radius: 5px !important;
     font-weight: 600 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.01em !important;
 }
 
-.btn { padding: 12px 24px !important; font-size: 14px !important; }
-.btn-sm { padding: 8px 14px !important; font-size: 13px !important; }
+.btn {
+    padding: 12px 24px !important;
+    font-size: 14px !important;
+}
+
+.btn-sm {
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+}
 
 /* Nav item active state */
 .nav-item.active {

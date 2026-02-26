@@ -16,6 +16,7 @@ let currentApplicantId = null;
 
     await openApplicantDetail(currentApplicantId);
     setupApplicantListeners();
+    hideLoader();
 })();
 
 function setupApplicantListeners() {

@@ -13,6 +13,7 @@
 
     await Promise.all([loadAgencies(), loadCapmonsterKey(), loadLogs()]);
     setupMasterListeners();
+    hideLoader();
 })();
 
 // ============================================================

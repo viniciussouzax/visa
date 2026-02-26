@@ -15,6 +15,7 @@ let currentFilter = '';
     showSkeleton('pipeline-list');
     await loadPipeline();
     setupListeners();
+    hideLoader();
 })();
 
 function setupListeners() {
