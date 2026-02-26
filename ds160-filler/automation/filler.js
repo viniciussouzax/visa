@@ -362,7 +362,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 }
 
                 // Select security question from settings (config.security_question = index from DB)
-                const questionIndex = parseInt(config.security_question || '1', 10);
+                const questionIndex = parseInt(config.security_question || '0', 10);
                 await page.locator("select[id$='_ddlQuestions']").selectOption({ index: questionIndex });
                 // Security answer: config (from settings/dashboard) takes priority, profile as fallback
                 const secAnswer = config.security_answer || profile.securityAnswer || '';
