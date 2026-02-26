@@ -28,10 +28,10 @@ let userCompanyShortId = null;
 const STAGES = {
     new: { label: 'Novo', color: '#3b82f6' },
     review: { label: 'Revisão', color: '#f59e0b' },
-    approved: { label: 'Aprovado', color: '#6366f1' },
+    approved: { label: 'Aprovado', color: '#22c55e' },
     doing: { label: 'Pendente', color: '#f97316' },
     done: { label: 'Concluído', color: '#22c55e' },
-    archived: { label: 'Arquivado', color: '#64748b' }
+    archived: { label: 'Arquivado', color: '#6b7280' }
 };
 
 const STAGE_ORDER = ['new', 'review', 'approved', 'doing', 'done', 'archived'];

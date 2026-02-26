@@ -108,56 +108,64 @@ async function loadPipelineList() {
     }
 
     const container = $('pipeline-list');
-    container.innerHTML = (applicants || []).map(a => {
+
+    // Column header
+    const headerHtml = (applicants && applicants.length > 0) ? `
+        <div class="pipeline-header" style="display:grid;grid-template-columns:28px 36px 1fr 120px 120px 100px 50px;gap:12px;align-items:center;padding:0 20px 8px;border-bottom:1px solid #e5e7eb;margin-bottom:4px">
+            <span></span><span></span>
+            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Solicitante</span>
+            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Prioridade</span>
+            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Status</span>
+            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Etapa</span>
+            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;text-align:center">Proc.</span>
+        </div>` : '';
+
+    const rowsHtml = (applicants || []).map(a => {
         const deps = dependentsMap[a.id] || [];
         const totalProcesses = 1 + deps.length;
         const doneProcesses = (a.pipeline_status === 'done' ? 1 : 0) + deps.filter(d => d.pipeline_status === 'done').length;
-        const progressColor = doneProcesses === totalProcesses && totalProcesses > 0 ? '#22c55e' : (doneProcesses > 0 ? '#f59e0b' : 'var(--text-muted)');
+        const progressColor = doneProcesses === totalProcesses && totalProcesses > 0 ? '#22c55e' : (doneProcesses > 0 ? '#f59e0b' : '#9ca3af');
 
         const stage = STAGES[a.pipeline_status] || STAGES.new;
         const email = a.data?.addressPhone?.email || a.data?.personal?.email || a.data?.contact?.email || '';
-        const updated = a.updated_at ? new Date(a.updated_at).toLocaleDateString('pt-BR') : '—';
         const initials = (a.full_name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-        const avatarBg = stage.color + '22';
 
         const prio = PRIORITIES[a.fill_priority] || PRIORITIES[0];
         const prioBadge = a.fill_priority >= 2
-            ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${prio.color}15;color:${prio.color};font-weight:700">${prio.icon} ${prio.label}</span>` : '';
+            ? `<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${prio.color}15;color:${prio.color};font-weight:600;white-space:nowrap">${prio.icon} ${prio.label}</span>`
+            : `<span style="font-size:11px;color:#9ca3af">—</span>`;
 
         const appData = appsMap[a.id];
         const fillStatus = appData?.fill_status || '';
         const fStage = FILL_STAGES[fillStatus];
         const fillBadge = fStage && fillStatus !== 'pending'
-            ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${fStage.color}15;color:${fStage.color};font-weight:600"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${fStage.color};margin-right:4px;vertical-align:middle"></span>${fStage.label}</span>` : '';
+            ? `<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${fStage.color}15;color:${fStage.color};font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${fStage.color};flex-shrink:0"></span>${fStage.label}</span>`
+            : `<span style="font-size:11px;color:#9ca3af">—</span>`;
 
-        return `<div class="pipeline-item bg-white dark:bg-gray-800 shadow-xs rounded-xl px-5 py-4 hover:shadow-md transition"
-                     data-id="${a.id}" draggable="true">
-            <div class="md:flex justify-between items-center space-y-4 md:space-y-0 space-x-2">
-                <div class="flex items-start space-x-3 md:space-x-4">
-                    <div class="drag-handle shrink-0 mt-1 cursor-grab active:cursor-grabbing flex items-center text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 mr-1" title="Arrastar para reordenar">
-                        <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
-                            <circle cx="3" cy="2" r="1.5"/><circle cx="9" cy="2" r="1.5"/>
-                            <circle cx="3" cy="6" r="1.5"/><circle cx="9" cy="6" r="1.5"/>
-                            <circle cx="3" cy="10" r="1.5"/><circle cx="9" cy="10" r="1.5"/>
-                            <circle cx="3" cy="14" r="1.5"/><circle cx="9" cy="14" r="1.5"/>
-                        </svg>
-                    </div>
-                    <div class="w-9 h-9 shrink-0 mt-1 rounded-full flex items-center justify-center text-xs font-bold" style="background:${avatarBg};color:${stage.color}">${initials}</div>
-                    <a href="applicant.html?id=${a.id}" class="block">
-                        <div class="inline-flex font-semibold text-gray-800 dark:text-gray-100 hover:text-violet-500 transition">${a.full_name}</div>
-                        ${email ? `<div class="text-sm text-gray-500 dark:text-gray-400">${email}</div>` : ''}
-                    </a>
-                </div>
-                <div class="flex items-center space-x-3 pl-10 md:pl-0">
-                    ${prioBadge}
-                    ${fillBadge}
-                    <div class="text-sm text-gray-500 dark:text-gray-400 italic whitespace-nowrap">${updated}</div>
-                    <div class="text-xs inline-flex font-medium rounded-full text-center px-2.5 py-1" style="background:${stage.color}22;color:${stage.color}"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${stage.color};margin-right:5px;vertical-align:middle"></span>${stage.label}</div>
-                    <span class="text-sm font-bold" style="color:${progressColor}">${doneProcesses}/${totalProcesses}</span>
-                </div>
+        return `<div class="pipeline-item bg-white dark:bg-gray-800 shadow-xs rounded-xl hover:shadow-md transition"
+                     data-id="${a.id}" draggable="true"
+                     style="display:grid;grid-template-columns:28px 36px 1fr 120px 120px 100px 50px;gap:12px;align-items:center;padding:12px 20px">
+            <div class="drag-handle shrink-0 cursor-grab active:cursor-grabbing flex items-center justify-center text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400" title="Arrastar para reordenar">
+                <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+                    <circle cx="3" cy="2" r="1.5"/><circle cx="9" cy="2" r="1.5"/>
+                    <circle cx="3" cy="6" r="1.5"/><circle cx="9" cy="6" r="1.5"/>
+                    <circle cx="3" cy="10" r="1.5"/><circle cx="9" cy="10" r="1.5"/>
+                    <circle cx="3" cy="14" r="1.5"/><circle cx="9" cy="14" r="1.5"/>
+                </svg>
             </div>
+            <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:#f3f4f6;color:#6b7280;flex-shrink:0">${initials}</div>
+            <a href="applicant.html?id=${a.id}" style="min-width:0;overflow:hidden">
+                <div style="font-size:14px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" class="dark:text-gray-100">${a.full_name}</div>
+                ${email ? `<div style="font-size:12px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${email}</div>` : ''}
+            </a>
+            <div>${prioBadge}</div>
+            <div>${fillBadge}</div>
+            <div><span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${stage.color}15;color:${stage.color};font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${stage.color};flex-shrink:0"></span>${stage.label}</span></div>
+            <div style="text-align:center"><span style="font-size:13px;font-weight:700;color:${progressColor}">${doneProcesses}/${totalProcesses}</span></div>
         </div>`;
     }).join('') || '<div class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">Nenhum solicitante nesta etapa</div>';
+
+    container.innerHTML = headerHtml + rowsHtml;
 
     // Setup drag and drop
     setupDragAndDrop();
