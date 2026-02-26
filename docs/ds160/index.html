@@ -3973,6 +3973,47 @@
             }
         }
 
+        // ===== AGE-BASED PAGE VISIBILITY =====
+        // Applicants under 14 skip WorkEducation1/2/3
+        function getApplicantAge() {
+            const day = document.getElementById('ddlDOBDay')?.value;
+            const monthNames = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
+            const month = document.getElementById('ddlDOBMonth')?.value;
+            const year = document.getElementById('tbxDOBYear')?.value;
+            if (!day || !month || !year || year.length !== 4) return null;
+            const m = monthNames[month];
+            if (m === undefined) return null;
+            const dob = new Date(parseInt(year), m, parseInt(day));
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const monthDiff = today.getMonth() - dob.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+            return age;
+        }
+
+        function updateAgeBasedPages() {
+            const age = getApplicantAge();
+            const isMinor = age !== null && age < 14;
+            const we1 = document.getElementById('pg-WorkEducation1');
+            const we2 = document.getElementById('pg-WorkEducation2');
+            const we3 = document.getElementById('pg-WorkEducation3');
+            if (we1) we1.style.display = isMinor ? 'none' : '';
+            if (we2) we2.style.display = isMinor ? 'none' : '';
+            if (we3) we3.style.display = isMinor ? 'none' : '';
+            // Update nav tabs
+            const navBtns = document.querySelectorAll('#nav button');
+            const we1Idx = PAGES.indexOf('WorkEducation1');
+            const we2Idx = PAGES.indexOf('WorkEducation2');
+            const we3Idx = PAGES.indexOf('WorkEducation3');
+            if (navBtns[we1Idx]) { navBtns[we1Idx].classList.toggle('hidden-tab', isMinor); navBtns[we1Idx].style.display = isMinor ? 'none' : ''; }
+            if (navBtns[we2Idx]) { navBtns[we2Idx].classList.toggle('hidden-tab', isMinor); navBtns[we2Idx].style.display = isMinor ? 'none' : ''; }
+            if (navBtns[we3Idx]) { navBtns[we3Idx].classList.toggle('hidden-tab', isMinor); navBtns[we3Idx].style.display = isMinor ? 'none' : ''; }
+            // Update accordion sections if needed
+            if (typeof updateConditionalSections === 'function' && typeof updatePageVisibility === 'function') {
+                // Re-run to sync accordion with new page visibility
+            }
+        }
+
         // ===== OCCUPATION → EMPLOYER VISIBILITY =====
         function updateEmployerVisibility() {
             const occ = document.getElementById('ddlPresentOccupation').value;
@@ -5249,6 +5290,7 @@
         document.getElementById('pg-DeceasedSpouse').style.display = 'none';
         document.getElementById('pg-PrevSpouse').style.display = 'none';
         updatePageVisibility();
+        updateAgeBasedPages();
 
         // Event listeners for conditional branches
         document.getElementById('ddlAPP_MARITAL_STATUS').addEventListener('change', updatePageVisibility);
@@ -5257,6 +5299,10 @@
         document.getElementById('ddlPPT_TYPE').addEventListener('change', updatePptTypeBranch);
         document.getElementById('ddlPresentOccupation').addEventListener('change', updateEmployerVisibility);
         document.getElementById('dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip').addEventListener('change', updateVisaSubtype);
+        // Age-based visibility: skip WorkEducation for minors (<14)
+        document.getElementById('ddlDOBDay').addEventListener('change', updateAgeBasedPages);
+        document.getElementById('ddlDOBMonth').addEventListener('change', updateAgeBasedPages);
+        document.getElementById('tbxDOBYear').addEventListener('input', updateAgeBasedPages);
 
         // Listen for specific travel radio changes
         document.querySelectorAll('input[name="rblSpecificTravel"]').forEach(r => {
