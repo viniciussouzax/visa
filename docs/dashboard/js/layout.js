@@ -13,7 +13,7 @@ const CURRENT_PAGE = (() => {
 })();
 
 const PAGE_TITLES = {
-    pipeline: 'Solicitante',
+    pipeline: 'Aplicações',
     archived: 'Arquivados',
     software: 'Software',
     master: 'Master',
@@ -26,7 +26,7 @@ function renderLayout() {
     if (!sidebarEl) return;
 
     const navItems = [
-        { view: 'pipeline', label: 'Solicitante', href: 'index.html' },
+        { view: 'pipeline', label: 'Aplicações', href: 'index.html' },
         { view: 'archived', label: 'Arquivados', href: 'archived.html' },
         { view: 'software', label: 'Software', href: 'software.html' },
         { view: 'master', label: 'Master', href: 'master.html', masterOnly: true }
