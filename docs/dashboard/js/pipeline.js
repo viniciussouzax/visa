@@ -77,10 +77,6 @@ function setupListeners() {
         });
     }
 
-    // Refresh button
-    const refreshBtn = $('btn-refresh');
-    if (refreshBtn) refreshBtn.onclick = () => { showSkeleton('pipeline-list'); loadPipeline(); };
-
     // Ctrl+K to open search
     document.addEventListener('keydown', e => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
