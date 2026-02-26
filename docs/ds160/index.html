@@ -3827,10 +3827,16 @@
             html = html.replace(/ctl00/g, 'ctl' + padIdx);
 
             // Add remove button
-            entry.innerHTML = `<button type="button" class="btn-rm" onclick="removeEntry(this)" title="Remover">🗑 REMOVER</button>${html}`;
+            entry.innerHTML = `<button type="button" class="btn-rm" onclick="removeEntry(this)" title="Remover">REMOVER</button>${html}`;
             // Insert before the add button
             const addBtn = container.querySelector('.btn-add');
             container.insertBefore(entry, addBtn);
+
+            // Clear all inputs to ensure they start empty
+            entry.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"], input[type="number"], textarea').forEach(el => { el.value = ''; });
+            entry.querySelectorAll('select').forEach(el => { el.selectedIndex = 0; });
+            entry.querySelectorAll('input[type="radio"]').forEach(el => { el.checked = false; });
+            entry.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; });
 
             // Re-init selects in new entry
             entry.querySelectorAll('.sel-day').forEach(populateDays);
