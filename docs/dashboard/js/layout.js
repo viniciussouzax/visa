@@ -93,6 +93,20 @@ function renderLayout() {
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    ${CURRENT_PAGE === 'pipeline' ? `
+                    <button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/50 transition" @click="$dispatch('open-search')" title="Buscar (Ctrl+K)">
+                        <svg class="fill-current text-gray-500 dark:text-gray-400" width="16" height="16" viewBox="0 0 16 16">
+                            <path d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />
+                            <path d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z" />
+                        </svg>
+                    </button>
+                    <button id="btn-refresh" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/50 transition" title="Atualizar">
+                        <svg class="fill-current text-gray-500 dark:text-gray-400" width="16" height="16" viewBox="0 0 16 16">
+                            <path d="M14.15 3.85a8.003 8.003 0 00-5.196-2.794 7.953 7.953 0 00-5.932 1.655L1.707.293A1 1 0 00.293 1.707l2 2a1 1 0 001.414 0l2-2A1 1 0 004.293.293L3.536 1.05A5.96 5.96 0 018 0a6 6 0 016 6h2a8.001 8.001 0 00-1.85-5.15z" />
+                            <path d="M8 16a8.001 8.001 0 006.464-3.293l.829.829a1 1 0 001.414-1.414l-2-2a1 1 0 00-1.414 0l-2 2a1 1 0 001.414 1.414l.757-.757A5.96 5.96 0 018 16a6 6 0 01-6-6H0a8 8 0 008 8z" />
+                        </svg>
+                    </button>
+                    ` : ''}
                     <div class="relative inline-flex" x-data="{ open: false }">
                         <button class="inline-flex justify-center items-center" aria-haspopup="true" @click.prevent="open = !open" :aria-expanded="open">
                             <div class="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:ring-2 hover:ring-violet-300 transition">${initials}</div>
