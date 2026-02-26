@@ -3368,6 +3368,9 @@
                 reqSelect('ddlCountry', 'Selecione o país');
                 reqInput('tbxAPP_HOME_TEL', 'Telefone é obrigatório');
                 reqInput('tbxAPP_EMAIL_ADDR', 'Email é obrigatório');
+                reqRadio('rblAddPhone', 'Informe se possui outro telefone');
+                reqRadio('rblAddEmail', 'Informe se possui outro email');
+                reqRadio('rblAddSocial', 'Informe se possui outra rede social');
                 // Validate email format
                 const emailVal = val('tbxAPP_EMAIL_ADDR');
                 if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
@@ -3386,6 +3389,7 @@
                 reqSelect('ddlPPT_EXPIREDay', 'Selecione o dia de expiração');
                 reqSelect('ddlPPT_EXPIREMonth', 'Selecione o mês de expiração');
                 reqInput('tbxPPT_EXPIREYear', 'Informe o ano de expiração');
+                reqRadio('rblLOST_PPT_IND', 'Informe se já perdeu ou teve passaporte roubado');
                 // Validate year formats
                 const issYr = val('tbxPPT_ISSUEYear');
                 if (issYr && (issYr.length !== 4 || isNaN(issYr))) { markError(document.getElementById('tbxPPT_ISSUEYear'), 'Ano deve ter 4 dígitos'); errors++; }
@@ -3447,6 +3451,20 @@
                 reqInput('tbxMOTHER_GIVEN_NAME', 'Nome da mãe é obrigatório');
                 reqRadio('rblFATHER_LIVE_IN_US_IND', 'Informe se o pai reside nos EUA');
                 reqRadio('rblMOTHER_LIVE_IN_US_IND', 'Informe se a mãe reside nos EUA');
+                reqRadio('rblUS_IMMED_RELATIVE_IND', 'Informe se possui parente imediato nos EUA');
+                // Validate US relative entries if branch is open
+                if (radioChecked('rblUS_IMMED_RELATIVE_IND') === 'Y') {
+                    page.querySelectorAll('#br-rblUS_IMMED_RELATIVE_IND .entry').forEach(entry => {
+                        const sn = entry.querySelector('[id*="tbxUS_REL_SURNAME"]');
+                        if (sn && !sn.value.trim()) { markError(sn, 'Sobrenome do parente é obrigatório'); errors++; }
+                        const gn = entry.querySelector('[id*="tbxUS_REL_GIVEN_NAME"]');
+                        if (gn && !gn.value.trim()) { markError(gn, 'Nome do parente é obrigatório'); errors++; }
+                        const rel = entry.querySelector('[id*="ddlUS_REL_TYPE"]');
+                        if (rel && !rel.value) { markError(rel, 'Selecione o tipo de relação'); errors++; }
+                        const st = entry.querySelector('[id*="ddlUS_REL_STATUS"]');
+                        if (st && !st.value) { markError(st, 'Selecione o status do parente'); errors++; }
+                    });
+                }
             }
 
             // ===== Work/Education =====
@@ -3459,6 +3477,17 @@
                 reqRadio('rblOtherPersonsTravelingWithYou', 'Selecione Sim ou Não');
                 if (radioChecked('rblOtherPersonsTravelingWithYou') === 'Y') {
                     reqRadio('rblGroupTravel', 'Informe se viaja em grupo');
+                    // Validate companion entries if not group travel
+                    if (radioChecked('rblGroupTravel') === 'N') {
+                        page.querySelectorAll('#br-groupNo .entry').forEach(entry => {
+                            const sn = entry.querySelector('[id*="tbxTC_SURNAME"]');
+                            if (sn && !sn.value.trim()) { markError(sn, 'Sobrenome do acompanhante é obrigatório'); errors++; }
+                            const gn = entry.querySelector('[id*="tbxTC_GIVEN_NAME"]');
+                            if (gn && !gn.value.trim()) { markError(gn, 'Nome do acompanhante é obrigatório'); errors++; }
+                            const rel = entry.querySelector('[id*="ddlTCRelationship"]');
+                            if (rel && !rel.value) { markError(rel, 'Selecione o relacionamento'); errors++; }
+                        });
+                    }
                 }
             }
 
@@ -3531,9 +3560,32 @@
                 });
                 reqRadio('rblCLAN_TRIBE_IND', 'Informe se pertence a clã/tribo');
                 reqRadio('rblCOUNTRIES_VISITED_IND', 'Informe se visitou outros países');
+                // Validate country entries if branch open
+                if (radioChecked('rblCOUNTRIES_VISITED_IND') === 'Y') {
+                    page.querySelectorAll('#br-rblCOUNTRIES_VISITED_IND .entry').forEach(entry => {
+                        const dd = entry.querySelector('[id*="ddlCOUNTRIES_VISITED"]');
+                        if (dd && !dd.value) { markError(dd, 'Selecione o país visitado'); errors++; }
+                    });
+                }
                 reqRadio('rblORGANIZATION_IND', 'Informe se é membro de organizações');
+                // Validate organization entries if branch open
+                if (radioChecked('rblORGANIZATION_IND') === 'Y') {
+                    page.querySelectorAll('#br-rblORGANIZATION_IND .entry').forEach(entry => {
+                        const name = entry.querySelector('[id*="tbxORGANIZATION_NAME"]');
+                        if (name && !name.value.trim()) { markError(name, 'Nome da organização é obrigatório'); errors++; }
+                    });
+                }
                 reqRadio('rblSPECIALIZED_SKILLS_IND', 'Informe se possui habilidades especializadas');
                 reqRadio('rblMILITARY_SERVICE_IND', 'Informe se serviu nas forças armadas');
+                // Validate military entries if branch open
+                if (radioChecked('rblMILITARY_SERVICE_IND') === 'Y') {
+                    page.querySelectorAll('#br-rblMILITARY_SERVICE_IND .entry').forEach(entry => {
+                        const country = entry.querySelector('[id*="ddlMILITARY_SVC_CNTRY"]');
+                        if (country && !country.value) { markError(country, 'Selecione o país do serviço militar'); errors++; }
+                        const branch = entry.querySelector('[id*="tbxMILITARY_SVC_BRANCH"]');
+                        if (branch && !branch.value.trim()) { markError(branch, 'Ramo militar é obrigatório'); errors++; }
+                    });
+                }
                 reqRadio('rblINSURGENT_ORG_IND', 'Informe se é membro de org. insurgente');
             }
 
