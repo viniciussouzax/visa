@@ -659,6 +659,26 @@
             </div>
         </header>
         <div class="max-w-2xl mx-auto px-4 pt-4 pb-8" id="acc-container"></div>
+        <!-- Botões de ação final (fora do card de segurança) -->
+        <div id="final-actions" class="max-w-2xl mx-auto px-4 pb-8" style="display:none">
+            <div
+                style="background:#f0fdf4;border:2px solid #22c55e;border-radius:12px;padding:24px;text-align:center;margin-top:8px">
+                <div style="font-size:20px;margin-bottom:4px">✅</div>
+                <p style="font-size:15px;font-weight:600;color:#15803d;margin:0 0 4px">Formulário completo!</p>
+                <p style="font-size:13px;color:#4b5563;margin:0 0 16px">Todas as seções foram preenchidas e validadas.
+                </p>
+                <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+                    <button id="btnApprove" onclick="approveForm()"
+                        style="display:none;background:#16a34a;color:#fff;border:none;padding:12px 32px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s"
+                        onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">✓
+                        Aprovar Aplicação</button>
+                    <button id="btnFinalize" onclick="finalizeForm()"
+                        style="display:none;background:#2563eb;color:#fff;border:none;padding:12px 32px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s"
+                        onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">📤
+                        Finalizar e Enviar</button>
+                </div>
+            </div>
+        </div>
     </div>
     <header>
         <h1>Formulário DS-160</h1>
@@ -2737,8 +2757,9 @@
             </div>
         </div>
         <div class="page-btns">
-            <button id="btnFinalAction" class="btn btn-next" style="background:#2e7d32"
-                onclick="finalAction()">Concluir</button>
+            <button class="btn btn-prev" onclick="prevPage()">ANTERIOR</button>
+            <button id="btnSaveForm" class="btn btn-next" style="background:#2e7d32" onclick="saveFormData()">💾 Salvar
+                Formulário</button>
         </div>
     </div>
 
@@ -3329,6 +3350,99 @@
                         if (dd && !dd.value) { markError(dd, 'Selecione o país'); errors++; }
                     });
                 }
+            }
+
+            // ===== Address & Phone =====
+            if (page.id === 'pg-AddressPhone') {
+                reqInput('tbxAPP_ADDR_LN1', 'Endereço é obrigatório');
+                reqInput('tbxAPP_ADDR_CITY', 'Cidade é obrigatória');
+                reqSelect('ddlCountry', 'Selecione o país');
+                reqInput('tbxAPP_HOME_TEL', 'Telefone é obrigatório');
+                reqInput('tbxAPP_EMAIL_ADDR', 'Email é obrigatório');
+                // Validate email format
+                const emailVal = val('tbxAPP_EMAIL_ADDR');
+                if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+                    markError(document.getElementById('tbxAPP_EMAIL_ADDR'), 'Email inválido'); errors++;
+                }
+            }
+
+            // ===== Passport =====
+            if (page.id === 'pg-Passport') {
+                reqSelect('ddlPPT_TYPE', 'Selecione o tipo de passaporte');
+                reqInput('tbxPPT_NUM', 'Número do passaporte é obrigatório');
+                reqSelect('ddlPPT_CNTRY', 'Selecione o país de emissão');
+                reqSelect('ddlPPT_ISSUEDay', 'Selecione o dia de emissão');
+                reqSelect('ddlPPT_ISSUEMonth', 'Selecione o mês de emissão');
+                reqInput('tbxPPT_ISSUEYear', 'Informe o ano de emissão');
+                reqSelect('ddlPPT_EXPIREDay', 'Selecione o dia de expiração');
+                reqSelect('ddlPPT_EXPIREMonth', 'Selecione o mês de expiração');
+                reqInput('tbxPPT_EXPIREYear', 'Informe o ano de expiração');
+                // Validate year formats
+                const issYr = val('tbxPPT_ISSUEYear');
+                if (issYr && (issYr.length !== 4 || isNaN(issYr))) { markError(document.getElementById('tbxPPT_ISSUEYear'), 'Ano deve ter 4 dígitos'); errors++; }
+                const expYr = val('tbxPPT_EXPIREYear');
+                if (expYr && (expYr.length !== 4 || isNaN(expYr))) { markError(document.getElementById('tbxPPT_EXPIREYear'), 'Ano deve ter 4 dígitos'); errors++; }
+            }
+
+            // ===== Travel =====
+            if (page.id === 'pg-Travel') {
+                reqRadio('rblSpecificTravel', 'Selecione se possui planos específicos');
+                const hasSpecific = radioChecked('rblSpecificTravel');
+                if (hasSpecific === 'Y') {
+                    // Specific travel: arrival date required
+                    reqSelect('ddlARRIVAL_US_DTEDay', 'Selecione o dia de chegada');
+                    reqSelect('ddlARRIVAL_US_DTEMonth', 'Selecione o mês de chegada');
+                    reqInput('tbxARRIVAL_US_DTEYear', 'Informe o ano de chegada');
+                    reqSelect('ddlDEPARTURE_US_DTEDay', 'Selecione o dia de partida');
+                    reqSelect('ddlDEPARTURE_US_DTEMonth', 'Selecione o mês de partida');
+                    reqInput('tbxDEPARTURE_US_DTEYear', 'Informe o ano de partida');
+                } else if (hasSpecific === 'N') {
+                    // Non-specific: intended arrival + length of stay
+                    reqSelect('ddlARRIVAL_US_NSDTEDay', 'Selecione o dia de chegada');
+                    reqSelect('ddlARRIVAL_US_NSDTEMonth', 'Selecione o mês de chegada');
+                    reqInput('tbxARRIVAL_US_NSDTEYear', 'Informe o ano de chegada');
+                    reqInput('tbxAPP_LOS', 'Informe o tempo de permanência');
+                    reqSelect('ddlAPP_LOS_CD', 'Selecione o período (dias/semanas/meses)');
+                }
+                // US address (both branches)
+                reqInput('tbxStreetAddress1', 'Endereço nos EUA é obrigatório');
+                reqInput('tbxCity', 'Cidade nos EUA é obrigatória');
+                reqSelect('ddlTravelState', 'Selecione o estado nos EUA');
+                // Payer
+                reqSelect('ddlWhoIsPaying', 'Selecione quem pagará pela viagem');
+            }
+
+            // ===== US Contact =====
+            if (page.id === 'pg-USContact') {
+                const nameNA = document.getElementById('cbxUS_POC_NAME_NA');
+                if (!nameNA?.checked) {
+                    reqInput('tbxUS_POC_SURNAME', 'Sobrenome do contato nos EUA é obrigatório');
+                    reqInput('tbxUS_POC_GIVEN_NAME', 'Nome do contato nos EUA é obrigatório');
+                }
+                const orgNA = document.getElementById('cbxUS_POC_ORG_NA_IND');
+                if (!orgNA?.checked) {
+                    reqInput('tbxUS_POC_ORGANIZATION', 'Organização do contato é obrigatória');
+                }
+                reqInput('tbxUS_POC_ADDR_LN1', 'Endereço do contato é obrigatório');
+                reqInput('tbxUS_POC_ADDR_CITY', 'Cidade do contato é obrigatória');
+                reqSelect('ddlUS_POC_ADDR_STATE', 'Selecione o estado');
+                reqInput('tbxUS_POC_ADDR_POSTAL_CD', 'CEP do contato é obrigatório');
+                reqInput('tbxUS_POC_HOME_TEL', 'Telefone do contato é obrigatório');
+            }
+
+            // ===== Family =====
+            if (page.id === 'pg-Family1') {
+                reqInput('tbxFATHER_SURNAME', 'Sobrenome do pai é obrigatório');
+                reqInput('tbxFATHER_GIVEN_NAME', 'Nome do pai é obrigatório');
+                reqInput('tbxMOTHER_SURNAME', 'Sobrenome da mãe é obrigatório');
+                reqInput('tbxMOTHER_GIVEN_NAME', 'Nome da mãe é obrigatório');
+                reqRadio('rblFATHER_LIVE_IN_US_IND', 'Informe se o pai reside nos EUA');
+                reqRadio('rblMOTHER_LIVE_IN_US_IND', 'Informe se a mãe reside nos EUA');
+            }
+
+            // ===== Work/Education =====
+            if (page.id === 'pg-WorkEducation1') {
+                reqSelect('ddlAPP_OCCUPATION', 'Selecione a ocupação');
             }
 
             if (errors > 0) {
@@ -4582,50 +4696,126 @@
             return true;
         }
 
-        // Final action: Finalizar (applicant) or Save+Approve (assessor)
-        async function finalAction() {
-            // Validate all fields before proceeding
-            if (!validateFullForm()) return;
+        // Save form data without approving — just persist to Supabase
+        async function saveFormData() {
+            // Validate current page first
+            if (!validateCurrentPage()) return;
 
-            // Mark the last section (Security5) as complete
+            // Mark current section as complete
             const curPageId = 'pg-' + (window._PAGES_NAMES?.[currentPage] || '');
             const curSecIdx = window._pageToSection?.[curPageId];
             if (curSecIdx !== undefined && window._markComplete) {
                 window._markComplete(curSecIdx);
             }
 
-            const btn = document.getElementById('btnFinalAction');
+            const btn = document.getElementById('btnSaveForm');
             btn.disabled = true;
             btn.textContent = 'Salvando...';
 
             try {
                 await saveToSupabase();
-
-                if (window._isAssessorMode) {
-                    // Assessor: approve the applicant
-                    if (savedApplicantId) {
-                        await sbFetch('rpc/approve_applicant', 'POST', {
-                            applicant_id: savedApplicantId
-                        });
-                    }
-                    btn.textContent = 'Aprovado!';
-                    btn.style.background = '#16a34a';
-                    // Notify parent dashboard
-                    if (window.parent !== window) {
-                        window.parent.postMessage({ type: 'form-approved', applicantId: savedApplicantId }, '*');
-                    }
-                } else {
-                    // Applicant: go back to gate
-                    btn.textContent = 'Salvo!';
-                    setTimeout(() => backToGate(), 1000);
-                }
+                btn.textContent = '✅ Salvo!';
+                btn.style.background = '#16a34a';
+                showToast('Formulário salvo com sucesso!');
+                // Check if all sections are complete to show approve/finalize
+                checkAllSectionsComplete();
+                setTimeout(() => {
+                    btn.textContent = '💾 Salvar Formulário';
+                    btn.style.background = '#2e7d32';
+                    btn.disabled = false;
+                }, 2000);
             } catch (e) {
-                console.error('Final action error:', e);
+                console.error('Save error:', e);
                 showToast('Erro ao salvar: ' + e.message);
+                btn.textContent = '💾 Salvar Formulário';
                 btn.disabled = false;
-                btn.textContent = window._isAssessorMode ? 'Aprovar' : 'Concluir';
             }
         }
+
+        // Approve form (assessor only)
+        async function approveForm() {
+            const btn = document.getElementById('btnApprove');
+            btn.disabled = true;
+            btn.textContent = 'Aprovando...';
+            try {
+                await saveToSupabase();
+                if (savedApplicantId) {
+                    await sbFetch('rpc/approve_applicant', 'POST', {
+                        applicant_id: savedApplicantId
+                    });
+                }
+                btn.textContent = '✅ Aprovado!';
+                showToast('Aplicação aprovada com sucesso!');
+                // Notify parent dashboard
+                if (window.parent !== window) {
+                    window.parent.postMessage({ type: 'form-approved', applicantId: savedApplicantId }, '*');
+                }
+            } catch (e) {
+                console.error('Approve error:', e);
+                showToast('Erro ao aprovar: ' + e.message);
+                btn.textContent = '✓ Aprovar Aplicação';
+                btn.disabled = false;
+            }
+        }
+
+        // Finalize form (applicant)
+        async function finalizeForm() {
+            const btn = document.getElementById('btnFinalize');
+            btn.disabled = true;
+            btn.textContent = 'Finalizando...';
+            try {
+                await saveToSupabase();
+                btn.textContent = '✅ Enviado!';
+                showToast('Formulário finalizado e enviado!');
+                setTimeout(() => backToGate(), 1500);
+            } catch (e) {
+                console.error('Finalize error:', e);
+                showToast('Erro ao finalizar: ' + e.message);
+                btn.textContent = '📤 Finalizar e Enviar';
+                btn.disabled = false;
+            }
+        }
+
+        // Check if all non-conditional sections are complete to show final buttons
+        function checkAllSectionsComplete() {
+            const SECTIONS = window._SECTIONS;
+            if (!SECTIONS) return;
+            const container = document.getElementById('acc-container');
+            if (!container) return;
+
+            let allComplete = true;
+            SECTIONS.forEach((sec, idx) => {
+                // Skip conditional sections that are hidden
+                if (sec.conditional) {
+                    const accItem = container.querySelector(`[data-section="${idx}"]`);
+                    if (accItem && accItem.style.display === 'none') return;
+                }
+                const check = document.querySelector(`[data-check="${idx}"]`);
+                if (!check || !check.classList.contains('done')) {
+                    allComplete = false;
+                }
+            });
+
+            const finalDiv = document.getElementById('final-actions');
+            const btnApprove = document.getElementById('btnApprove');
+            const btnFinalize = document.getElementById('btnFinalize');
+
+            if (allComplete) {
+                finalDiv.style.display = '';
+                if (window._isAssessorMode) {
+                    btnApprove.style.display = '';
+                    btnFinalize.style.display = 'none';
+                } else {
+                    btnApprove.style.display = 'none';
+                    btnFinalize.style.display = '';
+                }
+                // Scroll to final actions
+                finalDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                finalDiv.style.display = 'none';
+            }
+        }
+
 
         async function saveToSupabase() {
             try {
@@ -4888,11 +5078,42 @@
             }
 
             function markComplete(idx) {
-                completedSections.add(idx);
+                // Validate that required fields in this section have values
+                const sec = SECTIONS[idx];
+                if (!sec) return;
+                let hasEmptyRequired = false;
+                sec.pages.forEach(pageId => {
+                    const pg = document.getElementById(pageId);
+                    if (!pg || pg.style.display === 'none') return;
+                    // Check all inputs/selects that have a required label (with *)
+                    pg.querySelectorAll('.fg').forEach(fg => {
+                        const label = fg.querySelector('label');
+                        if (!label || !label.textContent.includes('*')) return;
+                        // Skip disabled/hidden fields
+                        if (fg.closest('.br:not(.open)') || fg.closest('.section-disabled')) return;
+                        const input = fg.querySelector('input[type="text"], textarea');
+                        const select = fg.querySelector('select');
+                        const radio = fg.querySelector('input[type="radio"]');
+                        if (input && !input.disabled && !input.value.trim()) hasEmptyRequired = true;
+                        if (select && !select.disabled && !select.value) hasEmptyRequired = true;
+                        if (radio) {
+                            const name = radio.name;
+                            if (name && !document.querySelector(`input[name="${name}"]:checked`)) hasEmptyRequired = true;
+                        }
+                    });
+                });
+
                 const check = document.querySelector(`[data-check="${idx}"]`);
-                if (check) {
-                    check.classList.add('done');
+                if (hasEmptyRequired) {
+                    // Do NOT mark as complete
+                    completedSections.delete(idx);
+                    if (check) check.classList.remove('done');
+                } else {
+                    completedSections.add(idx);
+                    if (check) check.classList.add('done');
                 }
+                // Update final buttons visibility
+                if (typeof checkAllSectionsComplete === 'function') checkAllSectionsComplete();
             }
 
             // updateProgress removed — progress bar was removed from UI
