@@ -34,58 +34,6 @@ function setupListeners() {
     if ($('app-prev')) $('app-prev').onclick = () => { if (currentPage > 1) { currentPage--; loadPipelineList(); } };
     if ($('app-next')) $('app-next').onclick = () => { currentPage++; loadPipelineList(); };
 
-    // Search
-    let searchTimeout;
-    const searchInput = $('search-applicants');
-    if (searchInput) {
-        searchInput.addEventListener('input', e => {
-            clearTimeout(searchTimeout);
-            const q = e.target.value.trim();
-            searchTimeout = setTimeout(async () => {
-                searchQuery = q;
-                currentPage = 1;
-                loadPipelineList();
-
-                const resultsList = $('search-results-list');
-                if (!resultsList) return;
-                if (!q) {
-                    resultsList.innerHTML = '<li class="px-2 py-1 text-gray-400 dark:text-gray-500 text-xs italic">Digite para buscar…</li>';
-                    return;
-                }
-                let rq = sb.from('applicants')
-                    .select('id, full_name, data, passport_number, pipeline_status')
-                    .is('primary_applicant_id', null)
-                    .or(`full_name.ilike.%${q}%,passport_number.ilike.%${q}%`)
-                    .order('updated_at', { ascending: false }).limit(8);
-                if (userCompanyId) rq = rq.eq('company_id', userCompanyId);
-                const { data: results } = await rq;
-                if (!results || results.length === 0) {
-                    resultsList.innerHTML = '<li class="px-2 py-1 text-gray-400 dark:text-gray-500 text-xs italic">Nenhum resultado encontrado</li>';
-                    return;
-                }
-                resultsList.innerHTML = results.map(a => {
-                    const stage = STAGES[a.pipeline_status] || STAGES.new;
-                    const initials = (a.full_name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-                    return `<li>
-                        <a class="flex items-center p-2 text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/20 rounded-lg cursor-pointer" href="applicant.html?id=${a.id}">
-                            <div class="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold mr-3" style="background:${stage.color}22;color:${stage.color}">${initials}</div>
-                            <div class="truncate"><span class="font-medium">${a.full_name}</span></div>
-                            <span class="ml-auto text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style="background:${stage.color}22;color:${stage.color}">${stage.label}</span>
-                        </a>
-                    </li>`;
-                }).join('');
-            }, 300);
-        });
-    }
-
-    // Ctrl+K to open search
-    document.addEventListener('keydown', e => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            window.dispatchEvent(new CustomEvent('open-search'));
-        }
-    });
-
     // Modal close
     $('modal-close')?.addEventListener('click', () => $('info-modal').classList.add('hidden'));
 

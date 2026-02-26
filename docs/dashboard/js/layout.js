@@ -93,14 +93,12 @@ function renderLayout() {
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    ${CURRENT_PAGE === 'pipeline' ? `
                     <button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/50 transition" @click="$dispatch('open-search')" title="Buscar (Ctrl+K)">
                         <svg class="fill-current text-gray-500 dark:text-gray-400" width="16" height="16" viewBox="0 0 16 16">
                             <path d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />
                             <path d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z" />
                         </svg>
                     </button>
-                    ` : ''}
                     <div class="relative inline-flex" x-data="{ open: false }">
                         <button class="inline-flex justify-center items-center" aria-haspopup="true" @click.prevent="open = !open" :aria-expanded="open">
                             <div class="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:ring-2 hover:ring-violet-300 transition">${initials}</div>
@@ -126,4 +124,97 @@ function renderLayout() {
             </div>
         </div>
     </header>`;
+
+    // ===== GLOBAL SEARCH MODAL =====
+    if (!document.getElementById('global-search-modal')) {
+        const searchDiv = document.createElement('div');
+        searchDiv.setAttribute('x-data', '{ searchOpen: false }');
+        searchDiv.setAttribute('@open-search.window', "searchOpen = true; $nextTick(() => { document.getElementById('global-search-input')?.focus(); });");
+        searchDiv.innerHTML = `
+            <div class="fixed inset-0 bg-gray-900/30 z-50 transition-opacity" x-show="searchOpen"
+                x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-out duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" aria-hidden="true" x-cloak></div>
+            <div id="global-search-modal" class="fixed inset-0 z-50 overflow-hidden flex items-start top-20 mb-4 justify-center px-4 sm:px-6"
+                role="dialog" aria-modal="true" x-show="searchOpen"
+                x-transition:enter="transition ease-in-out duration-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in-out duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-4" x-cloak>
+                <div class="bg-white dark:bg-gray-800 border border-transparent dark:border-gray-700/60 overflow-auto max-w-2xl w-full max-h-full rounded-lg shadow-lg"
+                    @click.outside="searchOpen = false" @keydown.escape.window="searchOpen = false">
+                    <form class="border-b border-gray-200 dark:border-gray-700/60" onsubmit="event.preventDefault();">
+                        <div class="relative">
+                            <label for="global-search-input" class="sr-only">Buscar</label>
+                            <input id="global-search-input" class="w-full dark:text-gray-300 bg-white dark:bg-gray-800 border-0 focus:ring-transparent placeholder-gray-400 dark:placeholder-gray-500 appearance-none py-3 pl-10 pr-4"
+                                type="search" placeholder="Buscar solicitante por nome ou passaporte…" />
+                            <button class="absolute inset-0 right-auto group" type="submit" aria-label="Search">
+                                <svg class="shrink-0 fill-current text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 ml-4 mr-2" width="16" height="16" viewBox="0 0 16 16">
+                                    <path d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />
+                                    <path d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                    <div class="py-4 px-2">
+                        <div class="mb-3 last:mb-0">
+                            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase px-2 mb-2">Resultados</div>
+                            <ul id="global-search-results" class="text-sm">
+                                <li class="px-2 py-1 text-gray-400 dark:text-gray-500 text-xs italic">Digite para buscar…</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(searchDiv);
+        setupGlobalSearch();
+    }
+
+    // Ctrl+K shortcut
+    if (!window._globalSearchKeyBound) {
+        window._globalSearchKeyBound = true;
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                window.dispatchEvent(new CustomEvent('open-search'));
+            }
+        });
+    }
+}
+
+function setupGlobalSearch() {
+    let timeout;
+    const input = document.getElementById('global-search-input');
+    if (!input) return;
+    input.addEventListener('input', e => {
+        clearTimeout(timeout);
+        const q = e.target.value.trim();
+        timeout = setTimeout(async () => {
+            const resultsList = document.getElementById('global-search-results');
+            if (!resultsList) return;
+            if (!q) {
+                resultsList.innerHTML = '<li class="px-2 py-1 text-gray-400 dark:text-gray-500 text-xs italic">Digite para buscar…</li>';
+                return;
+            }
+            let rq = sb.from('applicants')
+                .select('id, full_name, passport_number, pipeline_status')
+                .is('primary_applicant_id', null)
+                .or(`full_name.ilike.%${q}%,passport_number.ilike.%${q}%`)
+                .order('updated_at', { ascending: false }).limit(8);
+            if (userCompanyId) rq = rq.eq('company_id', userCompanyId);
+            const { data: results } = await rq;
+            if (!results || results.length === 0) {
+                resultsList.innerHTML = '<li class="px-2 py-1 text-gray-400 dark:text-gray-500 text-xs italic">Nenhum resultado encontrado</li>';
+                return;
+            }
+            resultsList.innerHTML = results.map(a => {
+                const stage = STAGES[a.pipeline_status] || STAGES.new;
+                const initials = (a.full_name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                return `<li>
+                    <a class="flex items-center p-2 text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/20 rounded-lg cursor-pointer" href="applicant.html?id=${a.id}">
+                        <div class="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold mr-3" style="background:${stage.color}22;color:${stage.color}">${initials}</div>
+                        <div class="truncate"><span class="font-medium">${a.full_name}</span></div>
+                        <span class="ml-auto text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style="background:${stage.color}22;color:${stage.color}">${stage.label}</span>
+                    </a>
+                </li>`;
+            }).join('');
+        }, 300);
+    });
 }
