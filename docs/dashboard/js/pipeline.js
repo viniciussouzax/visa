@@ -111,7 +111,7 @@ async function loadPipelineList() {
 
     // Column header
     const headerHtml = (applicants && applicants.length > 0) ? `
-        <div class="pipeline-header" style="display:grid;grid-template-columns:28px 36px 1fr 120px 120px 100px 50px;gap:12px;align-items:center;padding:0 20px 8px;border-bottom:1px solid #e5e7eb;margin-bottom:4px">
+        <div class="pipeline-header" style="display:grid;grid-template-columns:28px 36px 1fr 120px 120px 100px 50px;gap:12px;align-items:center;padding:0 20px 8px;margin-bottom:4px">
             <span></span><span></span>
             <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Solicitante</span>
             <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Prioridade</span>
