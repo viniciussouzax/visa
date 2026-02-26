@@ -684,9 +684,9 @@
                 </p>
                 <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
                     <button id="btnApprove" onclick="approveForm()"
-                        style="display:none;background:#16a34a;color:#fff;border:none;padding:14px 40px;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:0.5px"
-                        onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">✓
-                        APROVAR APLICAÇÃO</button>
+                        style="display:none;width:100%;background:#16a34a;color:#fff;border:none;padding:14px;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:0.5px"
+                        onmouseover="this.style.background='#15803d'"
+                        onmouseout="this.style.background='#16a34a'">APROVAR APLICACAO</button>
                 </div>
             </div>
         </div>
@@ -4727,20 +4727,19 @@
 
                 // Check if all sections are complete
                 const allComplete = areAllSectionsComplete();
-                if (allComplete && savedApplicantId) {
-                    // Move from 'new' to 'review' automatically
+                if (allComplete && savedApplicantId && !window._isAssessorMode) {
+                    // Solicitante: move from 'new' to 'review' and redirect
                     await sbFetch(`applicants?id=eq.${savedApplicantId}`, 'PATCH', {
                         pipeline_status: 'review',
                         updated_at: new Date().toISOString()
                     });
-                    showToast('Formulário salvo e enviado para revisão!');
-                    // Notify parent dashboard
+                    showToast('Formulario salvo e enviado para revisao!');
                     if (window.parent !== window) {
                         window.parent.postMessage({ type: 'form-saved', applicantId: savedApplicantId, status: 'review' }, '*');
                     }
                     setTimeout(() => backToGate(), 1500);
                 } else {
-                    showToast('Formulário salvo com sucesso!');
+                    showToast('Formulario salvo com sucesso!');
                 }
 
                 checkAllSectionsComplete();
@@ -4766,16 +4765,17 @@
                         applicant_id: savedApplicantId
                     });
                 }
-                btn.textContent = '✅ Aprovado!';
-                showToast('Aplicação aprovada com sucesso!');
+                btn.textContent = 'Aprovado!';
+                showToast('Aplicacao aprovada com sucesso!');
                 // Notify parent dashboard
                 if (window.parent !== window) {
                     window.parent.postMessage({ type: 'form-approved', applicantId: savedApplicantId }, '*');
                 }
+                setTimeout(() => backToGate(), 1500);
             } catch (e) {
                 console.error('Approve error:', e);
                 showToast('Erro ao aprovar: ' + e.message);
-                btn.textContent = '✓ APROVAR APLICAÇÃO';
+                btn.textContent = 'APROVAR APLICACAO';
                 btn.disabled = false;
             }
         }
