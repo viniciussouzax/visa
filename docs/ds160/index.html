@@ -3454,6 +3454,113 @@
                 reqSelect('ddlAPP_OCCUPATION', 'Selecione a ocupação');
             }
 
+            // ===== TravelCompanions =====
+            if (page.id === 'pg-TravelCompanions') {
+                reqRadio('rblOtherPersonsTravelingWithYou', 'Selecione Sim ou Não');
+            }
+
+            // ===== PreviousUSTravel =====
+            if (page.id === 'pg-PreviousUSTravel') {
+                reqRadio('rblPREV_US_TRAVEL_IND', 'Informe se já esteve nos EUA');
+                if (radioChecked('rblPREV_US_TRAVEL_IND') === 'Y') {
+                    reqRadio('rblPREV_US_DRIVER_LIC_IND', 'Informe se possui carteira de motorista dos EUA');
+                }
+                reqRadio('rblPREV_VISA_IND', 'Informe se já obteve visto americano');
+                if (radioChecked('rblPREV_VISA_IND') === 'Y') {
+                    reqRadio('rblPREV_VISA_SAME_TYPE_IND', 'Informe se solicita o mesmo tipo de visto');
+                    reqRadio('rblPREV_VISA_SAME_CNTRY_IND', 'Informe se solicita no mesmo país');
+                    reqRadio('rblPREV_VISA_TEN_PRINT_IND', 'Informe se foram coletadas impressões digitais');
+                    reqRadio('rblPREV_VISA_LOST_IND', 'Informe se o visto foi perdido ou roubado');
+                    reqRadio('rblPREV_VISA_CANCELLED_IND', 'Informe se o visto foi cancelado');
+                }
+                reqRadio('rblPREV_VISA_REFUSED_IND', 'Informe se teve visto recusado');
+                reqRadio('rblIV_PETITION_IND', 'Informe se houve petição de imigrante');
+            }
+
+            // ===== Family2 (Cônjuge) =====
+            if (page.id === 'pg-Family2') {
+                reqInput('tbxSpouseSurname', 'Sobrenome do cônjuge é obrigatório');
+                reqInput('tbxSpouseGivenName', 'Nome do cônjuge é obrigatório');
+                reqSelect('ddlSpouseDOBDay', 'Selecione o dia de nascimento');
+                reqSelect('ddlSpouseDOBMonth', 'Selecione o mês de nascimento');
+                reqInput('tbxSpouseDOBYear', 'Informe o ano de nascimento');
+                reqSelect('ddlSpouseNatDropDownList', 'Selecione a nacionalidade do cônjuge');
+                reqSelect('ddlSpousePOBCountry', 'Selecione o país de nascimento do cônjuge');
+                reqSelect('ddlSpouseAddressType', 'Selecione o tipo de endereço do cônjuge');
+                // Year format
+                const spouseYr = val('tbxSpouseDOBYear');
+                if (spouseYr && (spouseYr.length !== 4 || isNaN(spouseYr))) {
+                    markError(document.getElementById('tbxSpouseDOBYear'), 'Ano deve ter 4 dígitos'); errors++;
+                }
+            }
+
+            // ===== WorkEducation2 =====
+            if (page.id === 'pg-WorkEducation2') {
+                reqRadio('rblPreviouslyEmployed', 'Informe se já trabalhou antes');
+                reqRadio('rblOtherEduc', 'Informe se frequentou outra escola');
+            }
+
+            // ===== WorkEducation3 =====
+            if (page.id === 'pg-WorkEducation3') {
+                reqRadio('rblCLAN_TRIBE_IND', 'Informe se pertence a clã/tribo');
+                reqRadio('rblCOUNTRIES_VISITED_IND', 'Informe se visitou outros países');
+                reqRadio('rblORGANIZATION_IND', 'Informe se é membro de organizações');
+                reqRadio('rblSPECIALIZED_SKILLS_IND', 'Informe se possui habilidades especializadas');
+                reqRadio('rblMILITARY_SERVICE_IND', 'Informe se serviu nas forças armadas');
+                reqRadio('rblINSURGENT_ORG_IND', 'Informe se é membro de org. insurgente');
+            }
+
+            // ===== Security1 (Saúde) =====
+            if (page.id === 'pg-Security1') {
+                reqRadio('rblDisease', 'Informe sobre doença contagiosa');
+                reqRadio('rblDisorder', 'Informe sobre transtorno mental ou físico');
+                reqRadio('rblDruguser', 'Informe sobre uso de drogas');
+            }
+
+            // ===== Security2 (Criminal) =====
+            if (page.id === 'pg-Security2') {
+                reqRadio('rblArrested', 'Informe se foi preso ou condenado');
+                reqRadio('rblControlledSubstances', 'Informe sobre substâncias controladas');
+                reqRadio('rblProstitution', 'Informe sobre prostituição');
+                reqRadio('rblMoneyLaundering', 'Informe sobre lavagem de dinheiro');
+                reqRadio('rblHumanTrafficking', 'Informe sobre tráfico de pessoas');
+                reqRadio('rblAssistedSevereTrafficking', 'Informe sobre auxílio a tráfico');
+                reqRadio('rblHumanTraffickingRelated', 'Informe sobre parentesco com traficante');
+            }
+
+            // ===== Security3 (Nacional) =====
+            if (page.id === 'pg-Security3') {
+                reqRadio('rblIllegalActivity', 'Informe sobre atividades ilegais');
+                reqRadio('rblTerroristActivity', 'Informe sobre atividades terroristas');
+                reqRadio('rblTerroristSupport', 'Informe sobre apoio ao terrorismo');
+                reqRadio('rblTerroristOrg', 'Informe sobre organização terrorista');
+                reqRadio('rblTerroristRel', 'Informe sobre parentesco com terrorista');
+                reqRadio('rblGenocide', 'Informe sobre genocídio');
+                reqRadio('rblTorture', 'Informe sobre tortura');
+                reqRadio('rblExViolence', 'Informe sobre violência extrajudicial');
+                reqRadio('rblChildSoldier', 'Informe sobre recrutamento de crianças');
+                reqRadio('rblReligiousFreedom', 'Informe sobre liberdade religiosa');
+                reqRadio('rblPopulationControls', 'Informe sobre controle populacional');
+                reqRadio('rblTransplant', 'Informe sobre transplante coercivo');
+            }
+
+            // ===== Security4 (Imigração) =====
+            if (page.id === 'pg-Security4') {
+                reqRadio('rblRemovalHearing', 'Informe sobre audiência de deportação');
+                reqRadio('rblImmigrationFraud', 'Informe sobre fraude de imigração');
+                reqRadio('rblFailToAttend', 'Informe sobre não comparecimento');
+                reqRadio('rblVisaViolation', 'Informe sobre violação de visto');
+                reqRadio('rblDeport', 'Informe se foi deportado');
+            }
+
+            // ===== Security5 (Diversos) =====
+            if (page.id === 'pg-Security5') {
+                reqRadio('rblChildCustody', 'Informe sobre custódia de criança');
+                reqRadio('rblVotingViolation', 'Informe sobre violação eleitoral');
+                reqRadio('rblRenounceExp', 'Informe sobre renúncia de cidadania');
+                reqRadio('rblAttWoReimb', 'Informe sobre assistência sem reembolso');
+            }
+
             if (errors > 0) {
                 showToast(`${errors} campo(s) obrigatório(s) não preenchido(s)`);
                 // Scroll to first error
@@ -3871,6 +3978,8 @@
         function removeEntry(btn) {
             const entry = btn.closest('.entry');
             if (entry) entry.remove();
+            // Re-validate section after removing entry
+            revalidateCurrentSection();
         }
 
         // ===== JSON GENERATION =====
