@@ -3774,15 +3774,29 @@
                 r.addEventListener('change', () => {
                     const branchName = r.dataset.branch;
                     // Special case: specific travel has Y and N branches
-                    if (branchName === 'rblSpecificTravel') { updateTravelBranch(); return; }
+                    if (branchName === 'rblSpecificTravel') { updateTravelBranch(); revalidateCurrentSection(); return; }
                     const br = document.getElementById('br-' + branchName);
                     const shouldOpen = invertedBranches.includes(branchName) ? r.value === 'N' : r.value === 'Y';
                     if (br) {
                         br.classList.toggle('open', shouldOpen);
-                        if (!shouldOpen) clearBranchInputs(br);
+                        if (!shouldOpen) {
+                            clearBranchInputs(br);
+                            revalidateCurrentSection();
+                        }
                     }
                 });
             });
+        }
+
+        // Re-validate the current section's check after branch change
+        function revalidateCurrentSection() {
+            const curPageId = 'pg-' + (window._PAGES_NAMES?.[currentPage] || '');
+            const curSecIdx = window._pageToSection?.[curPageId];
+            if (curSecIdx !== undefined && window._markComplete) {
+                window._markComplete(curSecIdx);
+            }
+            // Hide approve button if sections are no longer all complete
+            checkAllSectionsComplete();
         }
 
         // ===== ADD ANOTHER =====
