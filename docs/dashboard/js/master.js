@@ -53,7 +53,7 @@ function setupMasterListeners() {
     // Settings save
     if ($('btn-save-settings')) {
         $('btn-save-settings').onclick = async () => {
-            const question = $('setting-security-question')?.value || '4';
+            const question = $('setting-security-question')?.value || '0';
             const answer = $('setting-security-answer')?.value || '';
             const upserts = [
                 { key_name: 'security_question', key_value: question, description: 'Índice da pergunta de segurança DS-160' },
@@ -140,7 +140,7 @@ async function loadSettings() {
     (data || []).forEach(s => {
         if (s.key_name === 'security_question') {
             const el = $('setting-security-question');
-            if (el) el.value = s.key_value || '4';
+            if (el) el.value = s.key_value || '0';
         }
         if (s.key_name === 'security_answer') {
             const el = $('setting-security-answer');
