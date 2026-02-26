@@ -16,16 +16,38 @@ let userCompanyId = null;
 let userCompanyShortId = null;
 let currentPage = 1;
 let searchQuery = '';
-const PAGE_SIZE = 15;
+let currentFilter = '';
+const PAGE_SIZE = 25;
 
 // Archived view state
 let archivedPage = 1;
 let archivedSearch = '';
 
+// View cache — avoids redundant fetches on tab switch
+const viewLoaded = { pipeline: false, archived: false, software: false, master: false };
+
+// Loading skeleton helper
+function showSkeleton(containerId, count = 3) {
+    const el = $(containerId);
+    if (!el) return;
+    el.innerHTML = Array.from({ length: count }, () =>
+        `<div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl px-5 py-4 animate-pulse">
+            <div class="flex items-center space-x-4">
+                <div class="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 shrink-0"></div>
+                <div class="flex-1 space-y-2">
+                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+                    <div class="h-3 bg-gray-100 dark:bg-gray-700/50 rounded w-1/2"></div>
+                </div>
+                <div class="h-5 bg-gray-100 dark:bg-gray-700/50 rounded-full w-16"></div>
+            </div>
+        </div>`
+    ).join('');
+}
+
 const STAGES = {
     new: { label: 'Novo', color: '#3b82f6' },
     review: { label: 'Revisão', color: '#f59e0b' },
-    approved: { label: 'Aprovado', color: '#8b5cf6' },
+    approved: { label: 'Aprovado', color: '#6366f1' },
     doing: { label: 'Pendente', color: '#f97316' },
     done: { label: 'Concluído', color: '#22c55e' },
     archived: { label: 'Arquivado', color: '#64748b' }
@@ -39,6 +61,13 @@ const FILL_STAGES = {
     filled: { label: 'Preenchido', color: '#22c55e' },
     error: { label: 'Erro', color: '#ef4444' },
     needs_attention: { label: 'Atenção', color: '#f59e0b' },
+};
+
+const PRIORITIES = {
+    0: { label: '—', icon: '', color: '#6b7280' },
+    1: { label: 'Normal', icon: '📋', color: '#3b82f6' },
+    2: { label: 'Urgente', icon: '⚡', color: '#f97316' },
+    3: { label: 'Emergência', icon: '🚨', color: '#ef4444' },
 };
 
 // ============================================================
@@ -57,11 +86,39 @@ function toast(msg, type = 'info') {
 // AUTH
 // ============================================================
 async function init() {
-    const { data: { session } } = await sb.auth.getSession();
+    // Diagnóstico: verificar localStorage primeiro
+    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    console.log('[AUTH] localStorage sb key:', sbKey || 'NÃO ENCONTRADA');
+    if (sbKey) {
+        try {
+            const stored = JSON.parse(localStorage.getItem(sbKey));
+            console.log('[AUTH] localStorage sessão:', stored?.user?.email || 'sem user', '| expires:', stored?.expires_at ? new Date(stored.expires_at * 1000).toLocaleString() : 'N/A');
+        } catch (e) { console.log('[AUTH] localStorage parse error:', e); }
+    }
+
+    const { data: { session }, error } = await sb.auth.getSession();
+    console.log('[AUTH] getSession:', session ? 'OK (' + session.user.email + ')' : 'NULL', error ? 'ERRO: ' + error.message : '');
+
     if (session) {
         currentUser = session.user;
         await setupApp();
+    } else {
+        // Sem sessão — mostra tela de login
+        $('auth-screen').style.display = '';
+        $('app-screen').style.display = 'none';
     }
+
+    // Listener para mudanças de auth
+    sb.auth.onAuthStateChange((event, session) => {
+        console.log('[AUTH] stateChange:', event);
+        if (event === 'SIGNED_IN' && !currentUser && session) {
+            currentUser = session.user;
+            setupApp();
+        }
+        if (event === 'TOKEN_REFRESHED' && session) {
+            currentUser = session.user;
+        }
+    });
 }
 
 $('btn-login').onclick = async () => {
@@ -75,13 +132,14 @@ $('btn-login').onclick = async () => {
 };
 
 $('btn-logout').onclick = async () => {
+    localStorage.removeItem('ds160_dashboard_view');
     await sb.auth.signOut();
     location.reload();
 };
 
 async function setupApp() {
     $('auth-screen').style.display = 'none';
-    $('app-screen').style.display = 'block';
+    $('app-screen').style.display = 'flex';
     $('user-email').textContent = currentUser.email;
 
     const { data: masterData } = await sb.rpc('is_master');
@@ -93,17 +151,48 @@ async function setupApp() {
     const { data: memberData } = await sb.from('members').select('company_id').eq('user_id', currentUser.id).single();
     if (memberData) {
         userCompanyId = memberData.company_id;
-        // Load short_id
         const { data: companyData } = await sb.from('companies').select('short_id').eq('id', userCompanyId).single();
         if (companyData) userCompanyShortId = companyData.short_id;
     }
 
-    loadPipeline();
+    // Restore view from localStorage (primary) or hash (fallback) or 'pipeline' (default)
+    const saved = localStorage.getItem('ds160_dashboard_view') || location.hash.replace('#', '') || 'pipeline';
+    const parts = saved.split(':');
+    const savedView = parts[0];
+    const savedParam = parts.slice(1).join(':') || '';
+
+    console.log('[Dashboard] Restoring view:', saved, '→ view:', savedView, 'param:', savedParam);
+
+    if (savedView === 'applicant-detail' && savedParam) {
+        openApplicantDetail(savedParam);
+    } else if (savedView === 'master') {
+        const navItem = document.querySelector('.nav-item[data-view="master"]');
+        if (navItem) {
+            navItem.click();
+            if (savedParam) setTimeout(() => showMasterSub(savedParam), 150);
+        } else {
+            navigateTo('pipeline');
+        }
+    } else {
+        const navItem = document.querySelector(`.nav-item[data-view="${savedView}"]`);
+        if (navItem) {
+            navItem.click();
+        } else {
+            navigateTo('pipeline');
+        }
+    }
 }
 
 // ============================================================
-// NAVIGATION
+// NAVIGATION — Centralized persistence via localStorage + hash
 // ============================================================
+function navigateTo(viewKey) {
+    // viewKey examples: 'pipeline', 'archived', 'software', 'master:agencies', 'applicant-detail:UUID'
+    localStorage.setItem('ds160_dashboard_view', viewKey);
+    try { history.replaceState(null, '', '#' + viewKey); } catch (e) { }
+    console.log('[Dashboard] navigateTo:', viewKey);
+}
+
 function showView(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const view = document.getElementById('view-' + viewId);
@@ -112,19 +201,41 @@ function showView(viewId) {
 
 document.querySelectorAll('.nav-item[data-view]').forEach(item => {
     item.addEventListener('click', () => {
+        const view = item.dataset.view;
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         item.classList.add('active');
-        showView(item.dataset.view);
+        showView(view);
         $('page-title').textContent = item.textContent.trim();
         $('page-subtitle').textContent = '';
-        if (item.dataset.view === 'pipeline') loadPipeline();
-        if (item.dataset.view === 'archived') loadArchived();
-        if (item.dataset.view === 'software') loadSoftwareInfo();
-        if (item.dataset.view === 'master') {
+
+        // Persist current view
+        navigateTo(view);
+
+        // Lazy load — only fetch on first visit or force refresh
+        if (view === 'pipeline') {
+            if (!viewLoaded.pipeline) { showSkeleton('pipeline-list'); }
+            loadPipeline();
+            viewLoaded.pipeline = true;
+        }
+        if (view === 'archived') {
+            if (!viewLoaded.archived) { showSkeleton('archived-list'); }
+            loadArchived();
+            viewLoaded.archived = true;
+        }
+        if (view === 'software') {
+            if (!viewLoaded.software) loadSoftwareInfo();
+            viewLoaded.software = true;
+        }
+        if (view === 'master') {
             showMasterSub('agencies');
+            if (!viewLoaded.master) {
+                showSkeleton('agencies-list');
+                showSkeleton('logs-list');
+            }
             loadAgencies();
             loadCapmonsterKey();
             loadLogs();
+            viewLoaded.master = true;
         }
     });
 });
@@ -139,6 +250,8 @@ function showMasterSub(tabName) {
     if (sub) sub.classList.add('active');
     const tab = document.querySelector(`.master-tab[data-master-tab="${tabName}"]`);
     if (tab) tab.classList.add('active');
+    // Persist master sub-tab
+    navigateTo('master:' + tabName);
 }
 
 document.querySelectorAll('.master-tab').forEach(tab => {
@@ -231,9 +344,12 @@ async function loadPipelineList() {
     const to = from + PAGE_SIZE - 1;
 
     let query = sb.from('applicants')
-        .select('id, full_name, data, passport_number, pipeline_status, updated_at')
+        .select('id, full_name, data, passport_number, pipeline_status, updated_at, fill_priority, sort_order')
         .is('primary_applicant_id', null)
         .neq('pipeline_status', 'archived');
+
+    // Filter by pipeline stage if a stage card is selected
+    if (currentFilter) query = query.eq('pipeline_status', currentFilter);
 
     // Filter by organization only
     if (userCompanyId) query = query.eq('company_id', userCompanyId);
@@ -249,6 +365,7 @@ async function loadPipelineList() {
     // Get dependent counts + completion for each primary
     const ids = (applicants || []).map(a => a.id);
     let dependentsMap = {};
+    let appsMap = {};
     if (ids.length > 0) {
         const { data: deps } = await sb.from('applicants')
             .select('id, full_name, pipeline_status, primary_applicant_id')
@@ -257,11 +374,16 @@ async function loadPipelineList() {
             if (!dependentsMap[d.primary_applicant_id]) dependentsMap[d.primary_applicant_id] = [];
             dependentsMap[d.primary_applicant_id].push(d);
         });
+        // Fetch fill_status for each primary from applications
+        const { data: appsList } = await sb.from('applications')
+            .select('applicant_id, fill_status')
+            .in('applicant_id', ids);
+        (appsList || []).forEach(app => { appsMap[app.applicant_id] = app; });
     }
 
-    // Render list
-    const tbody = $('pipeline-list');
-    tbody.innerHTML = (applicants || []).map(a => {
+    // Render list (card style like job-listing)
+    const container = $('pipeline-list');
+    container.innerHTML = (applicants || []).map(a => {
         const deps = dependentsMap[a.id] || [];
         const totalProcesses = 1 + deps.length;
         const doneProcesses = (a.pipeline_status === 'done' ? 1 : 0) +
@@ -272,21 +394,54 @@ async function loadPipelineList() {
         const stage = STAGES[a.pipeline_status] || STAGES.new;
         const email = a.data?.addressPhone?.email || a.data?.personal?.email || a.data?.contact?.email || '';
         const updated = a.updated_at ? new Date(a.updated_at).toLocaleDateString('pt-BR') : '—';
+        const initials = (a.full_name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        const avatarBg = stage.color + '22';
 
-        return `<tr style="cursor:pointer" onclick="openApplicantDetail('${a.id}')">
-            <td>
-                <div style="font-weight:600">${a.full_name}</div>
-                ${email ? `<div style="font-size:11px;color:var(--text-muted)">${email}</div>` : ''}
-            </td>
-            <td><span class="badge" style="background:${stage.color}22;color:${stage.color}">${stage.label}</span></td>
-            <td>
-                <span style="font-weight:700;font-size:15px;color:${progressColor}">${doneProcesses}/${totalProcesses}</span>
-            </td>
-            <td style="font-size:12px;color:var(--text-muted)">${updated}</td>
-        </tr>`;
-    }).join('') || '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhum solicitante nesta etapa</td></tr>';
+        // Priority badge
+        const prio = PRIORITIES[a.fill_priority] || PRIORITIES[0];
+        const prioBadge = a.fill_priority >= 2
+            ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${prio.color}15;color:${prio.color};font-weight:700">${prio.icon} ${prio.label}</span>`
+            : '';
+
+        // Fill status badge
+        const appData = appsMap[a.id];
+        const fillStatus = appData?.fill_status || '';
+        const fStage = FILL_STAGES[fillStatus];
+        const fillBadge = fStage && fillStatus !== 'pending'
+            ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${fStage.color}15;color:${fStage.color};font-weight:600"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${fStage.color};margin-right:4px;vertical-align:middle"></span>${fStage.label}</span>`
+            : '';
+
+        return `<div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl px-5 py-4 cursor-pointer hover:shadow-md transition" onclick="openApplicantDetail('${a.id}')">
+            <div class="md:flex justify-between items-center space-y-4 md:space-y-0 space-x-2">
+                <!-- Left side -->
+                <div class="flex items-start space-x-3 md:space-x-4">
+                    <div class="w-9 h-9 shrink-0 mt-1 rounded-full flex items-center justify-center text-xs font-bold" style="background:${avatarBg};color:${stage.color}">${initials}</div>
+                    <div>
+                        <div class="inline-flex font-semibold text-gray-800 dark:text-gray-100">${a.full_name}</div>
+                        ${email ? `<div class="text-sm text-gray-500 dark:text-gray-400">${email}</div>` : ''}
+                    </div>
+                </div>
+                <!-- Right side -->
+                <div class="flex items-center space-x-3 pl-10 md:pl-0">
+                    ${prioBadge}
+                    ${fillBadge}
+                    <div class="text-sm text-gray-500 dark:text-gray-400 italic whitespace-nowrap">${updated}</div>
+                    <div class="text-xs inline-flex font-medium rounded-full text-center px-2.5 py-1" style="background:${stage.color}22;color:${stage.color}"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${stage.color};margin-right:5px;vertical-align:middle"></span>${stage.label}</div>
+                    <span class="text-sm font-bold" style="color:${progressColor}">${doneProcesses}/${totalProcesses}</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('') || '<div class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">Nenhum solicitante nesta etapa</div>';
 
     const hasMore = (applicants || []).length === PAGE_SIZE;
+    const paginationEl = $('pagination-container');
+    if (paginationEl) {
+        if (currentPage > 1 || hasMore) {
+            paginationEl.classList.remove('hidden');
+        } else {
+            paginationEl.classList.add('hidden');
+        }
+    }
     $('app-prev').disabled = currentPage <= 1;
     $('app-next').disabled = !hasMore;
     $('app-page-info').textContent = `Página ${currentPage}`;
@@ -315,28 +470,48 @@ async function loadArchived() {
     const { data: applicants, error } = await query;
     if (error) { toast('Erro: ' + error.message, 'error'); return; }
 
-    const tbody = $('archived-list');
-    tbody.innerHTML = (applicants || []).map(a => {
+    const container = $('archived-list');
+    const stage = STAGES.archived;
+    container.innerHTML = (applicants || []).map(a => {
         const email = a.data?.personal?.email || a.data?.contact?.email || '';
         const updated = a.updated_at ? new Date(a.updated_at).toLocaleDateString('pt-BR') : '—';
-        return `<tr style="cursor:pointer" onclick="openApplicantDetail('${a.id}')">
-            <td>
-                <div style="font-weight:600">${a.full_name}</div>
-                ${email ? `<div style="font-size:11px;color:var(--text-muted)">${email}</div>` : ''}
-            </td>
-            <td style="font-size:12px;color:var(--text-muted)">${a.passport_number || '—'}</td>
-            <td style="font-size:12px;color:var(--text-muted)">${updated}</td>
-            <td>
-                <button class="btn-sm btn-view" onclick="event.stopPropagation();viewApplicantJson('${a.id}')" title="Ver JSON">Ver</button>
-                <button class="btn-sm btn-queue" onclick="event.stopPropagation();movePipeline('${a.id}','new','${a.id}')" title="Restaurar">Restaurar</button>
-            </td>
-        </tr>`;
-    }).join('') || '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhum solicitante arquivado</td></tr>';
+        const initials = (a.full_name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        return `<div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl px-5 py-4 cursor-pointer hover:shadow-md transition" onclick="openApplicantDetail('${a.id}')">
+            <div class="md:flex justify-between items-center space-y-4 md:space-y-0 space-x-2">
+                <div class="flex items-start space-x-3 md:space-x-4">
+                    <div class="w-9 h-9 shrink-0 mt-1 rounded-full flex items-center justify-center text-xs font-bold" style="background:${stage.color}22;color:${stage.color}">${initials}</div>
+                    <div>
+                        <div class="font-semibold text-gray-800 dark:text-gray-100">${a.full_name}</div>
+                        ${email ? `<div class="text-sm text-gray-500 dark:text-gray-400">${email}</div>` : ''}
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4 pl-10 md:pl-0 shrink-0">
+                    ${a.passport_number ? `<div class="text-xs text-gray-400 dark:text-gray-500 font-mono">${a.passport_number}</div>` : ''}
+                    <div class="text-sm text-gray-500 dark:text-gray-400 italic whitespace-nowrap">${updated}</div>
+                    <div class="text-xs inline-flex font-medium rounded-full text-center px-2.5 py-1" style="background:${stage.color}22;color:${stage.color}">${stage.label}</div>
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click.stop="open = !open" class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/50 transition">
+                            <svg class="w-5 h-5 fill-current text-gray-400 dark:text-gray-500" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                        <div x-show="open" @click.outside="open = false" x-transition class="origin-top-right absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-lg shadow-lg py-1 z-20" x-cloak>
+                            <button onclick="event.stopPropagation();openApplicantDetail('${a.id}')" @click="open=false" class="w-full text-left px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30">Ver detalhes</button>
+                            <button onclick="event.stopPropagation();viewApplicantJson('${a.id}')" @click="open=false" class="w-full text-left px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30">Ver JSON</button>
+                            <button onclick="event.stopPropagation();movePipeline('${a.id}','new','${a.id}')" @click="open=false" class="w-full text-left px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10">Restaurar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }).join('') || '<div class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">Nenhum solicitante arquivado</div>';
 
     const hasMore = (applicants || []).length === PAGE_SIZE;
+    const total = (applicants || []).length;
     $('arch-prev').disabled = archivedPage <= 1;
     $('arch-next').disabled = !hasMore;
     $('arch-page-info').textContent = `Página ${archivedPage}`;
+    // Show/hide pagination
+    const pagEl = $('archived-pagination');
+    if (pagEl) pagEl.classList.toggle('hidden', archivedPage <= 1 && !hasMore);
 }
 
 // ============================================================
@@ -352,16 +527,63 @@ document.querySelectorAll('.pipeline-card').forEach(card => {
     });
 });
 
+// Pagination buttons
+if ($('app-prev')) {
+    $('app-prev').addEventListener('click', () => {
+        if (currentPage > 1) { currentPage--; loadPipelineList(); }
+    });
+}
+if ($('app-next')) {
+    $('app-next').addEventListener('click', () => {
+        currentPage++; loadPipelineList();
+    });
+}
+
 // ============================================================
 // SEARCH + PAGINATION
 // ============================================================
 let searchTimeout;
 $('search-applicants').addEventListener('input', e => {
     clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        searchQuery = e.target.value.trim();
+    const q = e.target.value.trim();
+    searchTimeout = setTimeout(async () => {
+        searchQuery = q;
         currentPage = 1;
         loadPipelineList();
+
+        // Render results inside modal
+        const resultsList = $('search-results-list');
+        if (!resultsList) return;
+        if (!q) {
+            resultsList.innerHTML = '<li class="px-2 py-1 text-gray-400 dark:text-gray-500 text-xs italic">Digite para buscar…</li>';
+            return;
+        }
+        let rq = sb.from('applicants')
+            .select('id, full_name, data, passport_number, pipeline_status')
+            .is('primary_applicant_id', null)
+            .or(`full_name.ilike.%${q}%,passport_number.ilike.%${q}%`)
+            .order('updated_at', { ascending: false }).limit(8);
+        if (userCompanyId) rq = rq.eq('company_id', userCompanyId);
+        const { data: results } = await rq;
+        if (!results || results.length === 0) {
+            resultsList.innerHTML = '<li class="px-2 py-1 text-gray-400 dark:text-gray-500 text-xs italic">Nenhum resultado encontrado</li>';
+            return;
+        }
+        resultsList.innerHTML = results.map(a => {
+            const stage = STAGES[a.pipeline_status] || STAGES.new;
+            const email = a.data?.addressPhone?.email || a.data?.personal?.email || a.data?.contact?.email || '';
+            const initials = (a.full_name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            return `<li>
+                <a class="flex items-center p-2 text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/20 rounded-lg cursor-pointer" onclick="openApplicantDetail('${a.id}')">
+                    <div class="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold mr-3" style="background:${stage.color}22;color:${stage.color}">${initials}</div>
+                    <div class="truncate">
+                        <span class="font-medium">${a.full_name}</span>
+                        ${email ? ` <span class="text-gray-400 dark:text-gray-500">· ${email}</span>` : ''}
+                    </div>
+                    <span class="ml-auto text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style="background:${stage.color}22;color:${stage.color}">${stage.label}</span>
+                </a>
+            </li>`;
+        }).join('');
     }, 300);
 });
 
@@ -425,9 +647,9 @@ async function openApplicantDetail(id) {
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:20px">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
             <div style="display:flex;align-items:center;gap:12px">
-                <span style="font-size:11px;color:var(--text-muted);font-weight:600">MOVER TODOS:</span>
+                <span style="font-size:13px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Mover todos:</span>
                 <select onchange="if(this.value){moveAllPipeline('${id}',this.value);this.value=''}" 
-                    style="font-size:12px;padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;outline:none">
+                    style="font-size:13px;padding:8px 14px;background:#fff;border:1px solid #d1d5db;border-radius:5px;color:#374151;cursor:pointer;outline:none;font-family:inherit;font-weight:500">
                     <option value="">Selecionar etapa...</option>
                     ${STAGE_ORDER.map(s => `<option value="${s}">${STAGES[s].label}</option>`).join('')}
                 </select>
@@ -440,7 +662,7 @@ async function openApplicantDetail(id) {
                 <div style="width:60px;height:5px;background:var(--border);border-radius:3px;overflow:hidden">
                     <div style="width:${progressPercent}%;height:100%;background:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : '#3b82f6'};border-radius:3px"></div>
                 </div>
-                <button onclick="showDeleteModal('${id}','${applicant.full_name.replace(/'/g, "\\\\'")}')" style="font-size:11px;padding:5px 12px;background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:5px;cursor:pointer">Excluir</button>
+                <button onclick="showDeleteModal('${id}','${applicant.full_name.replace(/'/g, "\\\\'")}')" style="font-size:13px;padding:8px 14px;background:rgba(239,68,68,.06);color:#ef4444;border:1px solid rgba(239,68,68,.25);border-radius:5px;cursor:pointer;font-weight:500;font-family:inherit;transition:all .2s">Excluir</button>
             </div>
         </div>
     </div>
@@ -464,23 +686,37 @@ async function openApplicantDetail(id) {
         const fillStatus = pApp?.fill_status || '—';
         const fStage = FILL_STAGES[fillStatus] || { label: fillStatus, color: '#6b7280' };
 
+        // Priority
+        const pPrio = PRIORITIES[p.fill_priority] || PRIORITIES[0];
+        const pPrioBadge = (p.fill_priority || 0) >= 2
+            ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${pPrio.color}15;color:${pPrio.color};font-weight:700">${pPrio.icon} ${pPrio.label}</span>`
+            : '';
+
         html += `
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;${isDone ? 'opacity:.7;' : ''}">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;${isDone ? 'opacity:.7;' : ''}${(p.fill_priority || 0) >= 3 ? 'border-left:3px solid #ef4444;' : (p.fill_priority || 0) >= 2 ? 'border-left:3px solid #f97316;' : ''}">
             <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="openProcessModal('${p.id}')">
                 <div>
                     <div style="display:flex;align-items:center;gap:8px">
                         <span style="font-weight:700;font-size:14px">${p.full_name}</span>
                         ${appId ? `<span style="font-size:10px;color:var(--text-muted);background:var(--bg);padding:2px 6px;border-radius:4px;font-family:monospace">${appId}</span>` : ''}
+                        ${pPrioBadge}
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
                         <span style="font-size:11px;color:var(--text-muted)">${roleLabel}${pPassport ? ' · ' + pPassport : ''}</span>
-                        ${fillStatus !== '—' ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${fStage.color}15;color:${fStage.color};font-weight:600">${fStage.label}</span>` : ''}
+                        ${fillStatus !== '—' ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${fStage.color}15;color:${fStage.color};font-weight:600"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${fStage.color};margin-right:4px;vertical-align:middle"></span>${fStage.label}</span>` : ''}
                     </div>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px">
-                    ${pApp ? `<button onclick="event.stopPropagation();viewAppDetails('${p.id}')" style="font-size:10px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--text)">Detalhes</button>` : ''}
+                    ${pApp ? `<button onclick="event.stopPropagation();viewAppDetails('${p.id}')" style="font-size:13px;padding:8px 14px;background:#fff;border:1px solid #d1d5db;border-radius:5px;cursor:pointer;color:#374151;font-weight:500;transition:all .2s;font-family:inherit">Detalhes</button>` : ''}
+                    <select onclick="event.stopPropagation()" onchange="if(this.value!==''){setPriority('${p.id}',this.value,'${id}')}"
+                        style="font-size:13px;padding:8px 14px;background:${pPrio.color}08;color:${pPrio.color};border:1px solid #d1d5db;border-radius:5px;cursor:pointer;outline:none;font-weight:500;font-family:inherit">
+                        <option value="">${pPrio.icon} ${(p.fill_priority || 0) >= 1 ? pPrio.label : 'Prioridade'}</option>
+                        <option value="1">📋 Normal</option>
+                        <option value="2">⚡ Urgente</option>
+                        <option value="3">🚨 Emergência</option>
+                    </select>
                     <select onclick="event.stopPropagation()" onchange="if(this.value){movePipeline('${p.id}',this.value,'${id}')}" 
-                        style="font-size:11px;padding:5px 10px;background:${pStage.color}10;color:${pStage.color};border:1px solid ${pStage.color}30;border-radius:5px;cursor:pointer;outline:none;font-weight:600">
+                        style="font-size:13px;padding:8px 14px;background:${pStage.color}08;color:${pStage.color};border:1px solid #d1d5db;border-radius:5px;cursor:pointer;outline:none;font-weight:600;font-family:inherit">
                         <option value="">${pStage.label}</option>
                         ${STAGE_ORDER.filter(s => s !== p.pipeline_status).map(s =>
             `<option value="${s}">${STAGES[s].label}</option>`
@@ -495,6 +731,7 @@ async function openApplicantDetail(id) {
 
     $('applicant-detail-content').innerHTML = html;
     showView('applicant-detail');
+    navigateTo('applicant-detail:' + id);
     $('page-title').textContent = applicant.full_name;
     $('page-subtitle').textContent = email || '';
 }
@@ -592,21 +829,69 @@ async function movePipeline(applicantId, newStatus, primaryId) {
         .update({ pipeline_status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', applicantId);
     if (error) { toast('Erro: ' + error.message, 'error'); return; }
+
+    // Auto-reset application when moving to 'approved' (enables re-fill)
+    if (newStatus === 'approved') {
+        await _resetApplicationForRefill(applicantId);
+    }
+
     toast(`Movido para ${STAGES[newStatus]?.label || newStatus}`, 'success');
-    // Reload the detail page
     openApplicantDetail(primaryId || applicantId);
-    loadPipeline(); // Update counts in background
+    loadPipeline();
 }
 
 async function moveAllPipeline(primaryId, newStatus) {
-    await sb.from('applicants')
-        .update({ pipeline_status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', primaryId);
-    await sb.from('applicants')
-        .update({ pipeline_status: newStatus, updated_at: new Date().toISOString() })
-        .eq('primary_applicant_id', primaryId);
+    // Get all IDs (primary + dependents)
+    const { data: deps } = await sb.from('applicants')
+        .select('id').eq('primary_applicant_id', primaryId);
+    const allIds = [primaryId, ...(deps || []).map(d => d.id)];
+
+    for (const aid of allIds) {
+        await sb.from('applicants')
+            .update({ pipeline_status: newStatus, updated_at: new Date().toISOString() })
+            .eq('id', aid);
+        if (newStatus === 'approved') {
+            await _resetApplicationForRefill(aid);
+        }
+    }
+
     toast(`Todos movidos para ${STAGES[newStatus]?.label || newStatus}`, 'success');
     openApplicantDetail(primaryId);
+    loadPipeline();
+}
+
+// Auto-reset application fill_status when moving to approved (enables re-fill)
+async function _resetApplicationForRefill(applicantId) {
+    const { data: apps } = await sb.from('applications')
+        .select('id, fill_status').eq('applicant_id', applicantId);
+    if (apps && apps.length > 0) {
+        for (const app of apps) {
+            if (app.fill_status === 'filled' || app.fill_status === 'error' || app.fill_status === 'needs_attention') {
+                await sb.from('applications').update({
+                    fill_status: 'pending',
+                    fill_error: null,
+                    fill_worker_id: null,
+                    fill_started_at: null,
+                    fill_finished_at: null,
+                    retry_count: 0,
+                    last_page: null,
+                    application_id: null,
+                    last_error_at: null
+                }).eq('id', app.id);
+            }
+        }
+    }
+}
+
+// Set priority for an applicant
+async function setPriority(applicantId, priority, primaryId) {
+    const { error } = await sb.from('applicants')
+        .update({ fill_priority: parseInt(priority), updated_at: new Date().toISOString() })
+        .eq('id', applicantId);
+    if (error) { toast('Erro: ' + error.message, 'error'); return; }
+    const prio = PRIORITIES[priority] || PRIORITIES[0];
+    toast(`Prioridade: ${prio.icon} ${prio.label}`, 'success');
+    openApplicantDetail(primaryId || applicantId);
     loadPipeline();
 }
 
@@ -671,6 +956,7 @@ async function confirmDelete() {
     if (error) { toast('Erro: ' + error.message, 'error'); return; }
     toast('Excluído com sucesso', 'success');
     showView('pipeline');
+    navigateTo('pipeline');
     $('page-title').textContent = 'Pipeline';
     $('page-subtitle').textContent = '';
     loadPipeline();
@@ -679,40 +965,71 @@ async function confirmDelete() {
 // ============================================================
 // LOGS (Master only)
 // ============================================================
+async function archiveLog(id) {
+    await sb.from('error_logs').update({ archived: true }).eq('id', id);
+    loadLogs();
+    toast('Erro arquivado');
+}
 async function loadLogs() {
     const { data, error: fetchErr } = await sb.from('error_logs').select('*').eq('archived', false).order('created_at', { ascending: false }).limit(50);
-    if (fetchErr) { $('logs-list').innerHTML = `<tr><td colspan="6" style="color:#ef4444">${fetchErr.message}</td></tr>`; return; }
+    if (fetchErr) { $('logs-list').innerHTML = `<div class="text-sm text-red-500 px-4 py-3">${fetchErr.message}</div>`; return; }
     const causeLabels = {
         browser_closed: 'Browser fechado', network_error: 'Internet', timeout: 'Timeout',
         field_error: 'Campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente',
         captcha_failed: 'Captcha', validation_error: 'Validação DS-160', postback_stuck: 'Postback',
         page_stuck: 'Página travada', unknown: 'Desconhecido'
     };
-    const causeBg = {
-        browser_closed: '#7f1d1d', network_error: '#713f12', timeout: '#1e3a5f',
-        field_error: '#4a1d7a', 'field_error:select': '#4a1d7a', 'field_error:missing': '#6b21a8',
-        captcha_failed: '#92400e', validation_error: '#dc2626', postback_stuck: '#1e40af',
-        page_stuck: '#374151', unknown: '#334155'
+    const causeColors = {
+        browser_closed: 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400',
+        network_error: 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400',
+        timeout: 'bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400',
+        field_error: 'bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400',
+        'field_error:select': 'bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400',
+        'field_error:missing': 'bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400',
+        captcha_failed: 'bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400',
+        validation_error: 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400',
+        postback_stuck: 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400',
+        page_stuck: 'bg-gray-100 dark:bg-gray-600/30 text-gray-600 dark:text-gray-400',
+        unknown: 'bg-gray-100 dark:bg-gray-600/30 text-gray-500 dark:text-gray-400'
     };
 
     const logs = data || [];
-    if ($('logs-count')) $('logs-count').textContent = `(${logs.length})`;
+    if ($('logs-count')) $('logs-count').textContent = logs.length;
+    if ($('logs-badge')) $('logs-badge').textContent = logs.length;
 
-    $('logs-list').innerHTML = logs.map((l, i) => `
-        <tr style="cursor:pointer" onclick="document.getElementById('stack-${i}').style.display = document.getElementById('stack-${i}').style.display === 'none' ? 'table-row' : 'none'">
-            <td style="font-size:12px;color:var(--text-muted)">${new Date(l.created_at).toLocaleString('pt-BR')}</td>
-            <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;background:${causeBg[l.error_cause] || causeBg.unknown}">${causeLabels[l.error_cause] || l.error_cause || '—'}</span></td>
-            <td style="font-size:12px">${l.page_name || '—'}</td>
-            <td style="font-size:12px;color:#a78bfa">${l.field_name || '—'}</td>
-            <td style="font-size:12px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.error_message || '—'}</td>
-            <td style="text-align:center">${l.screenshot_url ? `<a href="${l.screenshot_url}" target="_blank" style="color:#60a5fa;text-decoration:underline;font-size:11px">📸 Ver</a>` : '—'}</td>
-        </tr>
-        <tr id="stack-${i}" style="display:none"><td colspan="6">
-            ${l.validation_errors && l.validation_errors.length > 0 ? `<div style="margin-bottom:8px;padding:8px;background:#7f1d1d;border-radius:4px;font-size:12px"><strong>Erros do DS-160:</strong><ul style="margin:4px 0 0 16px">${l.validation_errors.map(v => `<li>${v}</li>`).join('')}</ul></div>` : ''}
-            ${l.screenshot_url ? `<div style="margin-bottom:8px"><img src="${l.screenshot_url}" style="max-width:100%;max-height:300px;border-radius:4px;border:1px solid #333" onclick="window.open('${l.screenshot_url}','_blank')"></div>` : ''}
-            <pre style="font-size:11px;color:var(--text-muted);white-space:pre-wrap;max-height:200px;overflow:auto;padding:8px;background:var(--bg);border-radius:4px">${l.error_stack || 'Sem stack trace'}</pre>
-        </td></tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">Nenhum erro ativo 🎉</td></tr>';
+    $('logs-list').innerHTML = logs.map((l, i) => {
+        const label = causeLabels[l.error_cause] || l.error_cause || '—';
+        const colors = causeColors[l.error_cause] || causeColors.unknown;
+        const dateStr = new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        return `<div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl px-5 py-4 hover:shadow-md transition">
+            <div class="md:flex justify-between items-center space-y-4 md:space-y-0 space-x-2">
+                <div class="flex items-start space-x-3 md:space-x-4 min-w-0">
+                    <span class="inline-flex items-center text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 mt-0.5 ${colors}">${label}</span>
+                    <div class="min-w-0">
+                        <div class="font-semibold text-gray-800 dark:text-gray-100 truncate">${l.page_name || '—'}${l.field_name ? ` <span class="text-xs font-mono text-violet-500">${l.field_name}</span>` : ''}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400 truncate">${l.error_message || 'Sem mensagem'}</div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4 pl-10 md:pl-0 shrink-0">
+                    <div class="text-sm text-gray-500 dark:text-gray-400 italic whitespace-nowrap">${dateStr}</div>
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click.stop="open = !open" class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/50 transition">
+                            <svg class="w-5 h-5 fill-current text-gray-400 dark:text-gray-500" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                        <div x-show="open" @click.outside="open = false" x-transition class="origin-top-right absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-lg shadow-lg py-1 z-20" x-cloak>
+                            <button onclick="document.getElementById('log-body-${i}').classList.toggle('hidden')" @click="open=false" class="w-full text-left px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30">Ver detalhes</button>
+                            ${l.screenshot_url ? `<a href="${l.screenshot_url}" target="_blank" @click="open=false" class="block px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30">Ver screenshot</a>` : ''}
+                            <button onclick="archiveLog('${l.id}')" @click="open=false" class="w-full text-left px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10">Arquivar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="log-body-${i}" class="hidden mt-3 pt-3 border-t border-gray-200 dark:border-gray-700/60 space-y-3">
+                ${l.validation_errors && l.validation_errors.length > 0 ? `<div class="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg p-3"><p class="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">Erros do DS-160:</p><ul class="text-xs text-red-500 dark:text-red-400 list-disc ml-4 space-y-0.5">${l.validation_errors.map(v => `<li>${v}</li>`).join('')}</ul></div>` : ''}
+                <pre class="text-[11px] text-gray-400 dark:text-gray-500 whitespace-pre-wrap max-h-40 overflow-auto p-3 bg-gray-50 dark:bg-gray-900/30 rounded-lg font-mono">${l.error_stack || 'Sem stack trace'}</pre>
+            </div>
+        </div>`;
+    }).join('') || '<div class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">Nenhum erro ativo 🎉</div>';
 }
 
 // Archive all logs
@@ -746,21 +1063,49 @@ if (saveCapBtn) {
 // ============================================================
 // AGENCIES (Master only)
 // ============================================================
+async function toggleAgencyStatus(companyId, isCurrentlyActive) {
+    const newStatus = !isCurrentlyActive;
+    const { error } = await sb.from('companies').update({ active: newStatus }).eq('id', companyId);
+    if (error) { toast('Erro: ' + error.message, 'error'); return; }
+    toast(newStatus ? 'Organização ativada' : 'Organização desativada');
+    loadAgencies();
+}
 async function loadAgencies() {
     const { data } = await sb.from('companies').select('*').order('name');
     $('agencies-list').innerHTML = (data || []).map(c => `
-        <div onclick="openAgencyDetail('${c.id}')" style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">
-            <div>
-                <div style="font-weight:600;font-size:14px">${c.name}</div>
-                <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${c.id}</div>
+        <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl px-5 py-4 hover:shadow-md transition">
+            <div class="md:flex justify-between items-center space-y-4 md:space-y-0 space-x-2">
+                <div class="flex items-start space-x-3 md:space-x-4 cursor-pointer" onclick="openAgencyDetail('${c.id}')">
+                    <div class="w-9 h-9 shrink-0 mt-0.5 rounded-full bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center text-xs font-bold text-violet-500">${(c.name || 'O')[0].toUpperCase()}</div>
+                    <div>
+                        <div class="font-semibold text-gray-800 dark:text-gray-100">${c.name}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400 font-mono">${c.id.substring(0, 8)}...</div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4 pl-10 md:pl-0 shrink-0">
+                    <span class="text-xs inline-flex font-medium rounded-full text-center px-2.5 py-1 ${c.active !== false ? 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400'}">
+                        ${c.active !== false ? '✓ Ativa' : '✗ Inativa'}
+                    </span>
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click.stop="open = !open" class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/50 transition">
+                            <svg class="w-5 h-5 fill-current text-gray-400 dark:text-gray-500" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                        <div x-show="open" @click.outside="open = false" x-transition class="origin-top-right absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-lg shadow-lg py-1 z-20" x-cloak>
+                            <button onclick="openAgencyDetail('${c.id}')" @click="open=false" class="w-full text-left px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30">Ver detalhes</button>
+                            <button onclick="toggleAgencyStatus('${c.id}', ${c.active !== false})" @click="open=false" class="w-full text-left px-3 py-1.5 text-sm ${c.active !== false ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10' : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10'}">${c.active !== false ? 'Desativar' : 'Ativar'}</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:11px;padding:4px 10px;border-radius:6px;background:${c.active !== false ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)'};color:${c.active !== false ? '#22c55e' : '#ef4444'}">
-                    ${c.active !== false ? '✓ Ativa' : '✗ Inativa'}
-                </span>
-                <span style="color:var(--text-muted);font-size:14px">→</span>
-            </div>
-        </div>`).join('') || '<div style="padding:30px;text-align:center;color:var(--text-muted)">Nenhuma agência cadastrada</div>';
+        </div>`).join('') || '<div class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">Nenhuma organização cadastrada</div>';
+}
+
+async function removeMember(userId, companyId) {
+    if (!confirm('Remover este assessor?')) return;
+    const { error } = await sb.from('members').delete().eq('user_id', userId).eq('company_id', companyId);
+    if (error) { toast('Erro: ' + error.message, 'error'); return; }
+    toast('Assessor removido');
+    openAgencyDetail(companyId);
 }
 
 async function openAgencyDetail(companyId) {
@@ -779,42 +1124,61 @@ async function openAgencyDetail(companyId) {
     }));
 
     let html = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div>
-                <h2 style="font-size:22px;font-weight:700;margin-bottom:4px">${company.name}</h2>
-                <div style="font-size:11px;color:var(--text-muted)">ID: ${company.id}</div>
-                ${company.cnpj ? `<div style="font-size:12px;color:var(--text-muted);margin-top:4px">CNPJ: ${company.cnpj}</div>` : ''}
+    <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-6 mb-6">
+        <div class="flex justify-between items-start">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center shrink-0">
+                    <span class="text-lg font-bold text-violet-500">${(company.name || 'O')[0].toUpperCase()}</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">${company.name}</h2>
+                    <div class="text-[11px] text-gray-400 dark:text-gray-500 font-mono mt-0.5">ID: ${company.id}</div>
+                    ${company.cnpj ? `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">CNPJ: ${company.cnpj}</div>` : ''}
+                </div>
             </div>
-            <button onclick="toggleCompany('${company.id}', ${!company.active})" 
-                style="font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;background:${company.active !== false ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)'};color:${company.active !== false ? '#22c55e' : '#ef4444'};border:1px solid ${company.active !== false ? '#22c55e44' : '#ef444444'}">
-                ${company.active !== false ? '✓ Agência Ativa' : '✗ Agência Inativa'}
-            </button>
-            ${memberDetails.length === 0 ? `<button onclick="deleteCompany('${company.id}', '${company.name.replace(/'/g, "\\'")}')"
-                style="font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid #ef444444;margin-left:8px">Excluir</button>` : ''}
+            <div class="flex items-center gap-2">
+                <button onclick="toggleCompany('${company.id}', ${!company.active})" 
+                    class="text-xs font-semibold px-4 py-2 rounded-lg transition ${company.active !== false ? 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/30 hover:bg-green-200 dark:hover:bg-green-500/30' : 'bg-red-100 dark:bg-red-500/20 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-500/30 hover:bg-red-200 dark:hover:bg-red-500/30'}">
+                    ${company.active !== false ? '✓ Ativa' : '✗ Inativa'}
+                </button>
+                ${memberDetails.length === 0 ? `<button onclick="deleteCompany('${company.id}', '${company.name.replace(/'/g, "\\\\'")}')"
+                    class="text-xs font-semibold px-4 py-2 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-500 border border-red-200 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-500/20 transition">Excluir</button>` : ''}
+            </div>
         </div>
     </div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h3 style="font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600">Assessores (${memberDetails.length})</h3>
-        <button onclick="openAddAssessorModal('${companyId}')" style="font-size:12px;padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600">+ Adicionar Assessor</button>
+    <div class="flex justify-between items-center mb-3">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Assessores (${memberDetails.length})</h3>
+        <button onclick="openAddAssessorModal('${companyId}')" class="btn-sm bg-violet-500 hover:bg-violet-600 text-white text-xs">+ Adicionar Assessor</button>
     </div>
-    <div style="display:grid;gap:10px">`;
+    <div class="space-y-2">`;
 
     if (memberDetails.length === 0) {
-        html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:30px;text-align:center;color:var(--text-muted)">Nenhum assessor vinculado</div>';
+        html += '<div class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">Nenhum assessor vinculado</div>';
     } else {
         memberDetails.forEach(m => {
             html += `
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center">
-                <div style="display:flex;align-items:center;gap:12px">
-                    <div style="width:38px;height:38px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;font-weight:700">${(m.name || 'A')[0].toUpperCase()}</div>
-                    <div>
-                        <div style="font-weight:600;font-size:14px">${m.name}</div>
-                        <div style="font-size:11px;color:var(--text-muted)">${m.email}</div>
+            <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl px-5 py-4 hover:shadow-md transition">
+                <div class="md:flex justify-between items-center space-y-4 md:space-y-0 space-x-2">
+                    <div class="flex items-start space-x-3 md:space-x-4">
+                        <div class="w-9 h-9 shrink-0 mt-0.5 rounded-full bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center text-xs font-bold text-violet-500">${(m.name || 'A')[0].toUpperCase()}</div>
+                        <div>
+                            <div class="font-semibold text-gray-800 dark:text-gray-100">${m.name}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">${m.email}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4 pl-10 md:pl-0 shrink-0">
+                        <span class="text-xs inline-flex font-medium rounded-full text-center px-2.5 py-1 bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 uppercase">${m.role || 'membro'}</span>
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click.stop="open = !open" class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/50 transition">
+                                <svg class="w-5 h-5 fill-current text-gray-400 dark:text-gray-500" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                            </button>
+                            <div x-show="open" @click.outside="open = false" x-transition class="origin-top-right absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-lg shadow-lg py-1 z-20" x-cloak>
+                                <button onclick="removeMember('${m.user_id}','${m.company_id}')" @click="open=false" class="w-full text-left px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10">Remover</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <span style="font-size:10px;padding:4px 10px;border-radius:6px;background:rgba(139,92,246,.15);color:#8b5cf6;font-weight:600;text-transform:uppercase">${m.role || 'membro'}</span>
             </div>`;
         });
     }

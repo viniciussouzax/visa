@@ -17,7 +17,7 @@
             --border: #e5e7eb;
             --text: #1f2937;
             --text-muted: #6b7280;
-            --accent: #8470ff;
+            --accent: #3b82f6;
             --success: #22c55e;
             --error: #ef4444;
         }
@@ -51,20 +51,20 @@
 
         /* === Nav items (JS toggles .active) === */
         .nav-item.active {
-            background: linear-gradient(135deg, rgba(132, 112, 255, .12), rgba(132, 112, 255, .04));
-            color: var(--color-violet-500, #8470ff);
+            background: linear-gradient(135deg, rgba(59, 130, 246, .12), rgba(59, 130, 246, .04));
+            color: #3b82f6;
         }
 
         /* === Master tabs (JS toggles .active) === */
         .master-tab.active {
-            border-bottom-color: var(--color-violet-500, #8470ff);
-            color: var(--color-violet-500, #8470ff);
+            border-bottom-color: #3b82f6;
+            color: #3b82f6;
         }
 
         /* === Pipeline cards (JS toggles .active) === */
         .pipeline-card.active {
-            outline: 2px solid var(--color-violet-500, #8470ff);
-            box-shadow: 0 0 0 2px rgba(132, 112, 255, .3);
+            outline: 2px solid #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, .3);
         }
 
         /* === Badge (used in JS template literals) === */
@@ -89,7 +89,7 @@
 
         .toast {
             padding: 10px 18px;
-            border-radius: 8px;
+            border-radius: 5px;
             font-size: 13px;
             font-weight: 500;
             color: #fff;
@@ -132,6 +132,141 @@
             display: none;
             align-items: center;
             justify-content: center;
+        }
+
+        /* ========================================================
+           OVERRIDES: Align Mosaic tokens with Clone form design
+           - Inputs: padding 12px 14px, border 1px #d1d5db, border-radius 5px, focus #3b82f6
+           - Buttons: primary bg #3b82f6, hover #2563eb
+           - Cards/Panels: border-radius 5px
+           ======================================================== */
+
+        /* Inputs & selects — match clone form exactly */
+        .form-input,
+        .form-textarea,
+        .form-multiselect,
+        .form-select {
+            padding: 12px 14px !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 5px !important;
+            font-size: 16px !important;
+            line-height: 1.5 !important;
+            color: #111827 !important;
+            transition: border-color .2s !important;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-multiselect:focus,
+        .form-select:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, .1) !important;
+        }
+
+        .dark .form-input,
+        .dark .form-textarea,
+        .dark .form-multiselect,
+        .dark .form-select {
+            background: rgba(17, 24, 39, .3) !important;
+            border-color: rgba(55, 65, 81, .6) !important;
+            color: #f3f4f6 !important;
+        }
+
+        .dark .form-input:focus,
+        .dark .form-textarea:focus,
+        .dark .form-select:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, .15) !important;
+        }
+
+        /* Radio & checkbox accent — match clone blue */
+        .form-checkbox:checked,
+        .form-radio:checked {
+            background-color: #3b82f6 !important;
+            border-color: transparent !important;
+        }
+
+        .form-checkbox:focus-visible,
+        .form-radio:focus-visible {
+            --tw-ring-color: rgba(59, 130, 246, .5) !important;
+        }
+
+        /* Buttons — primary uses form blue, not violet */
+        .bg-violet-500 {
+            background-color: #3b82f6 !important;
+        }
+
+        .bg-violet-600,
+        .hover\:bg-violet-600:hover {
+            background-color: #2563eb !important;
+        }
+
+        .hover\:bg-violet-600:hover {
+            background-color: #2563eb !important;
+        }
+
+        .text-violet-500 {
+            color: #3b82f6 !important;
+        }
+
+        .hover\:text-violet-600:hover {
+            color: #2563eb !important;
+        }
+
+        .dark .hover\:text-violet-400:hover {
+            color: #60a5fa !important;
+        }
+
+        .bg-violet-100 {
+            background-color: #dbeafe !important;
+        }
+
+        .dark .bg-violet-500\/20 {
+            background-color: rgba(59, 130, 246, .2) !important;
+        }
+
+        /* Border-radius consistency — 5px like the clone form */
+        .rounded-xl {
+            border-radius: 5px !important;
+        }
+
+        .rounded-lg {
+            border-radius: 5px !important;
+        }
+
+        .rounded-r-2xl {
+            border-radius: 0 5px 5px 0 !important;
+        }
+
+        /* Sidebar brand + avatar circle keep rounded */
+        .rounded-full {
+            border-radius: 9999px !important;
+        }
+
+        /* Cards shadow — match clone's subtle shadow */
+        .shadow-xs {
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .05) !important;
+        }
+
+        /* Btn base — match clone btn padding & weight */
+        .btn,
+        .btn-lg,
+        .btn-sm,
+        .btn-xs {
+            border-radius: 5px !important;
+            font-weight: 600 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.01em !important;
+        }
+
+        .btn {
+            padding: 12px 24px !important;
+            font-size: 14px !important;
+        }
+
+        .btn-sm {
+            padding: 8px 14px !important;
+            font-size: 13px !important;
         }
     </style>
 </head>
@@ -200,19 +335,20 @@
     </div>
 
     <!-- ===================== APP SCREEN ===================== -->
-    <div id="app-screen" style="display:none" class="flex h-screen overflow-hidden">
+    <div id="app-screen" style="display:none" class="flex h-[100dvh] overflow-hidden">
 
         <!-- ========== SIDEBAR (Mosaic block) ========== -->
-        <div id="sidebar"
-            class="flex flex-col lg:flex-shrink-0 lg:w-64 lg:sidebar-expanded:!w-64 2xl:w-64 transition-all duration-200 ease-in-out"
-            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-64'">
-            <div class="fixed inset-0 bg-gray-900/30 z-40 lg:hidden lg:sidebar-expanded:hidden 2xl:hidden"
-                :class="sidebarOpen ? 'block' : 'hidden'" @click="sidebarOpen = false"></div>
+        <!-- Sidebar -->
+        <div class="min-w-fit">
+            <!-- Sidebar backdrop (mobile only) -->
+            <div class="fixed inset-0 bg-gray-900/30 z-40 lg:hidden lg:z-auto transition-opacity duration-200"
+                :class="sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'" aria-hidden="true" x-cloak></div>
 
-            <div id="sidebar-panel"
-                class="fixed z-40 inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700/60 overflow-y-auto no-scrollbar shrink-0 transition-all duration-200 ease-in-out"
-                :class="sidebarOpen ? 'translate-x-0' : '-translate-x-64 lg:translate-x-0'"
-                @click.outside="sidebarOpen = false" @keydown.escape.window="sidebarOpen = false">
+            <!-- Sidebar -->
+            <div id="sidebar"
+                class="flex flex-col absolute z-40 left-0 top-0 lg:static lg:left-auto lg:top-auto lg:translate-x-0 h-[100dvh] overflow-y-scroll lg:overflow-y-auto no-scrollbar w-64 lg:w-20 lg:sidebar-expanded:!w-64 2xl:!w-64 shrink-0 bg-white dark:bg-gray-800 shadow-xs rounded-r-2xl p-4 transition-all duration-200 ease-in-out"
+                :class="sidebarOpen ? 'translate-x-0' : '-translate-x-64'" @click.outside="sidebarOpen = false"
+                @keydown.escape.window="sidebarOpen = false" x-cloak="lg">
                 <!-- Sidebar header -->
                 <div class="flex justify-between items-center px-4 pt-5 pb-2">
                     <a class="block" href="#">
@@ -241,7 +377,7 @@
                                         d="M6.068 7.482A2.003 2.003 0 0 0 8 10a2 2 0 1 0-.518-3.932L3.707 2.293a1 1 0 0 0-1.414 1.414l3.775 3.775Z" />
                                 </svg>
                                 <span
-                                    class="ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Pipeline</span>
+                                    class="ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Solicitante</span>
                             </a>
                         </li>
                         <li>
@@ -298,20 +434,19 @@
                         <span id="org-id-display"
                             class="text-[10px] text-gray-400 dark:text-gray-500 cursor-pointer hover:text-violet-500 transition truncate"></span>
                     </div>
-                    <button id="btn-logout"
-                        class="btn-sm w-full mt-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Sair</button>
                 </div>
             </div>
         </div>
 
         <!-- ========== CONTENT AREA ========== -->
-        <div class="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+        <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
 
             <!-- ========== HEADER (Mosaic block) ========== -->
             <header
-                class="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700/60">
+                class="sticky top-0 before:absolute before:inset-0 before:backdrop-blur-md before:bg-white/90 dark:before:bg-gray-800/90 lg:before:bg-gray-100/90 dark:lg:before:bg-gray-900/90 before:-z-10 max-lg:shadow-xs z-30">
                 <div class="px-4 sm:px-6 lg:px-8">
-                    <div class="flex items-center justify-between h-16 -mb-px">
+                    <div
+                        class="flex items-center justify-between h-16 lg:border-b border-gray-200 dark:border-gray-700/60">
                         <!-- Left: Hamburger + Title -->
                         <div class="flex items-center gap-3">
                             <button class="text-gray-500 hover:text-gray-600 lg:hidden"
@@ -322,47 +457,57 @@
                                 </svg>
                             </button>
                             <div>
-                                <h1 id="page-title" class="text-xl font-bold text-gray-800 dark:text-gray-100">Pipeline
+                                <h1 id="page-title" class="text-xl font-bold text-gray-800 dark:text-gray-100">
+                                    Solicitante
                                 </h1>
                                 <p id="page-subtitle" class="text-xs text-gray-500 dark:text-gray-400"></p>
                             </div>
                         </div>
-                        <!-- Right: Actions -->
                         <div class="flex items-center gap-2">
-                            <button id="btn-copy-form"
-                                class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 text-xs">Copiar
-                                link do formulario</button>
-                            <button id="btn-refresh"
-                                class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600">
-                                <svg class="w-4 h-4 fill-current" viewBox="0 0 16 16">
+                            <!-- Search icon -->
+                            <button x-data @click.prevent="$dispatch('open-search')"
+                                class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition">
+                                <svg class="w-4 h-4 fill-current text-gray-500/80" viewBox="0 0 16 16">
                                     <path
-                                        d="M14.15 3.85a1 1 0 0 0-1.414-1.414L10.5 4.672V1a1 1 0 0 0-2 0v3.672L6.264 2.436a1 1 0 1 0-1.414 1.414L8 7.003l3.15-3.153ZM1 13a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H2a1 1 0 0 1-1-1Z" />
+                                        d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />
+                                    <path
+                                        d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z" />
                                 </svg>
                             </button>
-                            <!-- Dark mode toggle (Mosaic block) -->
-                            <div>
-                                <input type="checkbox" name="light-switch" id="light-switch"
-                                    class="light-switch sr-only">
-                                <label
-                                    class="flex items-center justify-center cursor-pointer w-8 h-8 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-full"
-                                    for="light-switch">
-                                    <svg class="dark:hidden fill-current text-gray-500/80" width="16" height="16"
-                                        viewBox="0 0 16 16">
-                                        <path d="M8 0a1 1 0 0 1 1 1v.5a1 1 0 1 1-2 0V1a1 1 0 0 1 1-1Z" />
-                                        <path
-                                            d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-4 2a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
-                                        <path
-                                            d="M13.657 3.757a1 1 0 0 0-1.414-1.414l-.354.354a1 1 0 0 0 1.414 1.414l.354-.354ZM13.5 8a1 1 0 0 1 1-1h.5a1 1 0 1 1 0 2h-.5a1 1 0 0 1-1-1ZM13.303 11.889a1 1 0 0 0-1.414 1.414l.354.354a1 1 0 0 0 1.414-1.414l-.354-.354ZM8 13.5a1 1 0 0 1 1 1v.5a1 1 0 1 1-2 0v-.5a1 1 0 0 1 1-1ZM4.111 13.303a1 1 0 1 0-1.414-1.414l-.354.354a1 1 0 1 0 1.414 1.414l.354-.354ZM0 8a1 1 0 0 1 1-1h.5a1 1 0 0 1 0 2H1a1 1 0 0 1-1-1ZM3.757 2.343a1 1 0 1 0-1.414 1.414l.354.354A1 1 0 1 0 4.11 2.697l-.354-.354Z" />
-                                    </svg>
-                                    <svg class="hidden dark:block fill-current text-gray-400/80" width="16" height="16"
-                                        viewBox="0 0 16 16">
-                                        <path
-                                            d="M11.875 4.375a.625.625 0 1 0 1.25 0c.001-.69.56-1.249 1.25-1.25a.625.625 0 1 0 0-1.25 1.252 1.252 0 0 1-1.25-1.25.625.625 0 1 0-1.25 0 1.252 1.252 0 0 1-1.25 1.25.625.625 0 1 0 0 1.25c.69.001 1.249.56 1.25 1.25Z" />
-                                        <path
-                                            d="M7.019 1.985a1.55 1.55 0 0 0-.483-1.36 1.44 1.44 0 0 0-1.53-.277C2.056 1.553 0 4.5 0 7.9 0 12.352 3.648 16 8.1 16c3.407 0 6.246-2.058 7.51-4.963a1.446 1.446 0 0 0-.25-1.55 1.554 1.554 0 0 0-1.372-.502c-4.01.552-7.539-2.987-6.97-7ZM2 7.9C2 5.64 3.193 3.664 4.961 2.6 4.82 7.245 8.72 11.158 13.36 11.04 12.265 12.822 10.341 14 8.1 14 4.752 14 2 11.248 2 7.9Z" />
-                                    </svg>
-                                    <span class="sr-only">Modo claro/escuro</span>
-                                </label>
+
+                            <!-- User button (Mosaic block) -->
+                            <div class="relative inline-flex" x-data="{ open: false }">
+                                <button class="inline-flex justify-center items-center" aria-haspopup="true"
+                                    @click.prevent="open = !open" :aria-expanded="open">
+                                    <div
+                                        class="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:ring-2 hover:ring-violet-300 transition">
+                                        U</div>
+                                </button>
+                                <div class="origin-top-right z-10 absolute top-full right-0 min-w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 py-1.5 rounded-lg shadow-lg overflow-hidden mt-1"
+                                    @click.outside="open = false" @keydown.escape.window="open = false" x-show="open"
+                                    x-transition:enter="transition ease-out duration-200 transform"
+                                    x-transition:enter-start="opacity-0 -translate-y-2"
+                                    x-transition:enter-end="opacity-100 translate-y-0"
+                                    x-transition:leave="transition ease-out duration-200"
+                                    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" x-cloak>
+                                    <div class="pt-0.5 pb-2 px-3 mb-1 border-b border-gray-200 dark:border-gray-700/60">
+                                        <div id="header-user-email"
+                                            class="font-medium text-gray-800 dark:text-gray-100 text-sm truncate"></div>
+                                        <div id="header-user-role" class="text-xs text-violet-500 italic"></div>
+                                    </div>
+                                    <ul>
+                                        <li>
+                                            <a class="font-medium text-sm text-violet-500 hover:text-violet-600 dark:hover:text-violet-400 flex items-center py-1 px-3 cursor-pointer"
+                                                @click="open = false"
+                                                onclick="document.querySelectorAll('.nav-item').forEach(n=>{n.classList.remove('active');if(n.dataset.view==='master')n.classList.add('active')});showView('master');document.getElementById('page-title').textContent='Master';showMasterSub('settings');">Configurações</a>
+                                        </li>
+                                        <li>
+                                            <a id="btn-logout"
+                                                class="font-medium text-sm text-violet-500 hover:text-violet-600 dark:hover:text-violet-400 flex items-center py-1 px-3 cursor-pointer"
+                                                @click="open = false">Sair</a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -375,149 +520,212 @@
 
                     <!-- ==================== VIEW: PIPELINE ==================== -->
                     <div id="view-pipeline" class="view active">
-                        <!-- Stats cards (Mosaic grid pattern) -->
-                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-                            <div class="pipeline-card bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-4 cursor-pointer hover:border-violet-300 dark:hover:border-violet-500/50 transition"
-                                data-filter="new">
-                                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Novo
-                                </div>
-                                <div class="flex items-center">
-                                    <div id="stat-new" class="text-2xl font-bold text-gray-800 dark:text-gray-100">0
-                                    </div>
-                                    <div class="w-2 h-2 rounded-full bg-blue-500 ml-auto"></div>
-                                </div>
-                            </div>
-                            <div class="pipeline-card bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-4 cursor-pointer hover:border-violet-300 dark:hover:border-violet-500/50 transition"
-                                data-filter="review">
-                                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">
-                                    Revisao</div>
-                                <div class="flex items-center">
-                                    <div id="stat-review" class="text-2xl font-bold text-gray-800 dark:text-gray-100">0
-                                    </div>
-                                    <div class="w-2 h-2 rounded-full bg-yellow-500 ml-auto"></div>
-                                </div>
-                            </div>
-                            <div class="pipeline-card bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-4 cursor-pointer hover:border-violet-300 dark:hover:border-violet-500/50 transition"
-                                data-filter="approved">
-                                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">
-                                    Aprovado</div>
-                                <div class="flex items-center">
-                                    <div id="stat-approved" class="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                                        0</div>
-                                    <div class="w-2 h-2 rounded-full bg-violet-500 ml-auto"></div>
-                                </div>
-                            </div>
-                            <div class="pipeline-card bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-4 cursor-pointer hover:border-violet-300 dark:hover:border-violet-500/50 transition"
-                                data-filter="doing">
-                                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">
-                                    Pendente</div>
-                                <div class="flex items-center">
-                                    <div id="stat-doing" class="text-2xl font-bold text-gray-800 dark:text-gray-100">0
-                                    </div>
-                                    <div class="w-2 h-2 rounded-full bg-orange-500 ml-auto"></div>
-                                </div>
-                            </div>
-                            <div class="pipeline-card bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-4 cursor-pointer hover:border-violet-300 dark:hover:border-violet-500/50 transition"
-                                data-filter="done">
-                                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">
-                                    Concluido</div>
-                                <div class="flex items-center">
-                                    <div id="stat-done" class="text-2xl font-bold text-gray-800 dark:text-gray-100">0
-                                    </div>
-                                    <div class="w-2 h-2 rounded-full bg-green-500 ml-auto"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Search + Table (Mosaic table pattern) -->
+                        <!-- Page content (job-listing flex layout) -->
                         <div
-                            class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60">
-                            <div class="p-4 border-b border-gray-200 dark:border-gray-700/60">
-                                <div class="relative">
-                                    <input id="search-applicants" class="form-input w-full pl-10" type="search"
-                                        placeholder="Buscar solicitante...">
-                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 fill-current text-gray-400"
-                                        width="16" height="16" viewBox="0 0 16 16">
-                                        <path
-                                            d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />
-                                        <path
-                                            d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z" />
-                                    </svg>
+                            class="flex flex-col space-y-10 sm:flex-row sm:space-x-6 sm:space-y-0 md:flex-col md:space-x-0 md:space-y-10 xl:flex-row xl:space-x-6 xl:space-y-0 mt-2">
+
+                            <!-- ===== Sidebar (stats + alert) ===== -->
+                            <div class="space-y-4">
+
+                                <!-- Stats filter cards -->
+                                <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl p-5 min-w-60">
+                                    <div class="space-y-4">
+
+
+                                        <!-- Group: Etapas -->
+                                        <div>
+                                            <div class="text-sm text-gray-800 dark:text-gray-100 font-semibold mb-3">
+                                                Aplicações</div>
+                                            <ul class="space-y-2">
+                                                <li>
+                                                    <label
+                                                        class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
+                                                        data-filter="new">
+                                                        <div class="w-2 h-2 rounded-full mr-3 shrink-0"
+                                                            style="background:#3b82f6">
+                                                        </div>
+                                                        <span
+                                                            class="text-sm text-gray-600 dark:text-gray-300 font-medium">Novos</span>
+                                                        <span id="stat-new"
+                                                            class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                    </label>
+                                                </li>
+                                                <li>
+                                                    <label
+                                                        class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
+                                                        data-filter="review">
+                                                        <div class="w-2 h-2 rounded-full mr-3 shrink-0"
+                                                            style="background:#f59e0b">
+                                                        </div>
+                                                        <span
+                                                            class="text-sm text-gray-600 dark:text-gray-300 font-medium">Revisões</span>
+                                                        <span id="stat-review"
+                                                            class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                    </label>
+                                                </li>
+                                                <li>
+                                                    <label
+                                                        class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
+                                                        data-filter="approved">
+                                                        <div class="w-2 h-2 rounded-full mr-3 shrink-0"
+                                                            style="background:#6366f1">
+                                                        </div>
+                                                        <span
+                                                            class="text-sm text-gray-600 dark:text-gray-300 font-medium">Aprovados</span>
+                                                        <span id="stat-approved"
+                                                            class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                    </label>
+                                                </li>
+                                                <li>
+                                                    <label
+                                                        class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
+                                                        data-filter="doing">
+                                                        <div class="w-2 h-2 rounded-full mr-3 shrink-0"
+                                                            style="background:#f97316">
+                                                        </div>
+                                                        <span
+                                                            class="text-sm text-gray-600 dark:text-gray-300 font-medium">Pendentes</span>
+                                                        <span id="stat-doing"
+                                                            class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                    </label>
+                                                </li>
+                                                <li>
+                                                    <label
+                                                        class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
+                                                        data-filter="done">
+                                                        <div class="w-2 h-2 rounded-full mr-3 shrink-0"
+                                                            style="background:#22c55e">
+                                                        </div>
+                                                        <span
+                                                            class="text-sm text-gray-600 dark:text-gray-300 font-medium">Concluídos</span>
+                                                        <span id="stat-done"
+                                                            class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                    </label>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="overflow-x-auto">
-                                <table class="table-auto w-full dark:text-gray-300">
-                                    <thead
-                                        class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-200 dark:border-gray-700/60">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left">Nome</th>
-                                            <th class="px-4 py-3 text-left">Status</th>
-                                            <th class="px-4 py-3 text-left">Progresso</th>
-                                            <th class="px-4 py-3 text-left">Atualizado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="pipeline-list"
-                                        class="text-sm divide-y divide-gray-200 dark:divide-gray-700/60">
-                                    </tbody>
-                                </table>
-                            </div>
-                            <!-- Pagination (Mosaic pattern) -->
-                            <div
-                                class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700/60">
-                                <button id="app-prev"
-                                    class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">&lt;
-                                    Anterior</button>
-                                <span id="app-page-info" class="text-xs text-gray-400 dark:text-gray-500">Pagina
-                                    1</span>
-                                <button id="app-next"
-                                    class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Proximo
-                                    &gt;</button>
+
+                            <!-- ===== Content (search + list + pagination) ===== -->
+                            <div class="w-full">
+
+                                <!-- Search modal container -->
+                                <div x-data="{ searchOpen: false }"
+                                    @open-search.window="searchOpen = true; $nextTick(() => { $refs.searchInput.focus(); });">
+                                    <div id="app-page-info" class="hidden"></div>
+                                    <!-- Search modal backdrop -->
+                                    <div class="fixed inset-0 bg-gray-900/30 z-50 transition-opacity"
+                                        x-show="searchOpen" x-transition:enter="transition ease-out duration-200"
+                                        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                                        x-transition:leave="transition ease-out duration-100"
+                                        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                        aria-hidden="true" x-cloak></div>
+                                    <!-- Search modal dialog -->
+                                    <div id="search-modal"
+                                        class="fixed inset-0 z-50 overflow-hidden flex items-start top-20 mb-4 justify-center px-4 sm:px-6"
+                                        role="dialog" aria-modal="true" x-show="searchOpen"
+                                        x-transition:enter="transition ease-in-out duration-200"
+                                        x-transition:enter-start="opacity-0 translate-y-4"
+                                        x-transition:enter-end="opacity-100 translate-y-0"
+                                        x-transition:leave="transition ease-in-out duration-200"
+                                        x-transition:leave-start="opacity-100 translate-y-0"
+                                        x-transition:leave-end="opacity-0 translate-y-4" x-cloak>
+                                        <div class="bg-white dark:bg-gray-800 border border-transparent dark:border-gray-700/60 overflow-auto max-w-2xl w-full max-h-full rounded-lg shadow-lg"
+                                            @click.outside="searchOpen = false"
+                                            @keydown.escape.window="searchOpen = false">
+                                            <form class="border-b border-gray-200 dark:border-gray-700/60"
+                                                onsubmit="event.preventDefault();">
+                                                <div class="relative">
+                                                    <label for="search-applicants" class="sr-only">Buscar</label>
+                                                    <input id="search-applicants"
+                                                        class="w-full dark:text-gray-300 bg-white dark:bg-gray-800 border-0 focus:ring-transparent placeholder-gray-400 dark:placeholder-gray-500 appearance-none py-3 pl-10 pr-4"
+                                                        type="search"
+                                                        placeholder="Buscar solicitante por nome ou passaporte…"
+                                                        x-ref="searchInput" />
+                                                    <button class="absolute inset-0 right-auto group" type="submit"
+                                                        aria-label="Search">
+                                                        <svg class="shrink-0 fill-current text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 ml-4 mr-2"
+                                                            width="16" height="16" viewBox="0 0 16 16">
+                                                            <path
+                                                                d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />
+                                                            <path
+                                                                d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </form>
+                                            <div class="py-4 px-2" id="search-results-area">
+                                                <div class="mb-3 last:mb-0">
+                                                    <div
+                                                        class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase px-2 mb-2">
+                                                        Resultados</div>
+                                                    <ul id="search-results-list" class="text-sm">
+                                                        <li
+                                                            class="px-2 py-1 text-gray-400 dark:text-gray-500 text-xs italic">
+                                                            Digite para buscar…</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Pipeline list (card style like job-listing) -->
+                                <div id="pipeline-list" class="space-y-2">
+                                    <!-- Cards rendered by dashboard.js -->
+                                </div>
+
+                                <!-- Pagination (Mosaic style) -->
+                                <div id="pagination-container" class="mt-6 hidden">
+                                    <div class="flex justify-center">
+                                        <nav class="flex" role="navigation" aria-label="Navegação">
+                                            <div class="mr-2">
+                                                <button id="app-prev"
+                                                    class="inline-flex items-center justify-center rounded-lg leading-5 px-2.5 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-300 dark:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed shadow-xs">
+                                                    <span class="sr-only">Anterior</span>
+                                                    <svg class="fill-current" width="16" height="16"
+                                                        viewBox="0 0 16 16">
+                                                        <path d="M9.4 13.4l1.4-1.4-4-4 4-4-1.4-1.4L4 8z" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div class="ml-2">
+                                                <button id="app-next"
+                                                    class="inline-flex items-center justify-center rounded-lg leading-5 px-2.5 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 border border-gray-200 dark:border-gray-700/60 text-violet-500 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed">
+                                                    <span class="sr-only">Próximo</span>
+                                                    <svg class="fill-current" width="16" height="16"
+                                                        viewBox="0 0 16 16">
+                                                        <path d="M6.6 13.4L5.2 12l4-4-4-4 1.4-1.4L12 8z" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </nav>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
 
                     <!-- ==================== VIEW: ARCHIVED ==================== -->
                     <div id="view-archived" class="view">
-                        <div
-                            class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60">
-                            <div class="p-4 border-b border-gray-200 dark:border-gray-700/60">
-                                <div class="relative">
-                                    <input id="search-archived" class="form-input w-full pl-10" type="search"
-                                        placeholder="Buscar arquivado...">
-                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 fill-current text-gray-400"
-                                        width="16" height="16" viewBox="0 0 16 16">
-                                        <path
-                                            d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />
-                                        <path
-                                            d="M15.707 14.293L13.314 11.9a8.019 8.019 0 01-1.414 1.414l2.393 2.393a.997.997 0 001.414 0 .999.999 0 000-1.414z" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="table-auto w-full dark:text-gray-300">
-                                    <thead
-                                        class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-200 dark:border-gray-700/60">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left">Nome</th>
-                                            <th class="px-4 py-3 text-left">Passaporte</th>
-                                            <th class="px-4 py-3 text-left">Atualizado</th>
-                                            <th class="px-4 py-3 text-left">Acoes</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="archived-list"
-                                        class="text-sm divide-y divide-gray-200 dark:divide-gray-700/60">
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div
-                                class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700/60">
+
+
+                        <!-- Cards list -->
+                        <div id="archived-list" class="space-y-2"></div>
+
+                        <!-- Pagination -->
+                        <div id="archived-pagination" class="mt-6 hidden">
+                            <div class="flex items-center justify-between">
                                 <button id="arch-prev"
                                     class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">&lt;
                                     Anterior</button>
-                                <span id="arch-page-info" class="text-xs text-gray-400 dark:text-gray-500">Pagina
+                                <span id="arch-page-info" class="text-xs text-gray-400 dark:text-gray-500">Página
                                     1</span>
                                 <button id="arch-next"
-                                    class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Proximo
+                                    class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Próximo
                                     &gt;</button>
                             </div>
                         </div>
@@ -526,47 +734,89 @@
                     <!-- ==================== VIEW: APPLICANT DETAIL ==================== -->
                     <div id="view-applicant-detail" class="view">
                         <button id="btn-back-pipeline"
-                            class="btn-sm mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300"
-                            onclick="showView('pipeline');document.getElementById('page-title').textContent='Pipeline';document.getElementById('page-subtitle').textContent='';loadPipeline();">
-                            &lt; Voltar ao Pipeline
+                            class="btn-sm mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 inline-flex items-center gap-1.5"
+                            onclick="showView('pipeline');navigateTo('pipeline');document.getElementById('page-title').textContent='Solicitante';document.getElementById('page-subtitle').textContent='';loadPipeline();">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 16 16">
+                                <path d="M6.6 13.4 1.2 8l5.4-5.4 1.4 1.4L4 8l4 4-1.4 1.4Z" />
+                            </svg>
+                            Voltar
                         </button>
                         <div id="applicant-detail-content"></div>
                     </div>
 
                     <!-- ==================== VIEW: SOFTWARE ==================== -->
                     <div id="view-software" class="view">
-                        <div class="grid sm:grid-cols-2 gap-6">
-                            <!-- Software version card -->
-                            <div
-                                class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-6">
-                                <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Software
-                                    Desktop</h2>
-                                <div class="flex items-center gap-3 mb-3">
-                                    <span id="sw-version" class="text-2xl font-bold text-violet-500">—</span>
-                                    <span id="sw-version-date" class="text-xs text-gray-400 dark:text-gray-500"></span>
+                        <div
+                            class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+                            <!-- Software Desktop row -->
+                            <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700/60">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-10 h-10 rounded-lg bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center shrink-0">
+                                            <svg class="w-5 h-5 fill-current text-violet-500" viewBox="0 0 16 16">
+                                                <path
+                                                    d="M13 0H3C1.3 0 0 1.3 0 3v7c0 1.7 1.3 3 3 3h3v1H4.8c-.4 0-.8.3-.8.8s.3.8.8.8h6.5c.4 0 .8-.3.8-.8s-.3-.8-.8-.8H10v-1h3c1.7 0 3-1.3 3-3V3c0-1.7-1.3-3-3-3Zm1 10c0 .6-.4 1-1 1H3c-.6 0-1-.4-1-1V3c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v7Z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                                Software Desktop</h2>
+                                            <p class="text-xs text-gray-400 dark:text-gray-500">Aplicativo para Windows
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span id="sw-version" class="text-lg font-bold text-violet-500">—</span>
+                                        <span id="sw-version-date"
+                                            class="text-xs text-gray-400 dark:text-gray-500"></span>
+                                    </div>
                                 </div>
-                                <p id="sw-version-notes" class="text-sm text-gray-500 dark:text-gray-400 mb-5"></p>
+                                <p id="sw-version-notes" class="text-sm text-gray-500 dark:text-gray-400 mb-3"></p>
                                 <a id="sw-download-btn" href="#"
-                                    class="btn bg-violet-500 hover:bg-violet-600 text-white w-full text-center block">
-                                    <span>Baixar </span><span id="sw-download-version"></span>
+                                    class="btn bg-violet-500 hover:bg-violet-600 text-white w-full text-center block text-sm">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <svg class="w-4 h-4 fill-current opacity-80" viewBox="0 0 16 16">
+                                            <path
+                                                d="M8 12.3 3.4 7.7l1.4-1.4L7 8.5V1h2v7.5l2.2-2.2 1.4 1.4L8 12.3ZM14 14H2v-3H0v4c0 .6.4 1 1 1h14c.6 0 1-.4 1-1v-4h-2v3Z" />
+                                        </svg>
+                                        <span>Baixar <span id="sw-download-version"></span></span>
+                                    </div>
                                     <span id="sw-download-size" class="ml-2 text-xs opacity-70"></span>
                                 </a>
                                 <p id="sw-download-date"
                                     class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center"></p>
                             </div>
-                            <!-- Automation version card -->
-                            <div
-                                class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-6">
-                                <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Automacao
-                                    DS-160</h2>
-                                <div class="flex items-center gap-3 mb-3">
-                                    <span id="sw-auto-version" class="text-2xl font-bold text-sky-500">—</span>
-                                    <span id="sw-auto-date" class="text-xs text-gray-400 dark:text-gray-500"></span>
+                            <!-- Automation DS-160 row -->
+                            <div class="px-5 py-4">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-500/20 flex items-center justify-center shrink-0">
+                                            <svg class="w-5 h-5 fill-current text-sky-500" viewBox="0 0 16 16">
+                                                <path
+                                                    d="M10.284.92a1 1 0 1 0-.566 1.918 5.98 5.98 0 0 1 3.87 4.088 1 1 0 0 0 1.936-.502A7.98 7.98 0 0 0 10.284.92ZM5.716.92a1 1 0 1 0-.566-1.918A7.98 7.98 0 0 0 .476 6.424a1 1 0 1 0 1.936.502A5.98 5.98 0 0 1 5.716.92Zm8.612 9.452a1 1 0 0 0-1.936.502 5.98 5.98 0 0 1-3.87 4.088 1 1 0 0 0 .566 1.918 7.98 7.98 0 0 0 5.24-6.508ZM2.412 10.874a1 1 0 0 0-1.936-.502A7.98 7.98 0 0 0 5.716 16.88a1 1 0 1 0 .566-1.918 5.98 5.98 0 0 1-3.87-4.088Z" />
+                                                <circle cx="8" cy="8" r="3" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                                Automacao DS-160</h2>
+                                            <p class="text-xs text-gray-400 dark:text-gray-500">Script de
+                                                preenchimento</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span id="sw-auto-version" class="text-lg font-bold text-sky-500">—</span>
+                                        <span id="sw-auto-date" class="text-xs text-gray-400 dark:text-gray-500"></span>
+                                    </div>
                                 </div>
-                                <p id="sw-auto-changelog" class="text-sm text-gray-500 dark:text-gray-400"></p>
+                                <p id="sw-auto-changelog" class="text-sm text-gray-500 dark:text-gray-400 mt-2"></p>
                             </div>
                         </div>
                     </div>
+
+
 
                     <!-- ==================== VIEW: MASTER ==================== -->
                     <div id="view-master" class="view">
@@ -591,82 +841,147 @@
 
                         <!-- Sub: Agencies -->
                         <div id="master-sub-agencies" class="master-sub active">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100">Organizacoes</h3>
+                            <div class="flex justify-between items-center mb-5">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center shrink-0">
+                                        <svg class="w-5 h-5 fill-current text-violet-500" viewBox="0 0 16 16">
+                                            <path
+                                                d="M12 0H4a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V2a2 2 0 00-2-2zm-1 14H5a1 1 0 010-2h6a1 1 0 010 2zm1-4H4V3h8v7z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100">
+                                            Organizações</h3>
+                                        <p class="text-xs text-gray-400 dark:text-gray-500">Gerencie as empresas
+                                            cadastradas</p>
+                                    </div>
+                                </div>
                                 <button
                                     onclick="document.getElementById('modal-create-agency').classList.remove('hidden')"
-                                    class="btn-sm bg-violet-500 hover:bg-violet-600 text-white">+ Nova
-                                    Organizacao</button>
+                                    class="btn-sm bg-violet-500 hover:bg-violet-600 text-white inline-flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 fill-current" viewBox="0 0 16 16">
+                                        <path
+                                            d="M15 7H9V1a1 1 0 00-2 0v6H1a1 1 0 000 2h6v6a1 1 0 002 0V9h6a1 1 0 000-2z" />
+                                    </svg>
+                                    Nova Organização
+                                </button>
                             </div>
-                            <div id="agencies-list"
-                                class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 divide-y divide-gray-200 dark:divide-gray-700/60">
-                            </div>
+                            <div id="agencies-list" class="space-y-2"></div>
                         </div>
 
                         <!-- Sub: Agency Detail -->
                         <div id="master-sub-agency-detail" class="master-sub">
                             <button id="btn-back-agencies"
-                                class="btn-sm mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300">&lt;
-                                Voltar</button>
+                                class="btn-sm mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 inline-flex items-center gap-1.5">
+                                <svg class="w-4 h-4 fill-current" viewBox="0 0 16 16">
+                                    <path d="M6.6 13.4L1.2 8l5.4-5.4 1.4 1.4L4 8l4 4-1.4 1.4Z" />
+                                </svg>
+                                Voltar
+                            </button>
                             <div id="agency-detail-content"></div>
                         </div>
 
                         <!-- Sub: CapMonster -->
                         <div id="master-sub-capmonster" class="master-sub">
-                            <div
-                                class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-6 max-w-lg">
-                                <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">API Key
-                                    CapMonster</h3>
+                            <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl px-6 py-5 max-w-xl">
+                                <div class="flex items-start gap-4 mb-5">
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0">
+                                        <svg class="w-5 h-5 fill-current text-amber-500" viewBox="0 0 16 16">
+                                            <path
+                                                d="M11 0a5 5 0 00-4.916 5.916L0 12v3a1 1 0 001 1h3l6.084-6.084A5 5 0 0011 0zm1.5 5.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100">API Key
+                                            CapMonster</h3>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Chave de integração
+                                            para resolução automática de captchas</p>
+                                    </div>
+                                </div>
                                 <div class="space-y-3">
-                                    <input id="capmonster-key" class="form-input w-full" type="text"
-                                        placeholder="Cole a API Key aqui...">
-                                    <button id="btn-save-capmonster"
-                                        class="btn bg-violet-500 hover:bg-violet-600 text-white">Salvar</button>
+                                    <div>
+                                        <label
+                                            class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Chave
+                                            da API</label>
+                                        <input id="capmonster-key" class="form-input w-full font-mono text-sm"
+                                            type="text" placeholder="Insira sua API Key...">
+                                    </div>
+                                    <div class="flex items-center justify-between pt-1">
+                                        <span id="capmonster-status"
+                                            class="text-xs text-gray-400 dark:text-gray-500"></span>
+                                        <button id="btn-save-capmonster"
+                                            class="btn-sm bg-violet-500 hover:bg-violet-600 text-white inline-flex items-center gap-1.5">
+                                            <svg class="w-4 h-4 fill-current" viewBox="0 0 16 16">
+                                                <path
+                                                    d="M14.3 2.3L5 11.6 1.7 8.3c-.4-.4-1-.4-1.4 0s-.4 1 0 1.4l4 4c.2.2.4.3.7.3s.5-.1.7-.3l10-10c.4-.4.4-1 0-1.4s-1-.4-1.4 0z" />
+                                            </svg>
+                                            Salvar
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Sub: Logs -->
                         <div id="master-sub-logs" class="master-sub">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100">Erros da Automacao
-                                </h3>
+                            <div class="flex justify-between items-center mb-5">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0">
+                                        <svg class="w-5 h-5 fill-current text-red-500" viewBox="0 0 16 16">
+                                            <path
+                                                d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm0 12a1 1 0 110-2 1 1 0 010 2zm1-4a1 1 0 01-2 0V4a1 1 0 012 0v4z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100">Erros
+                                                da Automação</h3>
+                                            <span id="logs-badge"
+                                                class="inline-flex items-center justify-center text-xs font-medium bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">0</span>
+                                        </div>
+                                        <p class="text-xs text-gray-400 dark:text-gray-500">Falhas detectadas durante o
+                                            preenchimento</p>
+                                    </div>
+                                </div>
                                 <button id="btn-archive-logs"
-                                    class="btn-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs">Arquivar
-                                    todos</button>
+                                    class="btn-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:border-gray-300 inline-flex items-center gap-1.5 text-xs">
+                                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16">
+                                        <path
+                                            d="M2 0a2 2 0 00-2 2v2h16V2a2 2 0 00-2-2H2zM0 6v8a2 2 0 002 2h12a2 2 0 002-2V6H0zm5 2h6a1 1 0 110 2H5a1 1 0 110-2z" />
+                                    </svg>
+                                    Arquivar todos
+                                </button>
                             </div>
-                            <div
-                                class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-x-auto">
-                                <table class="table-auto w-full dark:text-gray-300">
-                                    <thead
-                                        class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-200 dark:border-gray-700/60">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left">Data</th>
-                                            <th class="px-4 py-3 text-left">Causa</th>
-                                            <th class="px-4 py-3 text-left">Pagina</th>
-                                            <th class="px-4 py-3 text-left">Campo</th>
-                                            <th class="px-4 py-3 text-left">Mensagem</th>
-                                            <th class="px-4 py-3 text-center">Screenshot</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="logs-list"
-                                        class="text-sm divide-y divide-gray-200 dark:divide-gray-700/60"></tbody>
-                                </table>
-                            </div>
+                            <div id="logs-list" class="space-y-2"></div>
                         </div>
 
                         <!-- Sub: Settings -->
                         <div id="master-sub-settings" class="master-sub">
-                            <div
-                                class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 p-6 max-w-lg">
-                                <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Pergunta de
-                                    Seguranca</h3>
-                                <div class="space-y-3">
+                            <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl px-6 py-5 max-w-xl">
+                                <div class="flex items-start gap-4 mb-5">
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+                                        <svg class="w-5 h-5 fill-current text-emerald-500" viewBox="0 0 16 16">
+                                            <path
+                                                d="M8 0L1 3v5c0 4.4 3 8.5 7 10 4-1.5 7-5.6 7-10V3L8 0zm0 2.2l5 2.1v3.8c0 3.3-2.2 6.4-5 7.7-2.8-1.3-5-4.4-5-7.7V4.3l5-2.1zm-1 8.3l-2.5-2.5 1.1-1.1L7 8.3l3.4-3.4 1.1 1.1L7 10.5z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100">Pergunta de
+                                            Segurança</h3>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Configuração padrão
+                                            para todas as aplicações DS-160</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
                                     <div>
                                         <label
                                             class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Pergunta</label>
                                         <select id="setting-security-question" class="form-select w-full">
-                                            <option value="4">Qual cidade voce nasceu?</option>
+                                            <option value="4">Qual cidade você nasceu?</option>
                                             <option value="5">Nome da sua escola</option>
                                             <option value="6">Nome da rua onde cresceu</option>
                                         </select>
@@ -674,13 +989,22 @@
                                     <div>
                                         <label
                                             class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Resposta
-                                            Padrao</label>
+                                            Padrão</label>
                                         <input id="setting-security-answer" class="form-input w-full" type="text"
-                                            placeholder="Resposta padrao...">
+                                            placeholder="Resposta padrão...">
                                     </div>
-                                    <button id="btn-save-settings"
-                                        class="btn bg-violet-500 hover:bg-violet-600 text-white">Salvar</button>
-                                    <div id="settings-status" style="display:none" class="text-sm mt-2"></div>
+                                    <div class="flex items-center justify-between pt-1">
+                                        <div id="settings-status" class="text-sm text-gray-400 dark:text-gray-500"
+                                            style="display:none"></div>
+                                        <button id="btn-save-settings"
+                                            class="btn-sm bg-violet-500 hover:bg-violet-600 text-white inline-flex items-center gap-1.5 ml-auto">
+                                            <svg class="w-4 h-4 fill-current" viewBox="0 0 16 16">
+                                                <path
+                                                    d="M14.3 2.3L5 11.6 1.7 8.3c-.4-.4-1-.4-1.4 0s-.4 1 0 1.4l4 4c.2.2.4.3.7.3s.5-.1.7-.3l10-10c.4-.4.4-1 0-1.4s-1-.4-1.4 0z" />
+                                            </svg>
+                                            Salvar
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -714,7 +1038,8 @@
 
     <!-- Process modal (iframe) -->
     <div id="process-modal">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-[95vw] max-w-5xl h-[90vh] flex flex-col border border-gray-200 dark:border-gray-700/60"
+        <div style="width:95vw;max-width:680px;height:90vh"
+            class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl flex flex-col border border-gray-200 dark:border-gray-700/60"
             onclick="event.stopPropagation()">
             <div
                 class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700/60 shrink-0">
@@ -804,7 +1129,7 @@
     <!-- Toast container -->
     <div id="toast-container"></div>
 
-    <!-- Scripts -->
+
     <script src="js/main.js"></script>
     <script src="dashboard.js"></script>
 </body>

@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0",
-    "date": "2026-02-23",
-    "changelog": "Versão inicial com versionamento semântico da automação"
+    "version": "1.1.0",
+    "date": "2026-02-26",
+    "changelog": "Hot-reload estendido para renderer (UI); sistema de prioridades; auto-reset de aplicações; cards com status de preenchimento"
 }

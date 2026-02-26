@@ -336,6 +336,10 @@ class QueueRunner {
 
     // ==============================================================
     // CLAIM / QUERY (filtered by organization)
+    // Priority order: emergency (3) > urgent (2) > normal (1/0)
+    // Within same priority: sort_order ASC, updated_at ASC
+    // Auto-reset: if application is 'filled', reset to 'pending'
+    // Auto-create: if no application exists, create one
     // ==============================================================
     async _claimNext() {
         // Get applicant IDs belonging to this organization
@@ -369,7 +373,7 @@ class QueueRunner {
             }
         }
 
-        // 1. PRIORITY: applicants with pipeline_status='doing' (in progress)
+        // 1. PRIORITY: applicants with pipeline_status='doing' (resume incomplete)
         let doingQuery = this.supabase
             .from('applicants')
             .select('id')
@@ -379,7 +383,6 @@ class QueueRunner {
 
         if (doingApplicants && doingApplicants.length > 0) {
             const doingIds = doingApplicants.map(a => a.id);
-            // Find their application that isn't completed
             const { data: doingApps } = await this.supabase
                 .from('applications')
                 .select('*')
@@ -399,30 +402,93 @@ class QueueRunner {
             }
         }
 
-        // 2. NEW: applicants with pipeline_status='approved' (ready to fill)
+        // 2. APPROVED: ordered by fill_priority DESC, sort_order ASC, updated_at ASC
         let approvedQuery = this.supabase
             .from('applicants')
-            .select('id')
+            .select('id, fill_priority, sort_order')
             .eq('pipeline_status', 'approved')
+            .order('fill_priority', { ascending: false })
+            .order('sort_order', { ascending: true })
             .order('updated_at', { ascending: true });
         if (applicantIds) approvedQuery = approvedQuery.in('id', applicantIds);
-        const { data: approvedApplicants } = await approvedQuery.limit(1);
+        const { data: approvedApplicants, error: approvedErr } = await approvedQuery.limit(10);
+
+        // Fallback if fill_priority/sort_order columns don't exist yet
+        if (approvedErr && approvedErr.message.includes('column')) {
+            console.warn('[Queue] fill_priority/sort_order columns missing, using fallback order');
+            let fallbackQuery = this.supabase
+                .from('applicants')
+                .select('id')
+                .eq('pipeline_status', 'approved')
+                .order('updated_at', { ascending: true });
+            if (applicantIds) fallbackQuery = fallbackQuery.in('id', applicantIds);
+            const { data: fallbackApplicants } = await fallbackQuery.limit(10);
+            if (!fallbackApplicants || fallbackApplicants.length === 0) return null;
+            return await this._ensureAndClaimApp(fallbackApplicants[0].id);
+        }
 
         if (!approvedApplicants || approvedApplicants.length === 0) return null;
 
-        const targetApplicantId = approvedApplicants[0].id;
+        // Try each approved applicant (in priority order) until one is claimable
+        for (const candidate of approvedApplicants) {
+            const result = await this._ensureAndClaimApp(candidate.id);
+            if (result) return result;
+        }
 
-        // Find their application
-        const { data: apps } = await this.supabase
+        return null;
+    }
+
+    // ==============================================================
+    // ENSURE APPLICATION EXISTS + CLAIM
+    // Auto-reset filled applications, auto-create missing ones
+    // ==============================================================
+    async _ensureAndClaimApp(applicantId) {
+        // Find ALL applications for this applicant
+        const { data: allApps } = await this.supabase
             .from('applications')
             .select('*')
-            .eq('applicant_id', targetApplicantId)
-            .neq('fill_status', 'filled')
+            .eq('applicant_id', applicantId)
+            .order('created_at', { ascending: false })
             .limit(1);
 
-        if (!apps || apps.length === 0) return null;
+        let app = allApps && allApps[0] ? allApps[0] : null;
 
-        const app = apps[0];
+        if (!app) {
+            // No application exists — create one
+            console.log(`[Queue] No application for ${applicantId} — creating`);
+            const { data: newApp, error: createErr } = await this.supabase
+                .from('applications')
+                .insert({ applicant_id: applicantId, fill_status: 'pending' })
+                .select()
+                .single();
+            if (createErr) {
+                console.error('[Queue] Failed to create application:', createErr.message);
+                return null;
+            }
+            app = newApp;
+        } else if (app.fill_status === 'filled') {
+            // Application exists but was already filled — auto-reset for re-fill
+            console.log(`[Queue] Auto-resetting filled application ${app.id} for re-fill`);
+            const { error: resetErr } = await this.supabase.from('applications').update({
+                fill_status: 'pending',
+                fill_error: null,
+                fill_worker_id: null,
+                fill_started_at: null,
+                fill_finished_at: null,
+                retry_count: 0,
+                last_page: null,
+                application_id: null,
+                last_error_at: null
+            }).eq('id', app.id);
+            if (resetErr) {
+                console.error('[Queue] Failed to reset application:', resetErr.message);
+                return null;
+            }
+            app.fill_status = 'pending';
+        } else if (app.fill_status === 'filling') {
+            // Already being filled by another worker — skip
+            return null;
+        }
 
         // Claim: set application to filling
         await this.supabase.from('applications').update({
@@ -435,8 +501,11 @@ class QueueRunner {
         await this.supabase.from('applicants').update({
             pipeline_status: 'doing',
             updated_at: new Date().toISOString()
-        }).eq('id', targetApplicantId);
-        console.log('[Queue] Claimed approved:', app.id, '→ doing');
+        }).eq('id', applicantId);
+
+        const priority = app.fill_priority || 0;
+        const priorityLabel = priority >= 3 ? '🚨 EMERGÊNCIA' : priority >= 2 ? '⚡ URGENTE' : '📋 Normal';
+        console.log(`[Queue] Claimed ${app.id} → doing (${priorityLabel})`);
 
         return { ...app, fill_status: 'filling' };
     }

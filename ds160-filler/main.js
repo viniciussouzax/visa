@@ -6,24 +6,28 @@ const { createClient } = require('@supabase/supabase-js');
 const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
 
-// Session file for persistent login
-const SESSION_FILE = path.join(app.getPath('userData'), 'session.json');
+// Session file for persistent login (lazy — app.getPath only works after 'ready')
+let _sessionFile;
+function getSessionFile() {
+    if (!_sessionFile) _sessionFile = path.join(app.getPath('userData'), 'session.json');
+    return _sessionFile;
+}
 
 function saveSession(email, password) {
-    fs.writeFileSync(SESSION_FILE, JSON.stringify({ email, password }), 'utf-8');
+    fs.writeFileSync(getSessionFile(), JSON.stringify({ email, password }), 'utf-8');
 }
 
 function loadSession() {
     try {
-        if (fs.existsSync(SESSION_FILE)) {
-            return JSON.parse(fs.readFileSync(SESSION_FILE, 'utf-8'));
+        if (fs.existsSync(getSessionFile())) {
+            return JSON.parse(fs.readFileSync(getSessionFile(), 'utf-8'));
         }
     } catch { }
     return null;
 }
 
 function clearSession() {
-    try { fs.unlinkSync(SESSION_FILE); } catch { }
+    try { fs.unlinkSync(getSessionFile()); } catch { }
 }
 
 let mainWindow;
@@ -95,6 +99,15 @@ app.whenReady().then(() => {
             lastUpdateCheck = now;
             console.log('[Update] Checking for updates...');
             autoUpdater.checkForUpdatesAndNotify().catch(() => { });
+
+            // Also run hot-reload for scripts + renderer
+            const { checkForUpdates } = require('./automation/hot-reload');
+            checkForUpdates().then(result => {
+                if (result && result.renderer && result.renderer.updated) {
+                    console.log('[Update] Renderer atualizado — recarregando janela...');
+                    mainWindow?.webContents.reload();
+                }
+            }).catch(() => { });
         };
 
         // Check on startup
@@ -180,6 +193,10 @@ app.whenReady().then(() => {
                 const automationFiles = diff.split('\n').filter(f =>
                     f.includes('automation/') || f.includes('main.js') || f.includes('field-map')
                 );
+                // Check if renderer files changed
+                const rendererFiles = diff.split('\n').filter(f =>
+                    f.includes('renderer/')
+                );
 
                 if (automationFiles.length > 0) {
                     console.log('[AutoUpdate] 🔄 Arquivos de automação alterados — reiniciando app...');
@@ -198,6 +215,9 @@ app.whenReady().then(() => {
                         app.relaunch();
                         app.exit(0);
                     }, 2000);
+                } else if (rendererFiles.length > 0) {
+                    console.log('[AutoUpdate] 🖥️ Renderer atualizado — recarregando janela...');
+                    mainWindow?.webContents.reload();
                 } else {
                     console.log('[AutoUpdate] Apenas arquivos não-críticos alterados, sem restart necessário');
                 }
