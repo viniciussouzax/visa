@@ -1320,6 +1320,8 @@ function normalizeProfile(data) {
             const pt = g(trav, 'purposeOfTrip', 'purpose_of_trip');
             return (pt && pt !== 'N/A') ? pt : null;
         })(),
+        purposeCategory: g(trav, 'purposeCategory', 'purpose_category') || null,
+        purposeSubCategory: g(trav, 'purposeSubCategory', 'purpose_sub_category') || null,
         hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.hasSpecificPlans === true || trav.has_specific_plans === 'Y',
         travel: {
             arrivalDate: (() => {

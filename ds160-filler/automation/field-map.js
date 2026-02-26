@@ -202,9 +202,10 @@ function buildDynamicFieldMap(a) {
   // ===================================================================
   // TRAVEL
   // ===================================================================
+  // Purpose of trip: use dynamic values from profile (fallback to B / B1-B2 for backward compat)
   map.push(
-    { pattern: /ddlPurposeOfTrip$/i, value: "B", type: "select" },
-    { pattern: /ddlOtherPurpose$/i, value: "B1-B2", type: "select" },
+    { pattern: /ddlPurposeOfTrip$/i, value: a.purposeCategory || "B", type: "select" },
+    { pattern: /ddlOtherPurpose$/i, value: a.purposeSubCategory || a.purposeOfTrip || "B1-B2", type: "select" },
     { pattern: /ddlVisaClass$/i, value: a.purposeOfTrip, type: "select-search" },
   );
 
