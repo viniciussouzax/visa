@@ -82,9 +82,9 @@ function renderLayout() {
     <header class="sticky top-0 before:absolute before:inset-0 before:backdrop-blur-md before:bg-white/90 dark:before:bg-gray-800/90 lg:before:bg-gray-100/90 dark:lg:before:bg-gray-900/90 before:-z-10 max-lg:shadow-xs z-30">
         <div class="px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 lg:border-b border-gray-200 dark:border-gray-700/60">
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-4">
                     <button class="text-gray-500 hover:text-gray-600 lg:hidden" @click.stop="sidebarOpen = !sidebarOpen">
-                        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M3 5h18M3 12h18M3 19h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+                        <svg class="fill-current" width="16" height="16" viewBox="0 0 24 24"><path d="M3 5h18M3 12h18M3 19h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
                     </button>
                     <div>
                         <h1 id="page-title" class="text-xl font-bold text-gray-800 dark:text-gray-100">${PAGE_TITLES[CURRENT_PAGE] || 'Dashboard'}</h1>
