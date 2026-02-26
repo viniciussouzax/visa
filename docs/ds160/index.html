@@ -669,13 +669,9 @@
                 </p>
                 <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
                     <button id="btnApprove" onclick="approveForm()"
-                        style="display:none;background:#16a34a;color:#fff;border:none;padding:12px 32px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s"
+                        style="display:none;background:#16a34a;color:#fff;border:none;padding:14px 40px;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:0.5px"
                         onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">✓
-                        Aprovar Aplicação</button>
-                    <button id="btnFinalize" onclick="finalizeForm()"
-                        style="display:none;background:#2563eb;color:#fff;border:none;padding:12px 32px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s"
-                        onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">📤
-                        Finalizar e Enviar</button>
+                        APROVAR APLICAÇÃO</button>
                 </div>
             </div>
         </div>
@@ -973,9 +969,9 @@
                         (Intended Length of Stay in U.S.) *</label>
                     <div style="display:flex;gap:6px;align-items:center">
                         <input type="text" id="tbxAPP_LOS" placeholder="Quantidade"
-                            style="width:80px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+                            style="flex:1;min-width:60px;max-width:120px;padding:8px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px">
                         <select id="ddlAPP_LOS_CD"
-                            style="width:180px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+                            style="flex:2;min-width:120px;padding:8px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px">
                             <option value="">- Período -</option>
                             <option value="Y">Ano(s)</option>
                             <option value="M">Mês(es)</option>
@@ -2758,8 +2754,7 @@
         </div>
         <div class="page-btns">
             <button class="btn btn-prev" onclick="prevPage()">ANTERIOR</button>
-            <button id="btnSaveForm" class="btn btn-next" style="background:#2e7d32" onclick="saveFormData()">💾 Salvar
-                Formulário</button>
+            <button id="btnSaveForm" class="btn btn-next" onclick="saveFormData()">SALVAR</button>
         </div>
     </div>
 
@@ -4696,7 +4691,7 @@
             return true;
         }
 
-        // Save form data without approving — just persist to Supabase
+        // Save form data — persists to Supabase, and if all sections complete, moves new→review
         async function saveFormData() {
             // Validate current page first
             if (!validateCurrentPage()) return;
@@ -4714,25 +4709,37 @@
 
             try {
                 await saveToSupabase();
-                btn.textContent = '✅ Salvo!';
-                btn.style.background = '#16a34a';
-                showToast('Formulário salvo com sucesso!');
-                // Check if all sections are complete to show approve/finalize
+
+                // Check if all sections are complete
+                const allComplete = areAllSectionsComplete();
+                if (allComplete && savedApplicantId) {
+                    // Move from 'new' to 'review' automatically
+                    await sbFetch(`rest/v1/applicants?id=eq.${savedApplicantId}`, 'PATCH', {
+                        pipeline_status: 'review',
+                        updated_at: new Date().toISOString()
+                    });
+                    showToast('Formulário salvo e enviado para revisão!');
+                    // Notify parent dashboard
+                    if (window.parent !== window) {
+                        window.parent.postMessage({ type: 'form-saved', applicantId: savedApplicantId, status: 'review' }, '*');
+                    }
+                    setTimeout(() => backToGate(), 1500);
+                } else {
+                    showToast('Formulário salvo com sucesso!');
+                }
+
                 checkAllSectionsComplete();
-                setTimeout(() => {
-                    btn.textContent = '💾 Salvar Formulário';
-                    btn.style.background = '#2e7d32';
-                    btn.disabled = false;
-                }, 2000);
+                btn.textContent = 'SALVAR';
+                btn.disabled = false;
             } catch (e) {
                 console.error('Save error:', e);
                 showToast('Erro ao salvar: ' + e.message);
-                btn.textContent = '💾 Salvar Formulário';
+                btn.textContent = 'SALVAR';
                 btn.disabled = false;
             }
         }
 
-        // Approve form (assessor only)
+        // Approve form (assessor only) — moves review→approved
         async function approveForm() {
             const btn = document.getElementById('btnApprove');
             btn.disabled = true;
@@ -4753,39 +4760,20 @@
             } catch (e) {
                 console.error('Approve error:', e);
                 showToast('Erro ao aprovar: ' + e.message);
-                btn.textContent = '✓ Aprovar Aplicação';
+                btn.textContent = '✓ APROVAR APLICAÇÃO';
                 btn.disabled = false;
             }
         }
 
-        // Finalize form (applicant)
-        async function finalizeForm() {
-            const btn = document.getElementById('btnFinalize');
-            btn.disabled = true;
-            btn.textContent = 'Finalizando...';
-            try {
-                await saveToSupabase();
-                btn.textContent = '✅ Enviado!';
-                showToast('Formulário finalizado e enviado!');
-                setTimeout(() => backToGate(), 1500);
-            } catch (e) {
-                console.error('Finalize error:', e);
-                showToast('Erro ao finalizar: ' + e.message);
-                btn.textContent = '📤 Finalizar e Enviar';
-                btn.disabled = false;
-            }
-        }
-
-        // Check if all non-conditional sections are complete to show final buttons
-        function checkAllSectionsComplete() {
+        // Check if ALL visible sections are complete
+        function areAllSectionsComplete() {
             const SECTIONS = window._SECTIONS;
-            if (!SECTIONS) return;
+            if (!SECTIONS) return false;
             const container = document.getElementById('acc-container');
-            if (!container) return;
+            if (!container) return false;
 
             let allComplete = true;
             SECTIONS.forEach((sec, idx) => {
-                // Skip conditional sections that are hidden
                 if (sec.conditional) {
                     const accItem = container.querySelector(`[data-section="${idx}"]`);
                     if (accItem && accItem.style.display === 'none') return;
@@ -4795,21 +4783,18 @@
                     allComplete = false;
                 }
             });
+            return allComplete;
+        }
 
+        // Show/hide final approve button (assessor only, when all sections done)
+        function checkAllSectionsComplete() {
+            const allComplete = areAllSectionsComplete();
             const finalDiv = document.getElementById('final-actions');
             const btnApprove = document.getElementById('btnApprove');
-            const btnFinalize = document.getElementById('btnFinalize');
 
-            if (allComplete) {
+            if (allComplete && window._isAssessorMode) {
                 finalDiv.style.display = '';
-                if (window._isAssessorMode) {
-                    btnApprove.style.display = '';
-                    btnFinalize.style.display = 'none';
-                } else {
-                    btnApprove.style.display = 'none';
-                    btnFinalize.style.display = '';
-                }
-                // Scroll to final actions
+                btnApprove.style.display = '';
                 finalDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
             } else {
                 finalDiv.style.display = 'none';
