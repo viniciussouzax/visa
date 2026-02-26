@@ -288,6 +288,8 @@ ipcMain.handle('fetch-queue', async () => {
             .from('applicants')
             .select('id, full_name, pipeline_status')
             .in('pipeline_status', ['approved', 'doing'])
+            .order('fill_priority', { ascending: false })
+            .order('sort_order', { ascending: true })
             .order('updated_at', { ascending: true });
 
         if (!applicants || applicants.length === 0) {
