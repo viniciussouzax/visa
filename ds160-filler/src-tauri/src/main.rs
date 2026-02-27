@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    ds160_filler_lib::run()
+    sends160_lib::run()
 }

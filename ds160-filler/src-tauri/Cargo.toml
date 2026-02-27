@@ -1,8 +1,8 @@
 [package]
-name = "ds160-filler"
+name = "sends160"
 version = "1.2.0"
 edition = "2021"
-description = "DS-160 Auto-Filler — Automação de formulários"
+description = "SENDS160 — Automação de formulários DS-160"
 
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
@@ -17,5 +17,5 @@ tokio = { version = "1", features = ["full"] }
 tauri-build = { version = "2", features = [] }
 
 [lib]
-name = "ds160_filler_lib"
+name = "sends160_lib"
 crate-type = ["lib", "cdylib", "staticlib"]

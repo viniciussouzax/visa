@@ -51,16 +51,16 @@ async function loadSoftwareInfo() {
                 ? new Date(release.published_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
                 : '';
             const notes = release.body || '';
-            const exeAsset = (release.assets || []).find(a => a.name.endsWith('.exe') && !a.name.endsWith('.blockmap'));
+            const msiAsset = (release.assets || []).find(a => a.name.endsWith('.msi'));
 
             $('sw-version').textContent = 'v' + versionClean;
             $('sw-version-date').textContent = releaseDate ? 'Publicado em ' + releaseDate : '';
             $('sw-version-notes').textContent = notes.substring(0, 200);
 
-            if (exeAsset) {
-                $('sw-download-btn').href = exeAsset.browser_download_url;
+            if (msiAsset) {
+                $('sw-download-btn').href = msiAsset.browser_download_url;
                 $('sw-download-version').textContent = 'v' + versionClean;
-                const sizeMB = (exeAsset.size / (1024 * 1024)).toFixed(1);
+                const sizeMB = (msiAsset.size / (1024 * 1024)).toFixed(1);
                 $('sw-download-size').textContent = sizeMB + ' MB';
                 $('sw-download-date').textContent = releaseDate ? 'Publicado em ' + releaseDate : '';
             } else {

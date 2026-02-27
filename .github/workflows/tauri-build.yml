@@ -1,4 +1,4 @@
-name: Build & Release (Tauri)
+name: Build & Release SENDS160
 
 on:
   push:
@@ -67,14 +67,14 @@ jobs:
         with:
           projectPath: ds160-filler
           tagName: ${{ github.ref_name }}
-          releaseName: "DS-160 Filler ${{ github.ref_name }}"
+          releaseName: "SENDS160 ${{ github.ref_name }}"
           releaseBody: |
-            ## DS-160 Filler ${{ github.ref_name }}
+            ## SENDS160 ${{ github.ref_name }}
 
             ### Downloads
-            - **Windows**: `.msi` ou `.exe`
+            - **Windows**: `.msi`
             - **macOS**: `.dmg`
             - **Linux**: `.AppImage` ou `.deb`
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
