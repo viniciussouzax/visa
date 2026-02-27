@@ -454,6 +454,215 @@ Classe: .badge</code>
         </div>
     </div>
 
+    <!-- ============================================================
+         10. TABELAS
+         ============================================================ -->
+    <div class="ds-section">
+        <h2>📊 Tabelas</h2>
+        <p class="desc">Tabelas limpas com bordas inferiores. Header cinza claro, linhas hover suaves.</p>
+        <div class="ds-card" style="padding:0;overflow:hidden">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,system-ui,sans-serif">
+                <thead>
+                    <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0">
+                        <th
+                            style="padding:12px 16px;text-align:left;font-weight:600;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.05em">
+                            Nome</th>
+                        <th
+                            style="padding:12px 16px;text-align:left;font-weight:600;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.05em">
+                            Email</th>
+                        <th
+                            style="padding:12px 16px;text-align:left;font-weight:600;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.05em">
+                            Status</th>
+                        <th
+                            style="padding:12px 16px;text-align:right;font-weight:600;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.05em">
+                            Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom:1px solid #f1f5f9" onmouseover="this.style.background='#f8fafc'"
+                        onmouseout="this.style.background='#fff'">
+                        <td style="padding:12px 16px;font-weight:500;color:#1e293b">SILVA, Marcos</td>
+                        <td style="padding:12px 16px;color:#64748b">marcos@email.com</td>
+                        <td style="padding:12px 16px"><span
+                                style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:#dcfce7;color:#16a34a">Concluído</span>
+                        </td>
+                        <td style="padding:12px 16px;text-align:right">
+                            <button
+                                style="font-size:13px;padding:6px 12px;background:#fff;border:1px solid #d1d5db;border-radius:5px;cursor:pointer;color:#374151;font-weight:500;font-family:inherit">Detalhes</button>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #f1f5f9" onmouseover="this.style.background='#f8fafc'"
+                        onmouseout="this.style.background='#fff'">
+                        <td style="padding:12px 16px;font-weight:500;color:#1e293b">COSTA, Ana</td>
+                        <td style="padding:12px 16px;color:#64748b">ana@email.com</td>
+                        <td style="padding:12px 16px"><span
+                                style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:#fef3c7;color:#d97706">Pendente</span>
+                        </td>
+                        <td style="padding:12px 16px;text-align:right">
+                            <button
+                                style="font-size:13px;padding:6px 12px;background:#fff;border:1px solid #d1d5db;border-radius:5px;cursor:pointer;color:#374151;font-weight:500;font-family:inherit">Detalhes</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <code class="ds-code">thead: bg #f8fafc, border-bottom 2px #e2e8f0
+th: 11px uppercase, color #64748b, letter-spacing .05em
+td: padding 12px 16px
+tr: border-bottom 1px #f1f5f9 + hover bg #f8fafc</code>
+    </div>
+
+    <!-- ============================================================
+         11. BOTÕES DE AÇÃO INLINE
+         ============================================================ -->
+    <div class="ds-section">
+        <h2>⚡ Botões de Ação Inline</h2>
+        <p class="desc">Botões usados dentro de cards/linhas como "Detalhes", "Editar", etc.</p>
+        <div class="ds-grid">
+            <div class="ds-card">
+                <h3>Botão Detalhes</h3>
+                <button
+                    style="font-size:13px;padding:8px 14px;background:#fff;border:1px solid #d1d5db;border-radius:5px;cursor:pointer;color:#374151;font-weight:500;transition:all .2s;font-family:Inter,system-ui,sans-serif"
+                    onmouseover="this.style.borderColor='#94a3b8';this.style.background='#f8fafc'"
+                    onmouseout="this.style.borderColor='#d1d5db';this.style.background='#fff'">Detalhes</button>
+                <code class="ds-code">font-size: 13px
+padding: 8px 14px
+bg: white, border: 1px solid #d1d5db
+color: #374151, font-weight: 500
+hover → border: #94a3b8, bg: #f8fafc</code>
+            </div>
+            <div class="ds-card">
+                <h3>Botão Icon (menu 3 pontos)</h3>
+                <button
+                    style="padding:6px;border-radius:50%;border:none;background:transparent;cursor:pointer;color:#94a3b8;transition:all .2s"
+                    onmouseover="this.style.background='#f1f5f9';this.style.color='#64748b'"
+                    onmouseout="this.style.background='transparent';this.style.color='#94a3b8'">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <circle cx="8" cy="3" r="1.5" />
+                        <circle cx="8" cy="8" r="1.5" />
+                        <circle cx="8" cy="13" r="1.5" />
+                    </svg>
+                </button>
+                <code class="ds-code">padding: 6px
+border-radius: 50%
+color: #94a3b8
+hover → bg: #f1f5f9, color: #64748b</code>
+            </div>
+            <div class="ds-card">
+                <h3>Link de ação</h3>
+                <a href="#"
+                    style="font-size:13px;font-weight:500;color:#3b82f6;text-decoration:none;transition:color .2s"
+                    onmouseover="this.style.color='#2563eb'" onmouseout="this.style.color='#3b82f6'">← Voltar ao
+                    Pipeline</a>
+                <code class="ds-code">font-size: 13px, font-weight: 500
+color: #3b82f6
+hover → color: #2563eb
+Sem text-decoration</code>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         12. DIVISORES
+         ============================================================ -->
+    <div class="ds-section">
+        <h2>➖ Divisores</h2>
+        <p class="desc">Separadores visuais entre grupos de conteúdo.</p>
+        <div class="ds-grid">
+            <div class="ds-card">
+                <h3>Divisor com label (Pipeline)</h3>
+                <div style="display:flex;align-items:center;gap:8px;padding:12px 0 4px">
+                    <span
+                        style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;white-space:nowrap">Emergência</span>
+                    <div style="flex:1;height:1px;background:#e5e7eb"></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:12px 0 4px;margin-top:8px">
+                    <span
+                        style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;white-space:nowrap">Urgência</span>
+                    <div style="flex:1;height:1px;background:#e5e7eb"></div>
+                </div>
+                <code class="ds-code">label: 10px/700 uppercase, color #9ca3af
+       letter-spacing: 1px
+linha: height 1px, bg #e5e7eb, flex:1
+padding: 12px 0 4px</code>
+            </div>
+            <div class="ds-card">
+                <h3>Divisor simples (hr)</h3>
+                <p style="font-size:13px;color:#64748b;margin:0 0 12px">Conteúdo acima</p>
+                <hr style="border:none;border-top:1px solid #e2e8f0;margin:0">
+                <p style="font-size:13px;color:#64748b;margin:12px 0 0">Conteúdo abaixo</p>
+                <code class="ds-code">border: none
+border-top: 1px solid #e2e8f0</code>
+            </div>
+            <div class="ds-card">
+                <h3>Divisor vertical (header)</h3>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <span style="font-size:14px;font-weight:600;color:#1e293b">Logo</span>
+                    <div style="height:20px;width:1px;background:#e2e8f0"></div>
+                    <span style="font-size:13px;color:#64748b">Título</span>
+                </div>
+                <code class="ds-code">height: 20px, width: 1px
+background: #e2e8f0
+Usado no header do formulário</code>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         13. INPUT + CLIPBOARD COPY
+         ============================================================ -->
+    <div class="ds-section">
+        <h2>📋 Input + Copiar Clipboard</h2>
+        <p class="desc">Input com botão de copiar, usado para links e URLs.</p>
+        <div class="ds-grid">
+            <div class="ds-card">
+                <h3>Input + botão copy</h3>
+                <label style="display:block;font-size:14px;font-weight:500;color:#374151;margin-bottom:6px">Link do
+                    formulário</label>
+                <div style="display:flex;align-items:center;gap:4px">
+                    <input type="text" value="https://sends160.com/form?id=abc123" readonly id="ds-copy-demo"
+                        style="flex:1;padding:8px 12px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;background:#f8fafc;color:#64748b;outline:none;font-family:Inter,system-ui,sans-serif;box-sizing:border-box">
+                    <button
+                        onclick="navigator.clipboard.writeText(document.getElementById('ds-copy-demo').value);this.querySelector('.icon-copy').style.display='none';this.querySelector('.icon-check').style.display='block';setTimeout(()=>{this.querySelector('.icon-copy').style.display='block';this.querySelector('.icon-check').style.display='none'},2000)"
+                        style="padding:6px;border-radius:5px;border:none;background:transparent;cursor:pointer;color:#94a3b8;transition:all .2s"
+                        onmouseover="this.style.background='#f1f5f9';this.style.color='#3b82f6'"
+                        onmouseout="this.style.background='transparent';this.style.color='#94a3b8'" title="Copiar link">
+                        <svg class="icon-copy" width="16" height="16" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2" />
+                            <path d="M5 15V5a2 2 0 012-2h10" stroke-width="2" />
+                        </svg>
+                        <svg class="icon-check" width="16" height="16" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24" style="display:none;color:#22c55e">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </button>
+                </div>
+                <code class="ds-code">Input: readonly, bg #f8fafc, font 12px
+Botão: icon SVG 16x16, p 6px
+       color #94a3b8 → hover #3b82f6
+Ao clicar: troca icon copy → check verde
+           setTimeout 2s volta ao original</code>
+            </div>
+            <div class="ds-card">
+                <h3>Botão copiar standalone</h3>
+                <button onclick="navigator.clipboard.writeText('texto copiado')"
+                    style="display:flex;align-items:center;gap:6px;padding:8px 14px;font-size:13px;font-weight:500;border:1px solid #d1d5db;border-radius:5px;background:#fff;color:#374151;cursor:pointer;font-family:Inter,system-ui,sans-serif;transition:all .2s"
+                    onmouseover="this.style.borderColor='#94a3b8';this.style.background='#f8fafc'"
+                    onmouseout="this.style.borderColor='#d1d5db';this.style.background='#fff'">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2" />
+                        <path d="M5 15V5a2 2 0 012-2h10" stroke-width="2" />
+                    </svg>
+                    Copiar
+                </button>
+                <code class="ds-code">Mesmo estilo do botão Detalhes
++ icon SVG 14x14 inline
+gap: 6px entre icon e texto</code>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>
