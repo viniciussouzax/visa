@@ -6,6 +6,7 @@
 const CURRENT_PAGE = (() => {
     const path = location.pathname;
     if (path.includes('archived')) return 'archived';
+    if (path.includes('settings')) return 'settings';
     if (path.includes('software')) return 'software';
     if (path.includes('master')) return 'master';
     if (path.includes('applicant')) return 'applicant';
@@ -15,6 +16,7 @@ const CURRENT_PAGE = (() => {
 const PAGE_TITLES = {
     pipeline: 'Aplicações',
     archived: 'Arquivados',
+    settings: 'Configurações',
     software: 'Software',
     master: 'Master',
     applicant: 'Detalhe'
@@ -28,6 +30,7 @@ function renderLayout() {
     const navItems = [
         { view: 'pipeline', label: 'Aplicações', href: 'index.html' },
         { view: 'archived', label: 'Arquivados', href: 'archived.html' },
+        { view: 'settings', label: 'Configurações', href: 'settings.html' },
         { view: 'software', label: 'Software', href: 'software.html' },
         { view: 'master', label: 'Master', href: 'master.html', masterOnly: true }
     ];
