@@ -4,141 +4,600 @@
 <head>
     <meta charset="UTF-8">
     <title>SENDS160</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    borderRadius: { DEFAULT: '5px' },
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
-                }
-            }
-        }
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        @keyframes pulse-dot {
+        /* ============================================================
+           SENDS160 Software — Design System
+           Tema escuro, compacto, inspirado no Headless Recorder.
+           ============================================================ */
 
-            0%,
-            100% {
-                opacity: 1;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #1a1d21;
+            color: #c9d1d9;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            -webkit-app-region: drag;
+            overflow: hidden;
+        }
+
+        button,
+        input,
+        a {
+            -webkit-app-region: no-drag;
+        }
+
+        /* --- Scrollbar --- */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+
+        /* --- Variables --- */
+        :root {
+            --bg-primary: #1a1d21;
+            --bg-card: #22262b;
+            --bg-elevated: #2d3139;
+            --border: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --blue: #58a6ff;
+            --blue-dim: #1f6feb;
+            --green: #3fb950;
+            --yellow: #d29922;
+            --red: #f85149;
+            --radius: 8px;
+        }
+
+        /* --- Header bar --- */
+        .header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            min-height: 48px;
+        }
+
+        .header-bar .logo {
+            height: 18px;
+            width: auto;
+            filter: brightness(0) invert(1);
+            opacity: .85;
+        }
+
+        .header-bar .version {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* --- Tabs --- */
+        .tab-bar {
+            display: flex;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 0 16px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all .2s;
+            font-family: inherit;
+            text-transform: none;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--blue);
+            border-bottom-color: var(--blue);
+        }
+
+        /* --- Tab content --- */
+        .tab-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* --- Main view --- */
+        .main-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 16px;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        /* --- Status hero (big circle like Headless Recorder) --- */
+        .status-hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 28px 16px;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+
+        .status-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .3s ease;
+            position: relative;
+        }
+
+        .status-circle.idle {
+            background: var(--green);
+            box-shadow: 0 0 0 6px rgba(63, 185, 80, .15), 0 0 24px rgba(63, 185, 80, .2);
+        }
+
+        .status-circle.running {
+            background: var(--blue-dim);
+            box-shadow: 0 0 0 6px rgba(31, 111, 235, .15), 0 0 24px rgba(31, 111, 235, .2);
+            animation: pulse-ring 2s infinite;
+        }
+
+        .status-circle.error {
+            background: var(--red);
+            box-shadow: 0 0 0 6px rgba(248, 81, 73, .15), 0 0 24px rgba(248, 81, 73, .2);
+        }
+
+        .status-circle.stopped {
+            background: var(--text-muted);
+            box-shadow: 0 0 0 6px rgba(72, 79, 88, .15);
+        }
+
+        .status-circle svg {
+            width: 28px;
+            height: 28px;
+            fill: #fff;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                box-shadow: 0 0 0 6px rgba(31, 111, 235, .15), 0 0 24px rgba(31, 111, 235, .2);
             }
 
             50% {
-                opacity: 0.4;
+                box-shadow: 0 0 0 10px rgba(31, 111, 235, .05), 0 0 32px rgba(31, 111, 235, .3);
+            }
+
+            100% {
+                box-shadow: 0 0 0 6px rgba(31, 111, 235, .15), 0 0 24px rgba(31, 111, 235, .2);
             }
         }
 
-        .animate-pulse-dot {
-            animation: pulse-dot 1.5s infinite;
+        .status-label {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
         }
 
-        /* --- Align with Clone form design tokens --- */
-        input[type="email"],
-        input[type="password"] {
-            padding: 12px 14px !important;
-            border: 1px solid #d1d5db !important;
-            border-radius: 5px !important;
-            background: #fff !important;
-            font-size: 16px !important;
-            line-height: 1.5 !important;
-            color: #111827 !important;
-            font-family: 'Inter', system-ui, sans-serif !important;
+        .status-detail {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        /* --- Timer badge --- */
+        .timer-badge {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--blue);
+        }
+
+        .timer-badge.visible {
+            display: inline-flex;
+        }
+
+        /* --- Action buttons --- */
+        .actions {
+            display: flex;
+            gap: 10px;
+            padding: 0 16px 16px;
+        }
+
+        .btn-action {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 14px 8px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all .2s;
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .btn-action:hover {
+            background: #353b44;
+            border-color: #484f58;
+        }
+
+        .btn-action:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .btn-action svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .btn-action.blue {
+            color: var(--blue);
+        }
+
+        .btn-action.amber {
+            color: var(--yellow);
+        }
+
+        /* --- Login form --- */
+        .login-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            gap: 16px;
+        }
+
+        .login-view .logo-big {
+            height: 24px;
+            width: auto;
+            filter: brightness(0) invert(1);
+            opacity: .9;
+            margin-bottom: 4px;
+        }
+
+        .login-view .field {
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .login-view label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            margin-bottom: 6px;
+        }
+
+        .login-view input[type="email"],
+        .login-view input[type="password"] {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
             transition: border-color .2s;
         }
 
-        input[type="email"]:focus,
-        input[type="password"]:focus {
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, .1) !important;
+        .login-view input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 2px rgba(88, 166, 255, .15);
         }
 
-        label {
-            font-size: 14px;
-            font-weight: 500;
-            color: #374151;
+        .login-view input::placeholder {
+            color: var(--text-muted);
         }
 
-        button {
-            font-family: 'Inter', system-ui, sans-serif;
+        .login-view .remember-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .login-view .remember-row input {
+            accent-color: var(--blue);
+        }
+
+        .login-view .remember-row label {
+            text-transform: none;
+            font-weight: 400;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .btn-login {
+            width: 100%;
+            max-width: 280px;
+            padding: 12px;
+            background: var(--blue-dim);
+            border: none;
+            border-radius: var(--radius);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s;
+            font-family: inherit;
             text-transform: uppercase;
+            letter-spacing: .02em;
+        }
+
+        .btn-login:hover {
+            background: #388bfd;
+        }
+
+        .btn-login:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
+        .login-error {
+            font-size: 11px;
+            color: var(--red);
+            text-align: center;
+            min-height: 16px;
+        }
+
+        /* --- Log panel --- */
+        .log-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .log-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-card);
+        }
+
+        .log-header span {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .log-header button {
+            background: none;
+            border: none;
+            font-size: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-family: inherit;
+            text-transform: uppercase;
+        }
+
+        .log-header button:hover {
+            color: var(--text-secondary);
+        }
+
+        .log-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 16px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 11px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            background: var(--bg-primary);
+        }
+
+        .log-line {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(48, 54, 61, .3);
+        }
+
+        .log-line .time {
+            color: var(--text-muted);
+            margin-right: 6px;
+        }
+
+        /* --- User bar --- */
+        .user-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            min-height: 36px;
+        }
+
+        .user-bar .email {
+            font-size: 11px;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 180px;
+        }
+
+        .user-bar .btn-logout {
+            background: none;
+            border: none;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--red);
+            cursor: pointer;
+            font-family: inherit;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+
+        .user-bar .btn-logout:hover {
+            opacity: .8;
+        }
+
+        /* --- Utility --- */
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 
-<body class="font-sans bg-slate-50 text-slate-800 h-screen flex flex-col select-none antialiased">
+<body>
 
-    <!-- Header -->
-    <div class="bg-white px-5 py-4 text-center border-b-2 border-blue-500 shadow-sm">
-        <img src="../images/logo-sends160.png" alt="SENDS160" style="height:22px;width:auto;margin:0 auto"
-            onerror="this.outerHTML='<span class=text-lg font-bold tracking-wide text-blue-500>SENDS160</span>'">
+    <!-- ====== LOGIN VIEW ====== -->
+    <div id="login-section" class="login-view">
+        <img src="../images/logo-sends160.png" alt="SENDS160" class="logo-big"
+            onerror="this.outerHTML='<span style=font-size:18px;font-weight:700;color:#58a6ff>SENDS160</span>'">
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Automação DS-160</p>
+
+        <div class="field">
+            <label>Email</label>
+            <input type="email" id="email" placeholder="seu@email.com">
+        </div>
+        <div class="field">
+            <label>Senha</label>
+            <input type="password" id="password" placeholder="••••••••">
+        </div>
+        <div class="remember-row">
+            <input type="checkbox" id="remember" checked>
+            <label for="remember">Lembrar meu login</label>
+        </div>
+        <button id="btn-login" class="btn-login">Entrar</button>
+        <p class="login-error" id="login-error"></p>
     </div>
 
-    <div class="flex-1 p-5 flex flex-col gap-3.5">
+    <!-- ====== MAIN VIEW (hidden until login) ====== -->
+    <div id="main-section" class="hidden" style="display:none;flex-direction:column;height:100vh">
 
-        <!-- LOGIN -->
-        <div id="login-section" class="flex flex-col gap-3">
-            <div>
-                <label class="block text-xs font-medium text-slate-500 mb-1">Email</label>
-                <input type="email" id="email" placeholder="seu@email.com"
-                    class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-slate-500 mb-1">Senha</label>
-                <input type="password" id="password" placeholder="••••••••"
-                    class="block w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
-            </div>
-            <div class="flex items-center gap-2 text-xs text-slate-500">
-                <input type="checkbox" id="remember" checked class="accent-blue-500 rounded">
-                <label for="remember" class="text-slate-600 cursor-pointer">Lembrar meu login</label>
-            </div>
-            <button id="btn-login"
-                class="w-full rounded bg-blue-500 text-white shadow-sm hover:bg-blue-600 transition-all"
-                style="padding:12px 24px;font-size:14px;font-weight:600">Entrar</button>
-            <p class="text-red-500 text-xs text-center" id="login-error"></p>
+        <!-- Header -->
+        <div class="header-bar">
+            <img src="../images/logo-sends160.png" alt="SENDS160" class="logo"
+                onerror="this.outerHTML='<span style=font-size:13px;font-weight:700;color:#58a6ff>SENDS160</span>'">
+            <span class="version">v1.1.3</span>
         </div>
 
-        <!-- MAIN -->
-        <div id="main-section" class="hidden flex-col gap-3.5 flex-1">
-            <!-- User bar -->
-            <div class="flex justify-between items-center text-xs text-slate-500">
-                <span id="user-email" class="overflow-hidden text-ellipsis whitespace-nowrap max-w-[200px]">—</span>
-                <button id="btn-logout"
-                    class="bg-transparent border-none text-red-500 text-[11px] cursor-pointer px-2 py-1 hover:text-red-600 uppercase">Sair</button>
+        <!-- Tabs -->
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="home">Início</button>
+            <button class="tab-btn" data-tab="logs">Logs</button>
+        </div>
+
+        <!-- TAB: Home -->
+        <div id="tab-home" class="tab-content active">
+            <!-- Status hero -->
+            <div class="status-hero">
+                <div id="status-circle" class="status-circle idle">
+                    <!-- Check icon (idle) -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                    </svg>
+                </div>
+                <div id="status-text" class="status-label">Ativo</div>
+                <div id="status-detail" class="status-detail">Monitorando fila de preenchimento</div>
+                <div id="timer-row" class="timer-badge">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z" />
+                    </svg>
+                    <span id="timer-text">—</span>
+                </div>
             </div>
 
-            <!-- Status card -->
-            <div class="overflow-hidden rounded bg-white shadow-sm border border-gray-200 p-4">
-                <div class="flex justify-between mb-2 text-[13px]">
-                    <span class="text-slate-500">Status</span>
-                    <span class="font-semibold text-slate-800" id="status-text">
-                        <span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1.5"></span>Ativo
-                    </span>
-                </div>
-
-                <div class="flex justify-between text-[13px]" id="timer-row" style="display:none;">
-                    <span class="text-slate-500">Próxima verificação</span>
-                    <span class="bg-blue-50 text-blue-500 px-2 py-0.5 rounded-md text-xs font-semibold"
-                        id="timer-text">—</span>
-                </div>
+            <!-- Actions -->
+            <div class="actions">
+                <button id="btn-refresh" class="btn-action blue">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+                    </svg>
+                    Verificar
+                </button>
+                <button id="btn-update" class="btn-action amber">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M21 10.12h-6.78l2.74-2.82c-2.73-2.7-7.15-2.8-9.88-.1-2.73 2.71-2.73 7.08 0 9.79 2.73 2.71 7.15 2.71 9.88 0C18.32 15.65 19 14.08 19 12.1h2c0 1.98-.88 4.55-2.64 6.29-3.51 3.48-9.21 3.48-12.72 0-3.5-3.47-3.5-9.11 0-12.58 3.51-3.47 9.14-3.47 12.65 0L21 3v7.12zM12.5 8v4.25l3.5 2.08-.72 1.21L11 13V8h1.5z" />
+                    </svg>
+                    Atualizar
+                </button>
             </div>
+        </div>
 
-            <!-- Buttons -->
-            <button id="btn-refresh"
-                class="w-full rounded bg-white text-blue-500 ring-1 ring-blue-500 hover:bg-blue-50 transition-all"
-                style="padding:12px 24px;font-size:14px;font-weight:600">Verificar fila agora</button>
-            <button id="btn-update"
-                class="w-full rounded bg-white text-amber-500 ring-1 ring-amber-500 hover:bg-amber-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                style="padding:10px 24px;font-size:13px;font-weight:600">Fechar e Atualizar</button>
+        <!-- TAB: Logs -->
+        <div id="tab-logs" class="tab-content">
+            <div class="log-panel">
+                <div class="log-header">
+                    <span>Registros de atividade</span>
+                    <button id="btn-clear-logs">Limpar</button>
+                </div>
+                <div class="log-body" id="log"></div>
+            </div>
+        </div>
 
-            <!-- Log -->
-            <div class="mt-auto max-h-[100px] overflow-y-auto font-mono text-[11px] text-slate-400 leading-normal overflow-hidden rounded bg-white border border-gray-200 p-2"
-                id="log"></div>
+        <!-- User bar (bottom) -->
+        <div class="user-bar">
+            <span class="email" id="user-email">—</span>
+            <button id="btn-logout" class="btn-logout">Sair</button>
         </div>
     </div>
-
-
 
     <script src="renderer.js"></script>
 </body>
