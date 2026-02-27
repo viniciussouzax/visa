@@ -8,6 +8,29 @@
     <link rel="stylesheet" href="../mosaic.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .login-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fff !important;
+            color: #1e293b;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+            box-sizing: border-box;
+        }
+
+        .login-input:focus {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, .15);
+        }
+
+        .login-input::placeholder {
+            color: #94a3b8;
+        }
+    </style>
 </head>
 
 <body class="font-inter antialiased bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400">
@@ -32,19 +55,12 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium mb-1" for="login-email">Email</label>
-                                <input id="login-email" class="form-input w-full" type="email"
-                                    placeholder="seu@email.com"
-                                    style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;background:#fff;color:#1e293b;transition:border-color .2s"
-                                    onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.15)'"
-                                    onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'">
+                                <input id="login-email" class="login-input" type="email" placeholder="seu@email.com">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-1" for="login-password">Senha</label>
-                                <input id="login-password" class="form-input w-full" type="password"
-                                    placeholder="••••••" autocomplete="on"
-                                    style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;background:#fff;color:#1e293b;transition:border-color .2s"
-                                    onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.15)'"
-                                    onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'">
+                                <input id="login-password" class="login-input" type="password" placeholder="••••••"
+                                    autocomplete="on">
                             </div>
                         </div>
                         <div id="login-error" class="text-sm text-red-500 mt-3"></div>
