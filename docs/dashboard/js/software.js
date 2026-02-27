@@ -51,7 +51,7 @@ async function loadSoftwareInfo() {
                 ? new Date(release.published_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
                 : '';
             const notes = release.body || '';
-            const msiAsset = (release.assets || []).find(a => a.name.endsWith('.msi'));
+            const msiAsset = (release.assets || []).find(a => a.name.endsWith('-setup.exe') || a.name.endsWith('.msi'));
 
             $('sw-version').textContent = 'v' + versionClean;
             $('sw-version-date').textContent = releaseDate ? 'Publicado em ' + releaseDate : '';
