@@ -11,6 +11,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 pub struct AppState {
     session: Mutex<Option<Session>>,
     sidecar_running: Mutex<bool>,
+    sidecar_stdin: Mutex<Option<std::process::ChildStdin>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -65,15 +66,28 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
     let email = email.to_string();
     let password = password.to_string();
 
-    // Get path to sidecar script (relative to resource dir)
-    let sidecar_path = app_handle
-        .path()
-        .resource_dir()
-        .map(|p| p.join("sidecar").join("run.js"))
-        .unwrap_or_else(|_| {
-            // fallback for dev mode
-            PathBuf::from("sidecar/run.js")
-        });
+    // Resolve the project root directory (ds160-filler/)
+    // In dev: cargo runs with CWD=src-tauri/, we need to go up one level
+    // In production: use resource dir
+    let project_dir = if cfg!(debug_assertions) {
+        let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+        // If CWD ends with src-tauri, go up one level
+        if cwd.ends_with("src-tauri") {
+            cwd.parent().unwrap_or(&cwd).to_path_buf()
+        } else {
+            cwd
+        }
+    } else {
+        app_handle
+            .path()
+            .resource_dir()
+            .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
+    };
+
+    let sidecar_path = project_dir.join("sidecar").join("run.js");
+
+    eprintln!("[Tauri] Starting sidecar: {:?}", sidecar_path);
+    eprintln!("[Tauri] Project dir (CWD for node): {:?}", project_dir);
 
     std::thread::spawn(move || {
         use std::process::{Command, Stdio};
@@ -83,12 +97,21 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
             .arg(&sidecar_path)
             .arg(&email)
             .arg(&password)
+            .current_dir(&project_dir) // CRITICAL: set CWD so require('../automation/queue') works
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
+            .stderr(Stdio::inherit()) // Let stderr flow to console (avoid deadlock)
+            .stdin(Stdio::piped())    // We need stdin to send commands
             .spawn();
 
         match child {
             Ok(mut process) => {
+                // Store stdin handle for sending commands later
+                if let Some(stdin) = process.stdin.take() {
+                    if let Some(state) = app_handle.try_state::<AppState>() {
+                        *state.sidecar_stdin.lock().unwrap() = Some(stdin);
+                    }
+                }
+
                 // Read stdout for status updates
                 if let Some(stdout) = process.stdout.take() {
                     let reader = BufReader::new(stdout);
@@ -98,16 +121,17 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
                             if let Ok(status) = serde_json::from_str::<serde_json::Value>(&line) {
                                 let _ = app_handle.emit("automation-status", &status);
                             } else {
-                                println!("[Sidecar] {}", line);
+                                eprintln!("[Sidecar stdout] {}", line);
                             }
                         }
                     }
                 }
                 // Wait for process to finish
                 let _ = process.wait();
+                eprintln!("[Tauri] Sidecar process exited");
             }
             Err(e) => {
-                eprintln!("[Sidecar] Failed to start: {}", e);
+                eprintln!("[Tauri] Failed to start sidecar: {}", e);
                 let _ = app_handle.emit("automation-status", serde_json::json!({
                     "type": "error",
                     "error": format!("Falha ao iniciar automação: {}", e)
@@ -115,15 +139,16 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
             }
         }
 
-        // Mark sidecar as not running
+        // Mark sidecar as not running and clear stdin
         if let Some(state) = app_handle.try_state::<AppState>() {
             *state.sidecar_running.lock().unwrap() = false;
+            *state.sidecar_stdin.lock().unwrap() = None;
         }
     });
 }
 
 // ============================================================
-// TAURI COMMANDS (equivalent to Electron IPC handlers)
+// TAURI COMMANDS
 // ============================================================
 
 #[tauri::command]
@@ -133,9 +158,6 @@ fn login(
     email: String,
     password: String,
 ) -> CommandResult {
-    // Note: Supabase auth is now handled in the frontend via supabase-js
-    // The backend just manages session persistence and starts the sidecar
-
     let session = Session {
         email: email.clone(),
         password: password.clone(),
@@ -147,7 +169,7 @@ fn login(
     let mut running = state.sidecar_running.lock().unwrap();
     if !*running {
         *running = true;
-        drop(running); // Release lock before spawn
+        drop(running);
         start_sidecar(&app, &email, &password);
     }
 
@@ -169,7 +191,13 @@ fn logout(app: AppHandle, state: State<AppState>) -> CommandResult {
     clear_session(&app);
     *state.session.lock().unwrap() = None;
     *state.sidecar_running.lock().unwrap() = false;
-    // TODO: kill sidecar process
+
+    // Send stop command to sidecar
+    if let Some(ref mut stdin) = *state.sidecar_stdin.lock().unwrap() {
+        use std::io::Write;
+        let _ = writeln!(stdin, r#"{{"action":"stop"}}"#);
+    }
+    *state.sidecar_stdin.lock().unwrap() = None;
 
     CommandResult {
         success: true,
@@ -182,6 +210,32 @@ fn logout(app: AppHandle, state: State<AppState>) -> CommandResult {
 #[tauri::command]
 fn get_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
+}
+
+#[tauri::command]
+fn restart_app(app: AppHandle) {
+    app.restart();
+}
+
+#[tauri::command]
+fn refresh_queue(state: State<AppState>) -> CommandResult {
+    if let Some(ref mut stdin) = *state.sidecar_stdin.lock().unwrap() {
+        use std::io::Write;
+        let _ = writeln!(stdin, r#"{{"action":"refresh"}}"#);
+        CommandResult {
+            success: true,
+            error: None,
+            user: None,
+            message: Some("Refresh enviado".to_string()),
+        }
+    } else {
+        CommandResult {
+            success: false,
+            error: Some("Automação não está rodando".to_string()),
+            user: None,
+            message: None,
+        }
+    }
 }
 
 // ============================================================
@@ -198,6 +252,8 @@ pub fn run() {
             get_saved_session,
             logout,
             get_version,
+            restart_app,
+            refresh_queue,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

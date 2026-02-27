@@ -175,16 +175,27 @@ class QueueRunner {
             this.consecutiveErrors = 0;
             return;
         }
-        // ⚠️ Missing data — close browser, re-queue (data may be corrected)
+        // ⚠️ Missing data — close browser, send to review (instead of infinite retry)
         if (result.cause === 'missing_data') {
             if (result.browser) await result.browser.close().catch(() => { });
-            console.warn(`[Queue] ⚠️ ${applicant.full_name}: dados faltantes — ${result.error}`);
+            const missingList = result.missingFields?.join(', ') || 'campos não identificados';
+            console.warn(`[Queue] ⚠️ ${applicant.full_name}: dados faltantes — ${missingList}`);
             await this._logError(app, applicant, result.error, null, 'Validation', null, 'missing_data', null, result.missingFields?.map(f => `Campo faltante: ${f}`));
-            await this._reQueue(app.id, result.error);
+
+            // Mark application as needs_attention
+            await this._markNeedsAttention(app.id, `Dados incompletos: ${missingList}`);
+
+            // Move applicant pipeline to 'review' so it doesn't retry
+            await this.supabase.from('applicants').update({
+                pipeline_status: 'review',
+                updated_at: new Date().toISOString()
+            }).eq('id', app.applicant_id);
+            console.log(`[Queue] ⚠️ ${applicant.full_name} → pipeline 'review' (dados incompletos)`);
+
             this.emit({
                 type: 'error',
                 applicantName: applicant.full_name,
-                error: `Dados incompletos: ${result.missingFields?.join(', ')} — tentará novamente em ${RE_QUEUE_DELAY / 60}min`
+                error: `Dados incompletos: ${missingList} — movido para revisão`
             });
             return;
         }
@@ -229,11 +240,17 @@ class QueueRunner {
             if (result.browser) await result.browser.close().catch(() => { });
 
             if (currentRetry >= MAX_RETRIES) {
-                await this._reQueue(app.id, result.error);
+                // MAX_RETRIES reached — send to review instead of re-queue
+                await this._markNeedsAttention(app.id, result.error);
+                await this.supabase.from('applicants').update({
+                    pipeline_status: 'review',
+                    updated_at: new Date().toISOString()
+                }).eq('id', app.applicant_id);
+                console.log(`[Queue] ⚠️ ${applicant.full_name} → pipeline 'review' (${MAX_RETRIES} tentativas)`);
                 this.emit({
                     type: 'error',
                     applicantName: applicant.full_name,
-                    error: `${result.error} (${MAX_RETRIES} tentativas — reagendado)`
+                    error: `${result.error} (${MAX_RETRIES} tentativas — movido para revisão)`
                 });
             } else {
                 this.emit({
