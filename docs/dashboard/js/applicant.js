@@ -53,30 +53,29 @@ async function openApplicantDetail(id) {
     $('page-subtitle').textContent = email;
 
     let html = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:20px">
+    <div class="ds-card" style="border-radius:12px;padding:18px;margin-bottom:20px">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
             <div style="display:flex;align-items:center;gap:12px">
-                <span style="font-size:13px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Mover todos:</span>
-                <select onchange="if(this.value){moveAllPipeline('${id}',this.value);this.value=''}"
-                    style="font-size:13px;padding:8px 14px;background:#fff;border:1px solid #d1d5db;border-radius:5px;color:#374151;cursor:pointer;outline:none;font-family:inherit;font-weight:500">
+                <span class="ds-col-header">Mover todos:</span>
+                <select onchange="if(this.value){moveAllPipeline('${id}',this.value);this.value=''}" class="ds-btn-inline">
                     <option value="">Selecionar etapa...</option>
                     ${STAGE_ORDER.map(s => `<option value="${s}">${STAGES[s].label}</option>`).join('')}
                 </select>
             </div>
             <div style="display:flex;align-items:center;gap:12px">
                 <div style="text-align:right">
-                    <span style="font-size:20px;font-weight:800;color:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : 'var(--text-muted)'}">${doneCount}/${totalCount}</span>
-                    <span style="font-size:10px;color:var(--text-muted);margin-left:4px">concluídos</span>
+                    <span class="ds-stat-big" style="color:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : 'var(--text-muted)'}">${doneCount}/${totalCount}</span>
+                    <span class="ds-stat-unit">concluídos</span>
                 </div>
-                <div style="width:60px;height:5px;background:var(--border);border-radius:3px;overflow:hidden">
-                    <div style="width:${progressPercent}%;height:100%;background:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : '#3b82f6'};border-radius:3px"></div>
+                <div class="ds-progress-bar">
+                    <div class="ds-progress-fill" style="width:${progressPercent}%;background:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : '#3b82f6'}"></div>
                 </div>
-                <button onclick="showDeleteModal('${id}','${applicant.full_name.replace(/'/g, "\\\\'")}')" style="font-size:13px;padding:8px 14px;background:rgba(239,68,68,.06);color:#ef4444;border:1px solid rgba(239,68,68,.25);border-radius:5px;cursor:pointer;font-weight:500;font-family:inherit;transition:all .2s">Excluir</button>
+                <button onclick="showDeleteModal('${id}','${applicant.full_name.replace(/'/g, "\\\\'")}')" class="ds-btn-danger">Excluir</button>
             </div>
         </div>
     </div>
 
-    <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600">Processos (${totalCount})</h3>
+    <h3 class="ds-section-label">Processos (${totalCount})</h3>
     <div style="display:grid;gap:10px">`;
 
     allProcesses.forEach(p => {
@@ -94,24 +93,24 @@ async function openApplicantDetail(id) {
 
         const pPrio = PRIORITIES[p.fill_priority] || PRIORITIES[0];
         const pPrioBadge = (p.fill_priority || 0) >= 2
-            ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${pPrio.color}15;color:${pPrio.color};font-weight:700">${pPrio.icon} ${pPrio.label}</span>` : '';
+            ? `<span class="ds-badge" style="font-size:10px;padding:1px 6px;background:${pPrio.color}15;color:${pPrio.color}">${pPrio.icon} ${pPrio.label}</span>` : '';
 
         html += `
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;${isDone ? 'opacity:.7;' : ''}${(p.fill_priority || 0) >= 3 ? 'border-left:3px solid #ef4444;' : (p.fill_priority || 0) >= 2 ? 'border-left:3px solid #f97316;' : ''}">
+        <div class="ds-process-card${isDone ? ' done' : ''}${(p.fill_priority || 0) >= 3 ? ' priority-high' : (p.fill_priority || 0) >= 2 ? ' priority-medium' : ''}">
             <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="openProcessModal('${p.id}')">
                 <div>
                     <div style="display:flex;align-items:center;gap:8px">
-                        <span style="font-weight:700;font-size:14px">${p.full_name}</span>
-                        ${appId ? `<span style="font-size:10px;color:var(--text-muted);background:var(--bg);padding:2px 6px;border-radius:4px;font-family:monospace">${appId}</span>` : ''}
+                        <span class="ds-text-name" style="white-space:normal">${p.full_name}</span>
+                        ${appId ? `<span class="ds-text-muted" style="background:var(--bg);padding:2px 6px;border-radius:4px;font-family:monospace">${appId}</span>` : ''}
                         ${pPrioBadge}
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
-                        <span style="font-size:11px;color:var(--text-muted)">${roleLabel}${pPassport ? ' · ' + pPassport : ''}</span>
-                        ${fillStatus !== '—' ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${fStage.color}15;color:${fStage.color};font-weight:600"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${fStage.color};margin-right:4px;vertical-align:middle"></span>${fStage.label}</span>` : ''}
+                        <span class="ds-text-muted">${roleLabel}${pPassport ? ' · ' + pPassport : ''}</span>
+                        ${fillStatus !== '—' ? `<span class="ds-badge" style="font-size:10px;padding:1px 6px;background:${fStage.color}15;color:${fStage.color}"><span class="ds-badge-dot" style="background:${fStage.color}"></span>${fStage.label}</span>` : ''}
                     </div>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px">
-                    ${pApp ? `<button onclick="event.stopPropagation();viewAppDetails('${p.id}')" style="font-size:13px;padding:8px 14px;background:#fff;border:1px solid #d1d5db;border-radius:5px;cursor:pointer;color:#374151;font-weight:500;transition:all .2s;font-family:inherit">Detalhes</button>` : ''}
+                    ${pApp ? `<button onclick="event.stopPropagation();viewAppDetails('${p.id}')" class="ds-btn-inline">Detalhes</button>` : ''}
                     <select onclick="event.stopPropagation()" onchange="if(this.value!==''){setPriority('${p.id}',this.value,'${id}')}"
                         style="font-size:13px;padding:8px 14px;background:${pPrio.color}08;color:${pPrio.color};border:1px solid #d1d5db;border-radius:5px;cursor:pointer;outline:none;font-weight:500;font-family:inherit">
                         <option value="">${pPrio.icon} ${(p.fill_priority || 0) >= 2 ? pPrio.label : 'Prioridade'}</option>

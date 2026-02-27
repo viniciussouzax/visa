@@ -119,13 +119,13 @@ async function loadPipelineList() {
 
     // Column header
     const headerHtml = (applicants && applicants.length > 0) ? `
-        <div class="pipeline-header" style="display:grid;grid-template-columns:28px 36px 1fr 120px 120px 100px 50px;gap:12px;align-items:center;padding:0 20px 8px;margin-bottom:4px">
+        <div class="pipeline-header ds-pipeline-grid ds-pipeline-header">
             <span></span><span></span>
-            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Solicitante</span>
-            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Prioridade</span>
-            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Etapa</span>
-            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">Status</span>
-            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;text-align:center">Proc.</span>
+            <span class="ds-col-header">Solicitante</span>
+            <span class="ds-col-header">Prioridade</span>
+            <span class="ds-col-header">Etapa</span>
+            <span class="ds-col-header">Status</span>
+            <span class="ds-col-header" style="text-align:center">Proc.</span>
         </div>` : '';
 
     // Group applicants by priority for dividers
@@ -149,21 +149,20 @@ async function loadPipelineList() {
 
         const prio = PRIORITIES[a.fill_priority] || PRIORITIES[0];
         const prioBadge = a.fill_priority >= 2
-            ? `<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${prio.color}15;color:${prio.color};font-weight:600;white-space:nowrap">${prio.icon} ${prio.label}</span>`
-            : `<span style="font-size:11px;color:#9ca3af">—</span>`;
+            ? `<span class="ds-badge" style="background:${prio.color}15;color:${prio.color}">${prio.icon} ${prio.label}</span>`
+            : `<span class="ds-text-muted">—</span>`;
 
         const appData = appsMap[a.id];
         const fillStatus = appData?.fill_status || '';
         const fStage = FILL_STAGES[fillStatus];
         const fillBadge = fStage && fillStatus !== 'pending'
-            ? `<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${fStage.color}15;color:${fStage.color};font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${fStage.color};flex-shrink:0"></span>${fStage.label}</span>`
-            : `<span style="font-size:11px;color:#9ca3af">—</span>`;
+            ? `<span class="ds-badge" style="background:${fStage.color}15;color:${fStage.color}"><span class="ds-badge-dot" style="background:${fStage.color}"></span>${fStage.label}</span>`
+            : `<span class="ds-text-muted">—</span>`;
 
         const prioGroup = (a.fill_priority || 0) >= 3 ? '3' : (a.fill_priority || 0) >= 2 ? '2' : '0';
 
-        return `<div class="pipeline-item bg-white dark:bg-gray-800 shadow-xs rounded-xl hover:shadow-md transition"
-                     data-id="${a.id}" data-priority-group="${prioGroup}" draggable="true"
-                     style="display:grid;grid-template-columns:28px 36px 1fr 120px 120px 100px 50px;gap:12px;align-items:center;padding:12px 20px">
+        return `<div class="pipeline-item bg-white dark:bg-gray-800 shadow-xs rounded-xl hover:shadow-md transition ds-pipeline-grid"
+                     data-id="${a.id}" data-priority-group="${prioGroup}" draggable="true">
             <div class="drag-handle shrink-0 cursor-grab active:cursor-grabbing flex items-center justify-center text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400" title="Arrastar para reordenar">
                 <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
                     <circle cx="3" cy="2" r="1.5"/><circle cx="9" cy="2" r="1.5"/>
@@ -172,22 +171,22 @@ async function loadPipelineList() {
                     <circle cx="3" cy="14" r="1.5"/><circle cx="9" cy="14" r="1.5"/>
                 </svg>
             </div>
-            <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:#f3f4f6;color:#6b7280;flex-shrink:0">${initials}</div>
+            <div class="ds-avatar ds-avatar-md">${initials}</div>
             <a href="applicant.html?id=${a.id}" style="min-width:0;overflow:hidden">
-                <div style="font-size:14px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" class="dark:text-gray-100">${a.full_name}</div>
-                ${email ? `<div style="font-size:12px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${email}</div>` : ''}
+                <div class="ds-text-name">${a.full_name}</div>
+                ${email ? `<div class="ds-text-sub">${email}</div>` : ''}
             </a>
             <div>${prioBadge}</div>
-            <div><span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${stage.color}15;color:${stage.color};font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${stage.color};flex-shrink:0"></span>${stage.label}</span></div>
+            <div><span class="ds-badge" style="background:${stage.color}15;color:${stage.color}"><span class="ds-badge-dot" style="background:${stage.color}"></span>${stage.label}</span></div>
             <div>${fillBadge}</div>
             <div style="text-align:center"><span style="font-size:13px;font-weight:700;color:${progressColor}">${doneProcesses}/${totalProcesses}</span></div>
         </div>`;
     }
 
     function buildDivider(label) {
-        return `<div class="priority-divider" style="display:flex;align-items:center;gap:8px;padding:12px 20px 4px;margin-top:4px" data-divider="true">
-            <span style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px">${label}</span>
-            <div style="flex:1;height:1px;background:#e5e7eb"></div>
+        return `<div class="priority-divider ds-divider" data-divider="true">
+            <span class="ds-divider-label">${label}</span>
+            <div class="ds-divider-line"></div>
         </div>`;
     }
 
@@ -323,7 +322,7 @@ async function openProcessModal(applicantId) {
     if (!applicant) return;
     const stage = STAGES[applicant.pipeline_status] || STAGES.new;
     $('process-modal-name').textContent = applicant.full_name;
-    $('process-modal-sub').innerHTML = `<span style="background:${stage.color}18;color:${stage.color};padding:2px 10px;border-radius:4px;font-size:11px;font-weight:600">${stage.label}</span>`;
+    $('process-modal-sub').innerHTML = `<span class="ds-badge" style="background:${stage.color}18;color:${stage.color}">${stage.label}</span>`;
     $('process-modal-iframe').src = `../ds160/index.html?id=${applicantId}`;
     $('process-modal').style.display = 'flex';
 }
@@ -351,10 +350,10 @@ async function viewApplicantJson(id) {
 
     $('modal-body').innerHTML = `
         <div style="margin-bottom:16px">
-            <div style="display:flex;gap:20px;margin-bottom:8px"><span style="color:var(--text-muted)">Email:</span> <span>${email}</span></div>
-            <div style="display:flex;gap:20px"><span style="color:var(--text-muted)">Telefone:</span> <span>${phone}</span></div>
+            <div class="ds-info-row"><span class="ds-info-label">Email:</span> <span>${email}</span></div>
+            <div class="ds-info-row"><span class="ds-info-label">Telefone:</span> <span>${phone}</span></div>
         </div>
-        <pre style="font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;max-height:400px;overflow:auto;white-space:pre-wrap">${JSON.stringify(combined, null, 2)}</pre>`;
+        <pre class="ds-json-preview">${JSON.stringify(combined, null, 2)}</pre>`;
 }
 
 // ============================================================
