@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>DS160 EXPRESSO</title>
+    <title>SENDS160</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -70,9 +70,9 @@
 <body class="font-sans bg-slate-50 text-slate-800 h-screen flex flex-col select-none antialiased">
 
     <!-- Header -->
-    <div
-        class="bg-white px-5 py-4 text-center text-lg font-bold tracking-wide text-blue-500 border-b-2 border-blue-500 shadow-sm">
-        DS160 EXPRESSO
+    <div class="bg-white px-5 py-4 text-center border-b-2 border-blue-500 shadow-sm">
+        <img src="../images/logo-sends160.png" alt="SENDS160" style="height:22px;width:auto;margin:0 auto"
+            onerror="this.outerHTML='<span class=text-lg font-bold tracking-wide text-blue-500>SENDS160</span>'">
     </div>
 
     <div class="flex-1 p-5 flex flex-col gap-3.5">
@@ -116,18 +116,7 @@
                         <span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1.5"></span>Ativo
                     </span>
                 </div>
-                <div class="flex justify-between mb-2 text-[13px]">
-                    <span class="text-slate-500">Fila</span>
-                    <span class="font-semibold text-slate-800" id="queue-count">—</span>
-                </div>
-                <div class="flex justify-between mb-2 text-[13px]">
-                    <span class="text-slate-500">Atual</span>
-                    <span class="font-semibold text-slate-800" id="current-task">—</span>
-                </div>
-                <div class="flex justify-between mb-2 text-[13px]">
-                    <span class="text-slate-500">Página</span>
-                    <span class="font-semibold text-slate-800" id="current-page">—</span>
-                </div>
+
                 <div class="flex justify-between text-[13px]" id="timer-row" style="display:none;">
                     <span class="text-slate-500">Próxima verificação</span>
                     <span class="bg-blue-50 text-blue-500 px-2 py-0.5 rounded-md text-xs font-semibold"
@@ -149,10 +138,7 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <div class="py-3 px-5 text-center text-[11px] text-slate-400 border-t border-slate-200 bg-white">
-        Suporte: <span class="text-green-500 font-semibold">WhatsApp +55 11 98894-5503</span>
-    </div>
+
 
     <script src="renderer.js"></script>
 </body>
