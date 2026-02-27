@@ -196,28 +196,35 @@ function setStatus(state, text) {
 listen('automation-status', (event) => {
     const status = event.payload;
 
-    if (status.type === 'filling') {
-        setCircle('running', 'Preenchendo...', status.applicantName || 'Processando formulário');
+    if (status.type === 'searching') {
+        setCircle('idle', 'Buscando...', 'Verificando fila de preenchimento');
         hideTimer();
+    } else if (status.type === 'claimed') {
+        setCircle('running', 'Encontrado', status.applicantName || 'Preparando...');
+        log(`📋 ${status.applicantName} — ${status.page || 'Preparando...'}`);
+        hideTimer();
+    } else if (status.type === 'filling') {
+        setCircle('running', 'Preenchendo...', `${status.applicantName} — ${status.page || ''}`);
     } else if (status.type === 'done') {
         log(`✅ ${status.applicantName} concluído`);
+        setCircle('idle', 'Concluído', `${status.applicantName} — finalizado`);
     } else if (status.type === 'error') {
         log(`❌ ${status.applicantName || ''} — ${status.error || 'Erro desconhecido'}`);
+        setCircle('error', 'Erro', status.applicantName || 'Verifique os logs');
     } else if (status.type === 'queue-empty') {
         setCircle('idle', 'Aguardando', 'Nenhum item na fila');
         if (status.nextCheck) showTimer(status.nextCheck);
     } else if (status.type === 'waiting') {
         const display = status.display || `${status.countdown}s`;
         showTimer(display);
-    } else if (status.type === 'checking') {
-        setCircle('running', 'Verificando fila...', 'Consultando novos itens');
-        hideTimer();
     } else if (status.type === 'retrying') {
-        setCircle('running', `Retentativa ${status.retryNumber}/3`, status.applicantName || '');
+        setCircle('running', `Retentativa ${status.retryNumber}/5`, status.applicantName || '');
         log(`🔄 ${status.applicantName} — tentativa ${status.retryNumber}, aguardando ${Math.round(status.delay / 60)}min`);
     } else if (status.type === 'paused') {
         setCircle('error', 'Pausado', status.message || 'Muitos erros seguidos');
         log(`⚠️ ${status.message}`);
+    } else if (status.type === 'update') {
+        log(`🔄 ${status.message || 'Scripts atualizados'}`);
     }
 });
 

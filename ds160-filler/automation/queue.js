@@ -88,6 +88,7 @@ class QueueRunner {
                 if (global.smartCheckForUpdates) global.smartCheckForUpdates();
 
                 console.log('[Queue] Checking for items...');
+                this.emit({ type: 'searching' });
 
                 // 1. Fetch config
                 const config = await this._getConfig();
@@ -142,9 +143,9 @@ class QueueRunner {
         const currentRetry = (app.retry_count || 0) + 1;
 
         this.emit({
-            type: 'filling',
+            type: 'claimed',
             applicantName: applicant.full_name,
-            page: app.last_page ? `Retomando de ${app.last_page}` : 'Iniciando...'
+            page: app.last_page ? `Retomando de ${app.last_page}` : 'Preparando...'
         });
 
         // Smart update check before fill
