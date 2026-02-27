@@ -124,15 +124,22 @@ async function main() {
 
         // Handle stdin for commands from Tauri
         process.stdin.setEncoding('utf-8');
+        process.stdin.resume(); // Ensure stdin is in flowing mode (required when piped)
         process.stdin.on('data', (data) => {
+            const raw = data.trim();
+            console.log(`[Stdin] Received: ${raw}`);
             try {
-                const cmd = JSON.parse(data.trim());
+                const cmd = JSON.parse(raw);
                 if (cmd.action === 'refresh') {
+                    console.log('[Stdin] Triggering queue refresh');
                     runner.triggerNow();
                 } else if (cmd.action === 'stop') {
+                    console.log('[Stdin] Stopping automation');
                     runner.stop().then(() => process.exit(0));
                 }
-            } catch { /* ignore invalid input */ }
+            } catch (e) {
+                console.warn(`[Stdin] Invalid JSON: ${raw}`);
+            }
         });
 
         // Keep process alive
