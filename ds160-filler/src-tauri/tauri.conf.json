@@ -32,11 +32,19 @@
             "icons/icon.icns",
             "icons/icon.ico"
         ],
+        "createUpdaterArtifacts": "v1Compatible",
         "windows": {
             "nsis": {
                 "installMode": "currentUser"
             }
         }
     },
-    "plugins": {}
+    "plugins": {
+        "updater": {
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDAzMTJENDUxRDNGODM4NUMKUldSY09QalRVZFFTQTlKeStrb0VPZ0ExNzRjTzNUZElTRy91MklRMmZhNktsa2RmMVNUREY1VDYK",
+            "endpoints": [
+                "https://github.com/viniciussouzax/visa/releases/latest/download/latest.json"
+            ]
+        }
+    }
 }

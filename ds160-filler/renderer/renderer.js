@@ -246,14 +246,41 @@ function log(msg) {
 // ============================================================
 $('btn-update').addEventListener('click', async () => {
     $('btn-update').disabled = true;
-    log('🔄 Reiniciando aplicação...');
+    $('btn-update').textContent = 'Verificando...';
+    log('🔍 Verificando atualizações...');
 
     try {
-        // Use Tauri's process plugin to restart
-        const { relaunch } = window.__TAURI__.process;
-        await relaunch();
+        const { check } = window.__TAURI__.updater;
+        const update = await check();
+        if (update) {
+            log(`📦 Nova versão disponível: ${update.version}`);
+            $('btn-update').textContent = 'Instalando...';
+            await update.downloadAndInstall();
+            log('✅ Atualização instalada! Reiniciando...');
+            const { relaunch } = window.__TAURI__.process;
+            await relaunch();
+        } else {
+            log('✅ Software atualizado (última versão)');
+            $('btn-update').textContent = 'Atualizar';
+            $('btn-update').disabled = false;
+        }
     } catch (e) {
-        log(`❌ Falha: ${e}`);
+        log(`⚠️ ${e}`);
+        $('btn-update').textContent = 'Atualizar';
         $('btn-update').disabled = false;
     }
 });
+
+// Auto-check for updates on startup (after 5 seconds)
+setTimeout(async () => {
+    try {
+        const { check } = window.__TAURI__.updater;
+        const update = await check();
+        if (update) {
+            log(`📦 Nova versão ${update.version} disponível — clique em Atualizar`);
+            const btn = $('btn-update');
+            btn.style.background = '#22c55e';
+            btn.textContent = `Atualizar (${update.version})`;
+        }
+    } catch { /* silently ignore in dev mode */ }
+}, 5000);

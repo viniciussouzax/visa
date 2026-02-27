@@ -1,0 +1,15 @@
+{
+    "identifier": "default",
+    "description": "Default capabilities for DS-160 Filler",
+    "windows": [
+        "main"
+    ],
+    "permissions": [
+        "core:default",
+        "shell:allow-open",
+        "shell:allow-execute",
+        "shell:default",
+        "process:default",
+        "updater:default"
+    ]
+}
