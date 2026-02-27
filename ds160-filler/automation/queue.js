@@ -88,7 +88,6 @@ class QueueRunner {
                 if (global.smartCheckForUpdates) global.smartCheckForUpdates();
 
                 console.log('[Queue] Checking for items...');
-                this.emit({ type: 'searching' });
 
                 // 1. Fetch config
                 const config = await this._getConfig();
@@ -143,9 +142,9 @@ class QueueRunner {
         const currentRetry = (app.retry_count || 0) + 1;
 
         this.emit({
-            type: 'claimed',
+            type: 'filling',
             applicantName: applicant.full_name,
-            page: app.last_page ? `Retomando de ${app.last_page}` : 'Preparando...'
+            page: app.last_page ? `Retomando de ${app.last_page}` : 'Iniciando...'
         });
 
         // Smart update check before fill
@@ -388,6 +387,24 @@ class QueueRunner {
                     fill_worker_id: null,
                 }).eq('id', s.id);
                 console.log(`[Queue] Recovered stale: ${s.id}`);
+            }
+        }
+
+        // 0b. Recovery: reset orphaned fills (filling but no started_at — crashed before start)
+        let orphanQuery = this.supabase
+            .from('applications')
+            .select('id')
+            .eq('fill_status', 'filling')
+            .is('fill_started_at', null);
+        if (applicantIds) orphanQuery = orphanQuery.in('applicant_id', applicantIds);
+        const { data: orphans } = await orphanQuery;
+        if (orphans && orphans.length > 0) {
+            for (const o of orphans) {
+                await this.supabase.from('applications').update({
+                    fill_status: 'pending',
+                    fill_worker_id: null,
+                }).eq('id', o.id);
+                console.log(`[Queue] Recovered orphan: ${o.id}`);
             }
         }
 
