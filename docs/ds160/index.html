@@ -671,9 +671,9 @@
                     <img src="../images/logo-sends160.png" alt="SENDS160" style="height:20px;width:auto">
                     <div style="height:20px;width:1px;background:#e2e8f0"></div>
                     <div>
-                        <p style="font-size:13px;font-weight:600;color:#1e293b;margin:0;line-height:1.2">Formulário
-                            DS-160</p>
-                        <p style="font-size:11px;color:#94a3b8;margin:0;line-height:1.2" id="acc-user-name"></p>
+                        <p style="font-size:13px;font-weight:600;color:#1e293b;margin:0;line-height:1.2"
+                            id="acc-applicant-name">—</p>
+                        <p style="font-size:11px;color:#94a3b8;margin:0;line-height:1.2">Formulário DS-160</p>
                     </div>
                 </div>
                 <button onclick="backToGate()"
@@ -4830,9 +4830,24 @@
             // Hide gate, show form
             document.getElementById('email-gate').style.display = 'none';
             document.getElementById('acc-wrapper').style.display = 'block';
-            document.getElementById('acc-user-name').textContent = existingApplicant?.data?._formSnapshot?.fields?.tbxAPP_SURNAME?.toUpperCase() && existingApplicant?.data?._formSnapshot?.fields?.tbxAPP_GIVEN_NAME
-                ? `${existingApplicant.data._formSnapshot.fields.tbxAPP_SURNAME.toUpperCase()}, ${existingApplicant.data._formSnapshot.fields.tbxAPP_GIVEN_NAME}`
-                : email;
+            const nameEl = document.getElementById('acc-applicant-name');
+            const surname = existingApplicant?.data?._formSnapshot?.fields?.tbxAPP_SURNAME;
+            const givenName = existingApplicant?.data?._formSnapshot?.fields?.tbxAPP_GIVEN_NAME;
+            nameEl.textContent = surname && givenName ? `${surname.toUpperCase()}, ${givenName}` : '—';
+
+            // Update header name dynamically when user fills Personal 1 fields
+            function updateHeaderName() {
+                const s = document.getElementById('tbxAPP_SURNAME')?.value?.trim();
+                const g = document.getElementById('tbxAPP_GIVEN_NAME')?.value?.trim();
+                const el = document.getElementById('acc-applicant-name');
+                if (el) el.textContent = s && g ? `${s.toUpperCase()}, ${g}` : '—';
+            }
+            setTimeout(() => {
+                const surnameField = document.getElementById('tbxAPP_SURNAME');
+                const givenField = document.getElementById('tbxAPP_GIVEN_NAME');
+                if (surnameField) surnameField.addEventListener('input', updateHeaderName);
+                if (givenField) givenField.addEventListener('input', updateHeaderName);
+            }, 500);
 
             // Reset check marks
             if (window._resetChecks) window._resetChecks();
@@ -5001,7 +5016,7 @@
             try {
                 const applicants = await sbGet(`rpc/get_applicant_by_id?applicant_id=${applicantId}`);
                 if (!applicants || applicants.length === 0) {
-                    document.getElementById('acc-user-name').textContent = 'Solicitante não encontrado';
+                    document.getElementById('acc-applicant-name').textContent = 'Solicitante não encontrado';
                     return;
                 }
 
@@ -5025,7 +5040,7 @@
                 if (btn) { btn.textContent = 'Aprovar'; }
             } catch (e) {
                 console.error('[DS-160] Auto-load error:', e);
-                document.getElementById('acc-user-name').textContent = 'Erro ao carregar';
+                document.getElementById('acc-applicant-name').textContent = 'Erro ao carregar';
             }
         })();
 
