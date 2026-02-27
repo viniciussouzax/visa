@@ -184,10 +184,10 @@ async function loadPipelineList() {
         </div>`;
     }
 
-    function buildDivider(label, color, icon) {
+    function buildDivider(label) {
         return `<div class="priority-divider" style="display:flex;align-items:center;gap:8px;padding:12px 20px 4px;margin-top:4px" data-divider="true">
-            <span style="font-size:10px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:4px">${icon} ${label}</span>
-            <div style="flex:1;height:1px;background:${color}30"></div>
+            <span style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px">${label}</span>
+            <div style="flex:1;height:1px;background:#e5e7eb"></div>
         </div>`;
     }
 
@@ -197,17 +197,17 @@ async function loadPipelineList() {
     if (hasAny) {
         // Emergência
         if (priorityGroups[3].length > 0) {
-            rowsHtml += buildDivider('III - Emergência', '#ef4444', '🚨');
+            rowsHtml += buildDivider('Emergência');
             rowsHtml += priorityGroups[3].map(buildRow).join('');
         }
         // Urgência
         if (priorityGroups[2].length > 0) {
-            rowsHtml += buildDivider('II - Urgência', '#f97316', '⚡');
+            rowsHtml += buildDivider('Urgência');
             rowsHtml += priorityGroups[2].map(buildRow).join('');
         }
         // Sem prioridade
         if (priorityGroups.low.length > 0) {
-            rowsHtml += buildDivider('I - Indefinido', '#9ca3af', '');
+            rowsHtml += buildDivider('Indefinido');
             rowsHtml += priorityGroups.low.map(buildRow).join('');
         }
     } else {
