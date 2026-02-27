@@ -7,7 +7,11 @@ node_modules/
 dist/
 dist2/
 out/
-*.exe
+
+# Tauri / Rust
+src-tauri/target/
+ds160-filler/src-tauri/target/
+WixTools/
 
 # Temp files
 tmp/
@@ -37,6 +41,13 @@ playwright-report/
 
 # Electron build
 release/
+
+# Tauri build output
+*.msi
+*.nsis
+*.AppImage
+*.deb
+*.dmg
 
 # Large binary
 nul

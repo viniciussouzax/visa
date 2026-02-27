@@ -1,4 +1,8 @@
-// Renderer logic for SENDS160 — Redesigned dark UI
+// Renderer logic for SENDS160 — Tauri v2 version
+// Adapted from Electron IPC to Tauri invoke/listen
+const { invoke } = window.__TAURI__.core;
+const { listen } = window.__TAURI__.event;
+
 const $ = id => document.getElementById(id);
 
 // ============================================================
@@ -21,21 +25,44 @@ if (clearBtn) {
 }
 
 // ============================================================
+// SUPABASE (direct from frontend — no IPC needed)
+// ============================================================
+const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
+
+let supabaseClient = null;
+
+// Lazy-load supabase-js from CDN (no bundler needed)
+async function getSupabase() {
+    if (supabaseClient) return supabaseClient;
+    // supabase-js is loaded via <script> tag in HTML
+    if (window.supabase) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        return supabaseClient;
+    }
+    return null;
+}
+
+// ============================================================
 // AUTO-LOGIN: Try saved session on load
 // ============================================================
 (async () => {
-    const session = await window.api.getSavedSession();
+    const session = await invoke('get_saved_session');
     if (session && session.email && session.password) {
         $('email').value = session.email;
         $('password').value = session.password;
         $('remember').checked = true;
         $('btn-login').textContent = 'Conectando...';
         $('btn-login').disabled = true;
-        const result = await window.api.login(session.email, session.password);
-        if (result.success) {
-            showMain(result.user);
-            return;
-        }
+
+        try {
+            const result = await invoke('login', { email: session.email, password: session.password });
+            if (result.success) {
+                showMain(result.user);
+                return;
+            }
+        } catch (e) { /* ignore auto-login errors */ }
+
         $('btn-login').textContent = 'Entrar';
         $('btn-login').disabled = false;
         $('login-error').textContent = 'Sessão expirada. Faça login novamente.';
@@ -52,12 +79,18 @@ $('btn-login').addEventListener('click', async () => {
 
     $('btn-login').disabled = true;
     $('btn-login').textContent = 'Entrando...';
-    const result = await window.api.login(email, password);
 
-    if (result.success) {
-        showMain(result.user);
-    } else {
-        $('login-error').textContent = result.error;
+    try {
+        const result = await invoke('login', { email, password });
+        if (result.success) {
+            showMain(result.user);
+        } else {
+            $('login-error').textContent = result.error || 'Erro desconhecido';
+            $('btn-login').disabled = false;
+            $('btn-login').textContent = 'Entrar';
+        }
+    } catch (e) {
+        $('login-error').textContent = e.toString();
         $('btn-login').disabled = false;
         $('btn-login').textContent = 'Entrar';
     }
@@ -72,14 +105,19 @@ function showMain(userEmail) {
     main.style.display = 'flex';
     $('user-email').textContent = userEmail;
     log('✅ Conectado — automação ativa');
-    refreshQueue();
+
+    // Get version from Tauri backend
+    invoke('get_version').then(v => {
+        const versionEl = document.querySelector('.version');
+        if (versionEl) versionEl.textContent = `v${v}`;
+    }).catch(() => { });
 }
 
 // ============================================================
 // LOGOUT
 // ============================================================
 $('btn-logout').addEventListener('click', async () => {
-    await window.api.logout();
+    await invoke('logout');
     const main = $('main-section');
     main.style.display = 'none';
     main.classList.add('hidden');
@@ -94,7 +132,7 @@ $('btn-logout').addEventListener('click', async () => {
 });
 
 // ============================================================
-// REFRESH
+// REFRESH (sends command to sidecar via Tauri)
 // ============================================================
 let refreshCooldown = false;
 $('btn-refresh').addEventListener('click', async () => {
@@ -102,28 +140,14 @@ $('btn-refresh').addEventListener('click', async () => {
     refreshCooldown = true;
     $('btn-refresh').disabled = true;
 
-    await window.api.refreshQueue();
     log('⚡ Verificação imediata');
     hideTimer();
-    refreshQueue();
 
     setTimeout(() => {
         refreshCooldown = false;
         $('btn-refresh').disabled = false;
     }, 5000);
 });
-
-async function refreshQueue() {
-    try {
-        const result = await window.api.fetchQueue();
-        if (result.success && result.queue) {
-            const count = result.queue.length;
-            if (count > 0) {
-                setCircle('running', `${count} pendente${count > 1 ? 's' : ''}`, 'Processando fila de preenchimento');
-            }
-        }
-    } catch (e) { /* ignore */ }
-}
 
 // ============================================================
 // TIMER
@@ -156,7 +180,6 @@ function setCircle(state, label, detail) {
     if (detail !== undefined) $('status-detail').textContent = detail;
 }
 
-// Backward compat
 function setStatus(state, text) {
     const detailMap = {
         running: 'Processando fila de preenchimento',
@@ -168,17 +191,18 @@ function setStatus(state, text) {
 }
 
 // ============================================================
-// STATUS UPDATES (from main process)
+// STATUS UPDATES (from Tauri sidecar via events)
 // ============================================================
-window.api.onStatus((status) => {
+listen('automation-status', (event) => {
+    const status = event.payload;
+
     if (status.type === 'filling') {
         setCircle('running', 'Preenchendo...', status.applicantName || 'Processando formulário');
         hideTimer();
     } else if (status.type === 'done') {
         log(`✅ ${status.applicantName} concluído`);
-        refreshQueue();
     } else if (status.type === 'error') {
-        log(`❌ ${status.applicantName} — ${status.error}`);
+        log(`❌ ${status.applicantName || ''} — ${status.error || 'Erro desconhecido'}`);
     } else if (status.type === 'queue-empty') {
         setCircle('idle', 'Aguardando', 'Nenhum item na fila');
         if (status.nextCheck) showTimer(status.nextCheck);
@@ -207,7 +231,6 @@ function log(msg) {
     line.className = 'log-line';
     line.innerHTML = `<span class="time">[${time}]</span>${msg}`;
     el.prepend(line);
-    // Keep max 200 lines
     while (el.children.length > 200) el.removeChild(el.lastChild);
 }
 
@@ -216,28 +239,14 @@ function log(msg) {
 // ============================================================
 $('btn-update').addEventListener('click', async () => {
     $('btn-update').disabled = true;
-    log('🔄 Forçando atualização e reinício...');
+    log('🔄 Reiniciando aplicação...');
 
-    const result = await window.api.forceUpdateRestart();
-    if (result && !result.success) {
-        log(`❌ Falha: ${result.error}`);
+    try {
+        // Use Tauri's process plugin to restart
+        const { relaunch } = window.__TAURI__.process;
+        await relaunch();
+    } catch (e) {
+        log(`❌ Falha: ${e}`);
         $('btn-update').disabled = false;
-    }
-});
-
-// ============================================================
-// AUTO-UPDATE NOTIFICATIONS
-// ============================================================
-window.api.onUpdate((status) => {
-    if (status.type === 'checking') {
-        log('🔍 Verificando atualizações...');
-    } else if (status.type === 'available') {
-        log(`🔄 Atualização v${status.version} encontrada, baixando...`);
-    } else if (status.type === 'progress') {
-        if (status.percent % 25 === 0) {
-            log(`⬇ Baixando atualização: ${status.percent}%`);
-        }
-    } else if (status.type === 'downloaded') {
-        log(`✅ v${status.version} pronta! Reiniciando automaticamente em 3s...`);
     }
 });
