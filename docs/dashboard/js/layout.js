@@ -192,10 +192,11 @@ function setupGlobalSearch() {
                 resultsList.innerHTML = '<li class="px-2 py-1 text-gray-400 dark:text-gray-500 text-xs italic">Digite para buscar…</li>';
                 return;
             }
+            const safe = q.replace(/[%_'"\\]/g, '');
             let rq = sb.from('applicants')
                 .select('id, full_name, passport_number, pipeline_status')
                 .is('primary_applicant_id', null)
-                .or(`full_name.ilike.%${q}%,passport_number.ilike.%${q}%`)
+                .or(`full_name.ilike.%${safe}%,passport_number.ilike.%${safe}%`)
                 .order('updated_at', { ascending: false }).limit(8);
             if (userCompanyId) rq = rq.eq('company_id', userCompanyId);
             const { data: results } = await rq;
@@ -208,7 +209,7 @@ function setupGlobalSearch() {
                 const initials = (a.full_name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
                 return `<li>
                     <a class="flex items-center p-2 text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/20 rounded-lg cursor-pointer" href="applicant.html?id=${a.id}">
-                        <div class="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold mr-3" style="background:${stage.color}22;color:${stage.color}">${initials}</div>
+                        <div class="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold mr-3" style="background:#f3f4f6;color:#6b7280">${initials}</div>
                         <div class="truncate"><span class="font-medium">${a.full_name}</span></div>
                         <span class="ml-auto text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style="background:${stage.color}22;color:${stage.color}">${stage.label}</span>
                     </a>

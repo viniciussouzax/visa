@@ -6,6 +6,11 @@ let searchQuery = '';
 let currentFilter = '';
 let draggedEl = null;
 
+// Sanitize search input to prevent injection
+function sanitizeSearch(str) {
+    return str.replace(/[%_'"\\]/g, '');
+}
+
 // ============================================================
 // INIT
 // ============================================================
@@ -81,7 +86,10 @@ async function loadPipelineList() {
 
     if (currentFilter) query = query.eq('pipeline_status', currentFilter);
     if (userCompanyId) query = query.eq('company_id', userCompanyId);
-    if (searchQuery) query = query.or(`full_name.ilike.%${searchQuery}%,passport_number.ilike.%${searchQuery}%`);
+    if (searchQuery) {
+        const safe = sanitizeSearch(searchQuery);
+        query = query.or(`full_name.ilike.%${safe}%,passport_number.ilike.%${safe}%`);
+    }
 
     // Order: priority DESC (emergency first), then sort_order ASC (manual order)
     query = query.order('fill_priority', { ascending: false })
@@ -120,7 +128,16 @@ async function loadPipelineList() {
             <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;text-align:center">Proc.</span>
         </div>` : '';
 
-    const rowsHtml = (applicants || []).map(a => {
+    // Group applicants by priority for dividers
+    const priorityGroups = { 3: [], 2: [], low: [] };
+    (applicants || []).forEach(a => {
+        const p = a.fill_priority || 0;
+        if (p >= 3) priorityGroups[3].push(a);
+        else if (p >= 2) priorityGroups[2].push(a);
+        else priorityGroups.low.push(a);
+    });
+
+    function buildRow(a) {
         const deps = dependentsMap[a.id] || [];
         const totalProcesses = 1 + deps.length;
         const doneProcesses = (a.pipeline_status === 'done' ? 1 : 0) + deps.filter(d => d.pipeline_status === 'done').length;
@@ -142,8 +159,10 @@ async function loadPipelineList() {
             ? `<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${fStage.color}15;color:${fStage.color};font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${fStage.color};flex-shrink:0"></span>${fStage.label}</span>`
             : `<span style="font-size:11px;color:#9ca3af">—</span>`;
 
+        const prioGroup = (a.fill_priority || 0) >= 3 ? '3' : (a.fill_priority || 0) >= 2 ? '2' : '0';
+
         return `<div class="pipeline-item bg-white dark:bg-gray-800 shadow-xs rounded-xl hover:shadow-md transition"
-                     data-id="${a.id}" draggable="true"
+                     data-id="${a.id}" data-priority-group="${prioGroup}" draggable="true"
                      style="display:grid;grid-template-columns:28px 36px 1fr 120px 120px 100px 50px;gap:12px;align-items:center;padding:12px 20px">
             <div class="drag-handle shrink-0 cursor-grab active:cursor-grabbing flex items-center justify-center text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400" title="Arrastar para reordenar">
                 <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
@@ -163,11 +182,41 @@ async function loadPipelineList() {
             <div>${fillBadge}</div>
             <div style="text-align:center"><span style="font-size:13px;font-weight:700;color:${progressColor}">${doneProcesses}/${totalProcesses}</span></div>
         </div>`;
-    }).join('') || '<div class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">Nenhum solicitante nesta etapa</div>';
+    }
+
+    function buildDivider(label, color, icon) {
+        return `<div class="priority-divider" style="display:flex;align-items:center;gap:8px;padding:12px 20px 4px;margin-top:4px" data-divider="true">
+            <span style="font-size:10px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:4px">${icon} ${label}</span>
+            <div style="flex:1;height:1px;background:${color}30"></div>
+        </div>`;
+    }
+
+    let rowsHtml = '';
+    const hasAny = (applicants || []).length > 0;
+
+    if (hasAny) {
+        // Emergência
+        if (priorityGroups[3].length > 0) {
+            rowsHtml += buildDivider('III - Emergência', '#ef4444', '🚨');
+            rowsHtml += priorityGroups[3].map(buildRow).join('');
+        }
+        // Urgência
+        if (priorityGroups[2].length > 0) {
+            rowsHtml += buildDivider('II - Urgência', '#f97316', '⚡');
+            rowsHtml += priorityGroups[2].map(buildRow).join('');
+        }
+        // Sem prioridade
+        if (priorityGroups.low.length > 0) {
+            rowsHtml += buildDivider('I - Indefinido', '#9ca3af', '');
+            rowsHtml += priorityGroups.low.map(buildRow).join('');
+        }
+    } else {
+        rowsHtml = '<div class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">Nenhum solicitante nesta etapa</div>';
+    }
 
     container.innerHTML = headerHtml + rowsHtml;
 
-    // Setup drag and drop
+    // Setup drag and drop (restricted to priority group)
     setupDragAndDrop();
 
     const hasMore = (applicants || []).length === PAGE_SIZE;
@@ -178,14 +227,13 @@ async function loadPipelineList() {
 }
 
 // ============================================================
-// DRAG & DROP
+// DRAG & DROP (restricted to same priority group)
 // ============================================================
 function setupDragAndDrop() {
     const container = $('pipeline-list');
     const items = container.querySelectorAll('.pipeline-item');
 
     items.forEach(item => {
-        // Only initiate drag from handle
         const handle = item.querySelector('.drag-handle');
 
         handle.addEventListener('mousedown', () => {
@@ -205,16 +253,20 @@ function setupDragAndDrop() {
                 el.classList.remove('drag-over-top', 'drag-over-bottom');
             });
             draggedEl = null;
-            // Save new order
             saveSortOrder();
         });
 
         item.addEventListener('dragover', e => {
             e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
             if (item === draggedEl) return;
 
-            // Determine if cursor is in top or bottom half
+            // Restrict drag to same priority group
+            if (draggedEl && item.dataset.priorityGroup !== draggedEl.dataset.priorityGroup) {
+                e.dataTransfer.dropEffect = 'none';
+                return;
+            }
+
+            e.dataTransfer.dropEffect = 'move';
             const rect = item.getBoundingClientRect();
             const midY = rect.top + rect.height / 2;
             const isAbove = e.clientY < midY;
@@ -230,6 +282,9 @@ function setupDragAndDrop() {
         item.addEventListener('drop', e => {
             e.preventDefault();
             if (!draggedEl || item === draggedEl) return;
+
+            // Block drop across priority groups
+            if (item.dataset.priorityGroup !== draggedEl.dataset.priorityGroup) return;
 
             const rect = item.getBoundingClientRect();
             const midY = rect.top + rect.height / 2;
@@ -253,7 +308,6 @@ async function saveSortOrder() {
         updates.push({ id: item.dataset.id, sort_order: index + 1 });
     });
 
-    // Batch update
     const promises = updates.map(u =>
         sb.from('applicants').update({ sort_order: u.sort_order }).eq('id', u.id)
     );
@@ -304,7 +358,7 @@ async function viewApplicantJson(id) {
 }
 
 // ============================================================
-// DELETE APPLICANT
+// DELETE APPLICANT (with loading state)
 // ============================================================
 let pendingDeleteId = null;
 
@@ -322,14 +376,20 @@ function closeDeleteModal() {
 async function confirmDelete() {
     if (!pendingDeleteId) return;
     const id = pendingDeleteId;
-    closeDeleteModal();
-    const { data: deps } = await sb.from('applicants').select('id').eq('primary_applicant_id', id);
-    const depIds = (deps || []).map(d => d.id);
-    if (depIds.length > 0) await sb.from('applications').delete().in('applicant_id', depIds);
-    await sb.from('applications').delete().eq('applicant_id', id);
-    await sb.from('applicants').delete().eq('primary_applicant_id', id);
-    const { error } = await sb.from('applicants').delete().eq('id', id);
-    if (error) { toast('Erro: ' + error.message, 'error'); return; }
-    toast('Excluído com sucesso', 'success');
-    loadPipeline();
+    const btn = $('delete-confirm-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Excluindo...'; }
+    try {
+        const { data: deps } = await sb.from('applicants').select('id').eq('primary_applicant_id', id);
+        const depIds = (deps || []).map(d => d.id);
+        if (depIds.length > 0) await sb.from('applications').delete().in('applicant_id', depIds);
+        await sb.from('applications').delete().eq('applicant_id', id);
+        await sb.from('applicants').delete().eq('primary_applicant_id', id);
+        const { error } = await sb.from('applicants').delete().eq('id', id);
+        if (error) { toast('Erro: ' + error.message, 'error'); return; }
+        toast('Excluído com sucesso', 'success');
+        closeDeleteModal();
+        loadPipeline();
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Excluir'; }
+    }
 }

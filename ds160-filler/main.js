@@ -283,14 +283,25 @@ ipcMain.handle('logout', async () => {
 ipcMain.handle('fetch-queue', async () => {
     if (!global.supabaseClient) return { success: false, error: 'Não conectado' };
     try {
+        // Get current user's company_id
+        const { data: { user } } = await global.supabaseClient.auth.getUser();
+        let companyId = null;
+        if (user) {
+            const { data: member } = await global.supabaseClient
+                .from('members').select('company_id').eq('user_id', user.id).single();
+            if (member) companyId = member.company_id;
+        }
+
         // Find applicants with pipeline_status in ['approved', 'doing']
-        const { data: applicants } = await global.supabaseClient
+        let query = global.supabaseClient
             .from('applicants')
             .select('id, full_name, pipeline_status')
-            .in('pipeline_status', ['approved', 'doing'])
-            .order('fill_priority', { ascending: false })
+            .in('pipeline_status', ['approved', 'doing']);
+        if (companyId) query = query.eq('company_id', companyId);
+        query = query.order('fill_priority', { ascending: false })
             .order('sort_order', { ascending: true })
             .order('updated_at', { ascending: true });
+        const { data: applicants } = await query;
 
         if (!applicants || applicants.length === 0) {
             return { success: true, queue: [] };

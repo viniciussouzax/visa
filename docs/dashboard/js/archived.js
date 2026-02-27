@@ -88,10 +88,16 @@ async function loadArchived() {
 }
 
 async function restoreApplicant(id) {
+    const now = new Date().toISOString();
+    // Restore primary
     const { error } = await sb.from('applicants')
-        .update({ pipeline_status: 'new', updated_at: new Date().toISOString() })
+        .update({ pipeline_status: 'new', updated_at: now })
         .eq('id', id);
     if (error) { toast('Erro: ' + error.message, 'error'); return; }
-    toast('Restaurado para Novo', 'success');
+    // Restore dependents in cascade
+    await sb.from('applicants')
+        .update({ pipeline_status: 'new', updated_at: now })
+        .eq('primary_applicant_id', id);
+    toast('Restaurado para Novo (incluindo dependentes)', 'success');
     loadArchived();
 }
