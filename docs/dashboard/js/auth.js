@@ -10,7 +10,7 @@ const $ = id => document.getElementById(id);
 (function () {
     const loader = document.createElement('div');
     loader.id = 'page-loader';
-    loader.innerHTML = '<div class="spinner"></div>';
+    loader.innerHTML = '<img src="../images/logo-sends160.png" class="logo-pulse" alt="SENDS160">';
     document.body.prepend(loader);
 })();
 

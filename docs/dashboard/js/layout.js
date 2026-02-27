@@ -42,7 +42,7 @@ function renderLayout() {
             @keydown.escape.window="sidebarOpen = false" x-cloak="lg">
             <div class="flex justify-between items-center px-4 pt-5 pb-2">
                 <a class="block" href="index.html">
-                    <span class="text-lg font-bold text-violet-500">DS160 Expresso</span>
+                    <span class="lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200"><img src="../images/logo-sends160.png" alt="SENDS160" style="height:22px;width:auto"></span>
                 </a>
                 <button class="lg:hidden text-gray-500 hover:text-gray-400" @click.stop="sidebarOpen = !sidebarOpen">
                     <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M10.7 18.7l1.4-1.4L7.8 13H20v-2H7.8l4.3-4.3-1.4-1.4L4 12z" /></svg>

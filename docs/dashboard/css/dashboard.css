@@ -24,23 +24,23 @@
     pointer-events: none;
 }
 
-#page-loader .spinner {
-    width: 36px;
-    height: 36px;
-    border: 3px solid #e5e7eb;
-    border-top-color: #3b82f6;
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
+#page-loader .logo-pulse {
+    width: 120px;
+    height: auto;
+    animation: logoPulse 2s ease-in-out infinite;
 }
 
-.dark #page-loader .spinner {
-    border-color: #374151;
-    border-top-color: #3b82f6;
-}
+@keyframes logoPulse {
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(0.96);
     }
 }
 
