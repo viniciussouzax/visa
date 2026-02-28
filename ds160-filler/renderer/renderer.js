@@ -132,16 +132,22 @@ $('btn-logout').addEventListener('click', async () => {
 });
 
 // ============================================================
-// TIMER
+// TIMER — countdown inside the sync button
 // ============================================================
 function showTimer(display) {
-    const row = $('timer-row');
-    row.classList.add('visible');
-    $('timer-text').textContent = display;
+    // Show countdown in the sync button text (e.g. "⏱ 28:55")
+    if (!syncBusy) {
+        const text = typeof display === 'number'
+            ? `⏱ ${Math.floor(display / 60)}:${String(display % 60).padStart(2, '0')}`
+            : `⏱ ${display}`;
+        $('btn-sync-text').textContent = text;
+    }
 }
 
 function hideTimer() {
-    $('timer-row').classList.remove('visible');
+    if (!syncBusy) {
+        $('btn-sync-text').textContent = 'Sincronizar';
+    }
 }
 
 // ============================================================
@@ -225,19 +231,13 @@ listen('automation-status', (event) => {
 // ============================================================
 // SYNC BUTTON (check update → refresh queue) — single unified button
 // ============================================================
-const SYNC_SVG = $('btn-sync').querySelector('svg')?.outerHTML || '';
 let syncBusy = false;
 
-function setSyncBtn(text, disabled) {
-    $('btn-sync').innerHTML = SYNC_SVG + text;
-    $('btn-sync').disabled = disabled;
-}
-
 $('btn-sync').addEventListener('click', async () => {
-    if (syncBusy) return;
+    if (syncBusy) return; // Anti-double-click
     syncBusy = true;
-    setSyncBtn('Verificando...', true);
-    hideTimer();
+    $('btn-sync-text').textContent = 'Sincronizando...';
+    $('btn-sync').disabled = true;
 
     try {
         // Step 1: Check for updates
@@ -245,31 +245,31 @@ $('btn-sync').addEventListener('click', async () => {
         const update = await check();
         if (update) {
             log(`📦 Nova versão ${update.version} — instalando...`);
-            setSyncBtn('Atualizando...', true);
+            $('btn-sync-text').textContent = 'Atualizando...';
             await update.downloadAndInstall();
             log('✅ Atualização instalada! Reiniciando...');
             const { relaunch } = window.__TAURI__.process;
             await relaunch();
-            return; // app will restart
+            return;
         }
     } catch { /* updater may fail in dev — continue to refresh */ }
 
     // Step 2: Refresh queue
     try {
         log('⚡ Buscando fila...');
-        setSyncBtn('Buscando...', true);
+        $('btn-sync-text').textContent = 'Buscando...';
         await invoke('refresh_queue');
     } catch (e) {
         log(`⚠️ ${e}`);
     }
 
     log('✅ Sincronizado');
-    setSyncBtn('Sincronizar', true);
+    $('btn-sync-text').textContent = 'Sincronizar';
 
-    // Cooldown 5s
+    // Cooldown 5s — prevent rapid clicks
     setTimeout(() => {
         syncBusy = false;
-        setSyncBtn('Sincronizar', false);
+        $('btn-sync').disabled = false;
     }, 5000);
 });
 
@@ -281,7 +281,7 @@ setTimeout(async () => {
         if (update) {
             log(`📦 Nova versão ${update.version} disponível — clique em Sincronizar`);
             $('btn-sync').style.borderColor = '#3fb950';
-            setSyncBtn(`Atualizar (${update.version})`, false);
+            $('btn-sync-text').textContent = `Atualizar`;
         }
     } catch { /* silently ignore in dev mode */ }
 }, 5000);
