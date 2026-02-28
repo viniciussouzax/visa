@@ -51,7 +51,7 @@
     },
     "plugins": {
         "updater": {
-            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJFQUEwNTY0MjM5M0I5MDMKUldRRHVaTWpaQVdxdnRpTXRqelVkSW9UMlZpQnNuOXgrSUIzN0pJWWRROW9VMDBQOG02QmF4M1EK",
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU3NDIwMjhCRENEOUFDQ0YKUldUUHJObmNpd0pDVjMwdzdzL09UVjNvbDhUMXdMdWthOEYzVzI2TkRFb2ZOZjQyUlpGOGc1T1gK",
             "endpoints": [
                 "https://github.com/viniciussouzax/visa/releases/latest/download/latest.json"
             ]
