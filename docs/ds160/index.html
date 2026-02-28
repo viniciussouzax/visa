@@ -3278,34 +3278,41 @@
             }).catch(e => console.error('[DS-160] Org resolution error:', e));
         }
 
+        let _isNavigating = false;
         async function nextPage() {
-            // Validate current page before advancing
-            if (!validateCurrentPage()) return;
-            // Intercept leaving Personal1 (index 1) to save applicant + application
-            if (currentPage === 1 && !savedApplicantId) {
-                await saveOnPersonal1Exit();
-            }
-
-            // Mark current section as complete (validation passed)
-            const curPageId = 'pg-' + (window._PAGES_NAMES?.[currentPage] || '');
-            const curSecIdx = window._pageToSection?.[curPageId];
-            if (curSecIdx !== undefined && window._markComplete) {
-                window._markComplete(curSecIdx);
-            }
-
-            const prevPage = currentPage;
-            for (let i = currentPage + 1; i < PAGES.length; i++) {
-                if (isPageVisible(i)) {
-                    showPage(i);
-                    // Notify accordion of section change
-                    if (window._onSectionChange) window._onSectionChange(prevPage, currentPage);
-                    // Auto-save AFTER check is marked so snapshot includes it
-                    autoSaveData();
-                    return;
+            if (_isNavigating) return; // Prevent double-click
+            _isNavigating = true;
+            try {
+                // Validate current page before advancing
+                if (!validateCurrentPage()) return;
+                // Intercept leaving Personal1 (index 1) to save applicant + application
+                if (currentPage === 1 && !savedApplicantId) {
+                    await saveOnPersonal1Exit();
                 }
+
+                // Mark current section as complete (validation passed)
+                const curPageId = 'pg-' + (window._PAGES_NAMES?.[currentPage] || '');
+                const curSecIdx = window._pageToSection?.[curPageId];
+                if (curSecIdx !== undefined && window._markComplete) {
+                    window._markComplete(curSecIdx);
+                }
+
+                const prevPage = currentPage;
+                for (let i = currentPage + 1; i < PAGES.length; i++) {
+                    if (isPageVisible(i)) {
+                        showPage(i);
+                        // Notify accordion of section change
+                        if (window._onSectionChange) window._onSectionChange(prevPage, currentPage);
+                        // Auto-save AFTER check is marked so snapshot includes it
+                        autoSaveData();
+                        return;
+                    }
+                }
+                // No next page — last section, just save
+                autoSaveData();
+            } finally {
+                _isNavigating = false;
             }
-            // No next page — last section, just save
-            autoSaveData();
         }
 
         // Silent auto-save: saves data without blocking UI
@@ -4047,6 +4054,11 @@
             document.getElementById('pg-Family2').style.display = hasSpouse ? '' : 'none';
             document.getElementById('pg-DeceasedSpouse').style.display = hasDeceasedSpouse ? '' : 'none';
             document.getElementById('pg-PrevSpouse').style.display = hasPrevSpouse ? '' : 'none';
+
+            // Clear stale data from hidden conditional pages
+            if (!hasSpouse) clearBranchInputs(document.getElementById('pg-Family2'));
+            if (!hasDeceasedSpouse) clearBranchInputs(document.getElementById('pg-DeceasedSpouse'));
+            if (!hasPrevSpouse) clearBranchInputs(document.getElementById('pg-PrevSpouse'));
 
             // Update nav tabs
             const navBtns = document.querySelectorAll('#nav button');
