@@ -683,6 +683,21 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         }
                     }
                 }
+                // Log Security responses summary
+                const answeredYes = await page.locator("input[type=radio][id$='_0']:checked").count().catch(() => 0);
+                const answeredNo = await page.locator("input[type=radio][id$='_1']:checked").count().catch(() => 0);
+                const totalRadioGroups = answeredYes + answeredNo;
+                if (answeredYes > 0) {
+                    // Identify which questions were answered Yes
+                    const yesRadios = await page.locator("input[type=radio][id$='_0']:checked").all().catch(() => []);
+                    const yesIds = [];
+                    for (const r of yesRadios) {
+                        const id = await r.getAttribute('id').catch(() => '');
+                        if (id) yesIds.push(id.replace(/_0$/, ''));
+                    }
+                    console.warn(`[Filler] ⚠️ SECURITY: ${answeredYes} respostas YES: ${yesIds.join(', ')}`);
+                }
+                console.log(`[Filler] Security: ${answeredYes} Yes, ${answeredNo} No (${totalRadioGroups} perguntas)`);
                 await clickNextAndWait(page);
                 continue;
             }
@@ -875,8 +890,22 @@ async function fillPageCompletely(page, fieldMap) {
     if (postbackLog.length > 0) {
         console.log(`[Filler] Postback triggers nesta página: ${postbackLog.join(' → ')}`);
     }
-    console.log(`[Filler] Página preenchida em ${pass} pass(es) [${elapsed}s]`);
-    return { passes: pass, postbackLog, elapsed: parseFloat(elapsed) };
+    // Detect empty fields that should have been filled — helps diagnose validation errors
+    const emptyFields = await page.evaluate(() => {
+        const empty = [];
+        document.querySelectorAll("select, input[type='text'], textarea").forEach(el => {
+            if (el.offsetParent !== null && !el.value && !el.disabled && el.id
+                && !/HelpButton|btnWarning|btnRecover|btnCancel|btnClient|btnNextPage/.test(el.id)) {
+                empty.push(el.id.split('_').pop());
+            }
+        });
+        return empty;
+    }).catch(() => []);
+    if (emptyFields.length > 0) {
+        console.warn(`[Filler] ⚠️ ${emptyFields.length} campos vazios após preenchimento: ${emptyFields.slice(0, 8).join(', ')}`);
+    }
+    console.log(`[Filler] Página preenchida em ${pass} pass(es) [${elapsed}s]${emptyFields.length > 0 ? ` — ${emptyFields.length} vazios` : ''}`);
+    return { passes: pass, postbackLog, elapsed: parseFloat(elapsed), emptyFields };
 }
 
 async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new Set()) {
@@ -940,8 +969,13 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                         const opts = await loc.evaluate(sel => Array.from(sel.options).map(o => ({ v: o.value, t: o.text })));
                         let found = opts.find(o => o.t.trim().toUpperCase() === match.value.trim().toUpperCase());
                         if (!found) found = opts.find(o => o.t.toUpperCase().includes(match.value.trim().toUpperCase()));
-                        if (found) await loc.selectOption(found.v);
-                        else continue;
+                        if (found) {
+                            await loc.selectOption(found.v);
+                            console.warn(`[Filler] ⚠️ SELECT FUZZY: ${field.id} — "${match.value}" → "${found.t}"`);
+                        } else {
+                            console.warn(`[Filler] ❌ SELECT SEM MATCH: ${field.id} — valor "${match.value}" não encontrado. Opções: ${opts.slice(0, 5).map(o => o.t).join(', ')}...`);
+                            continue;
+                        }
                     }
                 } else if (match.type === 'select-search') {
                     const allOpts = await loc.evaluate(sel =>
@@ -952,8 +986,12 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                     if (!found) found = allOpts.find(o => o.t.toUpperCase().includes(match.value.toUpperCase()));
                     if (!found) found = allOpts.find(o => o.v?.toUpperCase() === match.value.toUpperCase());
                     if (!found) found = allOpts.find(o => o.v?.toUpperCase().includes(match.value.toUpperCase()));
-                    if (found) await loc.selectOption(found.v);
-                    else continue;
+                    if (found) {
+                        await loc.selectOption(found.v);
+                    } else {
+                        console.warn(`[Filler] ❌ SELECT-SEARCH SEM MATCH: ${field.id} — valor "${match.value}" não encontrado. Opções: ${allOpts.slice(0, 5).map(o => o.t).join(', ')}...`);
+                        continue;
+                    }
                 } else {
                     try { await loc.selectOption(match.value); }
                     catch { try { await loc.selectOption({ label: match.value }); } catch { continue; } }
@@ -968,8 +1006,8 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
 
     // If postback needed, stop here and rescan after postback
     if (postbackNeeded) {
-        if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} campos sem match:`, unmatched.slice(0, 5).join(', '));
-        console.log(`[Filler] Pass ${passNum} — ${filled} preenchidos, ⏳ postback: ${postbackField}`);
+        if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} campos sem match:`, unmatched.slice(0, 10).join(', '));
+        console.log(`[Filler] Pass ${passNum} — ${filled}/${visible.length} preenchidos, ⏳ postback: ${postbackField}`);
 
         await waitForPostback(page);
         const fieldsAfter = await discoverFields(page);
@@ -1158,7 +1196,12 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                         const opts = await loc.evaluate(sel => Array.from(sel.options).map(o => ({ v: o.value, t: o.text })));
                         let found = opts.find(o => o.t.trim().toUpperCase() === match.value.trim().toUpperCase());
                         if (!found) found = opts.find(o => o.t.toUpperCase().includes(match.value.trim().toUpperCase()));
-                        if (found) await loc.selectOption(found.v);
+                        if (found) {
+                            await loc.selectOption(found.v);
+                            console.warn(`[Filler] ⚠️ SELECT-LABEL FUZZY: ${field.id} — "${match.value}" → "${found.t}"`);
+                        } else {
+                            console.warn(`[Filler] ❌ SELECT-LABEL SEM MATCH: ${field.id} — valor "${match.value}" não encontrado`);
+                        }
                     }
                     filled++;
                     break;
@@ -1225,8 +1268,8 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
         console.log(`[Filler] Batch fill: ${batchFilled} text fields`);
     }
 
-    if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} sem match:`, unmatched.slice(0, 5).join(', '));
-    console.log(`[Filler] Pass ${passNum} — ${filled} preenchidos, ${visible.length} visíveis`);
+    if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} sem match:`, unmatched.slice(0, 10).join(', '));
+    console.log(`[Filler] Pass ${passNum} — ${filled}/${visible.length} preenchidos`);
     return { needsRescan: false, postbackField: null };
 }
 
