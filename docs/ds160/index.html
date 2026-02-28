@@ -5042,7 +5042,7 @@
                 console.log('[DS-160] Auto-loaded applicant:', a.full_name);
 
                 // Mark completed sections and open next incomplete
-                setTimeout(() => { if (window.restoreCompletionState) window.restoreCompletionState(a.data); }, 100);
+                setTimeout(() => { if (window.restoreCompletionState) window.restoreCompletionState(a.data); }, 500);
 
                 // Update final button for assessor
                 const btn = document.getElementById('btnFinalAction');
@@ -5549,6 +5549,15 @@
                 if (typeof checkAllSectionsComplete === 'function') checkAllSectionsComplete();
             }
 
+            // Force-complete: mark section as done WITHOUT re-verifying DOM fields
+            // Used by assessor mode where we trust the saved snapshot
+            function forceComplete(idx) {
+                completedSections.add(idx);
+                const check = document.querySelector(`[data-check="${idx}"]`);
+                if (check) check.classList.add('done');
+                if (typeof checkAllSectionsComplete === 'function') checkAllSectionsComplete();
+            }
+
             // updateProgress removed — progress bar was removed from UI
 
             // === SECTION CHANGE CALLBACK ===
@@ -5578,6 +5587,7 @@
 
             // Expose for use after data restore
             window._markComplete = markComplete;
+            window._forceComplete = forceComplete;
             window._toggleAccordion = toggleAccordion;
             window._SECTIONS = SECTIONS;
             window._resetChecks = function () {
@@ -5594,8 +5604,8 @@
                     const snapshot = data._formSnapshot && data._formSnapshot.completedSections;
 
                     if (snapshot && Array.isArray(snapshot) && snapshot.length > 0) {
-                        // Primary: restore from saved snapshot
-                        snapshot.forEach(idx => markComplete(idx));
+                        // Primary: restore from saved snapshot — trust it, don't re-verify DOM
+                        snapshot.forEach(idx => forceComplete(idx));
 
                         // Find first incomplete for review
                         let firstIncomplete = 0;
@@ -5651,7 +5661,7 @@
                             });
                             if (SECTIONS[s].conditional && !hasData) continue;
                             if (hasData) {
-                                markComplete(s);
+                                forceComplete(s);
                             } else if (!SECTIONS[s].conditional) {
                                 if (firstIncomplete === 0) firstIncomplete = s;
                             }
