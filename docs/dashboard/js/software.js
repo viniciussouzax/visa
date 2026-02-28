@@ -51,28 +51,51 @@ async function loadSoftwareInfo() {
                 ? new Date(release.published_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
                 : '';
             const notes = release.body || '';
-            const msiAsset = (release.assets || []).find(a => a.name.endsWith('-setup.exe') || a.name.endsWith('.msi'));
+            const assets = release.assets || [];
 
             $('sw-version').textContent = 'v' + versionClean;
             $('sw-version-date').textContent = releaseDate ? 'Publicado em ' + releaseDate : '';
             $('sw-version-notes').textContent = notes.substring(0, 200);
 
-            if (msiAsset) {
-                $('sw-download-btn').href = msiAsset.browser_download_url;
-                $('sw-download-version').textContent = 'v' + versionClean;
-                const sizeMB = (msiAsset.size / (1024 * 1024)).toFixed(1);
-                $('sw-download-size').textContent = sizeMB + ' MB';
-                $('sw-download-date').textContent = releaseDate ? 'Publicado em ' + releaseDate : '';
+            // Find platform assets
+            const winAsset = assets.find(a => a.name.endsWith('-setup.exe') || a.name.endsWith('.msi'));
+            const macAsset = assets.find(a => a.name.endsWith('.dmg'));
+            const linuxAsset = assets.find(a => a.name.endsWith('.AppImage'));
+            const linuxDeb = assets.find(a => a.name.endsWith('.deb'));
+            const fallback = `https://github.com/${GH_OWNER}/${GH_REPO}/releases/latest`;
+
+            function fmtSize(bytes) { return (bytes / (1024 * 1024)).toFixed(1) + ' MB'; }
+
+            // Windows
+            if (winAsset) {
+                $('dl-windows').href = winAsset.browser_download_url;
+                $('dl-windows-info').textContent = `v${versionClean} · ${fmtSize(winAsset.size)}`;
             } else {
-                $('sw-download-btn').href = `https://github.com/${GH_OWNER}/${GH_REPO}/releases/latest`;
-                $('sw-download-version').textContent = 'v' + versionClean;
-                $('sw-download-size').textContent = '';
-                $('sw-download-date').textContent = releaseDate ? 'Publicado em ' + releaseDate : '';
+                $('dl-windows').href = fallback;
+            }
+
+            // macOS
+            if (macAsset) {
+                $('dl-macos').href = macAsset.browser_download_url;
+                $('dl-macos-info').textContent = `v${versionClean} · ${fmtSize(macAsset.size)}`;
+            } else {
+                $('dl-macos').href = fallback;
+            }
+
+            // Linux (prefer AppImage, fallback to .deb)
+            const linuxFinal = linuxAsset || linuxDeb;
+            if (linuxFinal) {
+                $('dl-linux').href = linuxFinal.browser_download_url;
+                const ext = linuxFinal.name.endsWith('.deb') ? '.deb' : '.AppImage';
+                $('dl-linux-info').textContent = `v${versionClean} · ${fmtSize(linuxFinal.size)} · ${ext}`;
+            } else {
+                $('dl-linux').href = fallback;
             }
         } else {
             $('sw-version').textContent = '—';
             $('sw-version-date').textContent = 'Nenhum release publicado';
-            $('sw-download-btn').href = `https://github.com/${GH_OWNER}/${GH_REPO}/releases`;
+            const fallback = `https://github.com/${GH_OWNER}/${GH_REPO}/releases`;
+            ['dl-windows', 'dl-macos', 'dl-linux'].forEach(id => { $(id).href = fallback; });
         }
     } catch (e) {
         console.warn('[Software] Erro ao buscar release:', e);
