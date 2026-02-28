@@ -3902,43 +3902,30 @@
             const fullName = (surname + ' ' + givenName).trim();
             if (!fullName) return; // no data to save
             const location = document.querySelector('.sel-location')?.value || 'SPL';
+            const email = document.getElementById('tbxAPP_EMAIL_ADDR')?.value?.trim() || '';
+            const pptNum = (document.getElementById('tbxPPT_NUM')?.value || '').trim() || null;
 
             try {
-                let primaryApplicantId = window._linkToPrimaryId || null;
-
-                // Create Applicant
-                const applicantPayload = {
-                    full_name: fullName,
-                    data: {
+                const result = await sbFetch('rpc/clone_create_applicant', 'POST', {
+                    p_full_name: fullName,
+                    p_data: {
                         personal1: {
                             surname, givenName,
                             fullNameNative: document.getElementById('tbxAPP_FULL_NAME_NATIVE')?.value || '',
                         },
-                        addressPhone: {
-                            email: document.getElementById('tbxAPP_EMAIL_ADDR')?.value?.trim() || '',
-                        },
+                        addressPhone: { email },
                         location: location,
                     },
-                };
-                // Include passport if available
-                const pptNum = (document.getElementById('tbxPPT_NUM')?.value || '').trim();
-                if (pptNum) applicantPayload.passport_number = pptNum;
-                if (primaryApplicantId) applicantPayload.primary_applicant_id = primaryApplicantId;
-                if (resolvedCompanyId) applicantPayload.company_id = resolvedCompanyId;
-
-                const applicants = await sbFetch('applicants', 'POST', applicantPayload);
-                if (!applicants || !applicants[0]?.id) return;
-                savedApplicantId = applicants[0].id;
-
-                // Create Application (security_answer comes from settings table, not here)
-                const applications = await sbFetch('applications', 'POST', {
-                    applicant_id: savedApplicantId,
-                    status: 'pending',
-                    form_data: { ds160_city: location },
+                    p_passport_number: pptNum,
+                    p_primary_applicant_id: window._linkToPrimaryId || null,
+                    p_org_short_id: urlOrgParam || null,
                 });
-                savedApplicationId = applications?.[0]?.id || null;
 
-                console.log('[DS-160] Applicant salvo:', savedApplicantId, '| Application:', savedApplicationId);
+                if (result) {
+                    savedApplicantId = result.applicant_id;
+                    savedApplicationId = result.application_id;
+                    console.log('[DS-160] Applicant criado:', savedApplicantId, '| App:', savedApplicationId, '| Company:', result.company_id);
+                }
             } catch (e) {
                 console.error('[DS-160] Erro ao salvar na Personal1:', e);
             }
