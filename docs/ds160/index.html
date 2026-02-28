@@ -5026,7 +5026,9 @@
                 savedApplicationId = existingApplicant.appId || null;
                 try {
                     const fullData = await sbGet(`rpc/get_applicant_by_id?applicant_id=${existingApplicant.id}`);
-                    const applicantData = fullData?.data || {};
+                    // RPC returns array or single object depending on PostgREST config
+                    const record = Array.isArray(fullData) ? fullData[0] : fullData;
+                    const applicantData = record?.data || {};
                     restoreApplicantData(applicantData);
                     setTimeout(() => { if (window.restoreCompletionState) window.restoreCompletionState(applicantData); }, 500);
                 } catch (e) {
