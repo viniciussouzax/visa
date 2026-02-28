@@ -16,7 +16,8 @@
         "playwright": "^1.58.2"
     },
     "devDependencies": {
-        "@tauri-apps/cli": "^2.5.0"
+        "@tauri-apps/cli": "^2.5.0",
+        "sharp": "^0.34.5"
     },
     "type": "commonjs"
 }
