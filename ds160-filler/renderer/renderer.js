@@ -141,12 +141,18 @@ function showTimer(display) {
             ? `⏱ ${Math.floor(display / 60)}:${String(display % 60).padStart(2, '0')}`
             : `⏱ ${display}`;
         $('btn-sync-text').textContent = text;
+        // Hide sync icon during countdown
+        const svg = $('btn-sync').querySelector('svg');
+        if (svg) svg.style.display = 'none';
     }
 }
 
 function hideTimer() {
     if (!syncBusy) {
         $('btn-sync-text').textContent = 'Sincronizar';
+        // Show sync icon
+        const svg = $('btn-sync').querySelector('svg');
+        if (svg) svg.style.display = '';
     }
 }
 
