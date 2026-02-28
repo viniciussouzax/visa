@@ -5015,10 +5015,11 @@
                 window._linkToPrimaryId = linkToPrimaryId;
             }
 
-            // Always reset to first page/section after form setup
-            // For existing applicants, restoreCompletionState will override after 500ms
-            showPage(0);
-            if (window._toggleAccordion) window._toggleAccordion(0, true);
+            // Always reset accordion to first section (Início)
+            // toggleAccordion handles showing the correct page internally
+            if (window._toggleAccordion) {
+                window._toggleAccordion(0, true);
+            }
         }
 
         function restoreApplicantData(data) {
