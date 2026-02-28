@@ -4444,7 +4444,8 @@
                     arrivalFlight: val('tbxArriveFlight'), arrivalCity: val('tbxArriveCity'),
                     departureDate: dateVal('ddlDEPARTURE_US_DTEDay', 'ddlDEPARTURE_US_DTEMonth', 'tbxDEPARTURE_US_DTEYear'),
                     departureFlight: val('tbxDepartFlight'), departureCity: val('tbxDepartCity'),
-                    specificLocation: val('dtlTravelLoc_ctl00_tbxSPECTRAVEL_LOCATION'),
+                    specificLocations: collectEntries('dtlTravelLoc', e => entryVal(e, 'tbxSPECTRAVEL_LOCATION')),
+                    specificLocation: val('dtlTravelLoc_ctl00_tbxSPECTRAVEL_LOCATION'), // backward compat
                     nonSpecificArrival: dateVal('ddlARRIVAL_US_NSDTEDay', 'ddlARRIVAL_US_NSDTEMonth', 'tbxARRIVAL_US_NSDTEYear'),
                     lengthOfStay: val('tbxAPP_LOS'), lengthOfStayUnit: val('ddlAPP_LOS_CD'),
                     usAddress: {
