@@ -502,6 +502,123 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 }
             }
 
+            // ====== RECOVERY PAGE: Retrieve a DS-160 Application ======
+            // Phase 1: App ID + Captcha → click Retrieve
+            // Phase 2: App ID (disabled) + Surname (5 letters) + Year of Birth + Security Answer → click Retrieve
+            if (pageName === 'Recovery') {
+                console.log(`[Filler] 🔄 Recovery.aspx detectada — recuperando aplicação`);
+                onPage('Recovery');
+
+                let recoveryDone = false;
+                for (let rAttempt = 1; rAttempt <= 5; rAttempt++) {
+                    await waitForPageReady(page);
+
+                    // Detect which phase we're in
+                    const surnameField = page.locator("input[id$='_txbSurname']").first();
+                    const dobYearField = page.locator("input[id$='_txbDOBYear']").first();
+                    const secAnswerField = page.locator("input[id$='_txbAnswer']").first();
+                    const captchaImg = page.locator("img[id$='_CaptchaImage'], img[src*='captcha']").first();
+                    const appIdInput = page.locator("input[id$='_tbxApplicationID'], input[id*='ApplicationID']").first();
+
+                    const hasSurname = await surnameField.isVisible({ timeout: 1500 }).catch(() => false);
+                    const hasCaptcha = await captchaImg.isVisible({ timeout: 1500 }).catch(() => false);
+
+                    if (hasSurname) {
+                        // ====== PHASE 2: Security Questions ======
+                        console.log(`[Filler] Recovery FASE 2: Security Questions (tentativa ${rAttempt})`);
+
+                        // Surname — first 5 letters, uppercase
+                        const surname5 = (profile.surname || '').substring(0, 5).toUpperCase();
+                        await surnameField.fill(surname5);
+                        console.log(`[Filler] Recovery: Surname preenchido: ${surname5}`);
+
+                        // Year of Birth
+                        if (await dobYearField.isVisible({ timeout: 1000 }).catch(() => false)) {
+                            const birthYear = profile.dob?.year || '';
+                            await dobYearField.fill(String(birthYear));
+                            console.log(`[Filler] Recovery: Year of Birth preenchido: ${birthYear}`);
+                        }
+
+                        // Security Answer
+                        if (await secAnswerField.isVisible({ timeout: 1000 }).catch(() => false)) {
+                            const secAnswer = config.security_answer || profile.securityAnswer || '';
+                            await secAnswerField.fill(secAnswer);
+                            console.log(`[Filler] Recovery: Security answer preenchido`);
+                        }
+
+                    } else if (hasCaptcha) {
+                        // ====== PHASE 1: App ID + Captcha ======
+                        console.log(`[Filler] Recovery FASE 1: App ID + Captcha (tentativa ${rAttempt})`);
+
+                        // Fill Application ID (only if enabled)
+                        if (await appIdInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+                            const isEnabled = await appIdInput.isEnabled().catch(() => false);
+                            if (isEnabled) {
+                                await appIdInput.fill(application.application_id || '');
+                                console.log(`[Filler] Recovery: App ID preenchido: ${application.application_id}`);
+                            }
+                        }
+
+                        // Solve captcha
+                        try {
+                            const keys = { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key };
+                            const imgPath = path.join(TMP, 'captcha_recovery.png');
+                            await captchaImg.screenshot({ path: imgPath });
+                            const answer = await solveCaptcha(imgPath, captchaMode, keys);
+                            console.log(`[Filler] Recovery captcha (attempt ${rAttempt}): ${answer}`);
+                            const captchaInput = page.locator("input[id$='_txtCodeTextBox']").first();
+                            await captchaInput.fill('');
+                            await captchaInput.fill(answer);
+                        } catch (e) {
+                            console.warn(`[Filler] Recovery captcha error:`, e.message);
+                        }
+
+                    } else {
+                        // ====== PHASE 1 (sem captcha): apenas App ID ======
+                        console.log(`[Filler] Recovery FASE 1: App ID sem captcha (tentativa ${rAttempt})`);
+                        if (await appIdInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+                            const isEnabled = await appIdInput.isEnabled().catch(() => false);
+                            if (isEnabled) {
+                                await appIdInput.fill(application.application_id || '');
+                                console.log(`[Filler] Recovery: App ID preenchido: ${application.application_id}`);
+                            }
+                        }
+                    }
+
+                    // Click Retrieve Application button
+                    const retrieveBtn = page.locator("input[id$='_btnRetrieve'], a[id$='_lnkRetrieve'], input[value*='Retrieve']").first();
+                    if (await retrieveBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+                        await retrieveBtn.click();
+                        console.log('[Filler] Recovery: clicou Retrieve Application');
+                    } else {
+                        console.warn('[Filler] Recovery: botão Retrieve não encontrado');
+                    }
+
+                    await sleep(3000);
+                    await waitForPageReady(page);
+
+                    const newUrl = page.url();
+                    if (!newUrl.includes('Recovery.aspx')) {
+                        console.log(`[Filler] ✅ Recovery bem-sucedido — navegou para: ${newUrl}`);
+                        recoveryDone = true;
+                        break;
+                    }
+
+                    // Check for validation errors
+                    const errorText = await page.locator('[id*="ValidationSummary"], [id*="lblError"]').first().innerText().catch(() => '');
+                    if (errorText) {
+                        console.warn(`[Filler] Recovery erro: ${errorText.substring(0, 100)}`);
+                    }
+
+                    console.warn(`[Filler] Recovery tentativa ${rAttempt} falhou — ainda em Recovery.aspx`);
+                }
+
+                if (!recoveryDone) {
+                    throw new Error('Recovery.aspx: falhou 5x ao tentar recuperar aplicação');
+                }
+                continue; // Re-enter loop to identify the new page
+            }
+
             // Detectar páginas desconhecidas e tentar recovery
             if (pageName === 'Unknown') {
                 console.warn(`[Filler] ⚠️ Página desconhecida: ${url}`);
@@ -635,6 +752,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
 function identifyPage(url) {
     if (url.includes('Default.aspx')) return 'Landing';
+    if (url.includes('Recovery.aspx')) return 'Recovery';
     if (url.includes('ConfirmApplicationID') || url.includes('SecureQuestion')) return 'SecurityQuestion';
     const file = url.split('/').pop()?.split('?')[0] || '';
     const node = (url.match(/node=(\w+)/) || [])[1] || '';

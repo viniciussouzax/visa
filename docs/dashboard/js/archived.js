@@ -65,7 +65,7 @@ async function loadArchived() {
                 <div class="flex items-center space-x-4 pl-10 md:pl-0 shrink-0">
                     ${a.passport_number ? `<div class="text-xs text-gray-400 dark:text-gray-500 font-mono">${a.passport_number}</div>` : ''}
                     <div class="text-sm text-gray-500 dark:text-gray-400 italic whitespace-nowrap">${updated}</div>
-                    <div class="text-xs inline-flex font-medium rounded-full text-center px-2.5 py-1" style="background:${stage.color}22;color:${stage.color}">${stage.label}</div>
+                    <div class="text-xs inline-flex rounded-full text-center px-2.5 py-1" style="background:${stage.color}22;color:${stage.color}">${stage.label}</div>
                     <div class="relative" x-data="{ open: false }">
                         <button @click.stop="open = !open" class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/50 transition">
                             <svg class="w-5 h-5 fill-current text-gray-400 dark:text-gray-500" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>

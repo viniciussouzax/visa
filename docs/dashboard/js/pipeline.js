@@ -62,7 +62,7 @@ async function loadPipeline() {
     if (userCompanyId) statsQuery = statsQuery.eq('company_id', userCompanyId);
     const { data: allApplicants } = await statsQuery;
 
-    const counts = { new: 0, review: 0, approved: 0, doing: 0, done: 0 };
+    const counts = { new: 0, review: 0, approved: 0, done: 0 };
     (allApplicants || []).forEach(a => {
         if (counts[a.pipeline_status] !== undefined) counts[a.pipeline_status]++;
     });
@@ -120,12 +120,12 @@ async function loadPipelineList() {
     // Column header
     const headerHtml = (applicants && applicants.length > 0) ? `
         <div class="pipeline-header ds-pipeline-grid ds-pipeline-header">
-            <span></span><span></span>
             <span class="ds-col-header">Solicitante</span>
             <span class="ds-col-header">Prioridade</span>
             <span class="ds-col-header">Etapa</span>
             <span class="ds-col-header">Status</span>
-            <span class="ds-col-header" style="text-align:center">Proc.</span>
+            <span class="ds-col-header" style="text-align:center">Processos</span>
+            <span></span>
         </div>` : '';
 
     // Group applicants by priority for dividers
@@ -136,6 +136,18 @@ async function loadPipelineList() {
         else if (p >= 2) priorityGroups[2].push(a);
         else priorityGroups.low.push(a);
     });
+
+    // Within each priority group, sort error/attention first
+    function sortByFillStatus(arr) {
+        const urgentStatuses = ['error', 'needs_attention', 'system_error'];
+        return [
+            ...arr.filter(a => urgentStatuses.includes(appsMap[a.id]?.fill_status)),
+            ...arr.filter(a => !urgentStatuses.includes(appsMap[a.id]?.fill_status))
+        ];
+    }
+    priorityGroups[3] = sortByFillStatus(priorityGroups[3]);
+    priorityGroups[2] = sortByFillStatus(priorityGroups[2]);
+    priorityGroups.low = sortByFillStatus(priorityGroups.low);
 
     function buildRow(a) {
         const deps = dependentsMap[a.id] || [];
@@ -148,21 +160,27 @@ async function loadPipelineList() {
         const initials = (a.full_name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
         const prio = PRIORITIES[a.fill_priority] || PRIORITIES[0];
-        const prioBadge = a.fill_priority >= 2
-            ? `<span class="ds-badge" style="background:${prio.color}15;color:${prio.color}">${prio.icon} ${prio.label}</span>`
-            : `<span class="ds-text-muted">—</span>`;
+        const prioBadge = `<span class="ds-badge" style="background:${prio.color}15;color:${prio.color}">${prio.label}</span>`;
 
         const appData = appsMap[a.id];
         const fillStatus = appData?.fill_status || '';
         const fStage = FILL_STAGES[fillStatus];
         const fillBadge = fStage && fillStatus !== 'pending'
-            ? `<span class="ds-badge" style="background:${fStage.color}15;color:${fStage.color}"><span class="ds-badge-dot" style="background:${fStage.color}"></span>${fStage.label}</span>`
+            ? `<span class="ds-badge" style="background:${fStage.color}15;color:${fStage.color}">${fStage.label}</span>`
             : `<span class="ds-text-muted">—</span>`;
 
         const prioGroup = (a.fill_priority || 0) >= 3 ? '3' : (a.fill_priority || 0) >= 2 ? '2' : '0';
 
         return `<div class="pipeline-item bg-white dark:bg-gray-800 shadow-xs rounded-xl hover:shadow-md transition ds-pipeline-grid"
                      data-id="${a.id}" data-priority-group="${prioGroup}" draggable="true">
+            <a href="applicant.html?id=${a.id}" style="min-width:0;overflow:hidden">
+                <div class="ds-text-name">${a.full_name}</div>
+                ${email ? `<div class="ds-text-sub">${email}</div>` : ''}
+            </a>
+            <div>${prioBadge}</div>
+            <div><span class="ds-badge" style="background:${stage.color}15;color:${stage.color}">${stage.label}</span></div>
+            <div>${fillBadge}</div>
+            <div style="text-align:center"><span style="font-size:13px;color:${progressColor}">${doneProcesses}/${totalProcesses}</span></div>
             <div class="drag-handle shrink-0 cursor-grab active:cursor-grabbing flex items-center justify-center text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400" title="Arrastar para reordenar">
                 <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
                     <circle cx="3" cy="2" r="1.5"/><circle cx="9" cy="2" r="1.5"/>
@@ -171,22 +189,6 @@ async function loadPipelineList() {
                     <circle cx="3" cy="14" r="1.5"/><circle cx="9" cy="14" r="1.5"/>
                 </svg>
             </div>
-            <div class="ds-avatar ds-avatar-md">${initials}</div>
-            <a href="applicant.html?id=${a.id}" style="min-width:0;overflow:hidden">
-                <div class="ds-text-name">${a.full_name}</div>
-                ${email ? `<div class="ds-text-sub">${email}</div>` : ''}
-            </a>
-            <div>${prioBadge}</div>
-            <div><span class="ds-badge" style="background:${stage.color}15;color:${stage.color}"><span class="ds-badge-dot" style="background:${stage.color}"></span>${stage.label}</span></div>
-            <div>${fillBadge}</div>
-            <div style="text-align:center"><span style="font-size:13px;font-weight:700;color:${progressColor}">${doneProcesses}/${totalProcesses}</span></div>
-        </div>`;
-    }
-
-    function buildDivider(label) {
-        return `<div class="priority-divider ds-divider" data-divider="true">
-            <span class="ds-divider-label">${label}</span>
-            <div class="ds-divider-line"></div>
         </div>`;
     }
 
@@ -194,21 +196,10 @@ async function loadPipelineList() {
     const hasAny = (applicants || []).length > 0;
 
     if (hasAny) {
-        // Emergência
-        if (priorityGroups[3].length > 0) {
-            rowsHtml += buildDivider('Emergência');
-            rowsHtml += priorityGroups[3].map(buildRow).join('');
-        }
-        // Urgência
-        if (priorityGroups[2].length > 0) {
-            rowsHtml += buildDivider('Urgência');
-            rowsHtml += priorityGroups[2].map(buildRow).join('');
-        }
-        // Sem prioridade
-        if (priorityGroups.low.length > 0) {
-            rowsHtml += buildDivider('Indefinido');
-            rowsHtml += priorityGroups.low.map(buildRow).join('');
-        }
+        // Render in priority order (emergency > urgent > normal) without dividers
+        rowsHtml += priorityGroups[3].map(buildRow).join('');
+        rowsHtml += priorityGroups[2].map(buildRow).join('');
+        rowsHtml += priorityGroups.low.map(buildRow).join('');
     } else {
         rowsHtml = '<div class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">Nenhum solicitante nesta etapa</div>';
     }

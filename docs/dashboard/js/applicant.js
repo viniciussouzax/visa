@@ -106,7 +106,11 @@ async function openApplicantDetail(id) {
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
                         <span class="ds-text-muted">${roleLabel}${pPassport ? ' · ' + pPassport : ''}</span>
-                        ${fillStatus !== '—' ? `<span class="ds-badge" style="font-size:10px;padding:1px 6px;background:${fStage.color}15;color:${fStage.color}"><span class="ds-badge-dot" style="background:${fStage.color}"></span>${fStage.label}</span>` : ''}
+                        ${fillStatus !== '—' ? (() => {
+                const isClickable = fillStatus === 'error' || fillStatus === 'needs_attention' || fillStatus === 'system_error';
+                const clickAttr = isClickable ? `onclick="event.stopPropagation();openLogsModal('${p.id}')" style="cursor:pointer;font-size:10px;padding:1px 6px;background:${fStage.color}15;color:${fStage.color}"` : `style="font-size:10px;padding:1px 6px;background:${fStage.color}15;color:${fStage.color}"`;
+                return `<span class="ds-badge" ${clickAttr}><span class="ds-badge-dot" style="background:${fStage.color}"></span>${fStage.label}</span>`;
+            })() : ''}
                     </div>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px">
@@ -114,9 +118,9 @@ async function openApplicantDetail(id) {
                     <select onclick="event.stopPropagation()" onchange="if(this.value!==''){setPriority('${p.id}',this.value,'${id}')}"
                         style="font-size:13px;padding:8px 14px;background:${pPrio.color}08;color:${pPrio.color};border:1px solid #d1d5db;border-radius:5px;cursor:pointer;outline:none;font-weight:500;font-family:inherit">
                         <option value="">${pPrio.icon} ${(p.fill_priority || 0) >= 2 ? pPrio.label : 'Prioridade'}</option>
-                        <option value="0">I - Indefinido</option>
-                        <option value="2">⚡ II - Urgência</option>
-                        <option value="3">🚨 III - Emergência</option>
+                        <option value="0">Normal</option>
+                        <option value="2">Urgente</option>
+                        <option value="3">Emergência</option>
                     </select>
                     <select onclick="event.stopPropagation()" onchange="if(this.value){movePipeline('${p.id}',this.value,'${id}')}"
                         style="font-size:13px;padding:8px 14px;background:${pStage.color}08;color:${pStage.color};border:1px solid #d1d5db;border-radius:5px;cursor:pointer;outline:none;font-weight:600;font-family:inherit">
@@ -157,15 +161,20 @@ async function moveAllPipeline(primaryId, newStatus) {
 }
 
 async function _resetApplicationForRefill(applicantId) {
-    const { data: apps } = await sb.from('applications').select('id, fill_status').eq('applicant_id', applicantId);
+    const { data: apps } = await sb.from('applications').select('id, fill_status, application_id').eq('applicant_id', applicantId);
     if (apps && apps.length > 0) {
         for (const app of apps) {
-            if (app.fill_status === 'filled' || app.fill_status === 'error' || app.fill_status === 'needs_attention') {
-                await sb.from('applications').update({
+            if (app.fill_status === 'filled' || app.fill_status === 'error' || app.fill_status === 'needs_attention' || app.fill_status === 'system_error') {
+                const updateData = {
                     fill_status: 'pending', fill_error: null, fill_worker_id: null,
                     fill_started_at: null, fill_finished_at: null, retry_count: 0,
-                    last_page: null, application_id: null, last_error_at: null
-                }).eq('id', app.id);
+                    last_page: null, last_error_at: null
+                };
+                // Preservar application_id se já existe (retomar via Recovery)
+                if (!app.application_id) {
+                    updateData.application_id = null;
+                }
+                await sb.from('applications').update(updateData).eq('id', app.id);
             }
         }
     }
@@ -189,7 +198,7 @@ async function openProcessModal(applicantId) {
     if (!applicant) return;
     const stage = STAGES[applicant.pipeline_status] || STAGES.new;
     $('process-modal-name').textContent = applicant.full_name;
-    $('process-modal-sub').innerHTML = `<span style="background:${stage.color}18;color:${stage.color};padding:2px 10px;border-radius:4px;font-size:11px;font-weight:600">${stage.label}</span>`;
+    $('process-modal-sub').innerHTML = `<span style="background:${stage.color}18;color:${stage.color};padding:2px 10px;border-radius:4px;font-size:11px;font-weight:400">${stage.label}</span>`;
     $('process-modal-iframe').src = `../ds160/index.html?id=${applicantId}`;
     $('process-modal').style.display = 'flex';
 }
@@ -304,4 +313,173 @@ async function confirmDelete() {
     if (error) { toast('Erro: ' + error.message, 'error'); return; }
     toast('Excluído com sucesso', 'success');
     window.location.href = 'index.html';
+}
+
+// ============================================================
+// LOGS MODAL — Timeline de logs por processo
+// ============================================================
+async function openLogsModal(applicantId) {
+    $('logs-modal').style.display = 'flex';
+    $('logs-modal-body').innerHTML = '<div style="text-align:center;padding:32px 0;color:#9ca3af;font-size:14px">Carregando logs...</div>';
+
+    // Get applications for this applicant
+    const { data: apps } = await sb.from('applications').select('id').eq('applicant_id', applicantId);
+    const appIds = (apps || []).map(a => a.id);
+
+    if (appIds.length === 0) {
+        $('logs-modal-body').innerHTML = '<div class="log-empty">Nenhuma application encontrada para este processo.</div>';
+        return;
+    }
+
+    // Parallel queries: error_logs + fill_logs
+    const [errRes, fillRes] = await Promise.all([
+        sb.from('error_logs').select('*').in('application_id', appIds).order('created_at', { ascending: false }).limit(50),
+        sb.from('fill_logs').select('*').in('application_id', appIds).order('created_at', { ascending: false }).limit(50)
+    ]);
+
+    const errorLogs = (errRes.data || []).map(e => ({ ...e, _type: 'error' }));
+    const fillLogs = (fillRes.data || []).map(f => ({ ...f, _type: 'fill' }));
+
+    // Merge and sort by created_at DESC
+    const allLogs = [...errorLogs, ...fillLogs].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    if (allLogs.length === 0) {
+        $('logs-modal-body').innerHTML = '<div class="log-empty">Nenhum log encontrado para este processo.</div>';
+        return;
+    }
+
+    let html = `<div class="logs-timeline">`;
+
+    for (const log of allLogs) {
+        const date = new Date(log.created_at);
+        const timeStr = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' +
+            date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        if (log._type === 'error') {
+            // Error log entry
+            const causeLabel = log.error_cause || 'unknown';
+            const entryClass = causeLabel.includes('validation') || causeLabel === 'page_stuck'
+                ? 'log-warning' : 'log-error';
+
+            html += `<div class="log-entry ${entryClass}">`;
+            html += `<div class="log-meta">`;
+            html += `<span class="log-time">${timeStr}</span>`;
+            if (log.page_name) html += `<span class="log-page-badge">${log.page_name}</span>`;
+            html += `<span class="log-type-badge" style="background:#ef444415;color:#ef4444">🛑 ${causeLabel}</span>`;
+            html += `</div>`;
+            html += `<div class="log-message">${_escHtml(log.error_message || '')}</div>`;
+
+            // Validation errors
+            if (log.validation_errors && log.validation_errors.length > 0) {
+                html += `<div class="log-details">`;
+                log.validation_errors.forEach(v => { html += `<div>• ${_escHtml(v)}</div>`; });
+                html += `</div>`;
+            }
+
+            // Field name
+            if (log.field_name) {
+                html += `<div class="log-details">Campo: <code>${_escHtml(log.field_name)}</code></div>`;
+            }
+
+            // Screenshot
+            if (log.screenshot_url) {
+                html += `<img class="log-screenshot" src="${log.screenshot_url}" onclick="expandScreenshot('${log.screenshot_url}')" alt="Screenshot" loading="lazy">`;
+            }
+
+            // Actions (master only: View HTML)
+            if (isMaster && log.page_html) {
+                html += `<div class="log-actions">`;
+                html += `<button onclick="showPageHtml(this)" data-html="${btoa(unescape(encodeURIComponent(log.page_html)))}">📄 Ver HTML</button>`;
+                html += `</div>`;
+            }
+            html += `</div>`;
+
+        } else {
+            // Fill log entry
+            const navigated = log.navigated;
+            const entryClass = !navigated ? 'log-warning'
+                : (log.data_unused && log.data_unused.length > 0) ? 'log-info'
+                    : 'log-success';
+
+            const pct = log.fields_total > 0 ? Math.round((log.fields_filled / log.fields_total) * 100) : 0;
+
+            html += `<div class="log-entry ${entryClass}">`;
+            html += `<div class="log-meta">`;
+            html += `<span class="log-time">${timeStr}</span>`;
+            if (log.page_name) html += `<span class="log-page-badge">${log.page_name}</span>`;
+
+            if (!navigated) {
+                html += `<span class="log-type-badge" style="background:#f59e0b15;color:#f59e0b">⚠️ Stuck</span>`;
+            } else {
+                html += `<span class="log-type-badge" style="background:#22c55e15;color:#22c55e">✅ OK</span>`;
+            }
+            html += `</div>`;
+
+            // Stats
+            html += `<div class="log-stats">`;
+            html += `<span class="log-stat">📝 ${log.fields_filled}/${log.fields_total} campos (${pct}%)</span>`;
+            if (log.attempts > 1) html += `<span class="log-stat">🔄 ${log.attempts} tentativas</span>`;
+            if (log.duration_ms) html += `<span class="log-stat">⏱️ ${(log.duration_ms / 1000).toFixed(1)}s</span>`;
+            html += `</div>`;
+
+            // Unmatched fields
+            if (log.fields_unmatched && log.fields_unmatched.length > 0) {
+                html += `<div class="log-details"><strong>Campos não reconhecidos:</strong>`;
+                log.fields_unmatched.slice(0, 5).forEach(f => { html += ` <code>${_escHtml(f)}</code>`; });
+                if (log.fields_unmatched.length > 5) html += ` +${log.fields_unmatched.length - 5}`;
+                html += `</div>`;
+            }
+
+            // Unused data
+            if (log.data_unused && log.data_unused.length > 0) {
+                html += `<div class="log-details" style="color:#f59e0b"><strong>⚠️ Dados não utilizados:</strong>`;
+                log.data_unused.slice(0, 5).forEach(f => { html += ` <code>${_escHtml(f)}</code>`; });
+                if (log.data_unused.length > 5) html += ` +${log.data_unused.length - 5}`;
+                html += `</div>`;
+            }
+
+            // Validation errors
+            if (log.validation_errors && log.validation_errors.length > 0) {
+                html += `<div class="log-details" style="color:#ef4444">`;
+                log.validation_errors.forEach(v => { html += `<div>• ${_escHtml(v)}</div>`; });
+                html += `</div>`;
+            }
+
+            // Screenshot (for stuck pages)
+            if (log.screenshot_url) {
+                html += `<img class="log-screenshot" src="${log.screenshot_url}" onclick="expandScreenshot('${log.screenshot_url}')" alt="Screenshot" loading="lazy">`;
+            }
+
+            html += `</div>`;
+        }
+    }
+
+    html += `</div>`;
+    $('logs-modal-body').innerHTML = html;
+}
+
+function closeLogsModal() {
+    $('logs-modal').style.display = 'none';
+}
+
+function expandScreenshot(url) {
+    $('screenshot-lightbox-img').src = url;
+    $('screenshot-lightbox').classList.remove('hidden');
+}
+
+function showPageHtml(btn) {
+    try {
+        const encoded = btn.getAttribute('data-html');
+        const html = decodeURIComponent(escape(atob(encoded)));
+        $('html-viewer-body').textContent = html;
+        $('html-viewer-modal').classList.remove('hidden');
+    } catch (e) {
+        toast('Erro ao decodificar HTML', 'error');
+    }
+}
+
+function _escHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
 }

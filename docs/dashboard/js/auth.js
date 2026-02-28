@@ -26,29 +26,29 @@ let userCompanyShortId = null;
 // CONSTANTS
 // ============================================================
 const STAGES = {
-    new: { label: 'Novo', color: '#3b82f6' },
+    new: { label: 'Novo', color: '#9ca3af' },
     review: { label: 'Revisão', color: '#f59e0b' },
-    approved: { label: 'Aprovado', color: '#22c55e' },
-    doing: { label: 'Pendente', color: '#f97316' },
+    approved: { label: 'Aprovado', color: '#3b82f6' },
     done: { label: 'Concluído', color: '#22c55e' },
-    archived: { label: 'Arquivado', color: '#6b7280' }
+    archived: { label: 'Arquivado', color: '#4b5563' }
 };
 
-const STAGE_ORDER = ['new', 'review', 'approved', 'doing', 'done', 'archived'];
+const STAGE_ORDER = ['new', 'review', 'approved', 'done', 'archived'];
 
 const FILL_STAGES = {
     pending: { label: 'Aguardando', color: '#6b7280' },
     filling: { label: 'Preenchendo', color: '#3b82f6' },
     filled: { label: 'Preenchido', color: '#22c55e' },
-    error: { label: 'Erro', color: '#ef4444' },
-    needs_attention: { label: 'Atenção', color: '#f59e0b' },
+    error: { label: '🛑 Erro', color: '#ef4444' },
+    needs_attention: { label: '⚠️ Atenção', color: '#f59e0b' },
+    system_error: { label: '🔧 Erro Sistema', color: '#7c3aed' },
 };
 
 const PRIORITIES = {
-    0: { label: 'I - Indefinido', icon: '', color: '#6b7280' },
-    1: { label: 'I - Indefinido', icon: '', color: '#6b7280' },
-    2: { label: 'II - Urgência', icon: '⚡', color: '#f97316' },
-    3: { label: 'III - Emergência', icon: '🚨', color: '#ef4444' },
+    0: { label: 'Normal', icon: '', color: '#22c55e' },
+    1: { label: 'Normal', icon: '', color: '#22c55e' },
+    2: { label: 'Urgente', icon: '', color: '#f59e0b' },
+    3: { label: 'Emergência', icon: '', color: '#ef4444' },
 };
 
 const PAGE_SIZE = 25;

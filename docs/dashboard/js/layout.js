@@ -57,8 +57,8 @@ function renderLayout() {
         if (n.masterOnly && !isMaster) return '';
         const isActive = CURRENT_PAGE === n.view;
         const cls = isActive
-            ? 'nav-item active flex items-center p-2 rounded-lg text-sm font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/20 transition'
-            : 'nav-item flex items-center p-2 rounded-lg text-sm font-medium text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/20 transition';
+            ? 'nav-item active flex items-center p-2 rounded-lg text-sm text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/20 transition'
+            : 'nav-item flex items-center p-2 rounded-lg text-sm text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/20 transition';
         return `<li><a href="${n.href}" class="${cls}">
                             <span class="lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">${n.label}</span>
                         </a></li>`;
@@ -217,7 +217,7 @@ function setupGlobalSearch() {
                     <a class="flex items-center p-2 text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/20 rounded-lg cursor-pointer" href="applicant.html?id=${a.id}">
                         <div class="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold mr-3" style="background:#f3f4f6;color:#6b7280">${initials}</div>
                         <div class="truncate"><span class="font-medium">${a.full_name}</span></div>
-                        <span class="ml-auto text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style="background:${stage.color}22;color:${stage.color}">${stage.label}</span>
+                        <span class="ml-auto text-xs px-2 py-0.5 rounded-full shrink-0" style="background:${stage.color}22;color:${stage.color}">${stage.label}</span>
                     </a>
                 </li>`;
             }).join('');

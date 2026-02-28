@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SENDS160 — Pipeline</title>
+    <link rel="stylesheet" href="../fonts.css">
     <link rel="stylesheet" href="../mosaic.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <script defer src="../alpinejs.min.js"></script>
@@ -33,7 +34,7 @@
                         <!-- Sidebar (stats) -->
                         <div class="space-y-4">
                             <div
-                                style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">
+                                style="font-size:11px;font-weight:400;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px">
                                 Filtros</div>
                             <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl p-5 min-w-60">
                                 <div class="space-y-4">
@@ -43,51 +44,37 @@
                                                     class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
                                                     data-filter="new">
                                                     <div class="w-2 h-2 rounded-full mr-3 shrink-0"
-                                                        style="background:#3b82f6"></div>
-                                                    <span
-                                                        class="text-sm text-gray-600 dark:text-gray-300 font-medium">Novos</span>
+                                                        style="background:#9ca3af"></div>
+                                                    <span class="text-sm" style="color:#9ca3af">Novos</span>
                                                     <span id="stat-new"
-                                                        class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                        class="ml-auto text-sm text-gray-800 dark:text-gray-100">0</span>
                                                 </label></li>
                                             <li><label
                                                     class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
                                                     data-filter="review">
                                                     <div class="w-2 h-2 rounded-full mr-3 shrink-0"
                                                         style="background:#f59e0b"></div>
-                                                    <span
-                                                        class="text-sm text-gray-600 dark:text-gray-300 font-medium">Revisões</span>
+                                                    <span class="text-sm" style="color:#9ca3af">Revisões</span>
                                                     <span id="stat-review"
-                                                        class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                        class="ml-auto text-sm text-gray-800 dark:text-gray-100">0</span>
                                                 </label></li>
                                             <li><label
                                                     class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
                                                     data-filter="approved">
                                                     <div class="w-2 h-2 rounded-full mr-3 shrink-0"
-                                                        style="background:#22c55e"></div>
-                                                    <span
-                                                        class="text-sm text-gray-600 dark:text-gray-300 font-medium">Aprovados</span>
+                                                        style="background:#3b82f6"></div>
+                                                    <span class="text-sm" style="color:#9ca3af">Aprovados</span>
                                                     <span id="stat-approved"
-                                                        class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
-                                                </label></li>
-                                            <li><label
-                                                    class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
-                                                    data-filter="doing">
-                                                    <div class="w-2 h-2 rounded-full mr-3 shrink-0"
-                                                        style="background:#f97316"></div>
-                                                    <span
-                                                        class="text-sm text-gray-600 dark:text-gray-300 font-medium">Pendentes</span>
-                                                    <span id="stat-doing"
-                                                        class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                        class="ml-auto text-sm text-gray-800 dark:text-gray-100">0</span>
                                                 </label></li>
                                             <li><label
                                                     class="pipeline-card flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/20 transition"
                                                     data-filter="done">
                                                     <div class="w-2 h-2 rounded-full mr-3 shrink-0"
                                                         style="background:#22c55e"></div>
-                                                    <span
-                                                        class="text-sm text-gray-600 dark:text-gray-300 font-medium">Concluídos</span>
+                                                    <span class="text-sm" style="color:#9ca3af">Concluídos</span>
                                                     <span id="stat-done"
-                                                        class="ml-auto text-sm font-bold text-gray-800 dark:text-gray-100">0</span>
+                                                        class="ml-auto text-sm text-gray-800 dark:text-gray-100">0</span>
                                                 </label></li>
                                         </ul>
                                     </div>

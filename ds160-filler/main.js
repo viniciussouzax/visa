@@ -292,11 +292,11 @@ ipcMain.handle('fetch-queue', async () => {
             if (member) companyId = member.company_id;
         }
 
-        // Find applicants with pipeline_status in ['approved', 'doing']
+        // Find applicants with pipeline_status = 'approved'
         let query = global.supabaseClient
             .from('applicants')
             .select('id, full_name, pipeline_status')
-            .in('pipeline_status', ['approved', 'doing']);
+            .eq('pipeline_status', 'approved');
         if (companyId) query = query.eq('company_id', companyId);
         query = query.order('fill_priority', { ascending: false })
             .order('sort_order', { ascending: true })

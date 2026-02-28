@@ -45,15 +45,14 @@ function showSkeleton(containerId, count = 3) {
 }
 
 const STAGES = {
-    new: { label: 'Novo', color: '#3b82f6' },
+    new: { label: 'Novo', color: '#9ca3af' },
     review: { label: 'Revisão', color: '#f59e0b' },
-    approved: { label: 'Aprovado', color: '#6366f1' },
-    doing: { label: 'Pendente', color: '#f97316' },
+    approved: { label: 'Aprovado', color: '#3b82f6' },
     done: { label: 'Concluído', color: '#22c55e' },
-    archived: { label: 'Arquivado', color: '#64748b' }
+    archived: { label: 'Arquivado', color: '#4b5563' }
 };
 
-const STAGE_ORDER = ['new', 'review', 'approved', 'doing', 'done', 'archived'];
+const STAGE_ORDER = ['new', 'review', 'approved', 'done', 'archived'];
 
 const FILL_STAGES = {
     pending: { label: 'Aguardando', color: '#6b7280' },
@@ -61,13 +60,14 @@ const FILL_STAGES = {
     filled: { label: 'Preenchido', color: '#22c55e' },
     error: { label: 'Erro', color: '#ef4444' },
     needs_attention: { label: 'Atenção', color: '#f59e0b' },
+    system_error: { label: '🔧 Erro Sistema', color: '#7c3aed' },
 };
 
 const PRIORITIES = {
     0: { label: '—', icon: '', color: '#6b7280' },
-    1: { label: 'Normal', icon: '📋', color: '#3b82f6' },
-    2: { label: 'Urgente', icon: '⚡', color: '#f97316' },
-    3: { label: 'Emergência', icon: '🚨', color: '#ef4444' },
+    1: { label: 'Normal', icon: '', color: '#22c55e' },
+    2: { label: 'Urgente', icon: '', color: '#f59e0b' },
+    3: { label: 'Emergência', icon: '', color: '#ef4444' },
 };
 
 // ============================================================
@@ -326,7 +326,7 @@ async function loadPipeline() {
     if (userCompanyId) statsQuery = statsQuery.eq('company_id', userCompanyId);
     const { data: allApplicants } = await statsQuery;
 
-    const counts = { new: 0, review: 0, approved: 0, doing: 0, done: 0 };
+    const counts = { new: 0, review: 0, approved: 0, done: 0 };
     (allApplicants || []).forEach(a => {
         if (counts[a.pipeline_status] !== undefined) counts[a.pipeline_status]++;
     });
@@ -400,7 +400,7 @@ async function loadPipelineList() {
         // Priority badge
         const prio = PRIORITIES[a.fill_priority] || PRIORITIES[0];
         const prioBadge = a.fill_priority >= 2
-            ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${prio.color}15;color:${prio.color};font-weight:700">${prio.icon} ${prio.label}</span>`
+            ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${prio.color}15;color:${prio.color};font-weight:400">${prio.label}</span>`
             : '';
 
         // Fill status badge
@@ -408,7 +408,7 @@ async function loadPipelineList() {
         const fillStatus = appData?.fill_status || '';
         const fStage = FILL_STAGES[fillStatus];
         const fillBadge = fStage && fillStatus !== 'pending'
-            ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${fStage.color}15;color:${fStage.color};font-weight:600"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${fStage.color};margin-right:4px;vertical-align:middle"></span>${fStage.label}</span>`
+            ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${fStage.color}15;color:${fStage.color};font-weight:400">${fStage.label}</span>`
             : '';
 
         return `<div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl px-5 py-4 cursor-pointer hover:shadow-md transition" onclick="openApplicantDetail('${a.id}')">
@@ -426,7 +426,7 @@ async function loadPipelineList() {
                     ${prioBadge}
                     ${fillBadge}
                     <div class="text-sm text-gray-500 dark:text-gray-400 italic whitespace-nowrap">${updated}</div>
-                    <div class="text-xs inline-flex font-medium rounded-full text-center px-2.5 py-1" style="background:${stage.color}22;color:${stage.color}"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${stage.color};margin-right:5px;vertical-align:middle"></span>${stage.label}</div>
+                    <div class="text-xs inline-flex rounded-full text-center px-2.5 py-1" style="background:${stage.color}22;color:${stage.color}">${stage.label}</div>
                     <span class="text-sm font-bold" style="color:${progressColor}">${doneProcesses}/${totalProcesses}</span>
                 </div>
             </div>
@@ -711,9 +711,9 @@ async function openApplicantDetail(id) {
                     <select onclick="event.stopPropagation()" onchange="if(this.value!==''){setPriority('${p.id}',this.value,'${id}')}"
                         style="font-size:13px;padding:8px 14px;background:${pPrio.color}08;color:${pPrio.color};border:1px solid #d1d5db;border-radius:5px;cursor:pointer;outline:none;font-weight:500;font-family:inherit">
                         <option value="">${pPrio.icon} ${(p.fill_priority || 0) >= 1 ? pPrio.label : 'Prioridade'}</option>
-                        <option value="1">📋 Normal</option>
-                        <option value="2">⚡ Urgente</option>
-                        <option value="3">🚨 Emergência</option>
+                        <option value="1">Normal</option>
+                        <option value="2">Urgente</option>
+                        <option value="3">Emergência</option>
                     </select>
                     <select onclick="event.stopPropagation()" onchange="if(this.value){movePipeline('${p.id}',this.value,'${id}')}" 
                         style="font-size:13px;padding:8px 14px;background:${pStage.color}08;color:${pStage.color};border:1px solid #d1d5db;border-radius:5px;cursor:pointer;outline:none;font-weight:600;font-family:inherit">
@@ -863,21 +863,20 @@ async function moveAllPipeline(primaryId, newStatus) {
 // Auto-reset application fill_status when moving to approved (enables re-fill)
 async function _resetApplicationForRefill(applicantId) {
     const { data: apps } = await sb.from('applications')
-        .select('id, fill_status').eq('applicant_id', applicantId);
+        .select('id, fill_status, application_id').eq('applicant_id', applicantId);
     if (apps && apps.length > 0) {
         for (const app of apps) {
-            if (app.fill_status === 'filled' || app.fill_status === 'error' || app.fill_status === 'needs_attention') {
-                await sb.from('applications').update({
-                    fill_status: 'pending',
-                    fill_error: null,
-                    fill_worker_id: null,
-                    fill_started_at: null,
-                    fill_finished_at: null,
-                    retry_count: 0,
-                    last_page: null,
-                    application_id: null,
-                    last_error_at: null
-                }).eq('id', app.id);
+            if (app.fill_status === 'filled' || app.fill_status === 'error' || app.fill_status === 'needs_attention' || app.fill_status === 'system_error') {
+                const updateData = {
+                    fill_status: 'pending', fill_error: null, fill_worker_id: null,
+                    fill_started_at: null, fill_finished_at: null, retry_count: 0,
+                    last_page: null, last_error_at: null
+                };
+                // Preservar application_id se já existe (retomar via Recovery)
+                if (!app.application_id) {
+                    updateData.application_id = null;
+                }
+                await sb.from('applications').update(updateData).eq('id', app.id);
             }
         }
     }

@@ -234,29 +234,34 @@ class QueueRunner {
 
         this.consecutiveErrors++;
 
+        // Classify error: system (dev/AI fixes) vs data (assessor fixes)
+        // Data causes: assessor can fix by correcting form data
+        const dataCauses = ['missing_data', 'validation_error'];
+        const isSystemError = !dataCauses.includes(result.cause);
+
         // Fatal errors — close browser, no retry possible
         const fatalCauses = ['browser_closed', 'network_error'];
         if (fatalCauses.includes(result.cause) || currentRetry >= MAX_RETRIES) {
             if (result.browser) await result.browser.close().catch(() => { });
 
-            if (currentRetry >= MAX_RETRIES) {
-                // MAX_RETRIES reached — send to review instead of re-queue
-                await this._markNeedsAttention(app.id, result.error);
-                await this.supabase.from('applicants').update({
-                    pipeline_status: 'review',
-                    updated_at: new Date().toISOString()
-                }).eq('id', app.applicant_id);
-                console.log(`[Queue] ⚠️ ${applicant.full_name} → pipeline 'review' (${MAX_RETRIES} tentativas)`);
+            if (currentRetry >= MAX_RETRIES || fatalCauses.includes(result.cause)) {
+                if (isSystemError) {
+                    // System error — mark as system_error, stays in approved, software won't retry
+                    await this._markSystemError(app.id, result.error);
+                    console.log(`[Queue] 🔧 ${applicant.full_name} → system_error (${result.cause})`);
+                } else {
+                    // Data error — send to review for assessor to fix
+                    await this._markNeedsAttention(app.id, result.error);
+                    await this.supabase.from('applicants').update({
+                        pipeline_status: 'review',
+                        updated_at: new Date().toISOString()
+                    }).eq('id', app.applicant_id);
+                    console.log(`[Queue] ⚠️ ${applicant.full_name} → pipeline 'review' (erro de dados)`);
+                }
                 this.emit({
                     type: 'error',
                     applicantName: applicant.full_name,
-                    error: `${result.error} (${MAX_RETRIES} tentativas — movido para revisão)`
-                });
-            } else {
-                this.emit({
-                    type: 'error',
-                    applicantName: applicant.full_name,
-                    error: `${result.error} (${result.cause})`
+                    error: `${result.error} (${isSystemError ? 'erro sistema' : 'erro dados'} — ${result.cause})`
                 });
             }
             return;
@@ -438,6 +443,7 @@ class QueueRunner {
         }
 
         // 2. APPROVED: ordered by fill_priority DESC, sort_order ASC, updated_at ASC
+        //    Sub-priority: processes with existing application_id (resume) come first
         let approvedQuery = this.supabase
             .from('applicants')
             .select('id, fill_priority, sort_order')
@@ -446,7 +452,7 @@ class QueueRunner {
             .order('sort_order', { ascending: true })
             .order('updated_at', { ascending: true });
         if (applicantIds) approvedQuery = approvedQuery.in('id', applicantIds);
-        const { data: approvedApplicants, error: approvedErr } = await approvedQuery.limit(10);
+        const { data: approvedApplicants, error: approvedErr } = await approvedQuery.limit(20);
 
         // Fallback if fill_priority/sort_order columns don't exist yet
         if (approvedErr && approvedErr.message.includes('column')) {
@@ -464,10 +470,32 @@ class QueueRunner {
 
         if (!approvedApplicants || approvedApplicants.length === 0) return null;
 
-        // Try each approved applicant (in priority order) until one is claimable
-        for (const candidate of approvedApplicants) {
+        // Check which candidates have existing application_id (resume priority)
+        const candidateIds = approvedApplicants.map(a => a.id);
+        const { data: appsWithId } = await this.supabase
+            .from('applications')
+            .select('applicant_id')
+            .in('applicant_id', candidateIds)
+            .not('application_id', 'is', null)
+            .eq('fill_status', 'pending');
+
+        const resumeSet = new Set((appsWithId || []).map(a => a.applicant_id));
+
+        // Sort: resume candidates first, then rest (maintaining original order within each group)
+        const sorted = [
+            ...approvedApplicants.filter(a => resumeSet.has(a.id)),
+            ...approvedApplicants.filter(a => !resumeSet.has(a.id))
+        ];
+
+        // Try each approved applicant (resume-first, then priority order) until one is claimable
+        for (const candidate of sorted) {
             const result = await this._ensureAndClaimApp(candidate.id);
-            if (result) return result;
+            if (result) {
+                if (resumeSet.has(candidate.id)) {
+                    console.log(`[Queue] 🔄 Priorizando retomada: ${candidate.id} (já tem application_id)`);
+                }
+                return result;
+            }
         }
 
         return null;
@@ -522,6 +550,9 @@ class QueueRunner {
             app.fill_status = 'pending';
         } else if (app.fill_status === 'filling') {
             // Already being filled by another worker — skip
+            return null;
+        } else if (app.fill_status === 'system_error') {
+            // System error — requires dev/AI fix, skip until manually released
             return null;
         }
 
@@ -611,6 +642,19 @@ class QueueRunner {
                 last_error_at: new Date().toISOString()
             })
             .eq('id', appId);
+    }
+
+    // System error — requires dev/AI fix, software will NOT retry until manually released
+    async _markSystemError(appId, errMsg) {
+        await this.supabase
+            .from('applications')
+            .update({
+                fill_status: 'system_error',
+                fill_error: errMsg,
+                last_error_at: new Date().toISOString()
+            })
+            .eq('id', appId);
+        console.log(`[Queue] 🔧 Erro de sistema: ${appId} — aguardando correção`);
     }
 
     // Re-queue: reset fill_status (pipeline_status stays 'doing' so it'll be retried)

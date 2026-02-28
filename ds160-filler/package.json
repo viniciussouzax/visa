@@ -8,9 +8,7 @@
         "start": "tauri dev",
         "build": "tauri build",
         "build:debug": "tauri build --debug",
-        "install-browsers": "npx playwright install chromium",
-        "electron:start": "electron .",
-        "electron:build": "electron-builder --win --publish never"
+        "install-browsers": "npx playwright install chromium"
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.45.0",
@@ -18,10 +16,7 @@
         "playwright": "^1.58.2"
     },
     "devDependencies": {
-        "@tauri-apps/cli": "^2.5.0",
-        "electron": "^33.4.11",
-        "electron-builder": "^26.8.1",
-        "electron-updater": "^6.8.3"
+        "@tauri-apps/cli": "^2.5.0"
     },
     "type": "commonjs"
 }
