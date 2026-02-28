@@ -3317,9 +3317,10 @@
                 const surname = (data.personal1?.surname || '').toUpperCase();
                 const givenName = (data.personal1?.givenName || '').toUpperCase();
                 const fullName = (surname + ' ' + givenName).trim();
+                if (!fullName) return; // Don't overwrite with empty name
                 sbFetch('rpc/save_applicant_data', 'POST', {
                     applicant_id: savedApplicantId,
-                    applicant_full_name: fullName || 'SEM NOME',
+                    applicant_full_name: fullName,
                     applicant_data: data,
                 }).then(() => console.log('[DS-160] Auto-saved'))
                     .catch(e => console.warn('[DS-160] Auto-save failed:', e));
@@ -3398,6 +3399,7 @@
             if (page.id === 'pg-Personal1') {
                 reqInput('tbxAPP_SURNAME', 'Sobrenome é obrigatório');
                 reqInput('tbxAPP_GIVEN_NAME', 'Nome é obrigatório');
+                reqInput('tbxAPP_FULL_NAME_NATIVE', 'Nome no alfabeto nativo é obrigatório');
                 reqRadio('rblOtherNames', 'Selecione Sim ou Não');
                 reqSelect('ddlAPP_GENDER', 'Selecione o sexo');
                 reqSelect('ddlAPP_MARITAL_STATUS', 'Selecione o estado civil');
@@ -3405,6 +3407,7 @@
                 reqSelect('ddlDOBMonth', 'Selecione o mês');
                 reqInput('tbxDOBYear', 'Informe o ano de nascimento');
                 reqInput('tbxAPP_POB_CITY', 'Informe a cidade de nascimento');
+                reqInput('tbxAPP_POB_ST_PROVINCE', 'Estado de nascimento é obrigatório');
                 reqSelect('ddlAPP_POB_CNTRY', 'Selecione o país de nascimento');
                 // Validate year format
                 const year = val('tbxDOBYear');
@@ -3514,12 +3517,12 @@
             if (page.id === 'pg-Passport') {
                 reqSelect('ddlPPT_TYPE', 'Selecione o tipo de passaporte');
                 reqInput('tbxPPT_NUM', 'Número do passaporte é obrigatório');
-                reqSelect('ddlPPT_CNTRY', 'Selecione o país de emissão');
-                reqSelect('ddlPPT_ISSUEDay', 'Selecione o dia de emissão');
-                reqSelect('ddlPPT_ISSUEMonth', 'Selecione o mês de emissão');
-                reqInput('tbxPPT_ISSUEYear', 'Informe o ano de emissão');
-                reqSelect('ddlPPT_EXPIREDay', 'Selecione o dia de expiração');
-                reqSelect('ddlPPT_EXPIREMonth', 'Selecione o mês de expiração');
+                reqSelect('ddlPPT_ISSUED_CNTRY', 'Selecione o país de emissão');
+                reqSelect('ddlPPT_ISSUED_DTEDay', 'Selecione o dia de emissão');
+                reqSelect('ddlPPT_ISSUED_DTEMonth', 'Selecione o mês de emissão');
+                reqInput('tbxPPT_ISSUEDYear', 'Informe o ano de emissão');
+                reqSelect('ddlPPT_EXPIRE_DTEDay', 'Selecione o dia de expiração');
+                reqSelect('ddlPPT_EXPIRE_DTEMonth', 'Selecione o mês de expiração');
                 reqInput('tbxPPT_EXPIREYear', 'Informe o ano de expiração');
                 reqRadio('rblLOST_PPT_IND', 'Informe se já perdeu ou teve passaporte roubado');
                 if (radioChecked('rblLOST_PPT_IND') === 'Y') {
@@ -3531,8 +3534,8 @@
                     });
                 }
                 // Validate year formats
-                const issYr = val('tbxPPT_ISSUEYear');
-                if (issYr && (issYr.length !== 4 || isNaN(issYr))) { markError(document.getElementById('tbxPPT_ISSUEYear'), 'Ano deve ter 4 dígitos'); errors++; }
+                const issYr = val('tbxPPT_ISSUEDYear');
+                if (issYr && (issYr.length !== 4 || isNaN(issYr))) { markError(document.getElementById('tbxPPT_ISSUEDYear'), 'Ano deve ter 4 dígitos'); errors++; }
                 const expYr = val('tbxPPT_EXPIREYear');
                 if (expYr && (expYr.length !== 4 || isNaN(expYr))) { markError(document.getElementById('tbxPPT_EXPIREYear'), 'Ano deve ter 4 dígitos'); errors++; }
             }
@@ -3634,8 +3637,8 @@
 
             // ===== Work/Education =====
             if (page.id === 'pg-WorkEducation1') {
-                reqSelect('ddlAPP_OCCUPATION', 'Selecione a ocupação');
-                const occ = val('ddlAPP_OCCUPATION');
+                reqSelect('ddlPresentOccupation', 'Selecione a ocupação');
+                const occ = val('ddlPresentOccupation');
                 // Specify Other branch
                 if (occ === 'O') {
                     reqInput('tbxOtherOccupation', 'Especifique a ocupação');
