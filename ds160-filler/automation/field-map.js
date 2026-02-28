@@ -13,7 +13,7 @@ function buildDynamicFieldMap(a) {
     otherNames: a.otherNames || [],
     socialMedia: a.socialMedia || [],
     additionalSocialMediaAccounts: a.additionalSocialMediaAccounts || [],
-    languages: a.languages || ['PORTUGUESE'],
+    languages: a.languages || [],
     countriesVisitedList: a.countriesVisitedList || [],
     organizations: a.organizations || [],
     military: a.military || [],
@@ -1002,9 +1002,7 @@ function buildDynamicFieldMap(a) {
       map.push({ pattern: new RegExp(`dtlLANGUAGES_${ctl}_tbxLANGUAGE_NAME$`, 'i'), value: lang || "", ...base });
     });
     // Generic fallback for ctl00
-    map.push({ pattern: /tbxLANGUAGE_NAME$/i, value: a.languages[0] || "PORTUGUESE", type: "text" });
-  } else {
-    map.push({ pattern: /tbxLANGUAGE_NAME$/i, value: "PORTUGUESE", type: "text" });
+    map.push({ pattern: /tbxLANGUAGE_NAME$/i, value: a.languages[0] || "", type: "text" });
   }
 
   // Clan/Tribe
