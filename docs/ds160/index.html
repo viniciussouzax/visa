@@ -463,6 +463,67 @@
             }
         }
 
+        /* Gate Modal (replaces alert) */
+        .gate-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .55);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gate-modal-overlay.open {
+            display: flex;
+        }
+
+        .gate-modal-card {
+            background: #1e293b;
+            border-radius: 14px;
+            padding: 28px 32px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .4);
+            animation: toastIn .25s ease;
+        }
+
+        .gate-modal-card .modal-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .gate-modal-card .modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+
+        .gate-modal-card .modal-msg {
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .gate-modal-card .modal-btn {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff;
+            border: none;
+            padding: 10px 32px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform .15s;
+        }
+
+        .gate-modal-card .modal-btn:hover {
+            transform: scale(1.04);
+        }
+
         /* Hide old header and nav */
         body>header,
         body>nav {
@@ -633,6 +694,16 @@
 </head>
 
 <body class="bg-slate-50 min-h-screen">
+    <!-- ===== GATE MODAL (replaces alert) ===== -->
+    <div class="gate-modal-overlay" id="gateModalOverlay" onclick="if(event.target===this)closeGateModal()">
+        <div class="gate-modal-card">
+            <div class="modal-icon" id="gateModalIcon"></div>
+            <div class="modal-title" id="gateModalTitle"></div>
+            <div class="modal-msg" id="gateModalMsg"></div>
+            <button class="modal-btn" onclick="closeGateModal()">Entendi</button>
+        </div>
+    </div>
+
     <!-- ===== EMAIL GATE ===== -->
     <div id="email-gate">
         <div class="gate-card">
@@ -4809,7 +4880,7 @@
                         if (isLocked) {
                             item.style.cursor = 'not-allowed';
                             item.onclick = () => {
-                                alert('Este processo já foi aprovado/processado e não pode ser editado pelo solicitante. Entre em contato com o assessor.');
+                                showGateModal('🔒', 'Processo Bloqueado', 'Este processo já foi aprovado/processado e não pode ser editado pelo solicitante. Entre em contato com o assessor.');
                             };
                         } else {
                             item.onclick = () => startFormWithEmail(email, a);
@@ -4838,6 +4909,16 @@
                 btn.disabled = false;
                 btn.textContent = 'BUSCAR';
             }
+        }
+
+        function showGateModal(icon, title, msg) {
+            document.getElementById('gateModalIcon').textContent = icon;
+            document.getElementById('gateModalTitle').textContent = title;
+            document.getElementById('gateModalMsg').textContent = msg;
+            document.getElementById('gateModalOverlay').classList.add('open');
+        }
+        function closeGateModal() {
+            document.getElementById('gateModalOverlay').classList.remove('open');
         }
 
         function gateBackToSearch() {
