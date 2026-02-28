@@ -132,30 +132,12 @@ $('btn-logout').addEventListener('click', async () => {
 });
 
 // ============================================================
-// REFRESH (sends command to sidecar via Tauri)
-// ============================================================
-let refreshCooldown = false;
-$('btn-refresh').addEventListener('click', async () => {
-    if (refreshCooldown) return;
-    refreshCooldown = true;
-    $('btn-refresh').disabled = true;
-
-    log('⚡ Verificação imediata');
-    hideTimer();
-
-    setTimeout(() => {
-        refreshCooldown = false;
-        $('btn-refresh').disabled = false;
-    }, 5000);
-});
-
-// ============================================================
 // TIMER
 // ============================================================
 function showTimer(display) {
     const row = $('timer-row');
     row.classList.add('visible');
-    $('timer-text').textContent = typeof display === 'number' ? `${display}s` : display;
+    $('timer-text').textContent = display;
 }
 
 function hideTimer() {
@@ -191,6 +173,19 @@ function setStatus(state, text) {
 }
 
 // ============================================================
+// LOG
+// ============================================================
+function log(msg) {
+    const el = $('log');
+    const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    line.innerHTML = `<span class="time">[${time}]</span>${msg}`;
+    el.prepend(line);
+    while (el.children.length > 200) el.removeChild(el.lastChild);
+}
+
+// ============================================================
 // STATUS UPDATES (from Tauri sidecar via events)
 // ============================================================
 listen('automation-status', (event) => {
@@ -215,8 +210,7 @@ listen('automation-status', (event) => {
         setCircle('idle', 'Aguardando', 'Nenhum item na fila');
         if (status.nextCheck) showTimer(status.nextCheck);
     } else if (status.type === 'waiting') {
-        const display = status.display || `${status.countdown}s`;
-        showTimer(display);
+        showTimer(status.display || status.countdown);
     } else if (status.type === 'retrying') {
         setCircle('running', `Retentativa ${status.retryNumber}/5`, status.applicantName || '');
         log(`🔄 ${status.applicantName} — tentativa ${status.retryNumber}, aguardando ${Math.round(status.delay / 60)}min`);
@@ -229,46 +223,54 @@ listen('automation-status', (event) => {
 });
 
 // ============================================================
-// LOG
+// SYNC BUTTON (check update → refresh queue) — single unified button
 // ============================================================
-function log(msg) {
-    const el = $('log');
-    const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const line = document.createElement('div');
-    line.className = 'log-line';
-    line.innerHTML = `<span class="time">[${time}]</span>${msg}`;
-    el.prepend(line);
-    while (el.children.length > 200) el.removeChild(el.lastChild);
+const SYNC_SVG = $('btn-sync').querySelector('svg')?.outerHTML || '';
+let syncBusy = false;
+
+function setSyncBtn(text, disabled) {
+    $('btn-sync').innerHTML = SYNC_SVG + text;
+    $('btn-sync').disabled = disabled;
 }
 
-// ============================================================
-// FORCE UPDATE & RESTART
-// ============================================================
-$('btn-update').addEventListener('click', async () => {
-    $('btn-update').disabled = true;
-    $('btn-update').textContent = 'Verificando...';
-    log('🔍 Verificando atualizações...');
+$('btn-sync').addEventListener('click', async () => {
+    if (syncBusy) return;
+    syncBusy = true;
+    setSyncBtn('Verificando...', true);
+    hideTimer();
 
     try {
+        // Step 1: Check for updates
         const { check } = window.__TAURI__.updater;
         const update = await check();
         if (update) {
-            log(`📦 Nova versão disponível: ${update.version}`);
-            $('btn-update').textContent = 'Instalando...';
+            log(`📦 Nova versão ${update.version} — instalando...`);
+            setSyncBtn('Atualizando...', true);
             await update.downloadAndInstall();
             log('✅ Atualização instalada! Reiniciando...');
             const { relaunch } = window.__TAURI__.process;
             await relaunch();
-        } else {
-            log('✅ Software atualizado (última versão)');
-            $('btn-update').textContent = 'Atualizar';
-            $('btn-update').disabled = false;
+            return; // app will restart
         }
+    } catch { /* updater may fail in dev — continue to refresh */ }
+
+    // Step 2: Refresh queue
+    try {
+        log('⚡ Buscando fila...');
+        setSyncBtn('Buscando...', true);
+        await invoke('refresh_queue');
     } catch (e) {
         log(`⚠️ ${e}`);
-        $('btn-update').textContent = 'Atualizar';
-        $('btn-update').disabled = false;
     }
+
+    log('✅ Sincronizado');
+    setSyncBtn('Sincronizar', true);
+
+    // Cooldown 5s
+    setTimeout(() => {
+        syncBusy = false;
+        setSyncBtn('Sincronizar', false);
+    }, 5000);
 });
 
 // Auto-check for updates on startup (after 5 seconds)
@@ -277,10 +279,9 @@ setTimeout(async () => {
         const { check } = window.__TAURI__.updater;
         const update = await check();
         if (update) {
-            log(`📦 Nova versão ${update.version} disponível — clique em Atualizar`);
-            const btn = $('btn-update');
-            btn.style.background = '#22c55e';
-            btn.textContent = `Atualizar (${update.version})`;
+            log(`📦 Nova versão ${update.version} disponível — clique em Sincronizar`);
+            $('btn-sync').style.borderColor = '#3fb950';
+            setSyncBtn(`Atualizar (${update.version})`, false);
         }
     } catch { /* silently ignore in dev mode */ }
 }, 5000);

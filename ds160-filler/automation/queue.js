@@ -319,7 +319,7 @@ class QueueRunner {
                 this._countdown--;
                 const mins = Math.floor(this._countdown / 60);
                 const secs = this._countdown % 60;
-                const display = mins > 0 ? `${mins}m${secs.toString().padStart(2, '0')}s` : `${secs}s`;
+                const display = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
                 this.emit({
                     type: 'waiting',
                     countdown: this._countdown,

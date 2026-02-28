@@ -241,6 +241,9 @@ fn refresh_queue(state: State<AppState>) -> CommandResult {
 // ============================================================
 // APP SETUP
 // ============================================================
+use tauri::tray::TrayIconBuilder;
+use tauri::menu::{MenuBuilder, MenuItemBuilder};
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -256,6 +259,67 @@ pub fn run() {
             restart_app,
             refresh_queue,
         ])
+        .setup(|app| {
+            // --- System Tray Menu ---
+            let show_item = MenuItemBuilder::with_id("show", "Mostrar")
+                .build(app)?;
+            let quit_item = MenuItemBuilder::with_id("quit", "Sair")
+                .build(app)?;
+            let menu = MenuBuilder::new(app)
+                .item(&show_item)
+                .separator()
+                .item(&quit_item)
+                .build()?;
+
+            // --- Tray Icon ---
+            let _tray = TrayIconBuilder::with_id("main-tray")
+                .menu(&menu)
+                .tooltip("SENDS160 — Automação DS-160")
+                .on_menu_event(|app, event| {
+                    match event.id().as_ref() {
+                        "show" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.unminimize();
+                                let _ = window.set_focus();
+                            }
+                        }
+                        "quit" => {
+                            app.exit(0);
+                        }
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let tauri::tray::TrayIconEvent::Click {
+                        button: tauri::tray::MouseButton::Left,
+                        button_state: tauri::tray::MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
+            // --- Close to tray (hide instead of quit) ---
+            if let Some(window) = app.get_webview_window("main") {
+                let window_clone = window.clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        let _ = window_clone.hide();
+                    }
+                });
+            }
+
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
