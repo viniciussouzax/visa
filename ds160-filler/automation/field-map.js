@@ -361,24 +361,60 @@ function buildDynamicFieldMap(a) {
   // ===================================================================
   // PREVIOUS US TRAVEL
   // ===================================================================
-  // Has been in US?
-  if (a.hasBeenInUS && a.previousUSVisit) {
-    const pv = a.previousUSVisit;
-    map.push(
-      { pattern: /rblPREV_US_TRAVEL_IND_0$/i, value: "", type: "click" },
-      { pattern: /ddlPREV_US_VISIT_DTEDay$/i, value: pv.arrivalDate.day, type: "select" },
-      { pattern: /ddlPREV_US_VISIT_DTEMonth$/i, value: pv.arrivalDate.month, type: "select" },
-      { pattern: /tbxPREV_US_VISIT_DTEYear$/i, value: pv.arrivalDate.year, type: "text" },
-      { pattern: /tbxPREV_US_VISIT_LOS$/i, value: pv.lengthOfStay, type: "text" },
-      { pattern: /ddlPREV_US_VISIT_LOS_CD$/i, value: pv.lengthOfStayUnit, type: "select" },
-    );
-    // Driver's license
-    if (a.previousUSDriversLicense) {
+  // Has been in US? — supports multiple visits via addAnother
+  const previousVisits = a.previousVisits || (a.previousUSVisit ? [a.previousUSVisit] : []);
+  if (a.hasBeenInUS && previousVisits.length > 0) {
+    map.push({ pattern: /rblPREV_US_TRAVEL_IND_0$/i, value: "", type: "click" });
+
+    previousVisits.forEach((pv, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = {};
+      if (idx > 0) base.addAnother = { list: "dtlPREV_US_VISIT", idx };
+      const ad = pv.arrivalDate || {};
+
       map.push(
-        { pattern: /rblPREV_US_DRIVER_LIC_IND_0$/i, value: "", type: "click" },
-        { pattern: /tbxUS_DRIVER_LICENSE$/i, value: a.previousUSDriversLicenseNumber || "", type: "text" },
-        { pattern: /ddlUS_DRIVER_LICENSE_STATE$/i, value: a.previousUSDriversLicenseState || "", type: "select" },
+        { pattern: new RegExp(`dtlPREV_US_VISIT_${ctl}_ddlPREV_US_VISIT_DTEDay$`, 'i'), value: ad.day || "", type: "select", ...base },
+        { pattern: new RegExp(`dtlPREV_US_VISIT_${ctl}_ddlPREV_US_VISIT_DTEMonth$`, 'i'), value: ad.month || "", type: "select", ...base },
+        { pattern: new RegExp(`dtlPREV_US_VISIT_${ctl}_tbxPREV_US_VISIT_DTEYear$`, 'i'), value: ad.year || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPREV_US_VISIT_${ctl}_tbxPREV_US_VISIT_LOS$`, 'i'), value: pv.lengthOfStay || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlPREV_US_VISIT_${ctl}_ddlPREV_US_VISIT_LOS_CD$`, 'i'), value: pv.lengthOfStayUnit || "", type: "select", ...base },
       );
+    });
+    // Generic fallback for ctl00
+    if (previousVisits.length === 1) {
+      const pv = previousVisits[0];
+      const ad = pv.arrivalDate || {};
+      map.push(
+        { pattern: /ddlPREV_US_VISIT_DTEDay$/i, value: ad.day, type: "select" },
+        { pattern: /ddlPREV_US_VISIT_DTEMonth$/i, value: ad.month, type: "select" },
+        { pattern: /tbxPREV_US_VISIT_DTEYear$/i, value: ad.year, type: "text" },
+        { pattern: /tbxPREV_US_VISIT_LOS$/i, value: pv.lengthOfStay, type: "text" },
+        { pattern: /ddlPREV_US_VISIT_LOS_CD$/i, value: pv.lengthOfStayUnit, type: "select" },
+      );
+    }
+
+    // Driver's licenses — supports multiple via addAnother
+    const driversLicenses = a.driversLicenses || (a.previousUSDriversLicenseNumber ? [{ number: a.previousUSDriversLicenseNumber, state: a.previousUSDriversLicenseState }] : []);
+    if (a.previousUSDriversLicense && driversLicenses.length > 0) {
+      map.push({ pattern: /rblPREV_US_DRIVER_LIC_IND_0$/i, value: "", type: "click" });
+
+      driversLicenses.forEach((dl, idx) => {
+        const ctl = `ctl${String(idx).padStart(2, '0')}`;
+        const base = {};
+        if (idx > 0) base.addAnother = { list: "dtlUS_DRIVER_LICENSE", idx };
+
+        map.push(
+          { pattern: new RegExp(`dtlUS_DRIVER_LICENSE_${ctl}_tbxUS_DRIVER_LICENSE$`, 'i'), value: dl.number || "", type: "text", ...base },
+          { pattern: new RegExp(`dtlUS_DRIVER_LICENSE_${ctl}_ddlUS_DRIVER_LICENSE_STATE$`, 'i'), value: dl.state || "", type: "select", ...base },
+        );
+      });
+      // Generic fallback for ctl00
+      if (driversLicenses.length === 1) {
+        map.push(
+          { pattern: /tbxUS_DRIVER_LICENSE$/i, value: driversLicenses[0].number || "", type: "text" },
+          { pattern: /ddlUS_DRIVER_LICENSE_STATE$/i, value: driversLicenses[0].state || "", type: "select" },
+        );
+      }
     } else {
       map.push({ pattern: /rblPREV_US_DRIVER_LIC_IND_1$/i, value: "", type: "click" });
     }
@@ -1025,22 +1061,49 @@ function buildDynamicFieldMap(a) {
     map.push({ pattern: /rblSPECIALIZED_SKILLS_IND_1$/i, value: "", type: "click" });
   }
 
-  // Military service
-  if (a.militaryService && a.military) {
-    const m = a.military;
-    map.push(
-      { pattern: /rblMILITARY_SERVICE_IND_0$/i, value: "", type: "click" },
-      { pattern: /ddlMILITARY_SVC_CNTRY$/i, value: m.country, type: "select-label" },
-      { pattern: /tbxMILITARY_SVC_BRANCH$/i, value: m.branch, type: "text" },
-      { pattern: /tbxMILITARY_SVC_RANK$/i, value: m.rank, type: "text" },
-      { pattern: /tbxMILITARY_SVC_SPECIALTY$/i, value: m.specialty, type: "text" },
-      { pattern: /ddlMILITARY_SVC_FROMDay$/i, value: m.startDate.day, type: "select" },
-      { pattern: /ddlMILITARY_SVC_FROMMonth$/i, value: m.startDate.month, type: "select" },
-      { pattern: /tbxMILITARY_SVC_FROMYear$/i, value: m.startDate.year, type: "text" },
-      { pattern: /ddlMILITARY_SVC_TODay$/i, value: m.endDate.day, type: "select" },
-      { pattern: /ddlMILITARY_SVC_TOMonth$/i, value: m.endDate.month, type: "select" },
-      { pattern: /tbxMILITARY_SVC_TOYear$/i, value: m.endDate.year, type: "text" },
-    );
+  // Military service (dtlMILITARY_SERVICE) — supports multiple entries via addAnother
+  const militaryEntries = Array.isArray(a.military) ? a.military : (a.military ? [a.military] : []);
+  if (a.militaryService && militaryEntries.length > 0) {
+    map.push({ pattern: /rblMILITARY_SERVICE_IND_0$/i, value: "", type: "click" });
+
+    militaryEntries.forEach((m, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = {};
+      if (idx > 0) base.addAnother = { list: "dtlMILITARY_SERVICE", idx };
+      const sd = m.startDate || emptyDate;
+      const ed = m.endDate || emptyDate;
+
+      map.push(
+        { pattern: new RegExp(`dtlMILITARY_SERVICE_${ctl}_ddlMILITARY_SVC_CNTRY$`, 'i'), value: m.country || "", type: "select-label", ...base },
+        { pattern: new RegExp(`dtlMILITARY_SERVICE_${ctl}_tbxMILITARY_SVC_BRANCH$`, 'i'), value: m.branch || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlMILITARY_SERVICE_${ctl}_tbxMILITARY_SVC_RANK$`, 'i'), value: m.rank || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlMILITARY_SERVICE_${ctl}_tbxMILITARY_SVC_SPECIALTY$`, 'i'), value: m.specialty || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlMILITARY_SERVICE_${ctl}_ddlMILITARY_SVC_FROMDay$`, 'i'), value: sd.day || "", type: "select", ...base },
+        { pattern: new RegExp(`dtlMILITARY_SERVICE_${ctl}_ddlMILITARY_SVC_FROMMonth$`, 'i'), value: sd.month || "", type: "select", ...base },
+        { pattern: new RegExp(`dtlMILITARY_SERVICE_${ctl}_tbxMILITARY_SVC_FROMYear$`, 'i'), value: sd.year || "", type: "text", ...base },
+        { pattern: new RegExp(`dtlMILITARY_SERVICE_${ctl}_ddlMILITARY_SVC_TODay$`, 'i'), value: ed.day || "", type: "select", ...base },
+        { pattern: new RegExp(`dtlMILITARY_SERVICE_${ctl}_ddlMILITARY_SVC_TOMonth$`, 'i'), value: ed.month || "", type: "select", ...base },
+        { pattern: new RegExp(`dtlMILITARY_SERVICE_${ctl}_tbxMILITARY_SVC_TOYear$`, 'i'), value: ed.year || "", type: "text", ...base },
+      );
+    });
+    // Generic fallback for ctl00
+    if (militaryEntries.length === 1) {
+      const m = militaryEntries[0];
+      const sd = m.startDate || emptyDate;
+      const ed = m.endDate || emptyDate;
+      map.push(
+        { pattern: /ddlMILITARY_SVC_CNTRY$/i, value: m.country, type: "select-label" },
+        { pattern: /tbxMILITARY_SVC_BRANCH$/i, value: m.branch, type: "text" },
+        { pattern: /tbxMILITARY_SVC_RANK$/i, value: m.rank, type: "text" },
+        { pattern: /tbxMILITARY_SVC_SPECIALTY$/i, value: m.specialty, type: "text" },
+        { pattern: /ddlMILITARY_SVC_FROMDay$/i, value: sd.day, type: "select" },
+        { pattern: /ddlMILITARY_SVC_FROMMonth$/i, value: sd.month, type: "select" },
+        { pattern: /tbxMILITARY_SVC_FROMYear$/i, value: sd.year, type: "text" },
+        { pattern: /ddlMILITARY_SVC_TODay$/i, value: ed.day, type: "select" },
+        { pattern: /ddlMILITARY_SVC_TOMonth$/i, value: ed.month, type: "select" },
+        { pattern: /tbxMILITARY_SVC_TOYear$/i, value: ed.year, type: "text" },
+      );
+    }
   } else {
     map.push({ pattern: /rblMILITARY_SERVICE_IND_1$/i, value: "", type: "click" });
   }
@@ -1059,37 +1122,49 @@ function buildDynamicFieldMap(a) {
   // PREVIOUS SPOUSE (PrevSpouse page - D/W/L marital status)
   // ===================================================================
   const needsPrevSpouse = ["D", "W", "L"].includes(a.maritalStatus);
-  if (needsPrevSpouse && a.previousSpouse) {
-    const ps = a.previousSpouse;
-    map.push(
-      // Number of former spouses
-      { pattern: /NumberOfFormerSpouses$|NUM_PREV_SPOUSES$|ddlNumberPrevSpouses$|tbxNumberPrevSpouses$/i, value: ps.numberOfFormerSpouses, type: "text" },
-      // Surname and Given Name (PrevSpouse page uses DListSpouse_ctl00_ prefix)
-      { pattern: /DListSpouse_ctl00_tbxSURNAME$|FormView1_tbxSURNAME$/i, value: ps.surname, type: "text" },
-      { pattern: /DListSpouse_ctl00_tbxGIVEN_NAME$|FormView1_tbxGIVEN_NAME$/i, value: ps.givenName, type: "text" },
-      // DOB (PrevSpouse page reuses generic DOB selectors under DListSpouse)
-      { pattern: /DListSpouse_ctl00_ddlDOBDay$|ddlDOBDay$/i, value: ps.dob?.day || "", type: "select" },
-      { pattern: /DListSpouse_ctl00_ddlDOBMonth$|ddlDOBMonth$/i, value: ps.dob?.month || "", type: "select" },
-      { pattern: /DListSpouse_ctl00_tbxDOBYear$|tbxDOBYear$/i, value: ps.dob?.year || "", type: "text" },
-      // Nationality / Country of Origin (camelCase IDs)
-      { pattern: /ddlCOUNTRY_OF_ORIGIN$|ddlSpouseNatDropDownList$/i, value: ps.nationality, type: "select-label" },
-      { pattern: /ddlSPOUSE_NATL$/i, value: ps.nationality, type: "select-label" },
-      // Place of Birth
-      { pattern: /DListSpouse_ctl00_tbxSPOUSE_POB_CITY$|tbxSPOUSE_POB_CITY$|tbxSpousePOBCity$|tbxPOB_CITY$/i, value: ps.cityOfBirth || "", type: "text" },
-      { pattern: /DListSpouse_ctl00_ddlSPOUSE_POB_CNTRY$|ddlSPOUSE_POB_CNTRY$|ddlSpousePOBCountry$|ddlPOB_CNTRY$|ddlPOB_COUNTRY$/i, value: ps.countryOfBirth, type: "select-label" },
-      // Date of Marriage (camelCase: ddlDateOfMarriageDay / tbxDateOfMarriageYear)
-      { pattern: /ddlDATE_OF_MARRIAGEDay$|ddlDateOfMarriageDay$|ddlMarriageDTEDay$/i, value: ps.dateOfMarriage.day, type: "select" },
-      { pattern: /ddlDATE_OF_MARRIAGEMonth$|ddlDateOfMarriageMonth$|ddlMarriageDTEMonth$/i, value: ps.dateOfMarriage.month, type: "select" },
-      { pattern: /tbxDATE_OF_MARRIAGEYear$|tbxDateOfMarriageYear$|tbxMarriageDTEYear$/i, value: ps.dateOfMarriage.year, type: "text" },
-      // Date Marriage Ended (camelCase: ddlDateMarriageEndedDay / tbxDateMarriageEndedYear)
-      { pattern: /ddlDATE_MARRIAGE_ENDEDDay$|ddlDateMarriageEndedDay$|ddlMarriageEndedDTEDay$/i, value: ps.dateMarriageEnded.day, type: "select" },
-      { pattern: /ddlDATE_MARRIAGE_ENDEDMonth$|ddlDateMarriageEndedMonth$|ddlMarriageEndedDTEMonth$/i, value: ps.dateMarriageEnded.month, type: "select" },
-      { pattern: /tbxDATE_MARRIAGE_ENDEDYear$|tbxDateMarriageEndedYear$|tbxMarriageEndedDTEYear$/i, value: ps.dateMarriageEnded.year, type: "text" },
-      // How marriage ended (camelCase: tbxHowMarriageEnded)
-      { pattern: /tbxHOW_MARRIAGE_ENDED$|tbxHowMarriageEnded$/i, value: ps.howMarriageEnded, type: "text" },
-      // Country marriage was terminated (camelCase: ddlCountryMarriageTerminated)
-      { pattern: /ddlCNTRY_MARRIAGE_TERMINATED$|ddlCOUNTRY_MARRIAGE_TERMINATED$|ddlCountryMarriageTerminated$/i, value: ps.countryMarriageTerminated, type: "select-label" },
-    );
+  // Support multiple previous spouses via array (from form clone) or singular object (legacy)
+  const prevSpouseEntries = a.previousSpouses || (a.previousSpouse ? [a.previousSpouse] : []);
+  if (needsPrevSpouse && prevSpouseEntries.length > 0) {
+    // Number of former spouses
+    map.push({ pattern: /NumberOfFormerSpouses$|NUM_PREV_SPOUSES$|ddlNumberPrevSpouses$|tbxNumberPrevSpouses$/i, value: prevSpouseEntries[0].numberOfFormerSpouses || String(prevSpouseEntries.length), type: "text" });
+
+    prevSpouseEntries.forEach((ps, idx) => {
+      const ctl = `ctl${String(idx).padStart(2, '0')}`;
+      const base = {};
+      if (idx > 0) base.addAnother = { list: "dlPrevSpouse", idx };
+      const dom = ps.dateOfMarriage || emptyDate;
+      const dome = ps.dateMarriageEnded || emptyDate;
+
+      map.push(
+        { pattern: new RegExp(`DListSpouse_${ctl}_tbxSURNAME$|dlPrevSpouse_${ctl}_tbxPREV_SPOUSE_SURNAME$`, 'i'), value: ps.surname || "", type: "text", ...base },
+        { pattern: new RegExp(`DListSpouse_${ctl}_tbxGIVEN_NAME$|dlPrevSpouse_${ctl}_tbxPREV_SPOUSE_GIVEN_NAME$`, 'i'), value: ps.givenName || "", type: "text", ...base },
+        { pattern: new RegExp(`DListSpouse_${ctl}_ddlDOBDay$|dlPrevSpouse_${ctl}_ddlPREV_SPOUSE_DOBDay$`, 'i'), value: ps.dob?.day || "", type: "select", ...base },
+        { pattern: new RegExp(`DListSpouse_${ctl}_ddlDOBMonth$|dlPrevSpouse_${ctl}_ddlPREV_SPOUSE_DOBMonth$`, 'i'), value: ps.dob?.month || "", type: "select", ...base },
+        { pattern: new RegExp(`DListSpouse_${ctl}_tbxDOBYear$|dlPrevSpouse_${ctl}_tbxPREV_SPOUSE_DOBYear$`, 'i'), value: ps.dob?.year || "", type: "text", ...base },
+        { pattern: new RegExp(`ddlSPOUSE_NATL$|dlPrevSpouse_${ctl}_ddlPREV_SPOUSE_NATL$`, 'i'), value: ps.nationality || "", type: "select-label", ...base },
+        { pattern: new RegExp(`DListSpouse_${ctl}_tbxSPOUSE_POB_CITY$|dlPrevSpouse_${ctl}_tbxPREV_SPOUSE_CITY$`, 'i'), value: ps.cityOfBirth || "", type: "text", ...base },
+        { pattern: new RegExp(`DListSpouse_${ctl}_ddlSPOUSE_POB_CNTRY$|dlPrevSpouse_${ctl}_ddlPREV_SPOUSE_CNTRY$`, 'i'), value: ps.countryOfBirth || "", type: "select-label", ...base },
+        { pattern: new RegExp(`ddlDATE_OF_MARRIAGEDay$|ddlDateOfMarriageDay$|dlPrevSpouse_${ctl}_ddlDOM_DTEDay$`, 'i'), value: dom.day || "", type: "select", ...base },
+        { pattern: new RegExp(`ddlDATE_OF_MARRIAGEMonth$|ddlDateOfMarriageMonth$|dlPrevSpouse_${ctl}_ddlDOM_DTEMonth$`, 'i'), value: dom.month || "", type: "select", ...base },
+        { pattern: new RegExp(`tbxDATE_OF_MARRIAGEYear$|tbxDateOfMarriageYear$|dlPrevSpouse_${ctl}_tbxDOM_DTEYear$`, 'i'), value: dom.year || "", type: "text", ...base },
+        { pattern: new RegExp(`ddlDATE_MARRIAGE_ENDEDDay$|ddlDateMarriageEndedDay$|dlPrevSpouse_${ctl}_ddlDOME_DTEDay$`, 'i'), value: dome.day || "", type: "select", ...base },
+        { pattern: new RegExp(`ddlDATE_MARRIAGE_ENDEDMonth$|ddlDateMarriageEndedMonth$|dlPrevSpouse_${ctl}_ddlDOME_DTEMonth$`, 'i'), value: dome.month || "", type: "select", ...base },
+        { pattern: new RegExp(`tbxDATE_MARRIAGE_ENDEDYear$|tbxDateMarriageEndedYear$|dlPrevSpouse_${ctl}_tbxDOME_DTEYear$`, 'i'), value: dome.year || "", type: "text", ...base },
+        { pattern: new RegExp(`tbxHOW_MARRIAGE_ENDED$|dlPrevSpouse_${ctl}_tbxHOW_MARRIAGE_ENDED$`, 'i'), value: ps.howMarriageEnded || ps.howEnded || "", type: "text", ...base },
+        { pattern: new RegExp(`ddlCNTRY_MARRIAGE_TERMINATED$|dlPrevSpouse_${ctl}_ddlCNTRY_MARRIAGE_TERMINATED$`, 'i'), value: ps.countryMarriageTerminated || ps.countryTerminated || "", type: "select-label", ...base },
+      );
+    });
+    // Generic fallbacks for single-entry compat
+    if (prevSpouseEntries.length === 1) {
+      const ps = prevSpouseEntries[0];
+      map.push(
+        { pattern: /FormView1_tbxSURNAME$/i, value: ps.surname, type: "text" },
+        { pattern: /FormView1_tbxGIVEN_NAME$/i, value: ps.givenName, type: "text" },
+        { pattern: /ddlCOUNTRY_OF_ORIGIN$|ddlSpouseNatDropDownList$/i, value: ps.nationality, type: "select-label" },
+        { pattern: /tbxPOB_CITY$/i, value: ps.cityOfBirth || "", type: "text" },
+        { pattern: /ddlPOB_CNTRY$|ddlPOB_COUNTRY$/i, value: ps.countryOfBirth, type: "select-label" },
+      );
+    }
   }
 
   // ===================================================================
