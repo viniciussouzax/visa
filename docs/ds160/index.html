@@ -3833,6 +3833,9 @@
                         }
                     },
                 };
+                // Include passport if available
+                const pptNum = (document.getElementById('tbxPPT_NUM')?.value || '').trim();
+                if (pptNum) applicantPayload.passport_number = pptNum;
                 if (primaryApplicantId) applicantPayload.primary_applicant_id = primaryApplicantId;
                 if (resolvedCompanyId) applicantPayload.company_id = resolvedCompanyId;
 
@@ -3856,7 +3859,7 @@
 
         // ===== AUTO-SAVE PARTIAL DATA =====
         async function autoSavePartial() {
-            if (!savedApplicantId) return; // not yet created
+            if (!savedApplicantId || window._readOnly) return; // not yet created or locked
             try {
                 const partialData = {
                     personal1: {
@@ -4850,14 +4853,12 @@
             if (gateEmail) gateSearch();
         }
 
-        function startFormWithEmail(email, existingApplicant, linkToPrimaryId) {
+        async function startFormWithEmail(email, existingApplicant, linkToPrimaryId) {
             // Hide gate, show form
             document.getElementById('email-gate').style.display = 'none';
             document.getElementById('acc-wrapper').style.display = 'block';
             const nameEl = document.getElementById('acc-applicant-name');
-            const surname = existingApplicant?.data?._formSnapshot?.fields?.tbxAPP_SURNAME;
-            const givenName = existingApplicant?.data?._formSnapshot?.fields?.tbxAPP_GIVEN_NAME;
-            nameEl.textContent = surname && givenName ? `${surname.toUpperCase()}, ${givenName}` : '—';
+            nameEl.textContent = existingApplicant?.full_name || '—';
 
             // Update header name dynamically when user fills Personal 1 fields
             function updateHeaderName() {
@@ -4917,12 +4918,17 @@
             if (emailField) emailField.value = email;
 
             if (existingApplicant) {
-                // Restore existing data
+                // Fetch full applicant data securely (gate search no longer returns data)
                 savedApplicantId = existingApplicant.id;
                 savedApplicationId = existingApplicant.appId || null;
-                restoreApplicantData(existingApplicant.data || {});
-                // Mark completed sections and open next incomplete
-                setTimeout(() => { if (window.restoreCompletionState) window.restoreCompletionState(existingApplicant.data || {}); }, 100);
+                try {
+                    const fullData = await sbGet(`rpc/get_applicant_by_id?applicant_id=${existingApplicant.id}`);
+                    const applicantData = fullData?.data || {};
+                    restoreApplicantData(applicantData);
+                    setTimeout(() => { if (window.restoreCompletionState) window.restoreCompletionState(applicantData); }, 500);
+                } catch (e) {
+                    console.error('[DS-160] Failed to fetch applicant data:', e);
+                }
             } else if (linkToPrimaryId) {
                 // New dependent — store primary link
                 window._linkToPrimaryId = linkToPrimaryId;
@@ -5171,10 +5177,9 @@
                 // Check if all sections are complete
                 const allComplete = areAllSectionsComplete();
                 if (allComplete && savedApplicantId && !window._isAssessorMode) {
-                    // Solicitante: move from 'new' to 'review' and redirect
-                    await sbFetch(`applicants?id=eq.${savedApplicantId}`, 'PATCH', {
-                        pipeline_status: 'review',
-                        updated_at: new Date().toISOString()
+                    // Solicitante: move from 'new' to 'review' via RPC (protected)
+                    await sbFetch('rpc/submit_form_for_review', 'POST', {
+                        applicant_id: savedApplicantId
                     });
                     showToast('Formulario salvo e enviado para revisao!');
                     if (window.parent !== window) {
@@ -5691,7 +5696,7 @@
                     if (snapshot && Array.isArray(snapshot) && snapshot.length > 0) {
                         // Primary: restore from saved snapshot
                         let firstIncomplete = 0;
-                        snapshot.forEach(idx => markComplete(idx));
+                        snapshot.forEach(idx => forceComplete(idx));
 
                         // Find first incomplete non-conditional, non-security section
                         for (let s = 0; s < SECTIONS.length; s++) {
