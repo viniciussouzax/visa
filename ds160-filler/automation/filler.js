@@ -663,18 +663,26 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 throw new Error(`Unknown page: ${url}`);
             }
 
-            // Security pages: click all "No" radios
+            // Security pages: fill from field-map first (user may have answered "Y"),
+            // then default remaining unanswered radios to "No"
             if (isSecurityPage(url)) {
                 await waitForPageReady(page);
+                // Step 1: Fill any security fields that have actual data from the user's JSON
+                await fillPageCompletely(page, fieldMap);
+                // Step 2: Default remaining unanswered radios to "No"
                 let noRadios = page.locator("input[type=radio][id$='_1']");
                 let count = await noRadios.count();
                 for (let i = 0; i < count; i++) {
                     const radio = noRadios.nth(i);
-                    if (await radio.isVisible().catch(() => false) && !(await radio.isChecked())) {
-                        await radio.click();
+                    // Only click "No" if neither Yes nor No is already selected
+                    const radioName = await radio.getAttribute('name').catch(() => '');
+                    if (radioName) {
+                        const anyChecked = await page.locator(`input[type=radio][name="${radioName}"]:checked`).count().catch(() => 0);
+                        if (anyChecked === 0 && await radio.isVisible().catch(() => false)) {
+                            await radio.click();
+                        }
                     }
                 }
-                await fillPageCompletely(page, fieldMap);
                 await clickNextAndWait(page);
                 continue;
             }

@@ -4760,8 +4760,11 @@
             };
 
             // Remove empty/null sections for cleaner output
+            // NOTE: We preserve empty strings ('') because downstream (normalizeProfile)
+            // handles them with || defaults. Removing '' causes objects like previousVisa
+            // to disappear when their parent flag (hasUSVisa='Y') exists but sub-fields are empty.
             const clean = JSON.parse(JSON.stringify(data, (k, v) => {
-                if (v === '' || v === null) return undefined;
+                if (v === null) return undefined;
                 if (Array.isArray(v) && v.length === 0) return undefined;
                 if (typeof v === 'object' && !Array.isArray(v) && v !== null) {
                     const keys = Object.keys(v).filter(key => v[key] !== undefined);
