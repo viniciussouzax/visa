@@ -486,7 +486,19 @@
             width: 90%;
             text-align: center;
             box-shadow: 0 20px 60px rgba(0, 0, 0, .4);
-            animation: toastIn .25s ease;
+            animation: modalFadeIn .25s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.92) translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
 
         .gate-modal-card .modal-icon {
@@ -3901,7 +3913,11 @@
                         personal1: {
                             surname, givenName,
                             fullNameNative: document.getElementById('tbxAPP_FULL_NAME_NATIVE')?.value || '',
-                        }
+                        },
+                        addressPhone: {
+                            email: document.getElementById('tbxAPP_EMAIL_ADDR')?.value?.trim() || '',
+                        },
+                        location: location,
                     },
                 };
                 // Include passport if available
@@ -4958,6 +4974,12 @@
             // Reset check marks
             if (window._resetChecks) window._resetChecks();
 
+            // CRITICAL: Reset applicant IDs to prevent overwriting previous records
+            savedApplicantId = null;
+            savedApplicationId = null;
+            window._readOnly = false;
+            window._linkToPrimaryId = null;
+
             // RESET form completely before loading new data
             document.querySelectorAll('.page input[type="text"], .page input[type="tel"], .page input[type="email"], .page input[type="number"], .page textarea').forEach(el => {
                 if (!el.disabled) el.value = '';
@@ -5735,7 +5757,7 @@
                     } else {
                         // Fallback: mark based on data presence (legacy data without snapshot)
                         const dataToSection = {
-                            'location': 0, 'personal1': 1, 'personal2': 2,
+                            'personal1': 1, 'personal2': 2,
                             'travel': 3, 'travelCompanions': 4, 'previousUSTravel': 5,
                             'addressPhone': 6, 'passport': 7, 'usContact': 8,
                             'family1': 9, 'family2': 10, 'deceasedSpouse': 11, 'prevSpouse': 12,
@@ -5805,7 +5827,7 @@
                     } else {
                         // Fallback: mark based on data presence (legacy data without snapshot)
                         const dataToSection = {
-                            'location': 0, 'personal1': 1, 'personal2': 2,
+                            'personal1': 1, 'personal2': 2,
                             'travel': 3, 'travelCompanions': 4, 'previousUSTravel': 5,
                             'addressPhone': 6, 'passport': 7, 'usContact': 8,
                             'family1': 9, 'family2': 10, 'deceasedSpouse': 11, 'prevSpouse': 12,
