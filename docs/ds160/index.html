@@ -3961,15 +3961,16 @@
                     },
                     passport: {
                         number: val('tbxPPT_NUM'), type: val('ddlPPT_TYPE'),
-                        country: val('ddlPPT_CNTRY'), bookNumber: val('tbxPPT_BOOK_NUM'),
-                        issueDay: val('ddlPPT_ISSUEDay'), issueMonth: val('ddlPPT_ISSUEMonth'),
-                        issueYear: val('tbxPPT_ISSUEYear'),
-                        expireDay: val('ddlPPT_EXPIREDay'), expireMonth: val('ddlPPT_EXPIREMonth'),
+                        country: val('ddlPPT_ISSUED_CNTRY'), bookNumber: val('tbxPPT_BOOK_NUM'),
+                        issueDay: val('ddlPPT_ISSUED_DTEDay'), issueMonth: val('ddlPPT_ISSUED_DTEMonth'),
+                        issueYear: val('tbxPPT_ISSUEDYear'),
+                        expireDay: val('ddlPPT_EXPIRE_DTEDay'), expireMonth: val('ddlPPT_EXPIRE_DTEMonth'),
                         expireYear: val('tbxPPT_EXPIREYear'),
                     },
                     travel: {
-                        purpose: val('ddlTRAVEL_PURPOSE'), purposeSpec: val('ddlTRAVEL_PURPOSE_SPEC'),
-                        visaClass: val('ddlTRAVEL_VISA_CLASS'),
+                        purposeCategory: val('dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip'),
+                        purposeSubCategory: val('dlPrincipalAppTravel_ctl00_ddlOtherPurpose'),
+                        hasSpecificPlans: radioChecked('rblSpecificTravel'),
                     },
                     usContact: {
                         surname: val('tbxUS_POC_SURNAME'), givenName: val('tbxUS_POC_GIVEN_NAME'),
@@ -3987,7 +3988,7 @@
                         motherInUS: radioChecked('rblMOTHER_LIVE_IN_US_IND'),
                     },
                     spouse: {
-                        surname: val('tbxSPOUSE_SURNAME'), givenName: val('tbxSPOUSE_GIVEN_NAME'),
+                        surname: val('tbxSpouseSurname'), givenName: val('tbxSpouseGivenName'),
                     },
                 };
                 // Remove empty values
@@ -3995,9 +3996,10 @@
                 const surname = (clean.personal1?.surname || '').toUpperCase();
                 const givenName = (clean.personal1?.givenName || '').toUpperCase();
                 const fullName = (surname + ' ' + givenName).trim();
+                if (!fullName) return; // Don't overwrite with empty name
                 await sbFetch('rpc/save_applicant_data', 'POST', {
                     applicant_id: savedApplicantId,
-                    applicant_full_name: fullName || 'SEM NOME',
+                    applicant_full_name: fullName,
                     applicant_data: clean,
                 });
                 console.log('[DS-160] Auto-save parcial OK');
