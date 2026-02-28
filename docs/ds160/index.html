@@ -3278,12 +3278,12 @@
             }).catch(e => console.error('[DS-160] Org resolution error:', e));
         }
 
-        function nextPage() {
+        async function nextPage() {
             // Validate current page before advancing
             if (!validateCurrentPage()) return;
             // Intercept leaving Personal1 (index 1) to save applicant + application
             if (currentPage === 1 && !savedApplicantId) {
-                saveOnPersonal1Exit();
+                await saveOnPersonal1Exit();
             }
 
             // Mark current section as complete (validation passed)
@@ -5811,7 +5811,7 @@
                     if (snapshot && Array.isArray(snapshot) && snapshot.length > 0) {
                         // Primary: restore from saved snapshot
                         let firstIncomplete = 0;
-                        snapshot.forEach(idx => forceComplete(idx));
+                        snapshot.forEach(idx => markComplete(idx));
 
                         // Find first incomplete non-conditional, non-security section
                         for (let s = 0; s < SECTIONS.length; s++) {
