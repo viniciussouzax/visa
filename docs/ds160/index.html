@@ -5609,6 +5609,11 @@
                         _origShowPage(pageIdx);
                     }
                 }
+
+                // Smooth scroll to the opened section
+                requestAnimationFrame(() => {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
             }
 
             function markComplete(idx) {
@@ -5679,7 +5684,6 @@
                         markComplete(prevSecIdx);
                     }
                     toggleAccordion(newSecIdx, true);
-                    document.querySelector(`[data-section="${newSecIdx}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             };
 
