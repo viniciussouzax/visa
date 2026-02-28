@@ -792,7 +792,7 @@ async function waitForPostback(page) {
     await page.waitForFunction(() => {
         const mgr = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
         return !mgr || !mgr.get_isInAsyncPostBack();
-    }, { timeout: 5000 }).catch(() => { });
+    }, { timeout: 8000 }).catch(() => { });
 
     await sleep(150);
 
@@ -874,8 +874,9 @@ async function fillPageCompletely(page, fieldMap) {
 async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new Set()) {
     // Scroll page to ensure all elements are rendered (DS-160 lazy-loads some fields)
     await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); }).catch(() => { });
-    await sleep(100);
+    await sleep(200);
     await page.evaluate(() => { window.scrollTo(0, 0); }).catch(() => { });
+    await sleep(200);
     const fields = await discoverFields(page);
     const visible = fields.filter(f => f.visible && f.id);
     let postbackNeeded = false, filled = 0;
@@ -1496,6 +1497,16 @@ function normalizeProfile(data) {
 
         // === PREVIOUS US TRAVEL ===
         hasBeenInUS: prev.hasBeenInUS === 'Y' || prev.has_been_in_us === 'Y',
+        // Full array for multiple visits (field-map forEach + addAnother)
+        previousVisits: (() => {
+            const visits = prev.previousVisits || prev.previous_visits || [];
+            return visits.map(v => ({
+                arrivalDate: v.arrivalDate || { day: v.day, month: v.month, year: v.year },
+                lengthOfStay: v.lengthOfStay || v.length_of_stay || '',
+                lengthOfStayUnit: v.lengthOfStayUnit || v.length_of_stay_unit || 'D',
+            }));
+        })(),
+        // Legacy singular fallback
         previousUSVisit: (() => {
             const visits = prev.previousVisits || prev.previous_visits || [];
             if (!visits.length) return null;
@@ -1507,6 +1518,11 @@ function normalizeProfile(data) {
             };
         })(),
         previousUSDriversLicense: prev.hasDriversLicense === 'Y' || prev.has_drivers_license === 'Y',
+        // Full array for multiple licenses (field-map forEach + addAnother)
+        driversLicenses: (prev.driversLicenses || prev.drivers_licenses || []).map(dl => ({
+            number: dl.number || '', state: dl.state || '',
+        })),
+        // Legacy singular fallback
         previousUSDriversLicenseNumber: (prev.driversLicenses || prev.drivers_licenses || [])[0]?.number,
         previousUSDriversLicenseState: (prev.driversLicenses || prev.drivers_licenses || [])[0]?.state,
         hasUSVisa: prev.hasUSVisa === 'Y' || prev.has_us_visa === 'Y',
@@ -1614,6 +1630,24 @@ function normalizeProfile(data) {
         })(),
 
         // === PREVIOUS SPOUSE ===
+        // Full array for multiple spouses (field-map forEach + addAnother)
+        previousSpouses: (() => {
+            const ps = data.prevSpouse || data.prev_spouse || {};
+            const spouses = ps.spouses || [];
+            return spouses.map(s => ({
+                numberOfFormerSpouses: ps.numberOfPrevious || ps.number_of_previous || String(spouses.length),
+                surname: s.surname || '', givenName: s.givenName || s.given_name || '',
+                dob: s.dob || { day: '', month: '', year: '' },
+                nationality: s.nationality || '',
+                cityOfBirth: s.cityOfBirth || s.city_of_birth || '',
+                countryOfBirth: s.countryOfBirth || s.country_of_birth || '',
+                dateOfMarriage: s.dateOfMarriage || s.date_of_marriage || { day: '', month: '', year: '' },
+                dateMarriageEnded: s.dateMarriageEnded || s.date_marriage_ended || { day: '', month: '', year: '' },
+                howMarriageEnded: s.howEnded || s.how_ended || '',
+                countryMarriageTerminated: s.countryTerminated || s.country_terminated || '',
+            }));
+        })(),
+        // Legacy singular fallback
         previousSpouse: (() => {
             const ps = data.prevSpouse || data.prev_spouse || {};
             const spouses = ps.spouses || [];
@@ -1675,7 +1709,7 @@ function normalizeProfile(data) {
         specializedSkills: we3.specializedSkills === 'Y' || we3.specialized_skills === 'Y',
         specializedSkillsExplanation: we3.specializedSkillsExplanation || we3.specialized_skills_explanation || '',
         militaryService: we3.militaryService === 'Y' || we3.military_service === 'Y',
-        military: (we3.military || [])[0] || null,
+        military: we3.military || [],
         insurgentOrg: we3.insurgentOrg === 'Y' || we3.insurgent_org === 'Y',
         insurgentOrgExplanation: we3.insurgentOrgExplanation || we3.insurgent_org_explanation || '',
 
