@@ -10,6 +10,149 @@
     <link rel="stylesheet" href="css/dashboard.css">
     <script defer src="../alpinejs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .dl-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            transition: all .2s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .dark .dl-card {
+            background: rgba(55, 65, 81, .3);
+            border-color: rgba(75, 85, 99, .4);
+        }
+
+        .dl-card:hover {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, .04);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, .1);
+        }
+
+        .dark .dl-card:hover {
+            background: rgba(139, 92, 246, .08);
+        }
+
+        .dl-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .dl-icon.win {
+            background: linear-gradient(135deg, #0078d4 0%, #00bcf2 100%);
+        }
+
+        .dl-icon.mac {
+            background: linear-gradient(135deg, #333 0%, #555 100%);
+        }
+
+        .dl-icon.linux {
+            background: linear-gradient(135deg, #e95420 0%, #f7a72e 100%);
+        }
+
+        .dl-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .dl-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .dl-platform {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .dark .dl-platform {
+            color: #f3f4f6;
+        }
+
+        .dl-meta {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 2px;
+        }
+
+        .dl-arrow {
+            width: 18px;
+            height: 18px;
+            fill: #d1d5db;
+            flex-shrink: 0;
+            transition: fill .2s;
+        }
+
+        .dl-card:hover .dl-arrow {
+            fill: #8b5cf6;
+        }
+
+        .version-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+            font-size: 22px;
+            font-weight: 700;
+            border-radius: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .install-tip {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #92400e;
+            line-height: 1.5;
+        }
+
+        .dark .install-tip {
+            background: rgba(251, 191, 36, .1);
+            border-color: rgba(251, 191, 36, .3);
+            color: #fcd34d;
+        }
+
+        .install-tip svg {
+            width: 16px;
+            height: 16px;
+            fill: #f59e0b;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .release-notes {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.6;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .dark .release-notes {
+            color: #9ca3af;
+        }
+    </style>
 </head>
 
 <body class="font-inter antialiased bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-400"
@@ -23,109 +166,110 @@
             <main class="grow">
                 <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
                     <div class="grid grid-cols-12 gap-6">
+
                         <!-- Desktop App -->
-                        <div class="col-span-full xl:col-span-6 bg-white dark:bg-gray-800 shadow-xs rounded-xl">
+                        <div class="col-span-full xl:col-span-7 bg-white dark:bg-gray-800 shadow-xs rounded-xl">
                             <div class="p-5">
-                                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">Software Desktop
-                                </h2>
-                                <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">Última versão do aplicativo
-                                    SENDS160</div>
-                                <div class="space-y-3">
+                                <div class="flex items-center justify-between mb-4">
                                     <div>
-                                        <div
-                                            class="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
-                                            Versão</div>
-                                        <div id="sw-version"
-                                            class="text-2xl font-bold text-gray-800 dark:text-gray-100">—</div>
-                                        <div id="sw-version-date" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                        </div>
+                                        <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100">Software
+                                            Desktop</h2>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">Última versão do
+                                            aplicativo SENDS160</div>
                                     </div>
-                                    <div id="sw-version-notes" class="text-sm text-gray-500 dark:text-gray-400"></div>
-                                    <div class="pt-3 border-t border-gray-200 dark:border-gray-700/60">
-                                        <div
-                                            class="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-                                            Downloads</div>
-                                        <div class="grid grid-cols-1 gap-2">
-                                            <!-- Windows -->
-                                            <a id="dl-windows" href="#"
-                                                class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/30 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition group"
-                                                target="_blank">
-                                                <svg class="w-6 h-6 fill-current text-blue-500" viewBox="0 0 24 24">
-                                                    <path
-                                                        d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801" />
-                                                </svg>
-                                                <div class="flex-1 min-w-0">
-                                                    <div
-                                                        class="text-sm font-semibold text-gray-800 dark:text-gray-100 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition">
-                                                        Windows</div>
-                                                    <div id="dl-windows-info"
-                                                        class="text-xs text-gray-400 dark:text-gray-500">.exe
-                                                        Installer</div>
-                                                </div>
-                                                <svg class="w-4 h-4 fill-current text-gray-400 group-hover:text-violet-500 transition"
-                                                    viewBox="0 0 16 16">
-                                                    <path
-                                                        d="M15 15H1a1 1 0 0 1 0-2h14a1 1 0 0 1 0 2ZM8 10a1 1 0 0 1-.7-.3L3.3 5.7a1 1 0 0 1 1.4-1.4L7 6.6V1a1 1 0 0 1 2 0v5.6l2.3-2.3a1 1 0 0 1 1.4 1.4l-4 4A1 1 0 0 1 8 10Z" />
-                                                </svg>
-                                            </a>
-                                            <!-- macOS -->
-                                            <a id="dl-macos" href="#"
-                                                class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/30 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition group"
-                                                target="_blank">
-                                                <svg class="w-6 h-6 fill-current text-gray-600 dark:text-gray-300"
-                                                    viewBox="0 0 24 24">
-                                                    <path
-                                                        d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11" />
-                                                </svg>
-                                                <div class="flex-1 min-w-0">
-                                                    <div
-                                                        class="text-sm font-semibold text-gray-800 dark:text-gray-100 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition">
-                                                        macOS</div>
-                                                    <div id="dl-macos-info"
-                                                        class="text-xs text-gray-400 dark:text-gray-500">.dmg</div>
-                                                </div>
-                                                <svg class="w-4 h-4 fill-current text-gray-400 group-hover:text-violet-500 transition"
-                                                    viewBox="0 0 16 16">
-                                                    <path
-                                                        d="M15 15H1a1 1 0 0 1 0-2h14a1 1 0 0 1 0 2ZM8 10a1 1 0 0 1-.7-.3L3.3 5.7a1 1 0 0 1 1.4-1.4L7 6.6V1a1 1 0 0 1 2 0v5.6l2.3-2.3a1 1 0 0 1 1.4 1.4l-4 4A1 1 0 0 1 8 10Z" />
-                                                </svg>
-                                            </a>
-                                            <!-- Linux -->
-                                            <a id="dl-linux" href="#"
-                                                class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/30 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition group"
-                                                target="_blank">
-                                                <svg class="w-6 h-6 fill-current text-yellow-500" viewBox="0 0 24 24">
-                                                    <path
-                                                        d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.345 1.884 1.345.358 0 .723-.134 1.088-.529.365-.268.73-.803.796-1.469.07-.269.06-.597-.106-.928-.058-.134-.135-.268-.227-.4-.263-.4-.513-.67-.686-.938-.34-.533-.557-.867-.93-1.467-.267-.533-.637-1.135-.584-1.4.022-.134.169-.334.335-.6.265-.534.66-1.265.535-2l-.003-.003c-.05-.233-.136-.467-.262-.667-.126-.199-.288-.398-.497-.534-.417-.268-.684-.602-.948-.87-.264-.267-.596-.534-.793-.735a8.963 8.963 0 00-.602-1.87c-.172-.399-.453-1.398-.575-2.264-.058-.399-.089-.734-.084-1s.019-.532.117-.667c.531-.72.66-1.929.397-3.164-.264-1.233-.827-2.503-1.784-3.232A3.594 3.594 0 0012.504 0z" />
-                                                </svg>
-                                                <div class="flex-1 min-w-0">
-                                                    <div
-                                                        class="text-sm font-semibold text-gray-800 dark:text-gray-100 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition">
-                                                        Linux</div>
-                                                    <div id="dl-linux-info"
-                                                        class="text-xs text-gray-400 dark:text-gray-500">.AppImage /
-                                                        .deb</div>
-                                                </div>
-                                                <svg class="w-4 h-4 fill-current text-gray-400 group-hover:text-violet-500 transition"
-                                                    viewBox="0 0 16 16">
-                                                    <path
-                                                        d="M15 15H1a1 1 0 0 1 0-2h14a1 1 0 0 1 0 2ZM8 10a1 1 0 0 1-.7-.3L3.3 5.7a1 1 0 0 1 1.4-1.4L7 6.6V1a1 1 0 0 1 2 0v5.6l2.3-2.3a1 1 0 0 1 1.4 1.4l-4 4A1 1 0 0 1 8 10Z" />
-                                                </svg>
-                                            </a>
+                                    <div id="sw-version" class="version-badge">—</div>
+                                </div>
+
+                                <div class="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500 mb-4">
+                                    <span id="sw-version-date"></span>
+                                </div>
+
+                                <div id="sw-version-notes" class="release-notes mb-4"></div>
+
+                                <!-- Downloads grid -->
+                                <div
+                                    class="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider font-medium mb-3">
+                                    Downloads</div>
+                                <div class="space-y-2 mb-4">
+                                    <!-- Windows -->
+                                    <a id="dl-windows" href="#" class="dl-card" target="_blank">
+                                        <div class="dl-icon win">
+                                            <svg viewBox="0 0 24 24">
+                                                <path
+                                                    d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801" />
+                                            </svg>
                                         </div>
+                                        <div class="dl-info">
+                                            <div class="dl-platform">Windows</div>
+                                            <div id="dl-windows-info" class="dl-meta">Installer (.exe)</div>
+                                        </div>
+                                        <svg class="dl-arrow" viewBox="0 0 16 16">
+                                            <path
+                                                d="M15 15H1a1 1 0 0 1 0-2h14a1 1 0 0 1 0 2ZM8 10a1 1 0 0 1-.7-.3L3.3 5.7a1 1 0 0 1 1.4-1.4L7 6.6V1a1 1 0 0 1 2 0v5.6l2.3-2.3a1 1 0 0 1 1.4 1.4l-4 4A1 1 0 0 1 8 10Z" />
+                                        </svg>
+                                    </a>
+                                    <!-- macOS -->
+                                    <a id="dl-macos" href="#" class="dl-card" target="_blank">
+                                        <div class="dl-icon mac">
+                                            <svg viewBox="0 0 24 24">
+                                                <path
+                                                    d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11" />
+                                            </svg>
+                                        </div>
+                                        <div class="dl-info">
+                                            <div class="dl-platform">macOS</div>
+                                            <div id="dl-macos-info" class="dl-meta">Disk Image (.dmg)</div>
+                                        </div>
+                                        <svg class="dl-arrow" viewBox="0 0 16 16">
+                                            <path
+                                                d="M15 15H1a1 1 0 0 1 0-2h14a1 1 0 0 1 0 2ZM8 10a1 1 0 0 1-.7-.3L3.3 5.7a1 1 0 0 1 1.4-1.4L7 6.6V1a1 1 0 0 1 2 0v5.6l2.3-2.3a1 1 0 0 1 1.4 1.4l-4 4A1 1 0 0 1 8 10Z" />
+                                        </svg>
+                                    </a>
+                                    <!-- Linux -->
+                                    <a id="dl-linux" href="#" class="dl-card" target="_blank">
+                                        <div class="dl-icon linux">
+                                            <svg viewBox="0 0 24 24">
+                                                <path
+                                                    d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.345 1.884 1.345.358 0 .723-.134 1.088-.529.365-.268.73-.803.796-1.469.07-.269.06-.597-.106-.928-.058-.134-.135-.268-.227-.4-.263-.4-.513-.67-.686-.938-.34-.533-.557-.867-.93-1.467-.267-.533-.637-1.135-.584-1.4.022-.134.169-.334.335-.6.265-.534.66-1.265.535-2l-.003-.003c-.05-.233-.136-.467-.262-.667-.126-.199-.288-.398-.497-.534-.417-.268-.684-.602-.948-.87-.264-.267-.596-.534-.793-.735a8.963 8.963 0 00-.602-1.87c-.172-.399-.453-1.398-.575-2.264-.058-.399-.089-.734-.084-1s.019-.532.117-.667c.531-.72.66-1.929.397-3.164-.264-1.233-.827-2.503-1.784-3.232A3.594 3.594 0 0012.504 0z" />
+                                            </svg>
+                                        </div>
+                                        <div class="dl-info">
+                                            <div class="dl-platform">Linux</div>
+                                            <div id="dl-linux-info" class="dl-meta">AppImage / .deb</div>
+                                        </div>
+                                        <svg class="dl-arrow" viewBox="0 0 16 16">
+                                            <path
+                                                d="M15 15H1a1 1 0 0 1 0-2h14a1 1 0 0 1 0 2ZM8 10a1 1 0 0 1-.7-.3L3.3 5.7a1 1 0 0 1 1.4-1.4L7 6.6V1a1 1 0 0 1 2 0v5.6l2.3-2.3a1 1 0 0 1 1.4 1.4l-4 4A1 1 0 0 1 8 10Z" />
+                                        </svg>
+                                    </a>
+                                </div>
+
+                                <!-- Install tip -->
+                                <div class="install-tip">
+                                    <svg viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.168 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    <div>
+                                        <strong>Windows:</strong> Ao instalar, o SmartScreen pode exibir um aviso.
+                                        Clique
+                                        em <strong>"Mais informações"</strong> → <strong>"Executar assim
+                                            mesmo"</strong>.
+                                        Isso é normal para apps sem certificado de assinatura.
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Automation -->
-                        <div class="col-span-full xl:col-span-6 bg-white dark:bg-gray-800 shadow-xs rounded-xl">
+                        <div class="col-span-full xl:col-span-5 bg-white dark:bg-gray-800 shadow-xs rounded-xl">
                             <div class="p-5">
                                 <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">Automação DS-160
                                 </h2>
-                                <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">Scripts de preenchimento
+                                <div class="text-sm text-gray-500 dark:text-gray-400 mb-5">Scripts de preenchimento
                                     automático</div>
-                                <div class="space-y-3">
+                                <div class="space-y-4">
                                     <div>
                                         <div
                                             class="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
@@ -135,7 +279,8 @@
                                         <div id="sw-auto-date" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         </div>
                                     </div>
-                                    <div id="sw-auto-changelog" class="text-sm text-gray-500 dark:text-gray-400"></div>
+                                    <div id="sw-auto-changelog"
+                                        class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed"></div>
                                 </div>
                             </div>
                         </div>

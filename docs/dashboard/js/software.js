@@ -54,8 +54,20 @@ async function loadSoftwareInfo() {
             const assets = release.assets || [];
 
             $('sw-version').textContent = 'v' + versionClean;
-            $('sw-version-date').textContent = releaseDate ? 'Publicado em ' + releaseDate : '';
-            $('sw-version-notes').textContent = notes.substring(0, 200);
+            $('sw-version-date').textContent = releaseDate ? '📅 Publicado em ' + releaseDate : '';
+
+            // Format release notes - strip markdown
+            if (notes) {
+                const clean = notes
+                    .replace(/^#{1,4}\s+/gm, '')          // remove ## headers
+                    .replace(/\*\*(.*?)\*\*/g, '$1')       // **bold** → bold
+                    .replace(/\*(.*?)\*/g, '$1')           // *italic* → italic
+                    .replace(/`(.*?)`/g, '$1')             // `code` → code
+                    .replace(/^-\s+/gm, '• ')              // - list → • list
+                    .replace(/\n{3,}/g, '\n\n')            // collapse newlines
+                    .trim();
+                $('sw-version-notes').textContent = clean.substring(0, 300);
+            }
 
             // Find platform assets
             const winAsset = assets.find(a => a.name.endsWith('-setup.exe') || a.name.endsWith('.msi'));

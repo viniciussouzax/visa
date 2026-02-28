@@ -155,8 +155,8 @@
         }
 
         .status-circle {
-            width: 72px;
-            height: 72px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -167,42 +167,66 @@
 
         .status-circle.idle {
             background: var(--green);
-            box-shadow: 0 0 0 6px rgba(63, 185, 80, .15), 0 0 24px rgba(63, 185, 80, .2);
+            box-shadow: 0 0 0 8px rgba(63, 185, 80, .15), 0 0 30px rgba(63, 185, 80, .2);
+            animation: pulse-green 2.5s infinite;
         }
 
         .status-circle.running {
             background: var(--blue-dim);
-            box-shadow: 0 0 0 6px rgba(31, 111, 235, .15), 0 0 24px rgba(31, 111, 235, .2);
-            animation: pulse-ring 2s infinite;
+            box-shadow: 0 0 0 8px rgba(31, 111, 235, .15), 0 0 30px rgba(31, 111, 235, .2);
+            animation: pulse-blue 2s infinite;
         }
 
         .status-circle.error {
             background: var(--red);
-            box-shadow: 0 0 0 6px rgba(248, 81, 73, .15), 0 0 24px rgba(248, 81, 73, .2);
+            box-shadow: 0 0 0 8px rgba(248, 81, 73, .15), 0 0 30px rgba(248, 81, 73, .2);
+            animation: pulse-red 1.5s infinite;
         }
 
         .status-circle.stopped {
             background: var(--text-muted);
-            box-shadow: 0 0 0 6px rgba(72, 79, 88, .15);
+            box-shadow: 0 0 0 8px rgba(72, 79, 88, .15);
         }
 
         .status-circle svg {
-            width: 28px;
-            height: 28px;
+            width: 44px;
+            height: 44px;
             fill: #fff;
         }
 
-        @keyframes pulse-ring {
-            0% {
-                box-shadow: 0 0 0 6px rgba(31, 111, 235, .15), 0 0 24px rgba(31, 111, 235, .2);
+        @keyframes pulse-green {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 8px rgba(63, 185, 80, .15), 0 0 30px rgba(63, 185, 80, .2);
             }
 
             50% {
-                box-shadow: 0 0 0 10px rgba(31, 111, 235, .05), 0 0 32px rgba(31, 111, 235, .3);
+                box-shadow: 0 0 0 14px rgba(63, 185, 80, .08), 0 0 40px rgba(63, 185, 80, .3);
+            }
+        }
+
+        @keyframes pulse-blue {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 8px rgba(31, 111, 235, .15), 0 0 30px rgba(31, 111, 235, .2);
             }
 
+            50% {
+                box-shadow: 0 0 0 16px rgba(31, 111, 235, .06), 0 0 44px rgba(31, 111, 235, .35);
+            }
+        }
+
+        @keyframes pulse-red {
+
+            0%,
             100% {
-                box-shadow: 0 0 0 6px rgba(31, 111, 235, .15), 0 0 24px rgba(31, 111, 235, .2);
+                box-shadow: 0 0 0 8px rgba(248, 81, 73, .15), 0 0 30px rgba(248, 81, 73, .2);
+            }
+
+            50% {
+                box-shadow: 0 0 0 14px rgba(248, 81, 73, .08), 0 0 40px rgba(248, 81, 73, .3);
             }
         }
 
@@ -247,10 +271,11 @@
         .btn-action {
             flex: 1;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            gap: 6px;
-            padding: 14px 8px;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
             background: var(--bg-elevated);
             border: 1px solid var(--border);
             border-radius: var(--radius);
