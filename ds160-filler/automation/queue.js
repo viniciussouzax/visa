@@ -165,6 +165,23 @@ class QueueRunner {
         const result = await fillApplication(applicant, app, onAppId, config, captchaMode, (page) => {
             lastPage = page;
             this.emit({ type: 'filling', applicantName: applicant.full_name, page });
+        }, async (pageStats) => {
+            // Insert fill_log for this page into Supabase
+            try {
+                await this.supabase.from('fill_logs').insert({
+                    application_id: app.id,
+                    applicant_id: app.applicant_id,
+                    page_name: pageStats.pageName || 'Unknown',
+                    fields_filled: pageStats.fieldsFilled || 0,
+                    fields_total: pageStats.fieldsTotal || 0,
+                    fields_unmatched: pageStats.emptyFields?.length > 0 ? pageStats.emptyFields : null,
+                    validation_errors: pageStats.validationErrors?.length > 0 ? pageStats.validationErrors : null,
+                    navigated: pageStats.navigated !== false,
+                    attempts: pageStats.attempt || pageStats.passes || 1,
+                    duration_ms: Math.round((pageStats.elapsed || 0) * 1000),
+                    worker_id: this.workerId,
+                });
+            } catch (e) { console.warn('[Queue] fill_log insert failed:', e.message); }
         }, existingBrowser, existingPage);
 
         if (result.success) {

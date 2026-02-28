@@ -23,11 +23,12 @@ const TMP = path.join(__dirname, '..', 'tmp');
  * @param {object} config - From automation_config table
  * @param {string} captchaMode - 'capmonster' | 'ai_vision'
  * @param {function} onPage - Callback(pageName) for status updates
+ * @param {function} [onPageFilled] - Callback(pageStats) for fill_logs — called after each page is filled
  * @param {object} [existingBrowser] - Reuse this browser instead of creating new
  * @param {object} [existingPage] - Reuse this page instead of creating new
  * @returns {{ success: boolean, applicationId?: string, error?: string, browser, activePage }}
  */
-async function fillApplication(applicant, application, onAppId, config, captchaMode, onPage, existingBrowser, existingPage) {
+async function fillApplication(applicant, application, onAppId, config, captchaMode, onPage, onPageFilled, existingBrowser, existingPage) {
     if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
 
     // Build field map from applicant data
@@ -698,15 +699,37 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     console.warn(`[Filler] ⚠️ SECURITY: ${answeredYes} respostas YES: ${yesIds.join(', ')}`);
                 }
                 console.log(`[Filler] Security: ${answeredYes} Yes, ${answeredNo} No (${totalRadioGroups} perguntas)`);
+                // Report security page stats via callback
+                if (onPageFilled) {
+                    try { onPageFilled({ pageName, fieldsFilled: totalRadioGroups, fieldsTotal: totalRadioGroups, emptyFields: [], elapsed: 0, passes: 1 }); } catch { }
+                }
                 await clickNextAndWait(page);
                 continue;
             }
 
             // Fill page with retry
+            let fillResult = null;
             for (let attempt = 1; attempt <= 3; attempt++) {
-                await fillPageCompletely(page, fieldMap);
+                fillResult = await fillPageCompletely(page, fieldMap);
                 const { navigated } = await clickNextAndWait(page);
-                if (navigated) break;
+                if (navigated) {
+                    // Report page fill stats via callback
+                    if (onPageFilled && fillResult) {
+                        try {
+                            onPageFilled({
+                                pageName,
+                                fieldsFilled: fillResult.passes > 0 ? fillResult.passes : 0, // approx
+                                fieldsTotal: 0, // filled inside fillPageCompletely
+                                emptyFields: fillResult.emptyFields || [],
+                                elapsed: fillResult.elapsed || 0,
+                                passes: fillResult.passes || 1,
+                                attempt,
+                                navigated: true
+                            });
+                        } catch { }
+                    }
+                    break;
+                }
 
                 // Capture validation errors from DS-160 form
                 const validationErrors = await page.locator('.error-message li').allTextContents().catch(() => []);
@@ -715,6 +738,20 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 }
 
                 if (attempt === 3 && !navigated) {
+                    // Report failed page stats
+                    if (onPageFilled && fillResult) {
+                        try {
+                            onPageFilled({
+                                pageName,
+                                emptyFields: fillResult.emptyFields || [],
+                                elapsed: fillResult.elapsed || 0,
+                                passes: fillResult.passes || 1,
+                                attempt,
+                                navigated: false,
+                                validationErrors
+                            });
+                        } catch { }
+                    }
                     const errDetail = validationErrors.length > 0 ? validationErrors.join('; ') : 'Page stuck after 3 attempts';
                     throw new Error(`${pageName}: ${errDetail}`);
                 }
