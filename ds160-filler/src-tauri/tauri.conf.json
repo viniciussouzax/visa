@@ -14,6 +14,7 @@
                 "width": 420,
                 "height": 520,
                 "resizable": false,
+                "maximizable": false,
                 "center": true,
                 "decorations": true
             }
@@ -50,7 +51,7 @@
     },
     "plugins": {
         "updater": {
-            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDAzMTJENDUxRDNGODM4NUMKUldSY09QalRVZFFTQTlKeStrb0VPZ0ExNzRjTzNUZElTRy91MklRMmZhNktsa2RmMVNUREY1VDYK",
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJFQUEwNTY0MjM5M0I5MDMKUldRRHVaTWpaQVdxdnRpTXRqelVkSW9UMlZpQnNuOXgrSUIzN0pJWWRROW9VMDBQOG02QmF4M1EK",
             "endpoints": [
                 "https://github.com/viniciussouzax/visa/releases/latest/download/latest.json"
             ]
