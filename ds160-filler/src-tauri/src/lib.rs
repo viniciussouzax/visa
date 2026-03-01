@@ -284,6 +284,7 @@ fn logout(app: AppHandle, state: State<AppState>) -> CommandResult {
         #[cfg(windows)]
         {
             use std::process::Command;
+            use std::os::windows::process::CommandExt;
             // /T = kill child processes (Chromium), /F = force
             let _ = Command::new("taskkill")
                 .args(&["/PID", &pid.to_string(), "/T", "/F"])
