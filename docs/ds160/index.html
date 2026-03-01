@@ -4427,7 +4427,7 @@
         // ===== RADIO BRANCHES =====
         function setupRadioBranches() {
             // Branches that open on N instead of Y
-            const invertedBranches = ['mailingAddr'];
+            const invertedBranches = ['mailingAddr', 'payerAddr'];
             document.querySelectorAll('input[type=radio][data-branch]').forEach(r => {
                 r.addEventListener('change', () => {
                     const branchName = r.dataset.branch;
