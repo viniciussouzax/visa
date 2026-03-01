@@ -58,6 +58,7 @@ jobs:
 
       - name: Prepare production bundle
         working-directory: ds160-filler
+        shell: bash
         run: |
           node scripts/prepare-bundle.js
           cd _bundle/_pkg
