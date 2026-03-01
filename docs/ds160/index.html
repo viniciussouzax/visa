@@ -825,15 +825,14 @@
 
     <!-- ===== PAGE 0: Start (Mode + Location) ===== -->
     <div class="page active" id="pg-Start">
-        <h2>Início</h2>
+        <h2>Local da Entrevista</h2>
 
         <div class="section">
             <h3>Local da Entrevista</h3>
-            <p style="color:#555;margin-bottom:16px">Selecione a Embaixada ou Consulado dos EUA onde será realizada a
-                entrevista do visto.</p>
-            <div class="fg"><label>Embaixada / Consulado *</label><select id="ddlLocation"
-                    class="sel-location"></select>
-                <small style="color:#888">Escolha o posto consular mais próximo de você.</small>
+            <div class="fg"><label>Escolha o posto consular mais próximo de você *</label>
+                <small style="color:#888">Selecione a Embaixada ou Consulado dos EUA onde será realizada a entrevista do
+                    visto.</small>
+                <select id="ddlLocation" class="sel-location"></select>
             </div>
         </div>
         <div class="page-btns"><span></span><button class="btn btn-next" onclick="nextPage()">Proximo</button></div>
@@ -5231,7 +5230,7 @@
                 window._linkToPrimaryId = linkToPrimaryId;
             }
 
-            // Always reset accordion to first section (Início)
+            // Always reset accordion to first section (Local da Entrevista)
             // toggleAccordion handles showing the correct page internally
             if (window._toggleAccordion) {
                 window._toggleAccordion(0, true);
@@ -5743,7 +5742,7 @@
         // ===== ACCORDION SYSTEM =====
         (function () {
             const SECTIONS = [
-                { "label": "Início", "pages": ["pg-Start"] },
+                { "label": "Local da Entrevista", "pages": ["pg-Start"] },
                 { "label": "Dados Pessoais", "pages": ["pg-Personal1"] },
                 { "label": "Informações Pessoais Adicionais", "pages": ["pg-Personal2"] },
                 { "label": "Informações de Viagem", "pages": ["pg-Travel"] },
