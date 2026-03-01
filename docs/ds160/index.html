@@ -231,6 +231,25 @@
             line-height: 1.4;
         }
 
+        /* Date fields — horizontal responsive layout */
+        .date-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .date-row select,
+        .date-row input {
+            flex: 1;
+            min-width: 80px;
+            max-width: 160px;
+        }
+
+        .date-row input[type="text"] {
+            max-width: 100px;
+        }
+
         .radio-group {
             display: flex;
             gap: 24px;
