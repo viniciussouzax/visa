@@ -1,9 +1,10 @@
 {
     "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-cli/schema.json",
     "productName": "SENDS160",
-    "version": "1.4.6",
+    "version": "1.4.7",
     "identifier": "com.sends160.app",
     "build": {
+        "beforeBuildCommand": "node scripts/copy-resources.js",
         "frontendDist": "../renderer"
     },
     "app": {
@@ -31,8 +32,7 @@
     "bundle": {
         "active": true,
         "resources": [
-            "../sidecar/**",
-            "../automation/**"
+            "resources/"
         ],
         "targets": [
             "nsis",

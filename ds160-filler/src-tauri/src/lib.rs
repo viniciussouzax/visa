@@ -78,10 +78,12 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
             cwd
         }
     } else {
-        app_handle
+        // In production: resources are inside resources/ within resource_dir
+        let resource = app_handle
             .path()
             .resource_dir()
-            .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
+            .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+        resource.join("resources")
     };
 
     let sidecar_path = project_dir.join("sidecar").join("run.js");
