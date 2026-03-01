@@ -24,6 +24,22 @@ if (clearBtn) {
     clearBtn.addEventListener('click', () => { $('log').innerHTML = ''; });
 }
 
+// Copy logs button
+const copyBtn = $('btn-copy-logs');
+if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+        const logEl = $('log');
+        if (!logEl) return;
+        const lines = [...logEl.querySelectorAll('.log-line')].map(l => l.textContent).join('\n');
+        if (!lines) { copyBtn.textContent = '— vazio —'; setTimeout(() => { copyBtn.textContent = '📋 Copiar'; }, 1500); return; }
+        try {
+            await navigator.clipboard.writeText(lines);
+            copyBtn.textContent = '✅ Copiado!';
+        } catch { copyBtn.textContent = '❌ Erro'; }
+        setTimeout(() => { copyBtn.textContent = '📋 Copiar'; }, 2000);
+    });
+}
+
 // ============================================================
 // SUPABASE (direct from frontend — no IPC needed)
 // (Supabase is used only in the sidecar, not in the renderer)

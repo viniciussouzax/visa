@@ -477,6 +477,8 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            min-height: 0;
+            /* Fix: allow flex child to shrink below content size */
         }
 
         .log-header {
@@ -514,6 +516,8 @@
             flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
+            min-height: 0;
+            /* Fix: required for overflow-y:auto inside flex */
             padding: 8px 16px;
             font-family: 'JetBrains Mono', 'Fira Code', monospace;
             font-size: 11px;
@@ -635,7 +639,10 @@
             <div class="log-panel">
                 <div class="log-header">
                     <span>Registros de atividade</span>
-                    <button id="btn-clear-logs">Limpar</button>
+                    <div style="display:flex;gap:8px;">
+                        <button id="btn-copy-logs" title="Copiar logs">📋 Copiar</button>
+                        <button id="btn-clear-logs">Limpar</button>
+                    </div>
                 </div>
                 <div class="log-body" id="log"></div>
             </div>
