@@ -31,23 +31,40 @@ const REMOTE_DIR = GROUPS[0].remoteDir;
 const SHA_FILE = path.join(__dirname, '.last-sha');
 
 // ============================================================
-// HTTP helper (no external deps)
+// HTTP helper (no external deps) — with ETag caching for rate limit
 // ============================================================
-function httpGet(url) {
+const etagCache = {}; // url → { etag, data }
+
+function httpGet(url, useEtag = false) {
     return new Promise((resolve, reject) => {
         const opts = {
             headers: { 'User-Agent': 'DS160-Filler-AutoUpdate' }
         };
+        // ROB-1: Use If-None-Match to avoid consuming rate limit
+        if (useEtag && etagCache[url]?.etag) {
+            opts.headers['If-None-Match'] = etagCache[url].etag;
+        }
         https.get(url, opts, (res) => {
             if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-                return httpGet(res.headers.location).then(resolve).catch(reject);
+                return httpGet(res.headers.location, useEtag).then(resolve).catch(reject);
+            }
+            // 304 Not Modified — return cached data
+            if (res.statusCode === 304 && etagCache[url]?.data) {
+                res.resume(); // drain response
+                return resolve(etagCache[url].data);
             }
             if (res.statusCode !== 200) {
                 return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
             }
             let data = '';
             res.on('data', chunk => data += chunk);
-            res.on('end', () => resolve(data));
+            res.on('end', () => {
+                // Cache ETag for future requests
+                if (useEtag && res.headers.etag) {
+                    etagCache[url] = { etag: res.headers.etag, data };
+                }
+                resolve(data);
+            });
         }).on('error', reject);
     });
 }
@@ -59,7 +76,7 @@ function httpGet(url) {
 async function getRemoteSHA() {
     // Check commits on the entire ds160-filler directory
     const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/commits?path=ds160-filler&sha=${BRANCH}&per_page=1`;
-    const json = await httpGet(url);
+    const json = await httpGet(url, true); // Use ETag caching to reduce rate limit
     const commits = JSON.parse(json);
     if (!commits.length) throw new Error('No commits found');
     return commits[0].sha;

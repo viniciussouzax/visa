@@ -573,12 +573,18 @@ class QueueRunner {
             return null;
         }
 
-        // Claim: set application to filling
-        await this.supabase.from('applications').update({
+        // Claim: set application to filling (atomic: only if still pending)
+        const { data: claimed, error: claimErr } = await this.supabase.from('applications').update({
             fill_status: 'filling',
             fill_started_at: new Date().toISOString(),
             fill_worker_id: this.workerId
-        }).eq('id', app.id);
+        }).eq('id', app.id).eq('fill_status', 'pending').select().maybeSingle();
+
+        // ROB-4: If another worker claimed between SELECT and UPDATE, claimed will be null
+        if (!claimed || claimErr) {
+            console.warn(`[Queue] Claim race lost for ${app.id} — another worker claimed it`);
+            return null;
+        }
 
         // Pipeline: approved → doing
         await this.supabase.from('applicants').update({
@@ -588,9 +594,9 @@ class QueueRunner {
 
         const priority = app.fill_priority || 0;
         const priorityLabel = priority >= 3 ? '🚨 III - EMERGÊNCIA' : priority >= 2 ? '⚡ II - URGÊNCIA' : 'I - Indefinido';
-        console.log(`[Queue] Claimed ${app.id} → doing (${priorityLabel})`);
+        console.log(`[Queue] Claimed ${claimed.id} → doing (${priorityLabel})`);
 
-        return { ...app, fill_status: 'filling' };
+        return { ...claimed, fill_status: 'filling' };
     }
 
     async _getApp(appId) {
