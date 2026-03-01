@@ -1801,6 +1801,35 @@ function normalizeProfile(data) {
         insurgentOrg: we3.insurgentOrg === 'Y' || we3.insurgent_org === 'Y',
         insurgentOrgExplanation: we3.insurgentOrgExplanation || we3.insurgent_org_explanation || '',
 
+        // === SECURITY ===
+        // Maps all 30 security questions from the clone form JSON to flat fields
+        // The filler uses these to set Yes/No + explanation text on security pages
+        security: (() => {
+            const sec = data.security || {};
+            // List of all security field keys (matching generateJSON output)
+            const fields = [
+                // Security 1 - Health
+                'disease', 'disorder', 'drugUser',
+                // Security 2 - Criminal
+                'arrested', 'controlledSubstances', 'prostitution', 'moneyLaundering',
+                'humanTrafficking', 'assistedSevereTrafficking', 'humanTraffickingRelated',
+                // Security 3 - National Security
+                'illegalActivity', 'terroristActivity', 'terroristSupport', 'terroristOrg',
+                'terroristRel', 'genocide', 'torture', 'exViolence', 'childSoldier',
+                'religiousFreedom', 'populationControls', 'transplant',
+                // Security 4 - Immigration
+                'removalHearing', 'immigrationFraud', 'failToAttend', 'visaViolation', 'deport',
+                // Security 5 - Miscellaneous
+                'childCustody', 'votingViolation', 'renounceExp', 'attWoReimb',
+            ];
+            const result = {};
+            for (const f of fields) {
+                result[f] = sec[f] === 'Y';
+                result[f + 'Expl'] = sec[f + 'Expl'] || '';
+            }
+            return result;
+        })(),
+
         // === META ===
         location: data.location || null,
         securityAnswer: data.securityAnswer || data.security_answer || null
