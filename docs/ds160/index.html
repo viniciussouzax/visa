@@ -3267,16 +3267,23 @@
         // ===== ORG RESOLUTION from URL =====
         let resolvedCompanyId = null;
         const urlOrgParam = new URLSearchParams(location.search).get('org');
-        if (urlOrgParam) {
+        if (!urlOrgParam) {
+            // Block form: no org parameter
+            document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a2e;color:#fff;font-family:sans-serif;text-align:center;padding:20px"><div><h1 style="font-size:2em;margin-bottom:16px">⚠️ Link inválido</h1><p style="font-size:1.1em;color:#aaa;max-width:500px">Este formulário requer um link de organização válido.<br>Entre em contato com seu assessor para obter o link correto.</p><p style="margin-top:24px;color:#555;font-size:0.85em">Exemplo: ds160.com/?org=CODIGO</p></div></div>';
+        } else {
             // Resolve short_id to company UUID
             sbGet('companies?short_id=eq.' + encodeURIComponent(urlOrgParam) + '&select=id&limit=1').then(data => {
                 if (data && data[0]) {
                     resolvedCompanyId = data[0].id;
                     console.log('[DS-160] Org resolved:', urlOrgParam, '->', resolvedCompanyId);
                 } else {
-                    console.warn('[DS-160] Org not found for short_id:', urlOrgParam);
+                    // Block form: org not found
+                    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a2e;color:#fff;font-family:sans-serif;text-align:center;padding:20px"><div><h1 style="font-size:2em;margin-bottom:16px">❌ Organização não encontrada</h1><p style="font-size:1.1em;color:#aaa;max-width:500px">O código "<strong>' + urlOrgParam + '</strong>" não corresponde a nenhuma organização cadastrada.<br>Verifique o link com seu assessor.</p></div></div>';
                 }
-            }).catch(e => console.error('[DS-160] Org resolution error:', e));
+            }).catch(e => {
+                console.error('[DS-160] Org resolution error:', e);
+                document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a2e;color:#fff;font-family:sans-serif;text-align:center;padding:20px"><div><h1 style="font-size:2em;margin-bottom:16px">❌ Erro de conexão</h1><p style="font-size:1.1em;color:#aaa">Não foi possível validar a organização. Tente novamente.</p></div></div>';
+            });
         }
 
         let _isNavigating = false;
