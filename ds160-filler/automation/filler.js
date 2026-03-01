@@ -149,6 +149,18 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             const isOnLanding = currentUrl.includes('Default.aspx');
             let sessionExpired = isTimedOut;
 
+            // If on SessionTimedOut page, click OK to dismiss and go back to Landing
+            if (isTimedOut) {
+                console.log('[Filler] ⏰ Session timeout detectado — clicando OK para voltar ao Landing');
+                const okBtn = page.getByRole('button', { name: 'OK' });
+                if (await okBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+                    await okBtn.click();
+                    await page.waitForLoadState('domcontentloaded').catch(() => { });
+                    await waitForPageReady(page);
+                    console.log('[Filler] ✅ OK clicado, redirecionado para:', page.url());
+                }
+            }
+
             if (!isTimedOut && !isOnLanding) {
                 // Check page text for session expiry indicators
                 const bodyText = await page.locator('body').innerText({ timeout: 3000 }).catch(() => '');
@@ -630,7 +642,18 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 const isWarning = /warning|continue.*application|recover/i.test(pageText);
 
                 if (isTimeout) {
-                    console.error('[Filler] 🔴 Session expirada/timeout detectado');
+                    console.warn('[Filler] ⏰ Session timeout detectado na página — clicando OK');
+                    // Try to click OK button to dismiss timeout dialog
+                    const okBtn = page.getByRole('button', { name: 'OK' });
+                    if (await okBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+                        await okBtn.click();
+                        await page.waitForLoadState('domcontentloaded').catch(() => { });
+                        await waitForPageReady(page);
+                        console.log('[Filler] ✅ OK clicado, redirecionado para:', page.url());
+                        continue; // Re-enter loop to handle the new page (Landing)
+                    }
+                    // If no OK button found, throw
+                    console.error('[Filler] 🔴 Session expirada sem botão OK');
                     throw new Error('Session expired: ' + url);
                 }
 
