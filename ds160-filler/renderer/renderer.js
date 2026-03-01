@@ -128,31 +128,28 @@ $('btn-logout').addEventListener('click', async () => {
     $('btn-login').disabled = false;
     $('btn-login').textContent = 'Entrar';
     $('log').innerHTML = '';
-    setCircle('stopped', 'Desconectado', '');
+    setCircle('stopped', '', '');
+    const ct = $('circle-timer');
+    if (ct) ct.textContent = 'Desconectado';
 });
 
 // ============================================================
 // TIMER — countdown inside the sync button
 // ============================================================
 function showTimer(display) {
-    // Show countdown in the sync button text (e.g. "⏱ 28:55")
     if (!syncBusy) {
         const text = typeof display === 'number'
-            ? `⏱ ${Math.floor(display / 60)}:${String(display % 60).padStart(2, '0')}`
-            : `⏱ ${display}`;
-        $('btn-sync-text').textContent = text;
-        // Hide sync icon during countdown
-        const svg = $('btn-sync').querySelector('svg');
-        if (svg) svg.style.display = 'none';
+            ? `${Math.floor(display / 60)}:${String(display % 60).padStart(2, '0')}`
+            : display;
+        const ct = $('circle-timer');
+        if (ct) ct.textContent = text;
     }
 }
 
 function hideTimer() {
     if (!syncBusy) {
-        $('btn-sync-text').textContent = 'Sincronizar';
-        // Show sync icon
-        const svg = $('btn-sync').querySelector('svg');
-        if (svg) svg.style.display = '';
+        const ct = $('circle-timer');
+        if (ct) ct.textContent = '';
     }
 }
 
@@ -160,16 +157,21 @@ function hideTimer() {
 // STATUS CIRCLE
 // ============================================================
 const STATUS_ICONS = {
-    idle: '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>',
-    running: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>',
-    error: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>',
-    stopped: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>',
+    idle: '',
+    running: '',
+    error: '',
+    warning: '',
+    stopped: '',
+    sync: '',
 };
 
 function setCircle(state, label, detail) {
     const circle = $('status-circle');
     circle.className = 'status-circle ' + state;
-    circle.innerHTML = STATUS_ICONS[state] || STATUS_ICONS.idle;
+    // Preserve circle-timer span
+    const timerSpan = $('circle-timer');
+    const timerText = timerSpan ? timerSpan.textContent : '';
+    circle.innerHTML = (STATUS_ICONS[state] || STATUS_ICONS.idle) + '<span id="circle-timer" class="circle-timer">' + timerText + '</span>';
     $('status-text').textContent = label || 'Ativo';
     if (detail !== undefined) $('status-detail').textContent = detail;
 }
@@ -203,91 +205,102 @@ function log(msg) {
 listen('automation-status', (event) => {
     const status = event.payload;
 
-    if (status.type === 'searching') {
-        setCircle('idle', 'Buscando...', 'Verificando fila de preenchimento');
-        hideTimer();
-    } else if (status.type === 'claimed') {
-        setCircle('running', 'Encontrado', status.applicantName || 'Preparando...');
-        log(`📋 ${status.applicantName} — ${status.page || 'Preparando...'}`);
-        hideTimer();
-    } else if (status.type === 'filling') {
-        setCircle('running', 'Preenchendo...', `${status.applicantName} — ${status.page || ''}`);
-    } else if (status.type === 'done') {
-        log(`✅ ${status.applicantName} concluído`);
-        setCircle('idle', 'Concluído', `${status.applicantName} — finalizado`);
-    } else if (status.type === 'error') {
-        log(`❌ ${status.applicantName || ''} — ${status.error || 'Erro desconhecido'}`);
-        setCircle('error', 'Erro', status.applicantName || 'Verifique os logs');
-    } else if (status.type === 'queue-empty') {
-        setCircle('idle', 'Aguardando', 'Nenhum item na fila');
-        if (status.nextCheck) showTimer(status.nextCheck);
+    if (status.type === 'searching' || status.type === 'queue-empty' || status.type === 'done') {
+        // 🔵 AZUL — Ativo e aguardando
+        setCircle('idle', '', 'Ativo e aguardando');
+        if (status.type === 'queue-empty' && status.nextCheck) showTimer(status.nextCheck);
+        if (status.type === 'done') log(`✅ ${status.applicantName} concluído`);
+        if (status.type === 'searching') hideTimer();
+    } else if (status.type === 'claimed' || status.type === 'filling') {
+        // 🟢 VERDE — Preenchendo
+        const page = status.page || '';
+        const name = status.applicantName || '';
+        setCircle('running', '', `Página ${page} do solicitante ${name}`);
+        const ct = $('circle-timer');
+        if (ct) ct.textContent = 'Preenchendo';
+        if (status.type === 'claimed') {
+            log(`📋 ${name} — ${page || 'Preparando...'}`);
+        }
+    } else if (status.type === 'retrying') {
+        // 🟡 ÂMBAR — Retentando
+        setCircle('warning', '', `Página ${status.page || ''} do solicitante ${status.applicantName || ''}`);
+        const ct = $('circle-timer');
+        if (ct) ct.textContent = 'Retentando';
+        log(`🔄 ${status.applicantName} — tentativa ${status.retryNumber}`);
+    } else if (status.type === 'error' || status.type === 'paused') {
+        // 🔴 VERMELHO — Erro
+        const errMsg = (status.error || status.message || '').toLowerCase();
+        const isConnectionError = errMsg.includes('fetch') || errMsg.includes('network') ||
+            errMsg.includes('timeout') || errMsg.includes('enotfound') ||
+            errMsg.includes('econnrefused') || errMsg.includes('internet') ||
+            errMsg.includes('offline') || errMsg.includes('socket');
+        if (isConnectionError) {
+            setCircle('error', '', 'Sem conexão com a internet');
+        } else {
+            setCircle('error', '', 'Notificando suporte técnico');
+        }
+        const ct = $('circle-timer');
+        if (ct) ct.textContent = 'Erro';
+        if (status.type === 'error') log(`❌ ${status.applicantName || ''} — ${status.error || 'Erro'}`);
+        if (status.type === 'paused') log(`⚠️ ${status.message}`);
     } else if (status.type === 'waiting') {
         showTimer(status.display || status.countdown);
-    } else if (status.type === 'retrying') {
-        setCircle('running', `Retentativa ${status.retryNumber}/5`, status.applicantName || '');
-        log(`🔄 ${status.applicantName} — tentativa ${status.retryNumber}, aguardando ${Math.round(status.delay / 60)}min`);
-    } else if (status.type === 'paused') {
-        setCircle('error', 'Pausado', status.message || 'Muitos erros seguidos');
-        log(`⚠️ ${status.message}`);
     } else if (status.type === 'update') {
         log(`🔄 ${status.message || 'Scripts atualizados'}`);
     }
 });
 
 // ============================================================
-// SYNC BUTTON (check update → refresh queue) — single unified button
+// SYNC — clicking the circle triggers sync
 // ============================================================
 let syncBusy = false;
 
-$('btn-sync').addEventListener('click', async () => {
-    if (syncBusy) return; // Anti-double-click
+$('status-circle').addEventListener('click', async () => {
+    // Só permite sync quando está em estado idle (azul)
+    const circle = $('status-circle');
+    const isIdle = circle.classList.contains('idle');
+    if (!isIdle || syncBusy) return;
     syncBusy = true;
-    $('btn-sync-text').textContent = 'Sincronizando...';
-    $('btn-sync').disabled = true;
+    const ct = $('circle-timer');
+    if (ct) ct.innerHTML = '<div class="circle-spinner"></div>';
 
     try {
-        // Step 1: Check for updates
         const { check } = window.__TAURI__.updater;
         const update = await check();
         if (update) {
             log(`📦 Nova versão ${update.version} — instalando...`);
-            $('btn-sync-text').textContent = 'Atualizando...';
+            if (ct) ct.innerHTML = '<div class="circle-spinner"></div>';
             await update.downloadAndInstall();
             log('✅ Atualização instalada! Reiniciando...');
             const { relaunch } = window.__TAURI__.process;
             await relaunch();
             return;
         }
-    } catch { /* updater may fail in dev — continue to refresh */ }
+    } catch { }
 
-    // Step 2: Refresh queue
     try {
         log('⚡ Buscando fila...');
-        $('btn-sync-text').textContent = 'Buscando...';
+        if (ct) ct.innerHTML = '<div class="circle-spinner"></div>';
         await invoke('refresh_queue');
     } catch (e) {
         log(`⚠️ ${e}`);
     }
 
     log('✅ Sincronizado');
-    $('btn-sync-text').textContent = 'Sincronizar';
-
-    // Cooldown 5s — prevent rapid clicks
+    // Keep spinner until next status event arrives naturally
+    setCircle('idle', '', 'Ativo e aguardando');
     setTimeout(() => {
         syncBusy = false;
-        $('btn-sync').disabled = false;
     }, 5000);
 });
 
-// Auto-check for updates on startup (after 5 seconds)
+// Auto-check for updates on startup
 setTimeout(async () => {
     try {
         const { check } = window.__TAURI__.updater;
         const update = await check();
         if (update) {
-            log(`📦 Nova versão ${update.version} disponível — clique em Sincronizar`);
-            $('btn-sync').style.borderColor = '#3fb950';
-            $('btn-sync-text').textContent = `Atualizar`;
+            log(`📦 Nova versão ${update.version} disponível — clique no círculo`);
         }
-    } catch { /* silently ignore in dev mode */ }
+    } catch { }
 }, 5000);

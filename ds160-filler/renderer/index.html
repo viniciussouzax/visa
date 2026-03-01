@@ -20,7 +20,7 @@
 
         body {
             font-family: 'Inter', system-ui, sans-serif;
-            background: #1a1d21;
+            background: #22262b;
             color: #c9d1d9;
             height: 100vh;
             display: flex;
@@ -127,6 +127,7 @@
             flex: 1;
             flex-direction: column;
             overflow: hidden;
+            width: 100%;
         }
 
         .tab-content.active {
@@ -138,9 +139,12 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
             padding: 20px 16px;
-            gap: 16px;
+            gap: 12px;
             overflow-y: auto;
+            width: 100%;
         }
 
         /* --- Status hero (big circle like Headless Recorder) --- */
@@ -149,158 +153,212 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 28px 16px;
-            gap: 14px;
-            flex-shrink: 0;
+            padding: 16px;
+            gap: 12px;
+            flex: 1;
         }
 
         .status-circle {
-            width: 120px;
-            height: 120px;
+            width: 180px;
+            height: 180px;
+            min-width: 180px;
+            min-height: 180px;
             border-radius: 50%;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 4px;
             transition: all .3s ease;
             position: relative;
+            overflow: visible;
+            cursor: default;
         }
 
         .status-circle.idle {
-            background: var(--green);
-            box-shadow: 0 0 0 8px rgba(63, 185, 80, .15), 0 0 30px rgba(63, 185, 80, .2);
-            animation: pulse-green 2.5s infinite;
+            cursor: pointer;
+            background: var(--blue-dim);
+            box-shadow: 0 0 0 6px rgba(31, 111, 235, .12), 0 0 20px rgba(31, 111, 235, .15);
+            animation: pulse-wave-blue 3s ease-in-out infinite;
         }
 
         .status-circle.running {
-            background: var(--blue-dim);
-            box-shadow: 0 0 0 8px rgba(31, 111, 235, .15), 0 0 30px rgba(31, 111, 235, .2);
-            animation: pulse-blue 2s infinite;
+            background: var(--green);
+            box-shadow: 0 0 0 6px rgba(63, 185, 80, .12), 0 0 20px rgba(63, 185, 80, .15);
+            animation: pulse-wave-green 2.5s ease-in-out infinite;
         }
 
         .status-circle.error {
             background: var(--red);
-            box-shadow: 0 0 0 8px rgba(248, 81, 73, .15), 0 0 30px rgba(248, 81, 73, .2);
-            animation: pulse-red 1.5s infinite;
+            box-shadow: 0 0 0 6px rgba(248, 81, 73, .12), 0 0 20px rgba(248, 81, 73, .15);
+            animation: pulse-wave-red 2s ease-in-out infinite;
+        }
+
+        .status-circle.warning {
+            background: var(--yellow);
+            box-shadow: 0 0 0 6px rgba(210, 153, 34, .12), 0 0 20px rgba(210, 153, 34, .15);
+            animation: pulse-wave-amber 2.5s ease-in-out infinite;
         }
 
         .status-circle.stopped {
             background: var(--text-muted);
-            box-shadow: 0 0 0 8px rgba(72, 79, 88, .15);
+            box-shadow: 0 0 0 6px rgba(72, 79, 88, .1);
         }
 
-        .status-circle svg {
-            width: 44px;
-            height: 44px;
+        .status-circle svg.status-icon {
+            width: 40px;
+            height: 40px;
             fill: #fff;
         }
 
-        @keyframes pulse-green {
+        .status-circle .circle-timer {
+            font-size: 22px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, .9);
+            letter-spacing: .02em;
+            font-variant-numeric: tabular-nums;
+        }
 
-            0%,
-            100% {
-                box-shadow: 0 0 0 8px rgba(63, 185, 80, .15), 0 0 30px rgba(63, 185, 80, .2);
-            }
+        .circle-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255, 255, 255, .25);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
 
-            50% {
-                box-shadow: 0 0 0 14px rgba(63, 185, 80, .08), 0 0 40px rgba(63, 185, 80, .3);
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
             }
         }
 
-        @keyframes pulse-blue {
-
-            0%,
-            100% {
-                box-shadow: 0 0 0 8px rgba(31, 111, 235, .15), 0 0 30px rgba(31, 111, 235, .2);
+        /* Soft expanding wave pulse — green (idle) */
+        @keyframes pulse-wave-green {
+            0% {
+                box-shadow:
+                    0 0 0 0 rgba(63, 185, 80, .35),
+                    0 0 0 0 rgba(63, 185, 80, .20),
+                    0 0 0 0 rgba(63, 185, 80, .10),
+                    0 0 25px rgba(63, 185, 80, .15);
             }
 
             50% {
-                box-shadow: 0 0 0 16px rgba(31, 111, 235, .06), 0 0 44px rgba(31, 111, 235, .35);
+                box-shadow:
+                    0 0 0 15px rgba(63, 185, 80, .15),
+                    0 0 0 30px rgba(63, 185, 80, .08),
+                    0 0 0 45px rgba(63, 185, 80, .03),
+                    0 0 60px rgba(63, 185, 80, .25);
+            }
+
+            100% {
+                box-shadow:
+                    0 0 0 0 rgba(63, 185, 80, .35),
+                    0 0 0 0 rgba(63, 185, 80, .20),
+                    0 0 0 0 rgba(63, 185, 80, .10),
+                    0 0 25px rgba(63, 185, 80, .15);
             }
         }
 
-        @keyframes pulse-red {
-
-            0%,
-            100% {
-                box-shadow: 0 0 0 8px rgba(248, 81, 73, .15), 0 0 30px rgba(248, 81, 73, .2);
+        /* Soft expanding wave pulse — blue (running) */
+        @keyframes pulse-wave-blue {
+            0% {
+                box-shadow:
+                    0 0 0 0 rgba(31, 111, 235, .40),
+                    0 0 0 0 rgba(88, 166, 255, .20),
+                    0 0 0 0 rgba(88, 166, 255, .10),
+                    0 0 25px rgba(31, 111, 235, .15);
             }
 
             50% {
-                box-shadow: 0 0 0 14px rgba(248, 81, 73, .08), 0 0 40px rgba(248, 81, 73, .3);
+                box-shadow:
+                    0 0 0 16px rgba(31, 111, 235, .12),
+                    0 0 0 32px rgba(88, 166, 255, .06),
+                    0 0 0 48px rgba(88, 166, 255, .03),
+                    0 0 65px rgba(31, 111, 235, .30);
+            }
+
+            100% {
+                box-shadow:
+                    0 0 0 0 rgba(31, 111, 235, .40),
+                    0 0 0 0 rgba(88, 166, 255, .20),
+                    0 0 0 0 rgba(88, 166, 255, .10),
+                    0 0 25px rgba(31, 111, 235, .15);
+            }
+        }
+
+        /* Soft expanding wave pulse — red (error) */
+        @keyframes pulse-wave-red {
+            0% {
+                box-shadow:
+                    0 0 0 0 rgba(248, 81, 73, .40),
+                    0 0 0 0 rgba(248, 81, 73, .20),
+                    0 0 0 0 rgba(248, 81, 73, .10),
+                    0 0 25px rgba(248, 81, 73, .15);
+            }
+
+            50% {
+                box-shadow:
+                    0 0 0 14px rgba(248, 81, 73, .12),
+                    0 0 0 28px rgba(248, 81, 73, .06),
+                    0 0 0 42px rgba(248, 81, 73, .03),
+                    0 0 55px rgba(248, 81, 73, .28);
+            }
+
+            100% {
+                box-shadow:
+                    0 0 0 0 rgba(248, 81, 73, .40),
+                    0 0 0 0 rgba(248, 81, 73, .20),
+                    0 0 0 0 rgba(248, 81, 73, .10),
+                    0 0 25px rgba(248, 81, 73, .15);
+            }
+        }
+
+        /* Soft expanding wave pulse — amber (warning) */
+        @keyframes pulse-wave-amber {
+            0% {
+                box-shadow:
+                    0 0 0 0 rgba(210, 153, 34, .35),
+                    0 0 0 0 rgba(210, 153, 34, .20),
+                    0 0 0 0 rgba(210, 153, 34, .10),
+                    0 0 25px rgba(210, 153, 34, .15);
+            }
+
+            50% {
+                box-shadow:
+                    0 0 0 14px rgba(210, 153, 34, .12),
+                    0 0 0 28px rgba(210, 153, 34, .06),
+                    0 0 0 42px rgba(210, 153, 34, .03),
+                    0 0 55px rgba(210, 153, 34, .22);
+            }
+
+            100% {
+                box-shadow:
+                    0 0 0 0 rgba(210, 153, 34, .35),
+                    0 0 0 0 rgba(210, 153, 34, .20),
+                    0 0 0 0 rgba(210, 153, 34, .10),
+                    0 0 25px rgba(210, 153, 34, .15);
             }
         }
 
         .status-label {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text-primary);
-            text-align: center;
+            display: none;
         }
 
         .status-detail {
             font-size: 12px;
             color: var(--text-secondary);
             text-align: center;
+            margin-top: 50px;
         }
 
-        /* --- Timer badge --- */
+        /* --- Timer badge (hidden — timer is now inside circle) --- */
         .timer-badge {
             display: none;
         }
 
-        /* --- Action buttons --- */
-        .actions {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            padding: 0 16px 16px;
-        }
 
-        .btn-action {
-            max-width: 150px;
-            min-width: 120px;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 10px 14px;
-            background: var(--bg-elevated);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            color: var(--text-primary);
-            cursor: pointer;
-            transition: all .2s;
-            font-family: inherit;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: .02em;
-            white-space: nowrap;
-        }
-
-        .btn-action:hover {
-            background: #353b44;
-            border-color: #484f58;
-        }
-
-        .btn-action:disabled {
-            opacity: .4;
-            cursor: not-allowed;
-        }
-
-        .btn-action svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-        }
-
-        .btn-action.blue {
-            color: var(--blue);
-        }
-
-        .btn-action.amber {
-            color: var(--yellow);
-        }
 
         /* --- Login form --- */
         .login-view {
@@ -311,6 +369,7 @@
             justify-content: center;
             padding: 24px;
             gap: 16px;
+            -webkit-app-region: no-drag;
         }
 
         .login-view .logo-big {
@@ -560,25 +619,11 @@
             <!-- Status hero -->
             <div class="status-hero">
                 <div id="status-circle" class="status-circle idle">
-                    <!-- Check icon (idle) -->
-                    <svg viewBox="0 0 24 24">
-                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                    </svg>
+                    <span id="circle-timer" class="circle-timer"></span>
                 </div>
-                <div id="status-text" class="status-label">Ativo</div>
-                <div id="status-detail" class="status-detail">Monitorando fila de preenchimento</div>
+                <div id="status-text" class="status-label"></div>
+                <div id="status-detail" class="status-detail">Ativo e aguardando</div>
                 <div id="timer-row" class="timer-badge"></div>
-            </div>
-
-            <!-- Actions -->
-            <div class="actions">
-                <button id="btn-sync" class="btn-action blue">
-                    <svg viewBox="0 0 24 24" width="16" height="16">
-                        <path
-                            d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" />
-                    </svg>
-                    <span id="btn-sync-text">Sincronizar</span>
-                </button>
             </div>
         </div>
 
