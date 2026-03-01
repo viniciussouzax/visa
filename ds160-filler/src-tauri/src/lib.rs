@@ -91,9 +91,33 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
     eprintln!("[Tauri] Starting sidecar: {:?}", sidecar_path);
     eprintln!("[Tauri] Project dir (CWD for node): {:?}", project_dir);
 
+    // Pre-flight checks
+    if !sidecar_path.exists() {
+        eprintln!("[Tauri] ERROR: run.js not found at {:?}", sidecar_path);
+        let _ = app_handle.emit("automation-status", serde_json::json!({
+            "type": "error",
+            "error": "Arquivo sidecar/run.js não encontrado. Reinstale o aplicativo."
+        }));
+        return;
+    }
+
     std::thread::spawn(move || {
         use std::process::{Command, Stdio};
         use std::io::{BufRead, BufReader};
+
+        // Check if Node.js is available
+        let node_check = Command::new("node").arg("--version").output();
+        if node_check.is_err() {
+            eprintln!("[Tauri] ERROR: Node.js not found in PATH");
+            let _ = app_handle.emit("automation-status", serde_json::json!({
+                "type": "error",
+                "error": "Node.js não encontrado. Instale o Node.js (https://nodejs.org) e reinicie o aplicativo."
+            }));
+            if let Some(state) = app_handle.try_state::<AppState>() {
+                *state.sidecar_running.lock().unwrap() = false;
+            }
+            return;
+        }
 
         let child = Command::new("node")
             .arg(&sidecar_path)

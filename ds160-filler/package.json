@@ -1,6 +1,6 @@
 {
     "name": "ds160-filler",
-    "version": "1.4.9",
+    "version": "1.5.0",
     "description": "DS-160 Auto-Filler — Software de automação",
     "private": true,
     "scripts": {

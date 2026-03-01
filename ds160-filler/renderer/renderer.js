@@ -152,12 +152,8 @@ const STATUS_ICONS = {
 function setCircle(state, label, detail) {
     const circle = $('status-circle');
     circle.className = 'status-circle ' + state;
-    // Preserve circle-timer span
-    const timerSpan = $('circle-timer');
-    const timerText = timerSpan ? timerSpan.textContent : '';
-    // If no timer text, show spinner by default
-    const timerContent = timerText || SPINNER_HTML;
-    circle.innerHTML = (STATUS_ICONS[state] || STATUS_ICONS.idle) + '<span id="circle-timer" class="circle-timer">' + timerContent + '</span>';
+    // Always reset timer to spinner — callers set specific text AFTER calling setCircle
+    circle.innerHTML = (STATUS_ICONS[state] || STATUS_ICONS.idle) + '<span id="circle-timer" class="circle-timer">' + SPINNER_HTML + '</span>';
     $('status-text').textContent = label || 'Ativo';
     if (detail !== undefined) $('status-detail').textContent = detail;
 }
@@ -184,6 +180,11 @@ function log(msg) {
     el.prepend(line);
     while (el.children.length > 200) el.removeChild(el.lastChild);
 }
+
+// ============================================================
+// SYNC STATE (declared before event listener that uses it)
+// ============================================================
+let syncBusy = false;
 
 // ============================================================
 // STATUS UPDATES (from Tauri sidecar via events)
@@ -247,7 +248,6 @@ listen('automation-status', (event) => {
 // ============================================================
 // SYNC — clicking the circle triggers sync
 // ============================================================
-let syncBusy = false;
 
 $('status-circle').addEventListener('click', async () => {
     // Só permite sync quando está em estado idle (azul)
@@ -293,8 +293,8 @@ $('status-circle').addEventListener('click', async () => {
     }, 3000);
 });
 
-// Auto-check for updates on startup
-setTimeout(async () => {
+// Auto-check for updates on startup + every hour
+async function checkForAppUpdate() {
     try {
         const { check } = window.__TAURI__.updater;
         const update = await check();
@@ -302,4 +302,6 @@ setTimeout(async () => {
             log(`📦 Nova versão ${update.version} disponível — clique no círculo`);
         }
     } catch { }
-}, 5000);
+}
+setTimeout(checkForAppUpdate, 5000);
+setInterval(checkForAppUpdate, 60 * 60 * 1000); // Check every hour

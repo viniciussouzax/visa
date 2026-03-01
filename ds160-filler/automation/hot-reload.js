@@ -11,6 +11,9 @@ const REPO_NAME = 'visa';
 const BRANCH = 'main';
 
 // Groups of files to update
+// NOTE: Only automation files are updated via hot-reload.
+// The renderer (index.html, renderer.js) is bundled with the WebView
+// and cannot be updated at runtime in production.
 const GROUPS = [
     {
         name: 'automation',
@@ -18,13 +21,6 @@ const GROUPS = [
         localDir: __dirname,
         files: ['filler.js', 'field-map.js', 'queue.js', 'captcha.js', 'version.json'],
         critical: ['filler.js', 'field-map.js'],
-    },
-    {
-        name: 'renderer',
-        remoteDir: 'ds160-filler/renderer',
-        localDir: path.join(__dirname, '..', 'renderer'),
-        files: ['index.html', 'renderer.js'],
-        critical: ['index.html'],
     },
 ];
 
