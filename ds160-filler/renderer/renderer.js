@@ -236,6 +236,9 @@ listen('automation-status', (event) => {
         showTimer(status.display || status.countdown);
     } else if (status.type === 'update') {
         log(`🔄 ${status.message || 'Scripts atualizados'}`);
+    } else if (status.type === 'log') {
+        // Sidecar stderr — visible in Logs tab for debugging
+        log(`🔧 ${status.message || ''}`);
     } else if (status.type === 'disconnected') {
         // ⚫ CINZA — Sidecar morreu
         setCircle('stopped', '', 'Automação desconectada');

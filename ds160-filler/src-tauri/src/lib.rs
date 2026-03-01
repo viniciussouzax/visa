@@ -105,8 +105,26 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
         use std::process::{Command, Stdio};
         use std::io::{BufRead, BufReader};
 
+        // Windows: hide console window for spawned node processes
+        #[cfg(windows)]
+        use std::os::windows::process::CommandExt;
+        #[cfg(windows)]
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        // Helper to apply Windows-specific flags
+        #[cfg(windows)]
+        fn hide_window(cmd: &mut Command) -> &mut Command {
+            cmd.creation_flags(CREATE_NO_WINDOW)
+        }
+        #[cfg(not(windows))]
+        fn hide_window(cmd: &mut Command) -> &mut Command {
+            cmd
+        }
+
         // Check if Node.js is available
-        let node_check = Command::new("node").arg("--version").output();
+        let node_check = hide_window(&mut Command::new("node"))
+            .arg("--version")
+            .output();
         if node_check.is_err() {
             eprintln!("[Tauri] ERROR: Node.js not found in PATH");
             let _ = app_handle.emit("automation-status", serde_json::json!({
@@ -119,13 +137,13 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
             return;
         }
 
-        let child = Command::new("node")
+        let child = hide_window(&mut Command::new("node"))
             .arg(&sidecar_path)
             .arg(&email)
             .arg(&password)
             .current_dir(&project_dir) // CRITICAL: set CWD so require('../automation/queue') works
             .stdout(Stdio::piped())
-            .stderr(Stdio::inherit()) // Let stderr flow to console (avoid deadlock)
+            .stderr(Stdio::piped())   // Capture stderr to forward errors to frontend
             .stdin(Stdio::piped())    // We need stdin to send commands
             .spawn();
 
@@ -136,6 +154,24 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
                     if let Some(state) = app_handle.try_state::<AppState>() {
                         *state.sidecar_stdin.lock().unwrap() = Some(stdin);
                     }
+                }
+
+                // Capture stderr in a separate thread — forward to frontend as log events
+                let app_handle_stderr = app_handle.clone();
+                if let Some(stderr) = process.stderr.take() {
+                    std::thread::spawn(move || {
+                        let reader = BufReader::new(stderr);
+                        for line in reader.lines() {
+                            if let Ok(line) = line {
+                                eprintln!("[Sidecar] {}", line);
+                                // Forward to frontend for visibility in Logs tab
+                                let _ = app_handle_stderr.emit("automation-status", serde_json::json!({
+                                    "type": "log",
+                                    "message": line
+                                }));
+                            }
+                        }
+                    });
                 }
 
                 // Read stdout for status updates
@@ -154,12 +190,16 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
                 }
                 // Wait for process to finish
                 let exit_status = process.wait();
-                eprintln!("[Tauri] Sidecar process exited: {:?}", exit_status);
+                let exit_msg = match &exit_status {
+                    Ok(s) => format!("código: {}", s),
+                    Err(e) => format!("erro: {}", e),
+                };
+                eprintln!("[Tauri] Sidecar process exited: {}", exit_msg);
                 
                 // Notify frontend that sidecar died
                 let _ = app_handle.emit("automation-status", serde_json::json!({
                     "type": "disconnected",
-                    "error": "Sidecar encerrado"
+                    "error": format!("Sidecar encerrado ({})", exit_msg)
                 }));
             }
             Err(e) => {
@@ -227,7 +267,7 @@ fn logout(app: AppHandle, state: State<AppState>) -> CommandResult {
     // Send stop command to sidecar
     if let Some(ref mut stdin) = *state.sidecar_stdin.lock().unwrap() {
         use std::io::Write;
-        let _ = writeln!(stdin, r#"{{"action":"stop"}}"#);
+        let _ = stdin.write_all(b"{\"action\":\"stop\"}\n");
     }
     *state.sidecar_stdin.lock().unwrap() = None;
 
@@ -253,7 +293,7 @@ fn restart_app(app: AppHandle) {
 fn refresh_queue(state: State<AppState>) -> CommandResult {
     if let Some(ref mut stdin) = *state.sidecar_stdin.lock().unwrap() {
         use std::io::Write;
-        let _ = writeln!(stdin, r#"{{"action":"refresh"}}"#);
+        let _ = stdin.write_all(b"{\"action\":\"refresh\"}\n");
         CommandResult {
             success: true,
             error: None,

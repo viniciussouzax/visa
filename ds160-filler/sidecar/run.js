@@ -4,8 +4,28 @@
 // Runs the DS-160 automation queue, communicating via stdout (JSON)
 // Includes hot-reload: auto-updates automation scripts from GitHub
 // ============================================================
-const { createClient } = require('@supabase/supabase-js');
-const { checkForUpdates, getAutomationVersion } = require('../automation/hot-reload');
+
+// Global error boundary — catches module load errors and unhandled exceptions
+// Emits error via stdout JSON so the Tauri frontend can display it
+function emitFatalError(label, err) {
+    const msg = { type: 'error', error: `[Sidecar ${label}] ${err?.message || err}` };
+    try { process.stdout.write(JSON.stringify(msg) + '\n'); } catch { }
+    console.error(`[Sidecar FATAL] ${label}:`, err);
+    setTimeout(() => process.exit(1), 100); // give stdout time to flush
+}
+process.on('uncaughtException', (err) => emitFatalError('uncaughtException', err));
+process.on('unhandledRejection', (err) => emitFatalError('unhandledRejection', err));
+
+let createClient, checkForUpdates, getAutomationVersion;
+try {
+    ({ createClient } = require('@supabase/supabase-js'));
+    ({ checkForUpdates, getAutomationVersion } = require('../automation/hot-reload'));
+} catch (err) {
+    emitFatalError('module-load', err);
+    // emitFatalError already calls process.exit after flush
+    // But we need to prevent the rest of the code from running
+    return;
+}
 
 const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';

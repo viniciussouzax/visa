@@ -3029,7 +3029,7 @@ dependencies = [
 
 [[package]]
 name = "sends160"
-version = "1.4.8"
+version = "1.5.1"
 dependencies = [
  "dirs",
  "serde",
