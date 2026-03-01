@@ -136,21 +136,20 @@ $('btn-logout').addEventListener('click', async () => {
 // ============================================================
 // TIMER — countdown inside the sync button
 // ============================================================
+const SPINNER_HTML = '<div class="circle-spinner"></div>';
+
 function showTimer(display) {
-    if (!syncBusy) {
-        const text = typeof display === 'number'
-            ? `${Math.floor(display / 60)}:${String(display % 60).padStart(2, '0')}`
-            : display;
-        const ct = $('circle-timer');
-        if (ct) ct.textContent = text;
-    }
+    const text = typeof display === 'number'
+        ? `${Math.floor(display / 60)}:${String(display % 60).padStart(2, '0')}`
+        : display;
+    const ct = $('circle-timer');
+    if (ct) ct.textContent = text;
 }
 
 function hideTimer() {
-    if (!syncBusy) {
-        const ct = $('circle-timer');
-        if (ct) ct.textContent = '';
-    }
+    // No text = show spinner (never leave blank)
+    const ct = $('circle-timer');
+    if (ct) ct.innerHTML = SPINNER_HTML;
 }
 
 // ============================================================
@@ -171,7 +170,9 @@ function setCircle(state, label, detail) {
     // Preserve circle-timer span
     const timerSpan = $('circle-timer');
     const timerText = timerSpan ? timerSpan.textContent : '';
-    circle.innerHTML = (STATUS_ICONS[state] || STATUS_ICONS.idle) + '<span id="circle-timer" class="circle-timer">' + timerText + '</span>';
+    // If no timer text, show spinner by default
+    const timerContent = timerText || SPINNER_HTML;
+    circle.innerHTML = (STATUS_ICONS[state] || STATUS_ICONS.idle) + '<span id="circle-timer" class="circle-timer">' + timerContent + '</span>';
     $('status-text').textContent = label || 'Ativo';
     if (detail !== undefined) $('status-detail').textContent = detail;
 }
@@ -204,6 +205,8 @@ function log(msg) {
 // ============================================================
 listen('automation-status', (event) => {
     const status = event.payload;
+    // Any sidecar event clears syncBusy so spinner transitions smoothly
+    syncBusy = false;
 
     if (status.type === 'searching' || status.type === 'queue-empty' || status.type === 'done') {
         // 🔵 AZUL — Ativo e aguardando
@@ -286,12 +289,17 @@ $('status-circle').addEventListener('click', async () => {
         log(`⚠️ ${e}`);
     }
 
+    // Don't reset circle here — let the next sidecar event set the real state
+    // The spinner will stay visible until the sidecar responds with a status update
     log('✅ Sincronizado');
-    // Keep spinner until next status event arrives naturally
-    setCircle('idle', '', 'Ativo e aguardando');
     setTimeout(() => {
         syncBusy = false;
-    }, 5000);
+        // Only reset if still showing spinner after 10s (fallback)
+        const ct2 = $('circle-timer');
+        if (ct2 && ct2.querySelector('.circle-spinner')) {
+            setCircle('idle', '', 'Ativo e aguardando');
+        }
+    }, 3000);
 });
 
 // Auto-check for updates on startup

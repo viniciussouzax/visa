@@ -563,7 +563,7 @@ function buildDynamicFieldMap(a) {
   // Social Media (dtlSocialMedia) — supports multiple entries
   // Pergunta: "Do you use social media?" → Yes/No
   // Respostas: socialMedia[0] (ctl00), [1] (ctl01 → addAnother), ...
-  if (a.socialMedia && a.socialMedia.length > 0) {
+  if (Array.isArray(a.socialMedia) && a.socialMedia.length > 0) {
     map.push({ pattern: /rblAddSite_0$/i, value: "", type: "click" });
     a.socialMedia.forEach((sm, idx) => {
       const ctl = `ctl${String(idx).padStart(2, '0')}`;
