@@ -880,9 +880,8 @@
         </div>
         <div class="section section-disabled">
             <h3>Telecode</h3>
-            <p style="color:#666;font-size:13px;margin-bottom:10px">Telecodes são códigos numéricos de 4 dígitos que
-                representam caracteres em nomes com alfabeto não-romano.</p>
-            <div class="fg"><label>Possui um telecode que represente seu nome? *</label><span class="rg"><label><input
+            <div class="fg"><label>Possui um telecode que represente seu nome? *</label>
+                <small style="color:#888">Telecodes são códigos numéricos de 4 dígitos que representam caracteres em nomes com alfabeto não-romano.</small><span class="rg"><label><input
                             type="radio" name="rblTelecodeQuestion" value="Y" data-branch="rblTelecodeQuestion"
                             disabled>
                         Sim</label><label><input type="radio" name="rblTelecodeQuestion" value="N"
@@ -1006,10 +1005,8 @@
         </div>
         <div class="section">
             <h3>Números de Identificação</h3>
-            <p style="color:#666;font-size:13px;margin-bottom:10px">O Número de Identificação Nacional é um número único
-                fornecido pelo seu governo (ex: CPF para brasileiros). O governo dos EUA fornece números únicos para
-                quem busca emprego ou paga impostos.</p>
-            <div class="fg"><label>Número de Identificação Nacional (CPF) *</label><input type="text"
+            <div class="fg"><label>Número de Identificação Nacional (CPF) *</label>
+                <small style="color:#888">O Número de Identificação Nacional é um número único fornecido pelo seu governo (ex: CPF para brasileiros). O governo dos EUA fornece números únicos para quem busca emprego ou paga impostos.</small><input type="text"
                     id="tbxAPP_NATIONAL_ID" maxlength="20" placeholder="Ex: 123.456.789-00"><label class="na-lbl"><input
                         type="checkbox" class="na-cb" id="cbexAPP_NATIONAL_ID_NA" data-target="tbxAPP_NATIONAL_ID"> Não
                     se Aplica</label>
@@ -1155,8 +1152,8 @@
 
             <!-- === Outra Pessoa === -->
             <div class="br" id="br-payerPerson">
-                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações:</p>
                 <div class="fg"><label>Sobrenome da Pessoa que Pagará</label>
+                <small style="color:#888">Forneça as seguintes informações:</small>
                     <input type="text" id="tbxPayerSurname" maxlength="33" placeholder="Ex: FERNANDEZ GARCIA">
                 </div>
                 <div class="fg"><label>Nome da Pessoa que Pagará</label>
@@ -1193,8 +1190,8 @@
                             Não</label></span>
                 </div>
                 <div class="br" id="br-payerAddr">
-                    <p style="color:#666;font-size:13px;margin-bottom:10px">Endereço da Pessoa que Pagará</p>
                     <div class="fg"><label>Endereço - Linha 1</label>
+                <small style="color:#888">Endereço da Pessoa que Pagará</small>
                         <input type="text" id="tbxPayerStreetAddress1" placeholder="Endereço linha 1" maxlength="40">
                     </div>
                     <div class="fg"><label>Endereço - Linha 2 <em>*Opcional</em></label>
@@ -1227,8 +1224,8 @@
 
             <!-- === Empresa / Organização === -->
             <div class="br" id="br-payerCompany">
-                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações:</p>
                 <div class="fg"><label>Nome da Empresa / Organização</label>
+                <small style="color:#888">Forneça as seguintes informações:</small>
                     <input type="text" id="tbxPayingCompany" placeholder="Nome da empresa ou organização">
                 </div>
                 <div class="fg"><label>Telefone da Empresa</label>
@@ -1237,9 +1234,8 @@
                 <div class="fg"><label>Sua Relação com a Empresa</label>
                     <input type="text" id="tbxCompanyRelation" placeholder="Ex: Funcionário, Cliente">
                 </div>
-                <p style="color:#666;font-size:13px;margin:10px 0">Endereço da Empresa (Address of Company/Organization
-                    Paying)</p>
                 <div class="fg"><label>Endereço - Linha 1</label>
+                <small style="color:#888">Endereço da Empresa (Address of Company/Organization Paying)</small>
                     <input type="text" id="tbxPayerStreetAddress1C" placeholder="Endereço da empresa" maxlength="40">
                 </div>
                 <div class="fg"><label>Endereço - Linha 2 <em>*Opcional</em></label>
@@ -1296,9 +1292,8 @@
 
                 <!-- === Grupo: Sim → Nome do Grupo === -->
                 <div class="br" id="br-groupYes">
-                    <p style="color:#666;font-size:13px;margin-bottom:10px">Informe o nome do grupo com o qual você está
-                        viajando</p>
                     <div class="fg"><label>Nome do Grupo</label>
+                <small style="color:#888">Informe o nome do grupo com o qual você está viajando</small>
                         <input type="text" id="tbxGroupName" placeholder="Nome do grupo ou organização" maxlength="60">
                     </div>
                 </div>
@@ -1467,9 +1462,8 @@
                             Não</label></span>
                 </div>
                 <div class="br" id="br-rblPREV_VISA_LOST_IND">
-                    <p style="color:#666;font-size:13px;margin-bottom:10px">Informe o ano em que o visto foi perdido ou
-                        roubado</p>
                     <div class="fg"><label>Ano</label>
+                <small style="color:#888">Informe o ano em que o visto foi perdido ou roubado</small>
                         <input type="text" id="tbxLOST_VISA_YEAR" maxlength="4" placeholder="AAAA"
                             style="max-width:100px">
                     </div>
@@ -1575,9 +1569,8 @@
                         Não</label></span>
             </div>
             <div class="br" id="br-mailingAddr">
-                <p style="color:#666;font-size:13px;margin-bottom:10px">Informe seu endereço de correspondência (Provide
-                    your mailing address)</p>
                 <div class="fg"><label>Endereço Linha 1 (Street Address (Line 1)) *</label>
+                <small style="color:#888">Informe seu endereço de correspondência (Provide your mailing address)</small>
                     <input type="text" id="tbxMAILING_ADDR_LN1" maxlength="40"
                         placeholder="Endereço para correspondência">
                 </div>
@@ -1760,10 +1753,9 @@
                 <select id="ddlPPT_ISSUED_CNTRY" class="sel-country"></select>
             </div>
 
-            <p style="color:#666;font-size:13px;margin:16px 0 10px"><strong>Onde o Passaporte/Documento de Viagem foi
-                    Emitido?</strong></p>
 
             <div class="fg"><label>Cidade *</label>
+                <small style="color:#888">Onde o Passaporte/Documento de Viagem foi Emitido?</small>
                 <input type="text" id="tbxPPT_ISSUED_IN_CITY" maxlength="20" required placeholder="Ex: BRASILIA">
             </div>
             <div class="fg"><label>Estado/Província <em>*Se constar no passaporte / *If shown on
@@ -1844,9 +1836,8 @@
                 States)</h3>
 
             <!-- Contact Person -->
-            <p style="color:#666;font-size:13px;margin-bottom:10px"><strong>Pessoa de Contato</strong>
-            </p>
             <div class="fg"><label>Sobrenomes *</label>
+                <small style="color:#888">Pessoa de Contato</small>
                 <input type="text" id="tbxUS_POC_SURNAME" maxlength="33" placeholder="Sobrenome do contato">
             </div>
             <div class="fg"><label>Nomes *</label>
@@ -1880,10 +1871,9 @@
             </div>
 
             <!-- Address and Phone -->
-            <p style="color:#666;font-size:13px;margin:16px 0 10px"><strong>Endereço e Telefone do Ponto de Contato
-                </strong></p>
 
             <div class="fg"><label>Endereço nos EUA - Linha 1 (U.S. Street Address (Line 1)) *</label>
+                <small style="color:#888">Endereço e Telefone do Ponto de Contato</small>
                 <input type="text" id="tbxUS_POC_ADDR_LN1" maxlength="40" placeholder="Endereço nos EUA">
             </div>
             <div class="fg"><label>Endereço nos EUA - Linha 2 (U.S. Street Address (Line 2)) <em>*Opcional</em></label>
@@ -2089,9 +2079,8 @@
                 <select id="ddlSpouseNatDropDownList" class="sel-country"></select>
             </div>
 
-            <p style="color:#666;font-size:13px;margin:16px 0 10px"><strong>Local de Nascimento do Cônjuge (Spouse's
-                    Place of Birth)</strong></p>
             <div class="fg"><label>Cidade</label>
+                <small style="color:#888">Local de Nascimento do Cônjuge (Spouse's Place of Birth)</small>
                 <input type="text" id="tbxSpousePOBCity" maxlength="20" placeholder="Cidade natal do cônjuge">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexSPOUSE_POB_CITY_NA"
                         data-target="tbxSpousePOBCity"> Não sei </label>
@@ -2170,9 +2159,8 @@
                 <select id="ddlDECEASED_SPOUSE_NATL" class="sel-country"></select>
             </div>
 
-            <p style="color:#666;font-size:13px;margin:16px 0 10px"><strong>Local de Nascimento do Cônjuge Falecido
-                </strong></p>
             <div class="fg"><label>Cidade</label>
+                <small style="color:#888">Local de Nascimento do Cônjuge Falecido</small>
                 <input type="text" id="tbxDECEASED_SPOUSE_POB_CITY" maxlength="20" placeholder="Cidade natal">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexDECEASED_SPOUSE_POB_CITY_NA"
                         data-target="tbxDECEASED_SPOUSE_POB_CITY"> Não sei </label>
@@ -2221,9 +2209,8 @@
                         <select id="dlPrevSpouse_ctl00_ddlPREV_SPOUSE_NATL" class="sel-country"></select>
                     </div>
 
-                    <p style="color:#666;font-size:13px;margin:12px 0 8px"><strong>Local de Nascimento do Ex-Cônjuge
-                        </strong></p>
                     <div class="fg"><label>Cidade</label>
+                <small style="color:#888">Local de Nascimento do Ex-Cônjuge</small>
                         <input type="text" id="dlPrevSpouse_ctl00_tbxPREV_SPOUSE_CITY" maxlength="20"
                             placeholder="Cidade natal do ex-cônjuge">
                         <label class="na-lbl"><input type="checkbox" class="na-cb"
@@ -2270,19 +2257,16 @@
         <h2>13. Informações sobre Trabalho/Educação/Treinamento Atual</h2>
 
         <div class="section">
-            <p style="color:#c00;font-size:13px;margin-bottom:14px"><strong>NOTA:</strong> Forneça as informações a
-                seguir sobre seu emprego ou educação atual. (NOTE: Provide the following information concerning your
-                current employment or education.)</p>
 
             <div class="fg"><label>Ocupação Principal *</label>
+                <small style="color:#888">NOTA: Forneça as informações a seguir sobre seu emprego ou educação atual. (NOTE: Provide the following information concerning your current employment or education.)</small>
                 <select id="ddlPresentOccupation" class="sel-occupation"></select>
             </div>
 
             <!-- Specify Other (shown when occupation = O) -->
             <div class="br" id="br-specifyOther">
-                <p style="color:#666;font-size:13px;margin-bottom:10px">Forneça as seguintes informações (Provide the
-                    following information):</p>
                 <div class="fg"><label>Especifique Outro *</label>
+                <small style="color:#888">Forneça as seguintes informações (Provide the following information):</small>
                     <textarea id="tbxOtherOccupation" rows="3" maxlength="200"
                         placeholder="Especifique sua ocupação"></textarea>
                 </div>
@@ -2295,10 +2279,9 @@
                 <input type="text" id="tbxEmpSchName" maxlength="40" placeholder="Nome do empregador/escola">
             </div>
 
-            <p style="color:#666;font-size:13px;margin:12px 0 8px"><strong>Endereço do empregador ou escola atual
-                    :</strong></p>
 
             <div class="fg"><label>Endereço Linha 1 (Street Address (Line 1)) *</label>
+                <small style="color:#888">Endereço do empregador ou escola atual :</small>
                 <input type="text" id="tbxEmpSchAddr1" maxlength="40" placeholder="Endereço linha 1">
             </div>
             <div class="fg"><label>Endereço Linha 2 (Street Address (Line 2)) <em>*Opcional</em></label>
