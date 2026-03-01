@@ -52,9 +52,10 @@ copyDir(path.join(projectRoot, 'automation'), path.join(resourcesDir, 'automatio
 console.log('  ✓ automation/');
 
 // 3. Create a minimal package.json with only sidecar production deps
+const realPkg = JSON.parse(fs.readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
 const sidecarPkg = {
     name: "sends160-sidecar",
-    version: "1.0.0",
+    version: realPkg.version || "1.0.0",
     private: true,
     dependencies: {
         "@supabase/supabase-js": "^2.45.0",

@@ -129,8 +129,14 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
                     }
                 }
                 // Wait for process to finish
-                let _ = process.wait();
-                eprintln!("[Tauri] Sidecar process exited");
+                let exit_status = process.wait();
+                eprintln!("[Tauri] Sidecar process exited: {:?}", exit_status);
+                
+                // Notify frontend that sidecar died
+                let _ = app_handle.emit("automation-status", serde_json::json!({
+                    "type": "disconnected",
+                    "error": "Sidecar encerrado"
+                }));
             }
             Err(e) => {
                 eprintln!("[Tauri] Failed to start sidecar: {}", e);

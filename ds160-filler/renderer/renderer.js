@@ -26,22 +26,7 @@ if (clearBtn) {
 
 // ============================================================
 // SUPABASE (direct from frontend — no IPC needed)
-// ============================================================
-const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
-
-let supabaseClient = null;
-
-// Lazy-load supabase-js from CDN (no bundler needed)
-async function getSupabase() {
-    if (supabaseClient) return supabaseClient;
-    // supabase-js is loaded via <script> tag in HTML
-    if (window.supabase) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        return supabaseClient;
-    }
-    return null;
-}
+// (Supabase is used only in the sidecar, not in the renderer)
 
 // ============================================================
 // AUTO-LOGIN: Try saved session on load
@@ -250,6 +235,12 @@ listen('automation-status', (event) => {
         showTimer(status.display || status.countdown);
     } else if (status.type === 'update') {
         log(`🔄 ${status.message || 'Scripts atualizados'}`);
+    } else if (status.type === 'disconnected') {
+        // ⚫ CINZA — Sidecar morreu
+        setCircle('stopped', '', 'Automação desconectada');
+        const ct = $('circle-timer');
+        if (ct) ct.textContent = 'Desconectado';
+        log('⚠️ Sidecar encerrado — faça logout e login novamente');
     }
 });
 
