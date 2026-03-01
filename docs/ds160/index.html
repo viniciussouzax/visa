@@ -5179,7 +5179,13 @@
                     const record = Array.isArray(fullData) ? fullData[0] : fullData;
                     const applicantData = record?.data || {};
                     restoreApplicantData(applicantData);
-                    setTimeout(() => { if (window.restoreCompletionState) window.restoreCompletionState(applicantData); }, 500);
+                    // Delay to allow branches and dynamic selects to settle
+                    setTimeout(() => {
+                        // Clear any residual validation errors from restoration
+                        document.querySelectorAll('.fg.has-error').forEach(fg => fg.classList.remove('has-error'));
+                        document.querySelectorAll('.validation-msg').forEach(m => m.remove());
+                        if (window.restoreCompletionState) window.restoreCompletionState(applicantData);
+                    }, 600);
                 } catch (e) {
                     console.error('[DS-160] Failed to fetch applicant data:', e);
                 }
@@ -5998,7 +6004,7 @@
                     if (snapshot && Array.isArray(snapshot) && snapshot.length > 0) {
                         // Primary: restore from saved snapshot
                         let firstIncomplete = 0;
-                        snapshot.forEach(idx => markComplete(idx));
+                        snapshot.forEach(idx => forceComplete(idx));
 
                         // Find first incomplete non-conditional, non-security section
                         for (let s = 0; s < SECTIONS.length; s++) {
