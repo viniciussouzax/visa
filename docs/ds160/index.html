@@ -703,6 +703,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="validation/schemas.js"></script>
 </head>
 
 <body class="bg-slate-50 min-h-screen">
@@ -3374,11 +3375,51 @@
             clearErrors(page);
             let errors = 0;
 
+            // --- Advanced validation helpers (Zod-aligned) ---
+            const SPECIAL_CHARS = /[<>&"'\/\\;:{}[\]|~]/;
+            function autoTrim(id) {
+                const el = document.getElementById(id);
+                if (el && el.value) el.value = el.value.trim();
+            }
+            function maxLen(id, max, msg) {
+                const el = document.getElementById(id);
+                if (!el || el.disabled || el.closest('.br:not(.open)')) return;
+                if (el.value && el.value.length > max) { markError(el, msg || `Máximo ${max} caracteres`); errors++; }
+            }
+            function noSpecialChars(id) {
+                const el = document.getElementById(id);
+                if (!el || el.disabled || el.closest('.br:not(.open)')) return;
+                if (el.value && SPECIAL_CHARS.test(el.value)) { markError(el, 'Caracteres especiais não permitidos'); errors++; }
+            }
+            function validateYear(id, minYear, maxYear, msg) {
+                const el = document.getElementById(id);
+                if (!el || !el.value) return;
+                const y = parseInt(el.value);
+                if (isNaN(y) || y < minYear || y > maxYear) { markError(el, msg || `Ano deve estar entre ${minYear} e ${maxYear}`); errors++; }
+            }
+            function validatePhone(id, minDigits, maxDigits) {
+                const el = document.getElementById(id);
+                if (!el || el.disabled || el.closest('.br:not(.open)')) return;
+                if (!el.value) return;
+                const digits = el.value.replace(/\D/g, '');
+                if (digits.length < minDigits || digits.length > maxDigits) {
+                    markError(el, `Telefone: ${minDigits}-${maxDigits} dígitos`); errors++;
+                }
+            }
+            function validateEmail(id) {
+                const el = document.getElementById(id);
+                if (!el || !el.value || el.disabled) return;
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value.trim())) {
+                    markError(el, 'Email inválido'); errors++;
+                }
+            }
+
             function reqInput(id, msg) {
                 const el = document.getElementById(id);
                 if (!el) return;
                 // Skip disabled or hidden fields
                 if (el.disabled || el.closest('.br:not(.open)') || el.closest('.section-disabled')) return;
+                autoTrim(id);
                 if (!el.value || !el.value.trim()) { markError(el, msg); errors++; }
             }
             function reqSelect(id, msg) {
@@ -3407,6 +3448,12 @@
                 reqInput('tbxAPP_SURNAME', 'Sobrenome é obrigatório');
                 reqInput('tbxAPP_GIVEN_NAME', 'Nome é obrigatório');
                 reqInput('tbxAPP_FULL_NAME_NATIVE', 'Nome no alfabeto nativo é obrigatório');
+                // Max length + special chars (DS-160 limits)
+                maxLen('tbxAPP_SURNAME', 33); noSpecialChars('tbxAPP_SURNAME');
+                maxLen('tbxAPP_GIVEN_NAME', 33); noSpecialChars('tbxAPP_GIVEN_NAME');
+                maxLen('tbxAPP_FULL_NAME_NATIVE', 100);
+                maxLen('tbxAPP_POB_CITY', 20); noSpecialChars('tbxAPP_POB_CITY');
+                maxLen('tbxAPP_POB_ST_PROVINCE', 20); noSpecialChars('tbxAPP_POB_ST_PROVINCE');
                 reqRadio('rblOtherNames', 'Selecione Sim ou Não');
                 reqSelect('ddlAPP_GENDER', 'Selecione o sexo');
                 reqSelect('ddlAPP_MARITAL_STATUS', 'Selecione o estado civil');
@@ -3416,11 +3463,9 @@
                 reqInput('tbxAPP_POB_CITY', 'Informe a cidade de nascimento');
                 reqInput('tbxAPP_POB_ST_PROVINCE', 'Estado de nascimento é obrigatório');
                 reqSelect('ddlAPP_POB_CNTRY', 'Selecione o país de nascimento');
-                // Validate year format
-                const year = val('tbxDOBYear');
-                if (year && (year.length !== 4 || isNaN(year))) {
-                    markError(document.getElementById('tbxDOBYear'), 'Ano deve ter 4 dígitos'); errors++;
-                }
+                // Validate year — logical check (age 1-120, not future)
+                const nowYear = new Date().getFullYear();
+                validateYear('tbxDOBYear', nowYear - 120, nowYear - 1, 'Ano de nascimento inválido (1-120 anos)');
                 // If other names = Y, validate at least one entry
                 if (radioChecked('rblOtherNames') === 'Y') {
                     const entries = page.querySelectorAll('#br-rblOtherNames .entry');
@@ -3475,14 +3520,22 @@
                 reqInput('tbxAPP_ADDR_LN1', 'Endereço é obrigatório');
                 reqInput('tbxAPP_ADDR_CITY', 'Cidade é obrigatória');
                 reqSelect('ddlCountry', 'Selecione o país');
+                // Advanced: max length + special chars
+                maxLen('tbxAPP_ADDR_LN1', 40); noSpecialChars('tbxAPP_ADDR_LN1');
+                maxLen('tbxAPP_ADDR_LN2', 40); noSpecialChars('tbxAPP_ADDR_LN2');
+                maxLen('tbxAPP_ADDR_CITY', 20); noSpecialChars('tbxAPP_ADDR_CITY');
+                maxLen('tbxAPP_ADDR_STATE', 20); noSpecialChars('tbxAPP_ADDR_STATE');
+                maxLen('tbxAPP_ADDR_POSTAL_CD', 10);
                 // Mailing address
                 reqRadio('rblMailingAddrSame', 'Informe se endereço de correspondência é o mesmo');
                 if (radioChecked('rblMailingAddrSame') === 'N') {
                     reqInput('tbxMAILING_ADDR_LN1', 'Endereço de correspondência é obrigatório');
                     reqInput('tbxMAILING_ADDR_CITY', 'Cidade de correspondência é obrigatória');
                     reqSelect('ddlMailCountry', 'Selecione o país de correspondência');
+                    maxLen('tbxMAILING_ADDR_LN1', 40); maxLen('tbxMAILING_ADDR_CITY', 20);
                 }
                 reqInput('tbxAPP_HOME_TEL', 'Telefone é obrigatório');
+                validatePhone('tbxAPP_HOME_TEL', 7, 15);
                 reqRadio('rblAddPhone', 'Informe se possui outro telefone');
                 if (radioChecked('rblAddPhone') === 'Y') {
                     page.querySelectorAll('.as[data-list="dtlAddPhone"] .entry').forEach(entry => {
@@ -3491,10 +3544,8 @@
                     });
                 }
                 reqInput('tbxAPP_EMAIL_ADDR', 'Email é obrigatório');
-                const emailVal = val('tbxAPP_EMAIL_ADDR');
-                if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
-                    markError(document.getElementById('tbxAPP_EMAIL_ADDR'), 'Email inválido'); errors++;
-                }
+                validateEmail('tbxAPP_EMAIL_ADDR');
+                maxLen('tbxAPP_EMAIL_ADDR', 50);
                 reqRadio('rblAddEmail', 'Informe se possui outro email');
                 if (radioChecked('rblAddEmail') === 'Y') {
                     page.querySelectorAll('.as[data-list="dtlAddEmail"] .entry').forEach(entry => {
@@ -3524,13 +3575,16 @@
             if (page.id === 'pg-Passport') {
                 reqSelect('ddlPPT_TYPE', 'Selecione o tipo de passaporte');
                 reqInput('tbxPPT_NUM', 'Número do passaporte é obrigatório');
+                maxLen('tbxPPT_NUM', 20);
                 reqSelect('ddlPPT_ISSUED_CNTRY', 'Selecione o país de emissão');
                 reqSelect('ddlPPT_ISSUED_DTEDay', 'Selecione o dia de emissão');
                 reqSelect('ddlPPT_ISSUED_DTEMonth', 'Selecione o mês de emissão');
                 reqInput('tbxPPT_ISSUEDYear', 'Informe o ano de emissão');
+                validateYear('tbxPPT_ISSUEDYear', 1900, new Date().getFullYear(), 'Ano de emissão inválido');
                 reqSelect('ddlPPT_EXPIRE_DTEDay', 'Selecione o dia de expiração');
                 reqSelect('ddlPPT_EXPIRE_DTEMonth', 'Selecione o mês de expiração');
                 reqInput('tbxPPT_EXPIREYear', 'Informe o ano de expiração');
+                validateYear('tbxPPT_EXPIREYear', 1900, new Date().getFullYear() + 15, 'Ano de expiração inválido');
                 reqRadio('rblLOST_PPT_IND', 'Informe se já perdeu ou teve passaporte roubado');
                 if (radioChecked('rblLOST_PPT_IND') === 'Y') {
                     page.querySelectorAll('.as[data-list="dtlLostPPT"] .entry').forEach(entry => {
@@ -5321,11 +5375,49 @@
         }
 
         // Approve form (assessor only) — moves review→approved
+        // Includes Zod validation check before approving
         async function approveForm() {
             const btn = document.getElementById('btnApprove');
             btn.disabled = true;
-            btn.textContent = 'Aprovando...';
+            btn.textContent = 'Validando...';
             try {
+                // === ZOD VALIDATION CHECK ===
+                const data = generateJSON();
+                if (window.DS160Validation) {
+                    const result = window.DS160Validation.validateAll(data);
+                    if (!result.success) {
+                        // Group errors by section
+                        const bySection = {};
+                        result.errors.forEach(e => {
+                            const sec = e.section || 'geral';
+                            if (!bySection[sec]) bySection[sec] = [];
+                            bySection[sec].push(e.field ? `${e.field}: ${e.message}` : e.message);
+                        });
+                        // Build readable error list
+                        const lines = Object.entries(bySection).map(([sec, errs]) =>
+                            `\n📋 ${sec}:\n  • ${errs.slice(0, 5).join('\n  • ')}${errs.length > 5 ? `\n  ... +${errs.length - 5} erros` : ''}`
+                        ).join('');
+                        const totalErrors = result.errors.length;
+                        console.warn('[ZOD] Validation failed:', result.errors);
+                        showToast(`⚠️ ${totalErrors} erro(s) encontrado(s). Corrija antes de aprovar.`);
+                        // Show detailed modal
+                        const modal = document.getElementById('gateModalOverlay');
+                        if (modal) {
+                            document.getElementById('gateModalIcon').textContent = '⚠️';
+                            document.getElementById('gateModalTitle').textContent = `${totalErrors} erro(s) de validação`;
+                            document.getElementById('gateModalMsg').innerHTML =
+                                '<div style="text-align:left;font-size:13px;max-height:300px;overflow-y:auto;white-space:pre-wrap;font-family:monospace">' +
+                                lines + '</div>';
+                            modal.classList.add('open');
+                        }
+                        btn.textContent = 'APROVAR APLICAÇÃO';
+                        btn.disabled = false;
+                        return;
+                    }
+                    console.log('[ZOD] ✅ Validation passed — all fields OK');
+                }
+
+                btn.textContent = 'Aprovando...';
                 await saveToSupabase();
                 if (savedApplicantId) {
                     await sbFetch('rpc/approve_applicant', 'POST', {
@@ -5333,7 +5425,7 @@
                     });
                 }
                 btn.textContent = 'Aprovado!';
-                showToast('Aplicacao aprovada com sucesso!');
+                showToast('✅ Aplicação aprovada com sucesso!');
                 // Notify parent dashboard
                 if (window.parent !== window) {
                     window.parent.postMessage({ type: 'form-approved', applicantId: savedApplicantId }, '*');
@@ -5342,7 +5434,7 @@
             } catch (e) {
                 console.error('Approve error:', e);
                 showToast('Erro ao aprovar: ' + e.message);
-                btn.textContent = 'APROVAR APLICACAO';
+                btn.textContent = 'APROVAR APLICAÇÃO';
                 btn.disabled = false;
             }
         }
