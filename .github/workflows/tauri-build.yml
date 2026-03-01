@@ -63,8 +63,8 @@ jobs:
           node scripts/prepare-bundle.js
           cd _bundle/_pkg
           npm install --production
+          mv node_modules ../node_modules
           cd ..
-          mv _pkg/node_modules ./node_modules
           rm -rf _pkg
 
       - name: Install Playwright Chromium
