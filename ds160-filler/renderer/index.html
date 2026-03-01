@@ -513,6 +513,7 @@
         .log-body {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 8px 16px;
             font-family: 'JetBrains Mono', 'Fira Code', monospace;
             font-size: 11px;
@@ -524,6 +525,8 @@
         .log-line {
             padding: 2px 0;
             border-bottom: 1px solid rgba(48, 54, 61, .3);
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         .log-line .time {

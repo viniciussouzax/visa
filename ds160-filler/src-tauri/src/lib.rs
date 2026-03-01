@@ -78,12 +78,15 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
             cwd
         }
     } else {
-        // In production: resources are inside resources/ within resource_dir
-        let resource = app_handle
-            .path()
-            .resource_dir()
-            .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
-        resource.join("resources")
+        // In production: executable is at <install_dir>/sends160.exe
+        // Resources are at <install_dir>/resources/
+        // Using current_exe() is more reliable than Tauri's resource_dir()
+        let exe_path = std::env::current_exe()
+            .unwrap_or_else(|_| PathBuf::from("."));
+        let install_dir = exe_path.parent()
+            .unwrap_or_else(|| std::path::Path::new("."))
+            .to_path_buf();
+        install_dir.join("resources")
     };
 
     let sidecar_path = project_dir.join("sidecar").join("run.js");
@@ -111,20 +114,17 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
         #[cfg(windows)]
         const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-        // Helper to apply Windows-specific flags
-        #[cfg(windows)]
-        fn hide_window(cmd: &mut Command) -> &mut Command {
-            cmd.creation_flags(CREATE_NO_WINDOW)
-        }
-        #[cfg(not(windows))]
-        fn hide_window(cmd: &mut Command) -> &mut Command {
-            cmd
-        }
+        // Emit sidecar path for debugging
+        let _ = app_handle.emit("automation-status", serde_json::json!({
+            "type": "log",
+            "message": format!("Sidecar path: {:?}", sidecar_path)
+        }));
 
         // Check if Node.js is available
-        let node_check = hide_window(&mut Command::new("node"))
-            .arg("--version")
-            .output();
+        let mut node_check_cmd = Command::new("node");
+        #[cfg(windows)]
+        node_check_cmd.creation_flags(CREATE_NO_WINDOW);
+        let node_check = node_check_cmd.arg("--version").output();
         if node_check.is_err() {
             eprintln!("[Tauri] ERROR: Node.js not found in PATH");
             let _ = app_handle.emit("automation-status", serde_json::json!({
@@ -137,15 +137,17 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
             return;
         }
 
-        let child = hide_window(&mut Command::new("node"))
-            .arg(&sidecar_path)
+        let mut cmd = Command::new("node");
+        cmd.arg(&sidecar_path)
             .arg(&email)
             .arg(&password)
             .current_dir(&project_dir) // CRITICAL: set CWD so require('../automation/queue') works
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())   // Capture stderr to forward errors to frontend
-            .stdin(Stdio::piped())    // We need stdin to send commands
-            .spawn();
+            .stdin(Stdio::piped());   // We need stdin to send commands
+        #[cfg(windows)]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        let child = cmd.spawn();
 
         match child {
             Ok(mut process) => {

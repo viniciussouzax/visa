@@ -1,6 +1,6 @@
 [package]
 name = "sends160"
-version = "1.5.2"
+version = "1.5.5"
 edition = "2021"
 description = "SENDS160 — Automação de formulários DS-160"
 

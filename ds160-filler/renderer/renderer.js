@@ -91,6 +91,11 @@ function showMain(userEmail) {
     $('user-email').textContent = userEmail;
     log('✅ Conectado — automação ativa');
 
+    // Show spinner immediately while sidecar boots up
+    setCircle('active', '', 'Verificando aplicações...');
+    const ct = $('circle-timer');
+    if (ct) ct.innerHTML = '<div class="circle-spinner"></div>';
+
     // Get version from Tauri backend
     invoke('get_version').then(v => {
         const versionEl = document.querySelector('.version');
