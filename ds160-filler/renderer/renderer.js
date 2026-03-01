@@ -298,7 +298,7 @@ $('status-circle').addEventListener('click', async () => {
         if (ct2 && ct2.querySelector('.circle-spinner')) {
             setCircle('idle', '', 'Ativo e aguardando');
         }
-    }, 3000);
+    }, 10000);
 });
 
 // Auto-check for updates on startup + every hour
@@ -309,7 +309,7 @@ async function checkForAppUpdate() {
         if (update) {
             log(`📦 Nova versão ${update.version} disponível — clique no círculo`);
         }
-    } catch { }
+    } catch (e) { console.warn('[Update] Check failed:', e); }
 }
 setTimeout(checkForAppUpdate, 5000);
 setInterval(checkForAppUpdate, 60 * 60 * 1000); // Check every hour

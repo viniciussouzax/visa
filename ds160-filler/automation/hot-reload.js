@@ -77,6 +77,17 @@ function getLocalSHA() {
 async function downloadFile(remoteDir, localDir, name) {
     const url = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/${remoteDir}/${name}`;
     const content = await httpGet(url);
+
+    // ROB-2: Validate downloaded content is not HTML error page
+    const trimmed = content.trim();
+    if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<HTML')) {
+        throw new Error(`Downloaded HTML instead of JS for ${name} — possible 404/403`);
+    }
+    // For .js files, check it looks like valid JavaScript
+    if (name.endsWith('.js') && content.length < 50) {
+        throw new Error(`Downloaded content too small for ${name} (${content.length} bytes) — possible error`);
+    }
+
     // Ensure local directory exists
     if (!fs.existsSync(localDir)) {
         fs.mkdirSync(localDir, { recursive: true });

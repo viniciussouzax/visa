@@ -12,6 +12,7 @@ pub struct AppState {
     session: Mutex<Option<Session>>,
     sidecar_running: Mutex<bool>,
     sidecar_stdin: Mutex<Option<std::process::ChildStdin>>,
+    sidecar_pid: Mutex<Option<u32>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -151,7 +152,11 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
 
         match child {
             Ok(mut process) => {
-                // Store stdin handle for sending commands later
+                // Store stdin handle and PID for sending commands later
+                let pid = process.id();
+                if let Some(state) = app_handle.try_state::<AppState>() {
+                    *state.sidecar_pid.lock().unwrap() = Some(pid);
+                }
                 if let Some(stdin) = process.stdin.take() {
                     if let Some(state) = app_handle.try_state::<AppState>() {
                         *state.sidecar_stdin.lock().unwrap() = Some(stdin);
@@ -213,10 +218,11 @@ fn start_sidecar(app: &AppHandle, email: &str, password: &str) {
             }
         }
 
-        // Mark sidecar as not running and clear stdin
+        // Mark sidecar as not running and clear stdin/pid
         if let Some(state) = app_handle.try_state::<AppState>() {
             *state.sidecar_running.lock().unwrap() = false;
             *state.sidecar_stdin.lock().unwrap() = None;
+            *state.sidecar_pid.lock().unwrap() = None;
         }
     });
 }
@@ -272,6 +278,24 @@ fn logout(app: AppHandle, state: State<AppState>) -> CommandResult {
         let _ = stdin.write_all(b"{\"action\":\"stop\"}\n");
     }
     *state.sidecar_stdin.lock().unwrap() = None;
+
+    // BUG-2 fix: Kill sidecar process tree as fallback (stdin may be broken)
+    if let Some(pid) = state.sidecar_pid.lock().unwrap().take() {
+        #[cfg(windows)]
+        {
+            use std::process::Command;
+            // /T = kill child processes (Chromium), /F = force
+            let _ = Command::new("taskkill")
+                .args(&["/PID", &pid.to_string(), "/T", "/F"])
+                .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                .output();
+        }
+        #[cfg(not(windows))]
+        {
+            use std::process::Command;
+            let _ = Command::new("kill").args(&["-TERM", &pid.to_string()]).output();
+        }
+    }
 
     CommandResult {
         success: true,
