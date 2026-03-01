@@ -3208,15 +3208,17 @@
             const v = document.getElementById('ddlWhoIsPaying')?.value || '';
             const person = document.getElementById('br-payerPerson');
             const company = document.getElementById('br-payerCompany');
+            const isPersonPayer = (v === 'OTH' || v === 'USP');
+            const isCompanyPayer = (v === 'COM' || v === 'EMP' || v === 'USE');
             if (person) {
                 const wasOpen = person.classList.contains('open');
-                person.classList.toggle('open', v === 'OTH');
-                if (wasOpen && v !== 'OTH') clearBranchInputs(person);
+                person.classList.toggle('open', isPersonPayer);
+                if (wasOpen && !isPersonPayer) clearBranchInputs(person);
             }
             if (company) {
                 const wasOpen = company.classList.contains('open');
-                company.classList.toggle('open', v === 'COM');
-                if (wasOpen && v !== 'COM') clearBranchInputs(company);
+                company.classList.toggle('open', isCompanyPayer);
+                if (wasOpen && !isCompanyPayer) clearBranchInputs(company);
             }
         }
         updatePayerBranch();
@@ -3670,7 +3672,7 @@
                 reqInput('tbxStreetAddress1', 'Endereço nos EUA é obrigatório');
                 reqInput('tbxCity', 'Cidade nos EUA é obrigatória');
                 reqSelect('ddlTravelState', 'Selecione o estado nos EUA');
-                reqInput('tbxZIPCode', 'CEP nos EUA é obrigatório');
+                reqInput('tbZIPCode', 'CEP nos EUA é obrigatório');
                 // lengthOfStay: must be numeric > 0 when no specific plans
                 if (hasSpecific === 'N') {
                     const losEl = document.getElementById('tbxAPP_LOS');
@@ -3686,6 +3688,12 @@
                     reqInput('tbxPayerGivenName', 'Nome do pagador é obrigatório');
                     reqInput('tbxPayerPhone', 'Telefone do pagador é obrigatório');
                     reqSelect('ddlPayerRelationship', 'Selecione a relação com o pagador');
+                    reqRadio('rblPayerAddrSameAsInd', 'Informe se o endereço é o mesmo');
+                    if (radioChecked('rblPayerAddrSameAsInd') === 'N') {
+                        reqInput('tbxPayerStreetAddress1', 'Endereço do pagador é obrigatório');
+                        reqInput('tbxPayerCity', 'Cidade do pagador é obrigatória');
+                        reqSelect('ddlPayerCountry', 'Selecione o país do pagador');
+                    }
                 }
                 if (payer === 'COM' || payer === 'EMP' || payer === 'USE') {
                     reqInput('tbxPayingCompany', 'Nome da empresa/organização é obrigatório');
