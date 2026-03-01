@@ -3577,6 +3577,9 @@
                 reqInput('tbxPPT_NUM', 'Número do passaporte é obrigatório');
                 maxLen('tbxPPT_NUM', 20);
                 reqSelect('ddlPPT_ISSUED_CNTRY', 'Selecione o país de emissão');
+                reqInput('tbxPPT_ISSUED_IN_CITY', 'Cidade de emissão do passaporte é obrigatória');
+                maxLen('tbxPPT_ISSUED_IN_CITY', 20); noSpecialChars('tbxPPT_ISSUED_IN_CITY');
+                reqSelect('ddlPPT_ISSUED_IN_CNTRY', 'Selecione o país onde o passaporte foi emitido');
                 reqSelect('ddlPPT_ISSUED_DTEDay', 'Selecione o dia de emissão');
                 reqSelect('ddlPPT_ISSUED_DTEMonth', 'Selecione o mês de emissão');
                 reqInput('tbxPPT_ISSUEDYear', 'Informe o ano de emissão');
@@ -3628,6 +3631,14 @@
                 reqInput('tbxStreetAddress1', 'Endereço nos EUA é obrigatório');
                 reqInput('tbxCity', 'Cidade nos EUA é obrigatória');
                 reqSelect('ddlTravelState', 'Selecione o estado nos EUA');
+                reqInput('tbxZIPCode', 'CEP nos EUA é obrigatório');
+                // lengthOfStay: must be numeric > 0 when no specific plans
+                if (hasSpecific === 'N') {
+                    const losEl = document.getElementById('tbxAPP_LOS');
+                    if (losEl && losEl.value && (isNaN(losEl.value) || parseInt(losEl.value) <= 0)) {
+                        markError(losEl, 'Tempo de permanência deve ser um número maior que 0'); errors++;
+                    }
+                }
                 // Payer
                 reqSelect('ddlWhoIsPaying', 'Selecione quem pagará pela viagem');
                 const payer = val('ddlWhoIsPaying');
@@ -3649,17 +3660,23 @@
                 const nameNA = document.getElementById('cbxUS_POC_NAME_NA');
                 if (!nameNA?.checked) {
                     reqInput('tbxUS_POC_SURNAME', 'Sobrenome do contato nos EUA é obrigatório');
+                    maxLen('tbxUS_POC_SURNAME', 33); noSpecialChars('tbxUS_POC_SURNAME');
                     reqInput('tbxUS_POC_GIVEN_NAME', 'Nome do contato nos EUA é obrigatório');
+                    maxLen('tbxUS_POC_GIVEN_NAME', 33); noSpecialChars('tbxUS_POC_GIVEN_NAME');
                 }
                 const orgNA = document.getElementById('cbxUS_POC_ORG_NA_IND');
                 if (!orgNA?.checked) {
                     reqInput('tbxUS_POC_ORGANIZATION', 'Organização do contato é obrigatória');
+                    maxLen('tbxUS_POC_ORGANIZATION', 40); noSpecialChars('tbxUS_POC_ORGANIZATION');
                 }
                 reqInput('tbxUS_POC_ADDR_LN1', 'Endereço do contato é obrigatório');
+                maxLen('tbxUS_POC_ADDR_LN1', 40); noSpecialChars('tbxUS_POC_ADDR_LN1');
                 reqInput('tbxUS_POC_ADDR_CITY', 'Cidade do contato é obrigatória');
+                maxLen('tbxUS_POC_ADDR_CITY', 20); noSpecialChars('tbxUS_POC_ADDR_CITY');
                 reqSelect('ddlUS_POC_ADDR_STATE', 'Selecione o estado');
                 reqInput('tbxUS_POC_ADDR_POSTAL_CD', 'CEP do contato é obrigatório');
                 reqInput('tbxUS_POC_HOME_TEL', 'Telefone do contato é obrigatório');
+                validatePhone('tbxUS_POC_HOME_TEL', 10, 10);
             }
 
             // ===== Family =====
@@ -3668,10 +3685,26 @@
                 if (!fSurnNA?.checked) reqInput('tbxFATHER_SURNAME', 'Sobrenome do pai é obrigatório');
                 const fGivenNA = document.getElementById('cbxFATHER_GIVEN_NAME_UNK_IND');
                 if (!fGivenNA?.checked) reqInput('tbxFATHER_GIVEN_NAME', 'Nome do pai é obrigatório');
+                // Father DOB — obrigatório no DS-160 oficial
+                const fDobNA = document.getElementById('cbxFATHER_DOB_UNK_IND');
+                if (!fDobNA?.checked) {
+                    reqSelect('ddlFATHER_DOBDay', 'Selecione o dia de nascimento do pai');
+                    reqSelect('ddlFATHER_DOBMonth', 'Selecione o mês de nascimento do pai');
+                    reqInput('tbxFATHER_DOBYear', 'Ano de nascimento do pai é obrigatório');
+                    validateYear('tbxFATHER_DOBYear', 1900, new Date().getFullYear(), 'Ano do pai inválido');
+                }
                 const mSurnNA = document.getElementById('cbxMOTHER_SURNAME_UNK_IND');
                 if (!mSurnNA?.checked) reqInput('tbxMOTHER_SURNAME', 'Sobrenome da mãe é obrigatório');
                 const mGivenNA = document.getElementById('cbxMOTHER_GIVEN_NAME_UNK_IND');
                 if (!mGivenNA?.checked) reqInput('tbxMOTHER_GIVEN_NAME', 'Nome da mãe é obrigatório');
+                // Mother DOB — obrigatório no DS-160 oficial
+                const mDobNA = document.getElementById('cbxMOTHER_DOB_UNK_IND');
+                if (!mDobNA?.checked) {
+                    reqSelect('ddlMOTHER_DOBDay', 'Selecione o dia de nascimento da mãe');
+                    reqSelect('ddlMOTHER_DOBMonth', 'Selecione o mês de nascimento da mãe');
+                    reqInput('tbxMOTHER_DOBYear', 'Ano de nascimento da mãe é obrigatório');
+                    validateYear('tbxMOTHER_DOBYear', 1900, new Date().getFullYear(), 'Ano da mãe inválido');
+                }
                 reqRadio('rblFATHER_LIVE_IN_US_IND', 'Informe se o pai reside nos EUA');
                 if (radioChecked('rblFATHER_LIVE_IN_US_IND') === 'Y') {
                     reqSelect('ddlFATHER_US_STATUS', 'Selecione o status do pai nos EUA');
@@ -3707,14 +3740,21 @@
                 // Employer/School section (hidden for RT=Retired, H=Homemaker, U=Unemployed)
                 if (occ && occ !== 'RT' && occ !== 'H' && occ !== 'U' && occ !== 'N') {
                     reqInput('tbxEmpSchName', 'Nome do empregador/escola é obrigatório');
+                    maxLen('tbxEmpSchName', 40); noSpecialChars('tbxEmpSchName');
                     reqInput('tbxEmpSchAddr1', 'Endereço do empregador é obrigatório');
+                    maxLen('tbxEmpSchAddr1', 40); noSpecialChars('tbxEmpSchAddr1');
                     reqInput('tbxEmpSchCity', 'Cidade do empregador é obrigatória');
+                    maxLen('tbxEmpSchCity', 20); noSpecialChars('tbxEmpSchCity');
                     reqInput('tbxWORK_EDUC_TEL', 'Telefone do empregador é obrigatório');
+                    validatePhone('tbxWORK_EDUC_TEL', 7, 15);
                     reqSelect('ddlEmpSchCountry', 'Selecione o país do empregador');
                     reqSelect('ddlEmpDateFromDay', 'Selecione o dia de início');
                     reqSelect('ddlEmpDateFromMonth', 'Selecione o mês de início');
                     reqInput('tbxEmpDateFromYear', 'Informe o ano de início');
+                    validateYear('tbxEmpDateFromYear', 1950, new Date().getFullYear(), 'Ano de início inválido');
                     reqInput('tbxDescribeDuties', 'Descreva suas funções');
+                    maxLen('tbxDescribeDuties', 200);
+                    reqInput('tbxMonthlySalary', 'Salário mensal é obrigatório');
                 }
             }
 
@@ -3846,8 +3886,14 @@
                         if (emp && !emp.value.trim()) { markError(emp, 'Nome do empregador é obrigatório'); errors++; }
                         const city = entry.querySelector('[id*="tbEmployerCity"]');
                         if (city && !city.value.trim()) { markError(city, 'Cidade do empregador é obrigatória'); errors++; }
+                        const cntry = entry.querySelector('[id*="ddlEmployerCountry"]');
+                        if (cntry && !cntry.value) { markError(cntry, 'Selecione o país do empregador'); errors++; }
                         const title = entry.querySelector('[id*="tbJobTitle"]');
                         if (title && !title.value.trim()) { markError(title, 'Cargo é obrigatório'); errors++; }
+                        const startYr = entry.querySelector('[id*="tbEmpDateFromYear"]');
+                        if (startYr && !startYr.value.trim()) { markError(startYr, 'Ano de início é obrigatório'); errors++; }
+                        const endYr = entry.querySelector('[id*="tbEmpDateToYear"]');
+                        if (endYr && !endYr.value.trim()) { markError(endYr, 'Ano de término é obrigatório'); errors++; }
                     });
                 }
                 reqRadio('rblOtherEduc', 'Informe se frequentou outra escola');
@@ -3856,6 +3902,16 @@
                     page.querySelectorAll('#br-rblOtherEduc .entry').forEach(entry => {
                         const school = entry.querySelector('[id*="tbxSchoolName"]');
                         if (school && !school.value.trim()) { markError(school, 'Nome da escola é obrigatório'); errors++; }
+                        const city = entry.querySelector('[id*="tbxSchoolCity"]');
+                        if (city && !city.value.trim()) { markError(city, 'Cidade da escola é obrigatória'); errors++; }
+                        const cntry = entry.querySelector('[id*="ddlSchoolCountry"]');
+                        if (cntry && !cntry.value) { markError(cntry, 'Selecione o país da escola'); errors++; }
+                        const course = entry.querySelector('[id*="tbxSchoolCourseOfStudy"]');
+                        if (course && !course.value.trim()) { markError(course, 'Curso é obrigatório'); errors++; }
+                        const startYr = entry.querySelector('[id*="tbxSchoolFromYear"]');
+                        if (startYr && !startYr.value.trim()) { markError(startYr, 'Ano de início é obrigatório'); errors++; }
+                        const endYr = entry.querySelector('[id*="tbxSchoolToYear"]');
+                        if (endYr && !endYr.value.trim()) { markError(endYr, 'Ano de término é obrigatório'); errors++; }
                     });
                 }
             }
@@ -3902,52 +3958,77 @@
             // ===== Security1 (Saúde) =====
             if (page.id === 'pg-Security1') {
                 reqRadio('rblDisease', 'Informe sobre doença contagiosa');
+                if (radioChecked('rblDisease') === 'Y') reqInput('tbxDisease_EXPL', 'Explicação é obrigatória');
                 reqRadio('rblDisorder', 'Informe sobre transtorno mental ou físico');
+                if (radioChecked('rblDisorder') === 'Y') reqInput('tbxDisorder_EXPL', 'Explicação é obrigatória');
                 reqRadio('rblDruguser', 'Informe sobre uso de drogas');
+                if (radioChecked('rblDruguser') === 'Y') reqInput('tbxDruguser_EXPL', 'Explicação é obrigatória');
             }
 
             // ===== Security2 (Criminal) =====
             if (page.id === 'pg-Security2') {
-                reqRadio('rblArrested', 'Informe se foi preso ou condenado');
-                reqRadio('rblControlledSubstances', 'Informe sobre substâncias controladas');
-                reqRadio('rblProstitution', 'Informe sobre prostituição');
-                reqRadio('rblMoneyLaundering', 'Informe sobre lavagem de dinheiro');
-                reqRadio('rblHumanTrafficking', 'Informe sobre tráfico de pessoas');
-                reqRadio('rblAssistedSevereTrafficking', 'Informe sobre auxílio a tráfico');
-                reqRadio('rblHumanTraffickingRelated', 'Informe sobre parentesco com traficante');
+                const sec2Fields = ['rblArrested', 'rblControlledSubstances', 'rblProstitution',
+                    'rblMoneyLaundering', 'rblHumanTrafficking', 'rblAssistedSevereTrafficking', 'rblHumanTraffickingRelated'];
+                const sec2Msgs = ['Informe se foi preso ou condenado', 'Informe sobre substâncias controladas',
+                    'Informe sobre prostituição', 'Informe sobre lavagem de dinheiro',
+                    'Informe sobre tráfico de pessoas', 'Informe sobre auxílio a tráfico',
+                    'Informe sobre parentesco com traficante'];
+                sec2Fields.forEach((f, i) => {
+                    reqRadio(f, sec2Msgs[i]);
+                    if (radioChecked(f) === 'Y') {
+                        const explId = f.replace('rbl', 'tbx') + '_EXPL';
+                        reqInput(explId, 'Explicação é obrigatória');
+                    }
+                });
             }
 
             // ===== Security3 (Nacional) =====
             if (page.id === 'pg-Security3') {
-                reqRadio('rblIllegalActivity', 'Informe sobre atividades ilegais');
-                reqRadio('rblTerroristActivity', 'Informe sobre atividades terroristas');
-                reqRadio('rblTerroristSupport', 'Informe sobre apoio ao terrorismo');
-                reqRadio('rblTerroristOrg', 'Informe sobre organização terrorista');
-                reqRadio('rblTerroristRel', 'Informe sobre parentesco com terrorista');
-                reqRadio('rblGenocide', 'Informe sobre genocídio');
-                reqRadio('rblTorture', 'Informe sobre tortura');
-                reqRadio('rblExViolence', 'Informe sobre violência extrajudicial');
-                reqRadio('rblChildSoldier', 'Informe sobre recrutamento de crianças');
-                reqRadio('rblReligiousFreedom', 'Informe sobre liberdade religiosa');
-                reqRadio('rblPopulationControls', 'Informe sobre controle populacional');
-                reqRadio('rblTransplant', 'Informe sobre transplante coercivo');
+                const sec3Fields = ['rblIllegalActivity', 'rblTerroristActivity', 'rblTerroristSupport',
+                    'rblTerroristOrg', 'rblTerroristRel', 'rblGenocide', 'rblTorture', 'rblExViolence',
+                    'rblChildSoldier', 'rblReligiousFreedom', 'rblPopulationControls', 'rblTransplant'];
+                const sec3Msgs = ['Informe sobre atividades ilegais', 'Informe sobre atividades terroristas',
+                    'Informe sobre apoio ao terrorismo', 'Informe sobre organização terrorista',
+                    'Informe sobre parentesco com terrorista', 'Informe sobre genocídio',
+                    'Informe sobre tortura', 'Informe sobre violência extrajudicial',
+                    'Informe sobre recrutamento de crianças', 'Informe sobre liberdade religiosa',
+                    'Informe sobre controle populacional', 'Informe sobre transplante coercivo'];
+                sec3Fields.forEach((f, i) => {
+                    reqRadio(f, sec3Msgs[i]);
+                    if (radioChecked(f) === 'Y') {
+                        const explId = f.replace('rbl', 'tbx') + '_EXPL';
+                        reqInput(explId, 'Explicação é obrigatória');
+                    }
+                });
             }
 
             // ===== Security4 (Imigração) =====
             if (page.id === 'pg-Security4') {
-                reqRadio('rblRemovalHearing', 'Informe sobre audiência de deportação');
-                reqRadio('rblImmigrationFraud', 'Informe sobre fraude de imigração');
-                reqRadio('rblFailToAttend', 'Informe sobre não comparecimento');
-                reqRadio('rblVisaViolation', 'Informe sobre violação de visto');
-                reqRadio('rblDeport', 'Informe se foi deportado');
+                const sec4Fields = ['rblRemovalHearing', 'rblImmigrationFraud', 'rblFailToAttend',
+                    'rblVisaViolation', 'rblDeport'];
+                const sec4Msgs = ['Informe sobre audiência de deportação', 'Informe sobre fraude de imigração',
+                    'Informe sobre não comparecimento', 'Informe sobre violação de visto', 'Informe se foi deportado'];
+                sec4Fields.forEach((f, i) => {
+                    reqRadio(f, sec4Msgs[i]);
+                    if (radioChecked(f) === 'Y') {
+                        const explId = f.replace('rbl', 'tbx') + '_EXPL';
+                        reqInput(explId, 'Explicação é obrigatória');
+                    }
+                });
             }
 
             // ===== Security5 (Diversos) =====
             if (page.id === 'pg-Security5') {
-                reqRadio('rblChildCustody', 'Informe sobre custódia de criança');
-                reqRadio('rblVotingViolation', 'Informe sobre violação eleitoral');
-                reqRadio('rblRenounceExp', 'Informe sobre renúncia de cidadania');
-                reqRadio('rblAttWoReimb', 'Informe sobre assistência sem reembolso');
+                const sec5Fields = ['rblChildCustody', 'rblVotingViolation', 'rblRenounceExp', 'rblAttWoReimb'];
+                const sec5Msgs = ['Informe sobre custódia de criança', 'Informe sobre violação eleitoral',
+                    'Informe sobre renúncia de cidadania', 'Informe sobre assistência sem reembolso'];
+                sec5Fields.forEach((f, i) => {
+                    reqRadio(f, sec5Msgs[i]);
+                    if (radioChecked(f) === 'Y') {
+                        const explId = f.replace('rbl', 'tbx') + '_EXPL';
+                        reqInput(explId, 'Explicação é obrigatória');
+                    }
+                });
             }
 
             if (errors > 0) {
