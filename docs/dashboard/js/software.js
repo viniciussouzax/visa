@@ -6,12 +6,17 @@ const GH_REPO = 'visa';
 const GH_BRANCH = 'main';
 
 (async () => {
-    const ok = await initAuth();
-    if (!ok) return;
-    renderLayout();
-    await loadSoftwareInfo();
-    setupSoftwareListeners();
-    hideLoader();
+    try {
+        const ok = await initAuth();
+        if (!ok) { hideLoader(); return; }
+        renderLayout();
+        await loadSoftwareInfo();
+        setupSoftwareListeners();
+    } catch (e) {
+        console.error('[Software] Init error:', e);
+    } finally {
+        hideLoader();
+    }
 })();
 
 function setupSoftwareListeners() {

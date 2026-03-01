@@ -5,13 +5,18 @@ let archivedPage = 1;
 let archivedSearch = '';
 
 (async () => {
-    const ok = await initAuth();
-    if (!ok) return;
-    renderLayout();
-    showSkeleton('archived-list');
-    await loadArchived();
-    setupArchivedListeners();
-    hideLoader();
+    try {
+        const ok = await initAuth();
+        if (!ok) { hideLoader(); return; }
+        renderLayout();
+        showSkeleton('archived-list');
+        await loadArchived();
+        setupArchivedListeners();
+    } catch (e) {
+        console.error('[Archived] Init error:', e);
+    } finally {
+        hideLoader();
+    }
 })();
 
 function setupArchivedListeners() {

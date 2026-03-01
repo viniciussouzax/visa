@@ -5,18 +5,23 @@
 let currentApplicantId = null;
 
 (async () => {
-    const ok = await initAuth();
-    if (!ok) return;
-    renderLayout();
+    try {
+        const ok = await initAuth();
+        if (!ok) { hideLoader(); return; }
+        renderLayout();
 
-    // Get applicant ID from URL
-    const params = new URLSearchParams(location.search);
-    currentApplicantId = params.get('id');
-    if (!currentApplicantId) { window.location.href = 'index.html'; return; }
+        // Get applicant ID from URL
+        const params = new URLSearchParams(location.search);
+        currentApplicantId = params.get('id');
+        if (!currentApplicantId) { hideLoader(); window.location.href = 'index.html'; return; }
 
-    await openApplicantDetail(currentApplicantId);
-    setupApplicantListeners();
-    hideLoader();
+        await openApplicantDetail(currentApplicantId);
+        setupApplicantListeners();
+    } catch (e) {
+        console.error('[Applicant] Init error:', e);
+    } finally {
+        hideLoader();
+    }
 })();
 
 function setupApplicantListeners() {

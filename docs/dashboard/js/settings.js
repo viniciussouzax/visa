@@ -3,13 +3,17 @@
 // ============================================================
 
 (async () => {
-    const ok = await initAuth();
-    if (!ok) return;
-    renderLayout();
-
-    await Promise.all([loadOrgData(), loadMembers(), loadAutomationConfig(), loadSecuritySettings()]);
-    setupSettingsListeners();
-    hideLoader();
+    try {
+        const ok = await initAuth();
+        if (!ok) { hideLoader(); return; }
+        renderLayout();
+        await Promise.all([loadOrgData(), loadMembers(), loadAutomationConfig(), loadSecuritySettings()]);
+        setupSettingsListeners();
+    } catch (e) {
+        console.error('[Settings] Init error:', e);
+    } finally {
+        hideLoader();
+    }
 })();
 
 // ============================================================

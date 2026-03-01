@@ -3,17 +3,20 @@
 // ============================================================
 
 (async () => {
-    const ok = await initAuth();
-    if (!ok) return;
-    if (!isMaster) { window.location.href = 'index.html'; return; }
-    renderLayout();
-
-    showSkeleton('agencies-list');
-    showSkeleton('logs-list');
-
-    await Promise.all([loadAgencies(), loadCapmonsterKey(), loadLogs()]);
-    setupMasterListeners();
-    hideLoader();
+    try {
+        const ok = await initAuth();
+        if (!ok) { hideLoader(); return; }
+        if (!isMaster) { hideLoader(); window.location.href = 'index.html'; return; }
+        renderLayout();
+        showSkeleton('agencies-list');
+        showSkeleton('logs-list');
+        await Promise.all([loadAgencies(), loadCapmonsterKey(), loadLogs()]);
+        setupMasterListeners();
+    } catch (e) {
+        console.error('[Master] Init error:', e);
+    } finally {
+        hideLoader();
+    }
 })();
 
 // ============================================================

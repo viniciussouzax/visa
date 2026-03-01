@@ -9,7 +9,7 @@ const CURRENT_PAGE = (() => {
     if (path.includes('settings')) return 'settings';
     if (path.includes('software')) return 'software';
     if (path.includes('master')) return 'master';
-    if (path.includes('applicant')) return 'applicant';
+    if (path.includes('applicant')) return 'pipeline'; // applicant detail = pipeline sub-page
     return 'pipeline';
 })();
 
@@ -69,7 +69,7 @@ function renderLayout() {
                 <div class="lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
                     <label class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Link do formulário</label>
                     <div class="flex items-center gap-1.5">
-                        <input id="clone-url-input" type="text" readonly value="${window.location.origin + window.location.pathname.replace(/dashboard\/.*/, 'ds160/index.html')}" class="form-input text-xs bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 w-full py-1.5 px-2 rounded-lg cursor-text" style="font-size:11px"/>
+                        <input id="clone-url-input" type="text" readonly value="${window.location.origin + window.location.pathname.replace(/dashboard\/.*/, 'ds160/index.html') + (userCompanyShortId ? '?org=' + userCompanyShortId : '')}" class="form-input text-xs bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 w-full py-1.5 px-2 rounded-lg cursor-text" style="font-size:11px"/>
                         <button onclick="navigator.clipboard.writeText(document.getElementById('clone-url-input').value);this.innerHTML='<svg class=\\'w-4 h-4 text-green-500\\' fill=\\'none\\' stroke=\\'currentColor\\' viewBox=\\'0 0 24 24\\'><path stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\' stroke-width=\\'2\\' d=\\'M5 13l4 4L19 7\\'/></svg>';setTimeout(()=>{this.innerHTML='<svg class=\\'w-4 h-4\\' fill=\\'none\\' stroke=\\'currentColor\\' viewBox=\\'0 0 24 24\\'><rect x=\\'9\\' y=\\'9\\' width=\\'13\\' height=\\'13\\' rx=\\'2\\' stroke-width=\\'2\\'/><path d=\\'M5 15V5a2 2 0 012-2h10\\' stroke-width=\\'2\\'/></svg>';},2000)" class="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-violet-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Copiar link">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/><path d="M5 15V5a2 2 0 012-2h10" stroke-width="2"/></svg>
                         </button>

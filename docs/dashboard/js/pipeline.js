@@ -15,13 +15,18 @@ function sanitizeSearch(str) {
 // INIT
 // ============================================================
 (async () => {
-    const ok = await initAuth();
-    if (!ok) return;
-    renderLayout();
-    showSkeleton('pipeline-list');
-    await loadPipeline();
-    setupListeners();
-    hideLoader();
+    try {
+        const ok = await initAuth();
+        if (!ok) { hideLoader(); return; }
+        renderLayout();
+        showSkeleton('pipeline-list');
+        await loadPipeline();
+        setupListeners();
+    } catch (e) {
+        console.error('[Pipeline] Init error:', e);
+    } finally {
+        hideLoader();
+    }
 })();
 
 function setupListeners() {
