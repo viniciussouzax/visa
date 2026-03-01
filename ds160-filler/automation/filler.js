@@ -1263,6 +1263,25 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                     await loc.check();
                     filled++;
                     break;
+                case 'radio': {
+                    // Radio: field.id is the radio's name pattern from field-map
+                    // DS-160 radios: id$='_0' = Yes, id$='_1' = No
+                    // match.value = 'Y' → click Yes (_0), 'N' or anything else → click No (_1)
+                    const suffix = match.value === 'Y' ? '_0' : '_1';
+                    // Find the actual radio by appending suffix to the matched field's base name
+                    const baseId = field.id.replace(/_(0|1)$/, '');
+                    const targetId = baseId + suffix;
+                    const radioLoc = page.locator(`#${targetId.replace(/\$/g, '\\$')}`);
+                    const radioVis = await radioLoc.isVisible({ timeout: 300 }).catch(() => false);
+                    if (radioVis) {
+                        const alreadyChecked = await radioLoc.isChecked().catch(() => false);
+                        if (!alreadyChecked) {
+                            await radioLoc.click();
+                        }
+                        filled++;
+                    }
+                    break;
+                }
             }
         } catch { }
     }
