@@ -3264,6 +3264,38 @@
         let savedApplicantId = null;
         let savedApplicationId = null;
 
+        // ===== SUPABASE INTEGRATION =====
+        const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
+
+        async function sbFetch(path, method, body) {
+            const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_KEY,
+                    'Prefer': 'return=representation',
+                },
+                body: body ? JSON.stringify(body) : undefined,
+            });
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(res.status + ': ' + err);
+            }
+            const text = await res.text();
+            if (!text) return null;
+            try { return JSON.parse(text); } catch { return null; }
+        }
+
+        async function sbGet(path) {
+            const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+            });
+            if (!res.ok) return [];
+            return res.json();
+        }
+
         // ===== ORG RESOLUTION from URL =====
         let resolvedCompanyId = null;
         const urlOrgParam = new URLSearchParams(location.search).get('org');
@@ -4948,40 +4980,7 @@
 
 
 
-        // ===== SUPABASE INTEGRATION =====
-        const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
-
-
-
-        async function sbFetch(path, method, body) {
-            const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': 'Bearer ' + SUPABASE_KEY,
-                    'Prefer': 'return=representation',
-                },
-                body: body ? JSON.stringify(body) : undefined,
-            });
-            if (!res.ok) {
-                const err = await res.text();
-                throw new Error(res.status + ': ' + err);
-            }
-            // Safe JSON parse: handle 204 No Content and empty responses
-            const text = await res.text();
-            if (!text) return null;
-            try { return JSON.parse(text); } catch { return null; }
-        }
-
-        async function sbGet(path) {
-            const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
-            });
-            if (!res.ok) return [];
-            return res.json();
-        }
+        // (SUPABASE_URL, SUPABASE_KEY, sbFetch, sbGet moved to top — before ORG RESOLUTION)
 
         // ===== EMAIL GATE =====
         let gateEmail = '';
