@@ -56,6 +56,16 @@ jobs:
         working-directory: ds160-filler
         run: npm ci
 
+      - name: Prepare production bundle
+        working-directory: ds160-filler
+        run: |
+          node scripts/prepare-bundle.js
+          cd _bundle/_pkg
+          npm install --production
+          cd ..
+          mv _pkg/node_modules ./node_modules
+          rm -rf _pkg
+
       - name: Install Playwright Chromium
         working-directory: ds160-filler
         run: npx playwright install chromium

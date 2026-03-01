@@ -31,9 +31,7 @@
     "bundle": {
         "active": true,
         "resources": [
-            "../sidecar/**",
-            "../automation/**",
-            "../node_modules/**"
+            "../_bundle/**"
         ],
         "targets": [
             "nsis",
