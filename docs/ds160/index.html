@@ -143,16 +143,7 @@
             display: flex;
             flex-direction: column;
             margin-bottom: 20px;
-            gap: 8px;
-        }
-
-        /* p — Descrição e orientações */
-        .fg small,
-        .section>p {
-            font-size: 13px;
-            font-weight: 400;
-            color: #6B6B6B;
-            line-height: 1.5;
+            gap: 6px;
         }
 
         .fg label {
@@ -160,11 +151,30 @@
             font-weight: 600;
             color: #242424;
             line-height: 1.5;
+            order: 1;
+        }
+
+        /* Observation/help text: appears right after label (order 2) */
+        .fg small {
+            order: 2;
+            font-size: 12px;
+            color: #6B6B6B;
+            line-height: 1.4;
+        }
+
+        /* All interactive elements after small */
+        .fg>span,
+        .fg>div,
+        .fg>.rg,
+        .fg>.na-lbl,
+        .fg>.date-row {
+            order: 3;
         }
 
         .fg input,
         .fg select,
         .fg textarea {
+            order: 3;
             width: 100%;
             padding: 12px 14px;
             border: 1px solid #d1d5db;
@@ -287,21 +297,17 @@
         }
 
         .section {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 5px;
-            padding: 16px;
+            padding: 0;
             margin-bottom: 12px;
         }
 
         .section h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #242424;
+            display: none;
+        }
+
+        /* Description/observation text — repositioned between label and input */
+        .section>p {
             margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e5e7eb;
-            line-height: 1.4;
         }
 
         .br {
