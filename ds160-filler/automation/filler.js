@@ -436,78 +436,44 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             onPage(pageName);
             visited.push(pageName);
 
-            // Capture application_id — the ID format is AA00XXXXXX (2 letters + 8+ alphanumeric)
-            // e.g. AA00FCUFGX — contains LETTERS after the initial prefix, NOT just digits!
+            // Capture application_id — unified single evaluate (was 4 separate strategies with 10+ round-trips)
             if (!application.application_id) {
-                // Strategy 0: #content-main — the Application ID is visible on EVERY DS-160 page
                 try {
-                    const contentMain = page.locator('#content-main');
-                    const mainText = await contentMain.innerText({ timeout: 2000 }).catch(() => '');
-                    const contentMatch = mainText.match(/\b([A-Z]{2}[A-Z0-9]{8,})\b/);
-                    if (contentMatch) {
-                        application.application_id = contentMatch[1];
-                        console.log(`[Filler] 🆔 Application ID (from #content-main): ${contentMatch[1]}`);
-                        if (typeof onAppId === 'function') onAppId(contentMatch[1]);
-                    }
-                } catch (e) { console.warn('[Filler] AppID Strategy 0 failed:', e.message); }
-
-                // Strategy 1: Header selectors (Application bar at top of DS-160 pages)
-                if (!application.application_id) {
-                    const headerSelectors = [
-                        "span[id$='_lblAppID']",
-                        "span[id$='_lblBarcode']",
-                        "span[id*='AppID']",
-                        "span[id*='Barcode']",
-                        "#ctl00_ucApplicationBar_lblAppID",
-                        "#ctl00_ucApplicationBar_lblBarcode",
-                        "[id*='ucApplicationBar'] span",
-                        "[id*='pnlAppID'] span",
-                    ];
-                    for (const sel of headerSelectors) {
-                        if (application.application_id) break;
-                        try {
-                            const els = await page.locator(sel).all();
+                    const appId = await page.evaluate(() => {
+                        // Strategy 1: Header selectors (most reliable)
+                        const headerSels = ['[id$="_lblAppID"]', '[id$="_lblBarcode"]', '[id*="AppID"]',
+                            '[id*="ucApplicationBar"] span', '[id*="pnlAppID"] span'];
+                        for (const sel of headerSels) {
+                            const els = document.querySelectorAll(sel);
                             for (const el of els) {
-                                const text = await el.innerText().catch(() => '');
-                                const match = text.match(/[A-Z]{2}[A-Z0-9]{8,}/);
-                                if (match) {
-                                    application.application_id = match[0];
-                                    console.log(`[Filler] 🆔 Application ID (from header "${sel}"): ${match[0]}`);
-                                    if (typeof onAppId === 'function') onAppId(match[0]);
-                                    break;
-                                }
+                                const m = el.textContent?.match(/[A-Z]{2}[A-Z0-9]{8,}/);
+                                if (m) return m[0];
                             }
-                        } catch (e) { console.warn(`[Filler] AppID header ${sel} failed:`, e.message); }
-                    }
-                }
-
-                // Strategy 2: URL query parameters or path
-                if (!application.application_id) {
-                    const urlAppIdMatch = url.match(/[?&](?:c|appId|applicationId)=([A-Z]{2}[A-Z0-9]{8,})/i)
-                        || url.match(/\/([A-Z]{2}[A-Z0-9]{8,})\//);
-                    if (urlAppIdMatch) {
-                        application.application_id = urlAppIdMatch[1];
-                        console.log(`[Filler] 🆔 Application ID (from URL): ${urlAppIdMatch[1]}`);
-                        if (typeof onAppId === 'function') onAppId(urlAppIdMatch[1]);
-                    }
-                }
-
-                // Strategy 3: Full page text search (last resort)
-                if (!application.application_id) {
-                    try {
-                        const bodyText = await page.evaluate(() => {
-                            const allText = document.body?.innerText || '';
-                            const m = allText.match(/Application\s*(?:ID|Id|id)[:\s]*([A-Z]{2}[A-Z0-9]{8,})/i)
-                                || allText.match(/\b([A-Z]{2}[A-Z0-9]{8,})\b/);
-                            return m ? m[1] || m[0] : '';
-                        });
-                        if (bodyText) {
-                            application.application_id = bodyText;
-                            console.log(`[Filler] 🆔 Application ID (from page text): ${bodyText}`);
-                            if (typeof onAppId === 'function') onAppId(bodyText);
                         }
-                    } catch { }
-                }
+                        // Strategy 2: #content-main text
+                        const main = document.getElementById('content-main');
+                        if (main) {
+                            const m = main.textContent?.match(/\b([A-Z]{2}[A-Z0-9]{8,})\b/);
+                            if (m) return m[1];
+                        }
+                        // Strategy 3: Full page text (last resort)
+                        const body = document.body?.innerText || '';
+                        const m = body.match(/Application\s*(?:ID|Id|id)[:\s]*([A-Z]{2}[A-Z0-9]{8,})/i)
+                            || body.match(/\b([A-Z]{2}[A-Z0-9]{8,})\b/);
+                        return m ? (m[1] || m[0]) : '';
+                    });
+
+                    // Strategy 4: URL (no browser round-trip needed)
+                    const urlMatch = !appId && (url.match(/[?&](?:c|appId|applicationId)=([A-Z]{2}[A-Z0-9]{8,})/i)
+                        || url.match(/\/([A-Z]{2}[A-Z0-9]{8,})\//));
+
+                    const finalId = appId || (urlMatch ? urlMatch[1] : '');
+                    if (finalId) {
+                        application.application_id = finalId;
+                        console.log(`[Filler] 🆔 Application ID: ${finalId}`);
+                        if (typeof onAppId === 'function') onAppId(finalId);
+                    }
+                } catch (e) { console.warn('[Filler] AppID capture failed:', e.message); }
             }
 
             // ====== RECOVERY PAGE: Retrieve a DS-160 Application ======
@@ -687,38 +653,39 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 await waitForPageReady(page);
                 // Step 1: Fill any security fields that have actual data from the user's JSON
                 await fillPageCompletely(page, fieldMap);
-                // Step 2: Default remaining unanswered radios to "No"
-                let noRadios = page.locator("input[type=radio][id$='_1']");
-                let count = await noRadios.count();
-                for (let i = 0; i < count; i++) {
-                    const radio = noRadios.nth(i);
-                    // Only click "No" if neither Yes nor No is already selected
-                    const radioName = await radio.getAttribute('name').catch(() => '');
-                    if (radioName) {
-                        const anyChecked = await page.locator(`input[type=radio][name="${radioName}"]:checked`).count().catch(() => 0);
-                        if (anyChecked === 0 && await radio.isVisible().catch(() => false)) {
-                            await radio.click();
+                // Step 2: Default remaining unanswered radios to "No" via batch evaluate
+                const { answeredYes, answeredNo, totalRadioGroups, yesIds } = await page.evaluate(() => {
+                    let yesCount = 0, noCount = 0;
+                    const yIds = [];
+                    // Find all radio groups and default unanswered to "No"
+                    const noRadios = document.querySelectorAll("input[type=radio][id$='_1']");
+                    noRadios.forEach(radio => {
+                        if (radio.offsetParent === null) return; // skip hidden
+                        const name = radio.name;
+                        if (!name) return;
+                        const checked = document.querySelector(`input[type=radio][name="${name}"]:checked`);
+                        if (!checked) {
+                            radio.checked = true;
+                            radio.dispatchEvent(new Event('change', { bubbles: true }));
+                            radio.dispatchEvent(new Event('click', { bubbles: true }));
                         }
-                    }
-                }
-                // Log Security responses summary
-                const answeredYes = await page.locator("input[type=radio][id$='_0']:checked").count().catch(() => 0);
-                const answeredNo = await page.locator("input[type=radio][id$='_1']:checked").count().catch(() => 0);
-                const totalRadioGroups = answeredYes + answeredNo;
+                    });
+                    // Count all answered
+                    document.querySelectorAll("input[type=radio][id$='_0']:checked").forEach(r => {
+                        yesCount++;
+                        const id = r.id?.replace(/_0$/, '');
+                        if (id) yIds.push(id);
+                    });
+                    document.querySelectorAll("input[type=radio][id$='_1']:checked").forEach(() => noCount++);
+                    return { answeredYes: yesCount, answeredNo: noCount, totalRadioGroups: yesCount + noCount, yesIds: yIds };
+                }).catch(() => ({ answeredYes: 0, answeredNo: 0, totalRadioGroups: 0, yesIds: [] }));
+
                 if (answeredYes > 0) {
-                    // Identify which questions were answered Yes
-                    const yesRadios = await page.locator("input[type=radio][id$='_0']:checked").all().catch(() => []);
-                    const yesIds = [];
-                    for (const r of yesRadios) {
-                        const id = await r.getAttribute('id').catch(() => '');
-                        if (id) yesIds.push(id.replace(/_0$/, ''));
-                    }
                     console.warn(`[Filler] ⚠️ SECURITY: ${answeredYes} respostas YES: ${yesIds.join(', ')}`);
                 }
                 console.log(`[Filler] Security: ${answeredYes} Yes, ${answeredNo} No (${totalRadioGroups} perguntas)`);
-                // Report security page stats via callback
                 if (onPageFilled) {
-                    try { onPageFilled({ pageName, fieldsFilled: totalRadioGroups, fieldsTotal: totalRadioGroups, emptyFields: [], elapsed: 0, passes: 1 }); } catch { }
+                    try { onPageFilled({ pageName, fieldsFilled: totalRadioGroups, fieldsTotal: totalRadioGroups, emptyFields: [], elapsed: 0, passes: 1 }); } catch (e) { console.warn('[Filler] onPageFilled error:', e.message); }
                 }
                 await clickNextAndWait(page);
                 continue;
@@ -875,11 +842,9 @@ async function waitForPostback(page) {
 
     // Quick field count stabilization check (reduced from 3s to 800ms)
     const countFields = () => page.evaluate(() => {
-        // Force render by scrolling
-        window.scrollTo(0, document.body.scrollHeight);
-        window.scrollTo(0, 0);
         let c = 0;
-        document.querySelectorAll('select, input:not([type="hidden"]), textarea').forEach(el => {
+        const container = document.getElementById('content-main') || document;
+        container.querySelectorAll('select, input:not([type="hidden"]), textarea').forEach(el => {
             if (el.offsetParent !== null || el.type === 'radio' || el.type === 'checkbox') c++;
         });
         return c;
@@ -900,12 +865,11 @@ async function waitForPostback(page) {
 async function waitForPageReady(page, timeout = 2000) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
-        // Single evaluate: scroll + count + postback check (reduces round-trips)
+        // Single evaluate: count + postback check (reduces round-trips)
         const result = await page.evaluate(() => {
-            window.scrollTo(0, document.body.scrollHeight);
-            window.scrollTo(0, 0);
             let c = 0;
-            document.querySelectorAll("select, input[type='text'], input[type='radio'], textarea").forEach(el => {
+            const container = document.getElementById('content-main') || document;
+            container.querySelectorAll("select, input[type='text'], input[type='radio'], textarea").forEach(el => {
                 if (el.offsetParent !== null || el.type === 'radio' || el.type === 'checkbox') c++;
             });
             const m = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
@@ -1411,15 +1375,17 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
 async function discoverFields(page) {
     return page.evaluate(() => {
         const fields = [];
-        document.querySelectorAll('select').forEach(sel => {
+        // Scope to #content-main to avoid scanning header/footer/nav elements
+        const container = document.getElementById('content-main') || document;
+        container.querySelectorAll('select').forEach(sel => {
             if (sel.id.includes('ddlLanguage')) return;
             fields.push({ tag: 'select', id: sel.id, visible: sel.offsetParent !== null, value: sel.value, optCount: sel.options.length });
         });
-        document.querySelectorAll('input').forEach(inp => {
+        container.querySelectorAll('input').forEach(inp => {
             if (inp.type === 'hidden') return;
             fields.push({ tag: 'input', id: inp.id, type: inp.type, visible: inp.offsetParent !== null || inp.type === 'radio' || inp.type === 'checkbox', value: inp.value, checked: inp.checked });
         });
-        document.querySelectorAll('textarea').forEach(ta => {
+        container.querySelectorAll('textarea').forEach(ta => {
             fields.push({ tag: 'textarea', id: ta.id, visible: ta.offsetParent !== null, value: ta.value });
         });
         return fields;
