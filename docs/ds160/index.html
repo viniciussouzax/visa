@@ -4831,13 +4831,15 @@
                 // Family1
                 family1: {
                     father: {
-                        surname: val('tbxFATHER_SURNAME'), givenName: val('tbxFATHER_GIVEN_NAME'),
-                        dob: dateVal('ddlFathersDOBDay', 'ddlFathersDOBMonth', 'tbxFathersDOBYear'),
+                        surname: document.getElementById('cbxFATHER_SURNAME_UNK_IND')?.checked ? 'DNA' : val('tbxFATHER_SURNAME'),
+                        givenName: document.getElementById('cbxFATHER_GIVEN_NAME_UNK_IND')?.checked ? 'DNA' : val('tbxFATHER_GIVEN_NAME'),
+                        dob: document.getElementById('cbxFATHER_DOB_UNK_IND')?.checked ? 'DNA' : dateVal('ddlFathersDOBDay', 'ddlFathersDOBMonth', 'tbxFathersDOBYear'),
                         inUS: radioVal('rblFATHER_LIVE_IN_US_IND'), usStatus: val('ddlFATHER_US_STATUS'),
                     },
                     mother: {
-                        surname: val('tbxMOTHER_SURNAME'), givenName: val('tbxMOTHER_GIVEN_NAME'),
-                        dob: dateVal('ddlMothersDOBDay', 'ddlMothersDOBMonth', 'tbxMothersDOBYear'),
+                        surname: document.getElementById('cbxMOTHER_SURNAME_UNK_IND')?.checked ? 'DNA' : val('tbxMOTHER_SURNAME'),
+                        givenName: document.getElementById('cbxMOTHER_GIVEN_NAME_UNK_IND')?.checked ? 'DNA' : val('tbxMOTHER_GIVEN_NAME'),
+                        dob: document.getElementById('cbxMOTHER_DOB_UNK_IND')?.checked ? 'DNA' : dateVal('ddlMothersDOBDay', 'ddlMothersDOBMonth', 'tbxMothersDOBYear'),
                         inUS: radioVal('rblMOTHER_LIVE_IN_US_IND'), usStatus: val('ddlMOTHER_US_STATUS'),
                     },
                     immediateRelativesInUS: radioVal('rblUS_IMMED_RELATIVE_IND'),
