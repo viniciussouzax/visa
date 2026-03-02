@@ -5468,9 +5468,19 @@
                 const allComplete = areAllSectionsComplete();
                 if (allComplete && savedApplicantId && !window._isAssessorMode) {
                     // Solicitante: move from 'new' to 'review' via RPC (protected)
-                    await sbFetch('rpc/submit_form_for_review', 'POST', {
-                        applicant_id: savedApplicantId
-                    });
+                    // Only call RPC if status is still 'new' — avoid error if already 'review'
+                    try {
+                        await sbFetch('rpc/submit_form_for_review', 'POST', {
+                            applicant_id: savedApplicantId
+                        });
+                    } catch (rpcErr) {
+                        // If already in review, that's fine — just save
+                        if (rpcErr.message && rpcErr.message.includes('expected new')) {
+                            console.log('[DS-160] Already in review, skipping status change');
+                        } else {
+                            throw rpcErr; // Re-throw unexpected errors
+                        }
+                    }
                     showToast('Formulario salvo e enviado para revisao!');
                     if (window.parent !== window) {
                         window.parent.postMessage({ type: 'form-saved', applicantId: savedApplicantId, status: 'review' }, '*');
