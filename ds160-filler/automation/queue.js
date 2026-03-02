@@ -430,31 +430,32 @@ class QueueRunner {
             }
         }
 
-        // 1. PRIORITY: applicants with pipeline_status='doing' (resume incomplete)
-        let doingQuery = this.supabase
+        // 1. PRIORITY: approved applicants with fill_status != filled/pending (resume incomplete)
+        //    These are applicants being actively processed (filling, error, needs_attention)
+        let resumeQuery = this.supabase
             .from('applicants')
             .select('id')
-            .eq('pipeline_status', 'doing');
-        if (applicantIds) doingQuery = doingQuery.in('id', applicantIds);
-        const { data: doingApplicants } = await doingQuery;
+            .eq('pipeline_status', 'approved');
+        if (applicantIds) resumeQuery = resumeQuery.in('id', applicantIds);
+        const { data: resumeApplicants } = await resumeQuery;
 
-        if (doingApplicants && doingApplicants.length > 0) {
-            const doingIds = doingApplicants.map(a => a.id);
-            const { data: doingApps } = await this.supabase
+        if (resumeApplicants && resumeApplicants.length > 0) {
+            const resumeIds = resumeApplicants.map(a => a.id);
+            const { data: resumeApps } = await this.supabase
                 .from('applications')
                 .select('*')
-                .in('applicant_id', doingIds)
-                .neq('fill_status', 'filled')
+                .in('applicant_id', resumeIds)
+                .in('fill_status', ['filling', 'error', 'needs_attention'])
                 .limit(1);
 
-            if (doingApps && doingApps.length > 0) {
-                const app = doingApps[0];
+            if (resumeApps && resumeApps.length > 0) {
+                const app = resumeApps[0];
                 await this.supabase.from('applications').update({
                     fill_status: 'filling',
                     fill_started_at: new Date().toISOString(),
                     fill_worker_id: this.workerId
                 }).eq('id', app.id);
-                console.log('[Queue] Resuming doing:', app.id);
+                console.log('[Queue] Resuming:', app.id);
                 return { ...app, fill_status: 'filling' };
             }
         }
@@ -598,15 +599,10 @@ class QueueRunner {
             return null;
         }
 
-        // Pipeline: approved → doing
-        await this.supabase.from('applicants').update({
-            pipeline_status: 'doing',
-            updated_at: new Date().toISOString()
-        }).eq('id', applicantId);
-
+        // Pipeline stays 'approved' during filling (fill_status shows progress)
         const priority = app.fill_priority || 0;
         const priorityLabel = priority >= 3 ? '🚨 III - EMERGÊNCIA' : priority >= 2 ? '⚡ II - URGÊNCIA' : 'I - Indefinido';
-        console.log(`[Queue] Claimed ${app.id} → doing (${priorityLabel})`);
+        console.log(`[Queue] Claimed ${app.id} → filling (${priorityLabel})`);
 
         return { ...claimed, fill_status: 'filling' };
     }
@@ -692,7 +688,7 @@ class QueueRunner {
         console.log(`[Queue] 🔧 Erro de sistema: ${appId} — aguardando correção`);
     }
 
-    // Re-queue: reset fill_status (pipeline_status stays 'doing' so it'll be retried)
+    // Re-queue: reset fill_status (pipeline_status stays 'approved' so it'll be retried)
     async _reQueue(appId, errMsg) {
         await this.supabase
             .from('applications')
