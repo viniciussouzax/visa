@@ -1243,9 +1243,8 @@
                 </div>
                 <div class="fg fg-date"><label>Tempo Estimado de Permanência nos EUA
                         *</label>
-                    <div class="ssn-row">
-                        <input type="text" id="tbxAPP_LOS" placeholder="Quantidade" maxlength="4"
-                            style="max-width:120px">
+                    <div class="date-row">
+                        <input type="text" id="tbxAPP_LOS" placeholder="Quantidade" maxlength="4">
                         <select id="ddlAPP_LOS_CD">
                             <option value="">- Período -</option>
                             <option value="Y">Ano(s)</option>
@@ -1299,13 +1298,10 @@
                     <input type="text" id="tbxPayerPhone" maxlength="20" placeholder="Ex: 011-5511999998888">
                 </div>
                 <div class="fg"><label>Email</label>
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                        <input type="text" id="tbxPAYER_EMAIL_ADDR" placeholder="email@exemplo.com"
-                            style="flex:1;min-width:200px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
-                        <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPAYER_EMAIL_ADDR_NA"
-                                data-target="tbxPAYER_EMAIL_ADDR"> Não se Aplica</label>
-                    </div>
                     <small>Ex: email@exemplo.com</small>
+                    <input type="text" id="tbxPAYER_EMAIL_ADDR" placeholder="email@exemplo.com">
+                    <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPAYER_EMAIL_ADDR_NA"
+                            data-target="tbxPAYER_EMAIL_ADDR"> Não se Aplica</label>
                 </div>
                 <div class="fg"><label>Relação com Você</label>
                     <select id="ddlPayerRelationship">
@@ -1337,20 +1333,14 @@
                         <input type="text" id="tbxPayerCity" placeholder="Cidade">
                     </div>
                     <div class="fg"><label>Estado / Província</label>
-                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                            <input type="text" id="tbxPayerStateProvince" placeholder="Estado/Província"
-                                style="flex:1;min-width:180px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
-                            <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPayerStateProvince"
-                                    data-target="tbxPayerStateProvince"> Não se Aplica</label>
-                        </div>
+                        <input type="text" id="tbxPayerStateProvince" placeholder="Estado/Província">
+                        <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPayerStateProvince"
+                                data-target="tbxPayerStateProvince"> Não se Aplica</label>
                     </div>
                     <div class="fg"><label>CEP</label>
-                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                            <input type="text" id="tbxPayerPostalZIPCode" placeholder="CEP"
-                                style="flex:1;min-width:180px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
-                            <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPayerPostalZIPCode"
-                                    data-target="tbxPayerPostalZIPCode"> Não se Aplica</label>
-                        </div>
+                        <input type="text" id="tbxPayerPostalZIPCode" placeholder="CEP">
+                        <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPayerPostalZIPCode"
+                                data-target="tbxPayerPostalZIPCode"> Não se Aplica</label>
                     </div>
                     <div class="fg"><label>País / Região</label>
                         <select id="ddlPayerCountry" class="sel-country"></select>
@@ -1381,20 +1371,14 @@
                     <input type="text" id="tbxPayerCityC" placeholder="Cidade">
                 </div>
                 <div class="fg"><label>Estado / Província</label>
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                        <input type="text" id="tbxPayerStateProvinceC" placeholder="Estado/Província"
-                            style="flex:1;min-width:180px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
-                        <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPayerStateProvinceC"
-                                data-target="tbxPayerStateProvinceC"> Não se Aplica</label>
-                    </div>
+                    <input type="text" id="tbxPayerStateProvinceC" placeholder="Estado/Província">
+                    <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPayerStateProvinceC"
+                            data-target="tbxPayerStateProvinceC"> Não se Aplica</label>
                 </div>
                 <div class="fg"><label>CEP</label>
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                        <input type="text" id="tbxPayerPostalZIPCodeC" placeholder="CEP"
-                            style="flex:1;min-width:180px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
-                        <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPayerPostalZIPCodeC"
-                                data-target="tbxPayerPostalZIPCodeC"> Não se Aplica</label>
-                    </div>
+                    <input type="text" id="tbxPayerPostalZIPCodeC" placeholder="CEP">
+                    <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPayerPostalZIPCodeC"
+                            data-target="tbxPayerPostalZIPCodeC"> Não se Aplica</label>
                 </div>
                 <div class="fg"><label>País / Região</label>
                     <select id="ddlPayerCountryC" class="sel-country"></select>
@@ -1838,6 +1822,8 @@
                     Social</button>
             </div>
 
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px">
+
             <div class="fg"><label>Você deseja informar sobre sua presença em outros sites ou
                     aplicativos que utilizou nos últimos cinco anos para criar ou compartilhar conteúdo (fotos, vídeos,
                     publicações, etc.)? *</label>
@@ -1941,11 +1927,10 @@
                     expiração.</small>
                 <div class="date-row"><select id="ddlPPT_EXPIRE_DTEDay" class="sel-day"></select><select
                         id="ddlPPT_EXPIRE_DTEMonth" class="sel-month"></select><input type="text" id="tbxPPT_EXPIREYear"
-                        maxlength="4" placeholder="AAAA">
-                    <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxPPT_EXPIRE_NA"
-                            data-target="ddlPPT_EXPIRE_DTEDay,ddlPPT_EXPIRE_DTEMonth,tbxPPT_EXPIREYear"> Sem Validade
-                    </label>
-                </div>
+                        maxlength="4" placeholder="AAAA"></div>
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxPPT_EXPIRE_NA"
+                        data-target="ddlPPT_EXPIRE_DTEDay,ddlPPT_EXPIRE_DTEMonth,tbxPPT_EXPIREYear"> Sem Validade
+                </label>
             </div>
         </div>
 
@@ -2010,8 +1995,6 @@
             <div class="fg"><label>Nome(s) do Contato *</label>
                 <small>Primeiro nome da pessoa de contato nos EUA.</small>
                 <input type="text" id="tbxUS_POC_GIVEN_NAME" maxlength="33" placeholder="Ex: JOHN">
-            </div>
-            <div class="fg">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxUS_POC_NAME_NA"
                         data-target="tbxUS_POC_SURNAME,tbxUS_POC_GIVEN_NAME"> Não Sei</label>
             </div>
@@ -2100,10 +2083,9 @@
                 <small>Se não souber a data exata, marque "Não Sei".</small>
                 <div class="date-row"><select id="ddlFathersDOBDay" class="sel-day"></select><select
                         id="ddlFathersDOBMonth" class="sel-month"></select><input type="text" id="tbxFathersDOBYear"
-                        maxlength="4" placeholder="AAAA">
-                    <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxFATHER_DOB_UNK_IND"
-                            data-target="ddlFathersDOBDay,ddlFathersDOBMonth,tbxFathersDOBYear"> Não Sei</label>
-                </div>
+                        maxlength="4" placeholder="AAAA"></div>
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxFATHER_DOB_UNK_IND"
+                        data-target="ddlFathersDOBDay,ddlFathersDOBMonth,tbxFathersDOBYear"> Não Sei</label>
             </div>
             <div class="fg"><label>Seu pai está nos Estados Unidos? *</label>
                 <small>Informe se seu pai mora ou está atualmente nos EUA.</small>
@@ -2146,10 +2128,9 @@
                 <small>Se não souber a data exata, marque "Não Sei".</small>
                 <div class="date-row"><select id="ddlMothersDOBDay" class="sel-day"></select><select
                         id="ddlMothersDOBMonth" class="sel-month"></select><input type="text" id="tbxMothersDOBYear"
-                        maxlength="4" placeholder="AAAA">
-                    <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxMOTHER_DOB_UNK_IND"
-                            data-target="ddlMothersDOBDay,ddlMothersDOBMonth,tbxMothersDOBYear"> Não Sei</label>
-                </div>
+                        maxlength="4" placeholder="AAAA"></div>
+                <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxMOTHER_DOB_UNK_IND"
+                        data-target="ddlMothersDOBDay,ddlMothersDOBMonth,tbxMothersDOBYear"> Não Sei</label>
             </div>
             <div class="fg"><label>Sua mãe está nos Estados Unidos? *</label>
                 <small>Informe se sua mãe mora ou está atualmente nos EUA.</small>
@@ -2283,12 +2264,11 @@
                 </select>
             </div>
             <div class="br" id="br-spouseAddr">
-                <div class="fg"><label>Endereço Linha 1 (Street Address (Line 1)) *</label>
+                <div class="fg"><label>Endereço Linha 1 *</label>
                     <input type="text" id="tbxSPOUSE_ADDR_LN1" maxlength="40" placeholder="Endereço do cônjuge">
-                    <span style="font-size:11px;color:#999">(caixas postais não são permitidas / postal box numbers are
-                        not allowed)</span>
+                    <span style="font-size:11px;color:#999">(caixas postais não são permitidas)</span>
                 </div>
-                <div class="fg"><label>Endereço Linha 2 (Street Address (Line 2))</label>
+                <div class="fg"><label>Endereço Linha 2</label>
                     <input type="text" id="tbxSPOUSE_ADDR_LN2" maxlength="40" placeholder="Complemento">
                 </div>
                 <div class="fg"><label>Cidade *</label>
@@ -2458,11 +2438,11 @@
             </div>
 
 
-            <div class="fg"><label>Endereço Linha 1 (Street Address (Line 1)) *</label>
+            <div class="fg"><label>Endereço Linha 1 *</label>
                 <small>Endereço do empregador ou escola atual :</small>
                 <input type="text" id="tbxEmpSchAddr1" maxlength="40" placeholder="Endereço linha 1">
             </div>
-            <div class="fg"><label>Endereço Linha 2 (Street Address (Line 2)) <em>*Opcional</em></label>
+            <div class="fg"><label>Endereço Linha 2 <em>*Opcional</em></label>
                 <input type="text" id="tbxEmpSchAddr2" maxlength="40" placeholder="Complemento">
             </div>
             <div class="fg"><label>Cidade *</label>
@@ -2491,8 +2471,7 @@
                         maxlength="4" placeholder="AAAA"></div>
 
             </div>
-            <div class="fg"><label>Renda Mensal em Moeda Local (se empregado) (Monthly Income in Local Currency (if
-                    employed))</label>
+            <div class="fg"><label>Renda Mensal em Moeda Local (se empregado)</label>
                 <input type="text" id="tbxCURR_MONTHLY_SALARY" maxlength="15" placeholder="Ex: 5000">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxCURR_MONTHLY_SALARY_NA"
                         data-target="tbxCURR_MONTHLY_SALARY"> Não se Aplica</label>
