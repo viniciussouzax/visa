@@ -1478,8 +1478,8 @@ function normalizeProfile(data) {
 
     // Helper: prefer camelCase, fallback to snake_case
     const g = (obj, camel, snake) => obj[camel] || obj[snake] || '';
-    // Helper: convert 'N/A', empty strings to null (for checkbox-check fields)
-    const na = (v) => (!v || v === 'N/A' || v === 'n/a') ? null : v;
+    // Helper: convert 'N/A', 'DNA', empty strings to null (for checkbox-check fields)
+    const na = (v) => (!v || v === 'N/A' || v === 'n/a' || v === 'DNA') ? null : v;
 
     return {
         // === PERSONAL 1 ===
@@ -1487,7 +1487,10 @@ function normalizeProfile(data) {
         givenName: g(p1, 'givenName', 'given_name'),
         fullNameNative: g(p1, 'fullNameNative', 'full_name_native'),
         otherNamesUsed: p1.otherNamesUsed === 'Y' || p1.other_names_used === 'Y',
-        otherNames: p1.otherNames || p1.other_names || [],
+        otherNames: (p1.otherNames || p1.other_names || []).map(n => ({
+            surname: (n.surname || '').replace(/[^A-Za-z ]/g, '').trim(),
+            givenName: (n.givenName || '').replace(/[^A-Za-z ]/g, '').trim(),
+        })).filter(n => n.surname || n.givenName),
         telecode: p1.telecode === 'Y' || p1.telecode_question === 'Y',
         telecodeSurname: g(p1, 'telecodeSurname', 'telecode_surname'),
         telecodeGivenName: g(p1, 'telecodeGivenName', 'telecode_given_name'),
@@ -1561,8 +1564,8 @@ function normalizeProfile(data) {
             return countries[0]?.country;
         })(),
         nationalId: g(p2, 'nationalId', 'national_id'),
-        usSsn: p2.ssn && p2.ssn !== 'N/A' ? p2.ssn.replace(/-/g, '') : null,
-        usTaxpayerId: p2.taxId && p2.taxId !== 'N/A' ? p2.taxId : null,
+        usSsn: p2.ssn && p2.ssn !== 'N/A' && p2.ssn !== 'DNA' ? p2.ssn.replace(/-/g, '') : null,
+        usTaxpayerId: p2.taxId && p2.taxId !== 'N/A' && p2.taxId !== 'DNA' ? p2.taxId : null,
 
         // === TRAVEL ===
         purposeOfTrip: (() => {
@@ -1732,7 +1735,7 @@ function normalizeProfile(data) {
                 state: uc.state || ucAddr.state || '',
                 zip: uc.zip || ucAddr.zip || '',
                 phone: uc.phone || '',
-                email: uc.email || '',
+                email: na(uc.email) || '',
             };
         })(),
 
