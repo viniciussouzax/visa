@@ -587,12 +587,10 @@ function buildDynamicFieldMap(a) {
       );
     });
     // Generic fallback for ctl00
-    if (a.socialMedia.length === 1) {
-      map.push(
-        { pattern: /ddlSocialMedia$/i, value: a.socialMedia[0].platform, type: "select-search" },
-        { pattern: /tbxSocialMediaIdent$/i, value: a.socialMedia[0].handle, type: "text" },
-      );
-    }
+    map.push(
+      { pattern: /ddlSocialMedia$/i, value: a.socialMedia[0].platform, type: "select-search" },
+      { pattern: /tbxSocialMediaIdent$/i, value: a.socialMedia[0].handle, type: "text" },
+    );
   } else {
     map.push({ pattern: /rblAddSite_1$/i, value: "", type: "click" });
     map.push({ pattern: /cbexSOCIAL_MEDIA_PLATFORM_NA$/i, value: "", type: "checkbox-check" });
