@@ -264,14 +264,13 @@
 
         .ssn-row {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             align-items: center;
         }
 
         .ssn-row input {
             flex: 1;
-            min-width: 50px;
-            max-width: 100px;
+            min-width: 0;
             padding: 8px 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -280,9 +279,10 @@
         }
 
         .ssn-row span {
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 18px;
+            font-weight: 700;
             color: #64748b;
+            flex-shrink: 0;
         }
 
         .radio-group {
