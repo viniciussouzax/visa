@@ -343,11 +343,14 @@ function buildDynamicFieldMap(a) {
         { pattern: new RegExp(`dlTravelCompanions_${ctl}_tbxTC_GIVEN_NAME$`, 'i'), value: comp.givenName || "", type: "text", ...base },
         { pattern: new RegExp(`dlTravelCompanions_${ctl}_ddlTCRelationship$`, 'i'), value: comp.relationship || "", type: "select", ...base },
       );
-      // Generic fallback for ctl00 (some DS-160 versions use simpler IDs)
+      // Generic fallback for ctl00 (DS-160 uses varying IDs for first entry)
       if (idx === 0) {
         map.push(
           { pattern: /tbxTC_SURNAME$/i, value: comp.surname || "", type: "text" },
           { pattern: /tbxTC_GIVEN_NAME$/i, value: comp.givenName || "", type: "text" },
+          // Some DS-160 pages use simpler IDs (tbxSurname, tbxGivenName)
+          { pattern: /tbxSurname$/i, value: comp.surname || "", type: "text" },
+          { pattern: /tbxGivenName$/i, value: comp.givenName || "", type: "text" },
           { pattern: /ddlTCRelationship$/i, value: comp.relationship || "", type: "select" },
         );
       }
