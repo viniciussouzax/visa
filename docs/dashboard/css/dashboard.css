@@ -290,7 +290,9 @@
 /* Nav item active state */
 .nav-item.active {
     color: var(--text) !important;
-    background: var(--surface-hover) !important;
+    background: rgba(59, 130, 246, 0.08) !important;
+    border-left: 3px solid #3b82f6;
+    font-weight: 600;
 }
 
 /* Drag & Drop */

@@ -58,30 +58,15 @@ async function openApplicantDetail(id) {
     $('page-subtitle').textContent = email;
 
     let html = `
-    <div class="ds-card" style="border-radius:12px;padding:18px;margin-bottom:20px">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-            <div style="display:flex;align-items:center;gap:12px">
-                <span class="ds-col-header">Mover todos:</span>
-                <select onchange="if(this.value){moveAllPipeline('${id}',this.value);this.value=''}" class="ds-btn-inline">
-                    <option value="">Selecionar etapa...</option>
-                    ${STAGE_ORDER.map(s => `<option value="${s}">${STAGES[s].label}</option>`).join('')}
-                </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:12px">
-                <div style="text-align:right">
-                    <span class="ds-stat-big" style="color:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : 'var(--text-muted)'}">${doneCount}/${totalCount}</span>
-                    <span class="ds-stat-unit">concluídos</span>
-                </div>
-                <div class="ds-progress-bar">
-                    <div class="ds-progress-fill" style="width:${progressPercent}%;background:${doneCount === totalCount && totalCount > 0 ? '#22c55e' : '#3b82f6'}"></div>
-                </div>
-                <button onclick="showDeleteModal('${id}','${applicant.full_name.replace(/'/g, "\\\\'")}')" class="ds-btn-danger">Excluir</button>
-            </div>
-        </div>
+    <!-- Grid header -->
+    <div class="ds-pipeline-grid ds-pipeline-header" style="grid-template-columns:1fr 100px 100px 110px 80px">
+        <span class="ds-col-header">PROCESSO</span>
+        <span class="ds-col-header">PRIORIDADE</span>
+        <span class="ds-col-header">ETAPA</span>
+        <span class="ds-col-header">STATUS</span>
+        <span class="ds-col-header" style="text-align:center">AÇÕES</span>
     </div>
-
-    <h3 class="ds-section-label">Processos (${totalCount})</h3>
-    <div style="display:grid;gap:10px">`;
+    <div style="display:grid;gap:0">`;
 
     allProcesses.forEach(p => {
         const isPrimary = !p.primary_applicant_id;
@@ -97,41 +82,57 @@ async function openApplicantDetail(id) {
         const fStage = FILL_STAGES[fillStatus] || { label: fillStatus, color: '#6b7280' };
 
         const pPrio = PRIORITIES[p.fill_priority] || PRIORITIES[0];
-        const pPrioBadge = (p.fill_priority || 0) >= 2
-            ? `<span class="ds-badge" style="font-size:10px;padding:1px 6px;background:${pPrio.color}15;color:${pPrio.color}">${pPrio.icon} ${pPrio.label}</span>` : '';
+
+        // Fill badge
+        const fillBadge = fillStatus !== '—'
+            ? (() => {
+                const isClickable = fillStatus === 'error' || fillStatus === 'needs_attention' || fillStatus === 'system_error';
+                const clickAttr = isClickable ? `onclick="event.stopPropagation();openLogsModal('${p.id}')" style="cursor:pointer;background:${fStage.color}15;color:${fStage.color}"` : `style="background:${fStage.color}15;color:${fStage.color}"`;
+                return `<span class="ds-badge" ${clickAttr}><span class="ds-badge-dot" style="background:${fStage.color}"></span>${fStage.label}</span>`;
+            })()
+            : '<span class="ds-text-muted">—</span>';
+
+        // Priority badge (as select)
+        const prioBadge = `<select onclick="event.stopPropagation()" onchange="if(this.value!==''){setPriority('${p.id}',this.value,'${id}')}"
+            style="font-size:11px;padding:2px 8px;background:${pPrio.color}15;color:${pPrio.color};border:none;border-radius:4px;cursor:pointer;outline:none;font-weight:500;font-family:inherit;appearance:none;-webkit-appearance:none">
+            <option value="">${pPrio.label}</option>
+            <option value="0">Normal</option>
+            <option value="2">Urgente</option>
+            <option value="3">Emergência</option>
+        </select>`;
+
+        // Stage badge (as select)
+        const stageBadge = `<select onclick="event.stopPropagation()" onchange="if(this.value){movePipeline('${p.id}',this.value,'${id}')}"
+            style="font-size:11px;padding:2px 8px;background:${pStage.color}15;color:${pStage.color};border:none;border-radius:4px;cursor:pointer;outline:none;font-weight:600;font-family:inherit;appearance:none;-webkit-appearance:none">
+            <option value="">${pStage.label}</option>
+            ${STAGE_ORDER.filter(s => s !== p.pipeline_status).map(s => `<option value="${s}">${STAGES[s].label}</option>`).join('')}
+        </select>`;
 
         html += `
-        <div class="ds-process-card${isDone ? ' done' : ''}${(p.fill_priority || 0) >= 3 ? ' priority-high' : (p.fill_priority || 0) >= 2 ? ' priority-medium' : ''}">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="openProcessModal('${p.id}')">
-                <div>
-                    <div style="display:flex;align-items:center;gap:8px">
-                        <span class="ds-text-name" style="white-space:normal">${p.full_name}</span>
-                        ${appId ? `<span class="ds-text-muted" style="background:var(--bg);padding:2px 6px;border-radius:4px;font-family:monospace">${appId}</span>` : ''}
-                        ${pPrioBadge}
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
-                        <span class="ds-text-muted">${roleLabel}${pPassport ? ' · ' + pPassport : ''}</span>
-                        ${fillStatus !== '—' ? (() => {
-                const isClickable = fillStatus === 'error' || fillStatus === 'needs_attention' || fillStatus === 'system_error';
-                const clickAttr = isClickable ? `onclick="event.stopPropagation();openLogsModal('${p.id}')" style="cursor:pointer;font-size:10px;padding:1px 6px;background:${fStage.color}15;color:${fStage.color}"` : `style="font-size:10px;padding:1px 6px;background:${fStage.color}15;color:${fStage.color}"`;
-                return `<span class="ds-badge" ${clickAttr}><span class="ds-badge-dot" style="background:${fStage.color}"></span>${fStage.label}</span>`;
-            })() : ''}
-                    </div>
+        <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl hover:shadow-md transition ds-pipeline-grid${isDone ? ' opacity-60' : ''}"
+             style="grid-template-columns:1fr 100px 100px 110px 80px;cursor:pointer"
+             onclick="openProcessModal('${p.id}')">
+            <div style="min-width:0;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:6px">
+                    <span class="ds-text-name">${p.full_name}</span>
+                    ${appId ? `<span class="ds-text-muted" style="background:var(--bg);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:10px">${appId}</span>` : ''}
                 </div>
-                <div style="display:flex;align-items:center;gap:8px">
-                    ${pApp ? `<button onclick="event.stopPropagation();viewAppDetails('${p.id}')" class="ds-btn-inline">Detalhes</button>` : ''}
-                    <select onclick="event.stopPropagation()" onchange="if(this.value!==''){setPriority('${p.id}',this.value,'${id}')}"
-                        style="font-size:13px;padding:8px 14px;background:${pPrio.color}08;color:${pPrio.color};border:1px solid #d1d5db;border-radius:5px;cursor:pointer;outline:none;font-weight:500;font-family:inherit">
-                        <option value="">${pPrio.icon} ${(p.fill_priority || 0) >= 2 ? pPrio.label : 'Prioridade'}</option>
-                        <option value="0">Normal</option>
-                        <option value="2">Urgente</option>
-                        <option value="3">Emergência</option>
-                    </select>
-                    <select onclick="event.stopPropagation()" onchange="if(this.value){movePipeline('${p.id}',this.value,'${id}')}"
-                        style="font-size:13px;padding:8px 14px;background:${pStage.color}08;color:${pStage.color};border:1px solid #d1d5db;border-radius:5px;cursor:pointer;outline:none;font-weight:600;font-family:inherit">
-                        <option value="">${pStage.label}</option>
-                        ${STAGE_ORDER.filter(s => s !== p.pipeline_status).map(s => `<option value="${s}">${STAGES[s].label}</option>`).join('')}
-                    </select>
+                <div class="ds-text-sub">${roleLabel}${pPassport ? ' · ' + pPassport : ''}</div>
+            </div>
+            <div onclick="event.stopPropagation()">${prioBadge}</div>
+            <div onclick="event.stopPropagation()">${stageBadge}</div>
+            <div>${fillBadge}</div>
+            <div style="text-align:center" onclick="event.stopPropagation()">
+                <div class="relative" x-data="{ open: false }">
+                    <button @click.stop="open = !open" class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/50 transition">
+                        <svg class="w-5 h-5 fill-current text-gray-400 dark:text-gray-500" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" x-transition class="origin-top-right absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-lg shadow-lg py-1 z-20" x-cloak>
+                        ${pApp ? `<button onclick="event.stopPropagation();viewAppDetails('${p.id}')" @click="open=false" class="w-full text-left px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30">📋 Detalhes</button>` : ''}
+                        <button onclick="event.stopPropagation();openLogsModal('${p.id}')" @click="open=false" class="w-full text-left px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30">📄 Logs</button>
+                        <button onclick="event.stopPropagation();viewApplicantJson('${p.id}')" @click="open=false" class="w-full text-left px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30">{ } JSON</button>
+                        ${pApp ? `<div style="border-top:1px solid var(--border);margin:4px 0"></div><button onclick="event.stopPropagation();resetFillStatus('${p.id}','${id}')" @click="open=false" class="w-full text-left px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">🔄 Resetar Preenchimento</button>` : ''}
+                    </div>
                 </div>
             </div>
         </div>`;
@@ -165,24 +166,52 @@ async function moveAllPipeline(primaryId, newStatus) {
     openApplicantDetail(primaryId);
 }
 
-async function _resetApplicationForRefill(applicantId) {
+async function _resetApplicationForRefill(applicantId, fullReset = false) {
     const { data: apps } = await sb.from('applications').select('id, fill_status, application_id').eq('applicant_id', applicantId);
     if (apps && apps.length > 0) {
         for (const app of apps) {
-            if (app.fill_status === 'filled' || app.fill_status === 'error' || app.fill_status === 'needs_attention' || app.fill_status === 'system_error') {
+            if (fullReset || app.fill_status === 'filled' || app.fill_status === 'error' || app.fill_status === 'needs_attention' || app.fill_status === 'system_error') {
                 const updateData = {
                     fill_status: 'pending', fill_error: null, fill_worker_id: null,
                     fill_started_at: null, fill_finished_at: null, retry_count: 0,
                     last_page: null, last_error_at: null
                 };
-                // Preservar application_id se já existe (retomar via Recovery)
-                if (!app.application_id) {
+                if (fullReset) {
+                    // Reset completo: limpa application_id para começar do zero
+                    updateData.application_id = null;
+                } else if (!app.application_id) {
+                    // Preservar application_id se já existe (retomar via Recovery)
                     updateData.application_id = null;
                 }
                 await sb.from('applications').update(updateData).eq('id', app.id);
             }
         }
     }
+}
+
+let pendingResetId = null;
+let pendingResetPrimaryId = null;
+
+function resetFillStatus(applicantId, primaryId) {
+    pendingResetId = applicantId;
+    pendingResetPrimaryId = primaryId;
+    $('reset-modal').style.display = 'flex';
+}
+
+function closeResetModal() {
+    $('reset-modal').style.display = 'none';
+    pendingResetId = null;
+    pendingResetPrimaryId = null;
+}
+
+async function confirmReset() {
+    if (!pendingResetId) return;
+    const id = pendingResetId;
+    const primaryId = pendingResetPrimaryId;
+    closeResetModal();
+    await _resetApplicationForRefill(id, true);
+    toast('Preenchimento resetado com sucesso', 'success');
+    openApplicantDetail(primaryId || id);
 }
 
 async function setPriority(applicantId, priority, primaryId) {
@@ -221,13 +250,30 @@ function closeProcessModal() {
 async function viewAppDetails(applicantId) {
     const { data: applicant } = await sb.from('applicants').select('*').eq('id', applicantId).single();
     if (!applicant) return;
-    const { data: apps } = await sb.from('applications').select('*').eq('applicant_id', applicantId).limit(1);
-    const app = apps?.[0];
+    const [appsRes, secRes] = await Promise.all([
+        sb.from('applications').select('*').eq('applicant_id', applicantId).limit(1),
+        sb.from('settings').select('key_name, key_value').in('key_name', ['security_question', 'security_answer'])
+    ]);
+    const app = appsRes.data?.[0];
+
+    // Security settings
+    let securityAnswer = '—';
+    let securityQuestion = '—';
+    const SEC_QUESTIONS = [
+        'Qual é o nome de solteira da sua mãe?',
+        'Qual é o nome do seu animal de estimação favorito?',
+        'Em que cidade você nasceu?',
+        'Qual é o nome do seu melhor amigo de infância?',
+        'Qual é o nome da sua escola primária?'
+    ];
+    (secRes.data || []).forEach(s => {
+        if (s.key_name === 'security_answer') securityAnswer = s.key_value || '—';
+        if (s.key_name === 'security_question') securityQuestion = SEC_QUESTIONS[parseInt(s.key_value)] || `Pergunta ${s.key_value}`;
+    });
 
     const surname = (applicant.data?.personal1?.surname || applicant.full_name?.split(' ')[0] || '').toUpperCase();
     const surname5 = surname.substring(0, 5);
     const birthYear = applicant.data?.personal1?.dob?.year || '—';
-    const securityAnswer = app?.security_answer || '—';
     const applicationId = app?.application_id || '—';
     const fillStatus = app?.fill_status || '—';
     const fillError = app?.fill_error || '';

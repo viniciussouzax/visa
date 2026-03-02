@@ -149,7 +149,8 @@ function renderLayout() {
                         <div class="relative">
                             <label for="global-search-input" class="sr-only">Buscar</label>
                             <input id="global-search-input" class="w-full dark:text-gray-300 bg-white dark:bg-gray-800 border-0 focus:ring-transparent placeholder-gray-400 dark:placeholder-gray-500 appearance-none py-3 pl-10 pr-4"
-                                type="search" placeholder="Buscar solicitante por nome ou passaporte…" />
+                                type="search" placeholder="Buscar por nome ou passaporte…" />
+                            <kbd class="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">Ctrl+K</kbd>
                             <button class="absolute inset-0 right-auto group" type="submit" aria-label="Search">
                                 <svg class="shrink-0 fill-current text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 ml-4 mr-2" width="16" height="16" viewBox="0 0 16 16">
                                     <path d="M7 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zM7 2C4.243 2 2 4.243 2 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5z" />

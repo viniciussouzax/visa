@@ -83,7 +83,11 @@ async function loadArchived() {
                 </div>
             </div>
         </div>`;
-    }).join('') || '<div class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">Nenhum solicitante arquivado</div>';
+    }).join('') || `<div class="flex flex-col items-center justify-center py-20 text-gray-400 dark:text-gray-500">
+            <svg class="w-16 h-16 mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Nenhum solicitante arquivado</p>
+            <p class="text-xs mt-1">Processos arquivados aparecerão aqui</p>
+        </div>`;
 
     const hasMore = (applicants || []).length === PAGE_SIZE;
     if ($('arch-prev')) $('arch-prev').disabled = archivedPage <= 1;

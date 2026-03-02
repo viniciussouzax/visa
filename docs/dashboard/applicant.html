@@ -22,11 +22,6 @@
             <div id="header-container"></div>
             <main class="grow">
                 <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
-                    <!-- Back button -->
-                    <div class="mb-4">
-                        <a href="index.html" class="text-sm text-violet-500 hover:text-violet-600 font-medium">&larr;
-                            Voltar ao Pipeline</a>
-                    </div>
                     <!-- Detail content -->
                     <div id="applicant-detail-content">
                         <div class="text-center py-20 text-sm text-gray-400">Carregando...</div>
@@ -96,6 +91,29 @@
                     class="btn bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300">Cancelar</button>
                 <button id="delete-confirm-btn" onclick="confirmDelete()"
                     class="btn bg-red-500 hover:bg-red-600 text-white">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset fill modal -->
+    <div id="reset-modal"
+        style="display:none;position:fixed;inset:0;z-index:50;align-items:center;justify-content:center;background:rgba(17,24,39,0.5);backdrop-filter:blur(4px)"
+        onclick="if(event.target===this)closeResetModal()">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 text-center border border-gray-200 dark:border-gray-700/60"
+            onclick="event.stopPropagation()">
+            <div
+                class="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6 fill-current text-amber-500" viewBox="0 0 24 24">
+                    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-2h2v2Zm0-4h-2V7h2v6Z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Resetar Preenchimento</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Isso vai apagar o status atual e o Application ID,
+                permitindo refazer o preenchimento do zero.</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeResetModal()"
+                    class="btn bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300">Cancelar</button>
+                <button onclick="confirmReset()" class="btn bg-amber-500 hover:bg-amber-600 text-white">Resetar</button>
             </div>
         </div>
     </div>
@@ -360,10 +378,10 @@
         }
     </style>
 
-    <script src="../js/main.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/layout.js"></script>
-    <script src="js/applicant.js"></script>
+    <script src="../js/main.js?v=3"></script>
+    <script src="js/auth.js?v=3"></script>
+    <script src="js/layout.js?v=3"></script>
+    <script src="js/applicant.js?v=3"></script>
 </body>
 
 </html>
