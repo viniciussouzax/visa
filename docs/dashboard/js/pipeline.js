@@ -319,7 +319,7 @@ async function openProcessModal(applicantId) {
     const stage = STAGES[applicant.pipeline_status] || STAGES.new;
     $('process-modal-name').textContent = applicant.full_name;
     $('process-modal-sub').innerHTML = `<span class="ds-badge" style="background:${stage.color}18;color:${stage.color}">${stage.label}</span>`;
-    $('process-modal-iframe').src = `../ds160/index.html?id=${applicantId}`;
+    $('process-modal-iframe').src = `../ds160/index.html?id=${applicantId}${userCompanyShortId ? '&org=' + userCompanyShortId : ''}`;
     $('process-modal').style.display = 'flex';
 }
 
