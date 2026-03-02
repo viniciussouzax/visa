@@ -152,6 +152,7 @@
             border: 1px solid #60a5fa;
             border-radius: 8px;
             padding: 14px 16px;
+            flex-wrap: nowrap !important;
         }
 
         /* Last .fg in a section should not have bottom margin */
@@ -218,7 +219,7 @@
 
         /* "Não se Aplica" checkbox labels — compact inline style */
         .na-lbl {
-            display: inline-flex !important;
+            display: flex !important;
             flex-direction: row !important;
             align-items: center;
             gap: 6px;
@@ -238,6 +239,7 @@
             align-self: flex-start;
             white-space: nowrap;
             line-height: 1;
+            flex-shrink: 0;
         }
 
         .na-lbl:hover {
@@ -1127,11 +1129,10 @@
                     governo (ex: CPF para brasileiros). O governo dos EUA fornece números únicos para quem busca emprego
                     ou paga impostos.</small><input type="text" id="tbxAPP_NATIONAL_ID" maxlength="20"
                     placeholder="Ex: 123.456.789-00"><label class="na-lbl"><input type="checkbox" class="na-cb"
-                        id="cbexAPP_NATIONAL_ID_NA" data-target="tbxAPP_NATIONAL_ID"> Não
-                    se Aplica</label>
+                        id="cbexAPP_NATIONAL_ID_NA" data-target="tbxAPP_NATIONAL_ID"> Não se Aplica</label>
             </div>
-            <div class="fg" style="flex-wrap:wrap">
-                <label style="width:100%">Número do Seguro Social dos EUA</label>
+            <div class="fg">
+                <label>Número do Seguro Social dos EUA</label>
                 <div class="ssn-row"><input type="text" id="tbxAPP_SSN1" maxlength="3"
                         placeholder="XXX"><span>-</span><input type="text" id="tbxAPP_SSN2" maxlength="2"
                         placeholder="XX"><span>-</span><input type="text" id="tbxAPP_SSN3" maxlength="4"
@@ -1992,7 +1993,7 @@
                 <small style="color:#888">Primeiro nome da pessoa de contato nos EUA.</small>
                 <input type="text" id="tbxUS_POC_GIVEN_NAME" maxlength="33" placeholder="Ex: JOHN">
             </div>
-            <div class="fg" style="text-align:right">
+            <div class="fg">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxUS_POC_NAME_NA"
                         data-target="tbxUS_POC_SURNAME,tbxUS_POC_GIVEN_NAME"> Não Sei</label>
             </div>
