@@ -1752,8 +1752,28 @@ function normalizeProfile(data) {
         })(),
 
         // === FAMILY ===
-        father: fam1.father || {},
-        mother: fam1.mother || {},
+        father: (() => {
+            const f = fam1.father || {};
+            return {
+                surname: na(f.surname) || '',
+                givenName: na(f.givenName || f.given_name) || '',
+                dob: f.dob || { day: '', month: '', year: '' },
+                dobUnknown: !f.dob || f.dobUnknown || f.dob_unknown || false,
+                inUS: f.inUS || f.in_us || 'N',
+                usStatus: f.usStatus || f.us_status || '',
+            };
+        })(),
+        mother: (() => {
+            const m = fam1.mother || {};
+            return {
+                surname: na(m.surname) || '',
+                givenName: na(m.givenName || m.given_name) || '',
+                dob: m.dob || { day: '', month: '', year: '' },
+                dobUnknown: !m.dob || m.dobUnknown || m.dob_unknown || false,
+                inUS: m.inUS || m.in_us || 'N',
+                usStatus: m.usStatus || m.us_status || '',
+            };
+        })(),
         spouse: fam2 || {},
         relativesInUS: fam1.immediateRelativesInUS === 'Y' || fam1.relatives_in_us === 'Y',
         relatives: fam1.relatives || [],

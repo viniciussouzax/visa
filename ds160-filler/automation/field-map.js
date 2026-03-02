@@ -738,21 +738,45 @@ function buildDynamicFieldMap(a) {
   map.push(
     { pattern: /tbxFATHER_SURNAME$/i, value: a.father.surname, type: "text" },
     { pattern: /tbxFATHER_GIVEN_NAME$/i, value: a.father.givenName, type: "text" },
-    { pattern: /ddlFathersDOBDay$/i, value: a.father.dob.day, type: "select" },
-    { pattern: /ddlFathersDOBMonth$/i, value: a.father.dob.month, type: "select" },
-    { pattern: /tbxFathersDOBYear$/i, value: a.father.dob.year, type: "text" },
-    { pattern: /ddlFATHER_DOBDay$/i, value: a.father.dob.day, type: "select" },
-    { pattern: /ddlFATHER_DOBMonth$/i, value: a.father.dob.month, type: "select" },
-    { pattern: /tbxFATHER_DOBYear$/i, value: a.father.dob.year, type: "text" },
+  );
+  if (a.father.dobUnknown) {
+    map.push(
+      { pattern: /cbxFATHER_DOB_UNK_IND$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbexFATHER_DOB_UNK_IND$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbxFathersDOBUNK$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbexFathersDOBUNK$/i, value: "", type: "checkbox-check" },
+    );
+  } else {
+    map.push(
+      { pattern: /ddlFathersDOBDay$/i, value: a.father.dob.day, type: "select" },
+      { pattern: /ddlFathersDOBMonth$/i, value: a.father.dob.month, type: "select" },
+      { pattern: /tbxFathersDOBYear$/i, value: a.father.dob.year, type: "text" },
+      { pattern: /ddlFATHER_DOBDay$/i, value: a.father.dob.day, type: "select" },
+      { pattern: /ddlFATHER_DOBMonth$/i, value: a.father.dob.month, type: "select" },
+      { pattern: /tbxFATHER_DOBYear$/i, value: a.father.dob.year, type: "text" },
+    );
+  }
+  map.push(
     { pattern: /tbxMOTHER_SURNAME$/i, value: a.mother.surname, type: "text" },
     { pattern: /tbxMOTHER_GIVEN_NAME$/i, value: a.mother.givenName, type: "text" },
-    { pattern: /ddlMothersDOBDay$/i, value: a.mother.dob.day, type: "select" },
-    { pattern: /ddlMothersDOBMonth$/i, value: a.mother.dob.month, type: "select" },
-    { pattern: /tbxMothersDOBYear$/i, value: a.mother.dob.year, type: "text" },
-    { pattern: /ddlMOTHER_DOBDay$/i, value: a.mother.dob.day, type: "select" },
-    { pattern: /ddlMOTHER_DOBMonth$/i, value: a.mother.dob.month, type: "select" },
-    { pattern: /tbxMOTHER_DOBYear$/i, value: a.mother.dob.year, type: "text" },
   );
+  if (a.mother.dobUnknown) {
+    map.push(
+      { pattern: /cbxMOTHER_DOB_UNK_IND$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbexMOTHER_DOB_UNK_IND$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbxMothersDOBUNK$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbexMothersDOBUNK$/i, value: "", type: "checkbox-check" },
+    );
+  } else {
+    map.push(
+      { pattern: /ddlMothersDOBDay$/i, value: a.mother.dob.day, type: "select" },
+      { pattern: /ddlMothersDOBMonth$/i, value: a.mother.dob.month, type: "select" },
+      { pattern: /tbxMothersDOBYear$/i, value: a.mother.dob.year, type: "text" },
+      { pattern: /ddlMOTHER_DOBDay$/i, value: a.mother.dob.day, type: "select" },
+      { pattern: /ddlMOTHER_DOBMonth$/i, value: a.mother.dob.month, type: "select" },
+      { pattern: /tbxMOTHER_DOBYear$/i, value: a.mother.dob.year, type: "text" },
+    );
+  }
 
   // Father in US
   if (a.father.inUS === 'Y' || a.father.inUS === true) {
