@@ -1795,7 +1795,7 @@ function normalizeProfile(data) {
                 surname: ds.surname || '', givenName: ds.givenName || ds.given_name || '',
                 dob: ds.dob || { day: '', month: '', year: '' },
                 nationality: ds.nationality || '',
-                cityOfBirth: ds.cityOfBirth || ds.city_of_birth || '',
+                cityOfBirth: na(ds.cityOfBirth || ds.city_of_birth) || '',
                 countryOfBirth: ds.countryOfBirth || ds.country_of_birth || '',
             };
         })(),

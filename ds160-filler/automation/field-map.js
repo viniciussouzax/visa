@@ -1213,14 +1213,14 @@ function buildDynamicFieldMap(a) {
   if (a.maritalStatus === 'W' && a.deceasedSpouse) {
     const ds = a.deceasedSpouse;
     map.push(
-      { pattern: /tbxDECEASED_SPOUSE_SURNAME$|tbxSURNAME$/i, value: ds.surname, type: "text" },
-      { pattern: /tbxDECEASED_SPOUSE_GIVEN_NAME$|tbxGIVEN_NAME$/i, value: ds.givenName, type: "text" },
-      { pattern: /ddlDECEASED_SPOUSE_DOBDay$/i, value: ds.dob?.day || "", type: "select" },
-      { pattern: /ddlDECEASED_SPOUSE_DOBMonth$/i, value: ds.dob?.month || "", type: "select" },
-      { pattern: /tbxDECEASED_SPOUSE_DOBYear$/i, value: ds.dob?.year || "", type: "text" },
-      { pattern: /ddlDECEASED_SPOUSE_NATL$/i, value: ds.nationality, type: "select-label" },
-      { pattern: /tbxDECEASED_SPOUSE_POB_CITY$/i, value: ds.cityOfBirth || "", type: "text" },
-      { pattern: /ddlDECEASED_SPOUSE_POB_CNTRY$/i, value: ds.countryOfBirth, type: "select-label" },
+      { pattern: /tbxDECEASED_SPOUSE_SURNAME$|tbxSpouseSurname$|tbxSURNAME$/i, value: ds.surname, type: "text" },
+      { pattern: /tbxDECEASED_SPOUSE_GIVEN_NAME$|tbxSpouseGivenName$|tbxGIVEN_NAME$/i, value: ds.givenName, type: "text" },
+      { pattern: /ddlDECEASED_SPOUSE_DOBDay$|ddlSpouseDOBDay$|ddlDOBDay$/i, value: ds.dob?.day || "", type: "select" },
+      { pattern: /ddlDECEASED_SPOUSE_DOBMonth$|ddlSpouseDOBMonth$|ddlDOBMonth$/i, value: ds.dob?.month || "", type: "select" },
+      { pattern: /tbxDECEASED_SPOUSE_DOBYear$|tbxSpouseDOBYear$|tbxDOBYear$/i, value: ds.dob?.year || "", type: "text" },
+      { pattern: /ddlDECEASED_SPOUSE_NATL$|ddlSpouseNatDropDownList$/i, value: ds.nationality, type: "select-label" },
+      { pattern: /tbxDECEASED_SPOUSE_POB_CITY$|tbxSpousePOBCity$/i, value: ds.cityOfBirth || "", type: "text" },
+      { pattern: /ddlDECEASED_SPOUSE_POB_CNTRY$|ddlSpousePOBCountry$/i, value: ds.countryOfBirth, type: "select-label" },
     );
   }
 
