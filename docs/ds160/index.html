@@ -4659,9 +4659,9 @@
                     givenName: val('tbxAPP_GIVEN_NAME'),
                     fullNameNative: val('tbxAPP_FULL_NAME_NATIVE'),
                     otherNamesUsed: radioVal('rblOtherNames'),
-                    otherNames: collectEntries('DListAlias', e => ({
+                    otherNames: radioVal('rblOtherNames') === 'Y' ? collectEntries('DListAlias', e => ({
                         surname: entryVal(e, 'tbxSURNAME'), givenName: entryVal(e, 'tbxGIVEN_NAME')
-                    })),
+                    })) : [],
                     telecode: radioVal('rblTelecodeQuestion'),
                     telecodeSurname: val('tbxAPP_TelecodeSURNAME'),
                     telecodeGivenName: val('tbxAPP_TelecodeGIVEN_NAME'),
@@ -4677,15 +4677,15 @@
                 personal2: {
                     nationality: val('ddlAPP_NATL'),
                     otherNationality: radioVal('rblAPP_OTH_NATL_IND'),
-                    otherNationalities: collectEntries('dtlOTHER_NATL', e => ({
+                    otherNationalities: radioVal('rblAPP_OTH_NATL_IND') === 'Y' ? collectEntries('dtlOTHER_NATL', e => ({
                         country: entryVal(e, 'ddlOTHER_NATL'),
                         hasPassport: entryVal(e, 'rblOTHER_PPT_IND') || radioVal(e.querySelector('input[name*="rblOTHER_PPT_IND"]')?.name || ''),
                         passportNumber: entryVal(e, 'tbxOTHER_PPT_NUM')
-                    })),
+                    })) : [],
                     permanentResident: radioVal('rblPermResOtherCntryInd'),
-                    permanentResidentCountries: collectEntries('dtlOthPermResCntry', e => ({
+                    permanentResidentCountries: radioVal('rblPermResOtherCntryInd') === 'Y' ? collectEntries('dtlOthPermResCntry', e => ({
                         country: entryVal(e, 'ddlOthPermResCntry')
-                    })),
+                    })) : [],
                     nationalId: val('tbxAPP_NATIONAL_ID'),
                     ssn: [val('tbxAPP_SSN1'), val('tbxAPP_SSN2'), val('tbxAPP_SSN3')].filter(s => s).join('-') || 'N/A',
                     taxId: val('tbxAPP_TAX_ID'),
@@ -4733,11 +4733,11 @@
                     travelingWithOthers: radioVal('rblOtherPersonsTravelingWithYou'),
                     partOfGroup: radioVal('rblGroupTravel'),
                     groupName: val('tbxGroupName'),
-                    companions: collectEntries('dlTravelCompanions', e => ({
+                    companions: radioVal('rblOtherPersonsTravelingWithYou') === 'Y' ? collectEntries('dlTravelCompanions', e => ({
                         surname: entryVal(e, 'tbxTC_SURNAME'),
                         givenName: entryVal(e, 'tbxTC_GIVEN_NAME'),
                         relationship: entryVal(e, 'ddlTCRelationship'),
-                    })),
+                    })) : [],
                 },
                 // PreviousUSTravel
                 previousUSTravel: {
@@ -4795,17 +4795,17 @@
                     mobilePhone: val('tbxAPP_MOBILE_TEL'),
                     businessPhone: val('tbxAPP_BUS_TEL'),
                     additionalPhones: radioVal('rblAddPhone'),
-                    additionalPhoneNumbers: collectEntries('dtlAddPhone', e => entryVal(e, 'tbxAddPhoneInfo')),
+                    additionalPhoneNumbers: radioVal('rblAddPhone') === 'Y' ? collectEntries('dtlAddPhone', e => entryVal(e, 'tbxAddPhoneInfo')) : [],
                     email: val('tbxAPP_EMAIL_ADDR'),
                     additionalEmails: radioVal('rblAddEmail'),
-                    additionalEmailAddresses: collectEntries('dtlAddEmail', e => entryVal(e, 'tbxAddEmailInfo')),
+                    additionalEmailAddresses: radioVal('rblAddEmail') === 'Y' ? collectEntries('dtlAddEmail', e => entryVal(e, 'tbxAddEmailInfo')) : [],
                     socialMedia: collectEntries('dtlSocialMedia', e => ({
                         platform: entryVal(e, 'ddlSocialMedia'), handle: entryVal(e, 'tbxSocialMediaIdent'),
                     })),
                     additionalSocialMedia: radioVal('rblAddSocial'),
-                    additionalSocialMediaAccounts: collectEntries('dtlAddSocial', e => ({
+                    additionalSocialMediaAccounts: radioVal('rblAddSocial') === 'Y' ? collectEntries('dtlAddSocial', e => ({
                         platform: entryVal(e, 'tbxAddSocialPlatform'), handle: entryVal(e, 'tbxSocialMediaIdent'),
-                    })),
+                    })) : [],
                 },
                 // Passport
                 passport: {
@@ -4850,10 +4850,10 @@
                     },
                     immediateRelativesInUS: radioVal('rblUS_IMMED_RELATIVE_IND'),
                     otherRelativesInUS: radioVal('rblUS_OTHER_RELATIVE_IND'),
-                    relatives: collectEntries('dlUSRelatives', e => ({
+                    relatives: (radioVal('rblUS_IMMED_RELATIVE_IND') === 'Y' || radioVal('rblUS_OTHER_RELATIVE_IND') === 'Y') ? collectEntries('dlUSRelatives', e => ({
                         surname: entryVal(e, 'tbxUS_REL_SURNAME'), givenName: entryVal(e, 'tbxUS_REL_GIVEN_NAME'),
                         type: entryVal(e, 'ddlUS_REL_TYPE'), status: entryVal(e, 'ddlUS_REL_STATUS'),
-                    })),
+                    })) : [],
                 },
                 // Family2 (Spouse) — only include if spouse page is visible
                 family2: (document.getElementById('pg-Family2')?.style.display !== 'none') ? {
