@@ -4749,7 +4749,7 @@
                         state: entryVal(e, 'ddlUS_DRIVER_LICENSE_STATE'),
                     })) : [],
                     hasUSVisa: radioVal('rblPREV_VISA_IND'),
-                    previousVisa: {
+                    previousVisa: radioVal('rblPREV_VISA_IND') === 'Y' ? {
                         issueDate: dateVal('ddlPREV_VISA_ISSUED_DTEDay', 'ddlPREV_VISA_ISSUED_DTEMonth', 'tbxPREV_VISA_ISSUED_DTEYear'),
                         number: val('tbxPREV_VISA_FOIL_NUMBER'),
                         sameType: radioVal('rblPREV_VISA_SAME_TYPE_IND'),
@@ -4760,7 +4760,7 @@
                         lostExplanation: val('tbxLOST_VISA_EXPL'),
                         cancelled: radioVal('rblPREV_VISA_CANCELLED_IND'),
                         cancelledExplanation: val('tbxCANCELLED_VISA_EXPL'),
-                    },
+                    } : undefined,
                     visaRefused: radioVal('rblPREV_VISA_REFUSED_IND'),
                     visaRefusedExplanation: val('tbxPREV_VISA_REFUSED_EXPL'),
                     immigrantPetition: radioVal('rblIV_PETITION_IND'),
