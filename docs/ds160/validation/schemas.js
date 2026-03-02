@@ -126,7 +126,7 @@ export const Personal2Schema = z.object({
     })).max(5).optional().default([]),
     nationalId: optionalText(20).optional(),
     ssn: z.string().optional().refine(v => {
-        if (!v || v === 'N/A' || v.length === 0) return true;
+        if (!v || v === 'N/A' || v === 'DNA' || v.length === 0) return true;
         return /^\d{9}$/.test(v.replace(/-/g, ''));
     }, 'SSN deve ter 9 dígitos'),
     taxId: optionalText(20).optional(),
@@ -272,7 +272,7 @@ export const USContactSchema = z.object({
         zip: usZipSchema,
     }),
     phone: usPhoneSchema,
-    email: emailSchema.optional().or(z.literal('')),
+    email: emailSchema.optional().or(z.literal('')).or(z.literal('DNA')),
 }).refine(d => {
     if (!d.nameDoNotKnow && (!d.surname || !d.givenName)) return false;
     return true;
@@ -306,12 +306,12 @@ export const PreviousUSTravelSchema = z.object({
         lengthOfStay: z.string().min(1, 'Duração obrigatória'),
         lengthOfStayUnit: z.enum(['D', 'W', 'M', 'Y']).optional().default('D'),
     })).max(5).optional().default([]),
-    hasDriversLicense: yesNo.optional().default('N'),
+    hasDriversLicense: yesNo.or(z.literal('')).optional().default('N'),
     driversLicenses: z.array(z.object({
         number: requiredText(20),
         state: requiredText(20),
     })).max(5).optional().default([]),
-    hasUSVisa: yesNo.optional().default('N'),
+    hasUSVisa: yesNo.or(z.literal('')).optional().default('N'),
     previousVisa: z.object({
         issueDate: dateSchema,
         number: optionalText(20).optional(),
@@ -319,28 +319,28 @@ export const PreviousUSTravelSchema = z.object({
         sameCountry: optionalYesNo,
         tenPrint: optionalYesNo,
         lost: optionalYesNo,
-        lostYear: optionalText(4).optional(), // <-- ADICIONADO
-        lostExplanation: explanationText, // <-- ADICIONADO
-        cancelled: optionalYesNo, // <-- ADICIONADO
-        cancelledExplanation: explanationText, // <-- ADICIONADO
+        lostYear: optionalText(4).optional(),
+        lostExplanation: explanationText,
+        cancelled: optionalYesNo,
+        cancelledExplanation: explanationText,
     }).optional().nullable(),
-    visaRefused: yesNo.optional().default('N'),
+    visaRefused: yesNo.or(z.literal('')).optional().default('N'),
     visaRefusedExplanation: explanationText,
-    immigrantPetition: yesNo.optional().default('N'),
+    immigrantPetition: yesNo.or(z.literal('')).optional().default('N'),
     immigrantPetitionExplanation: explanationText,
-    permanentResident: yesNo.optional().default('N'), // <-- ADICIONADO
-    permanentResidentExplanation: explanationText, // <-- ADICIONADO
-    vwpDenial: yesNo.optional().default('N'), // <-- ADICIONADO
-    vwpDenialExplanation: explanationText, // <-- ADICIONADO
+    permanentResident: yesNo.or(z.literal('')).optional().default('N'),
+    permanentResidentExplanation: explanationText,
+    vwpDenial: yesNo.or(z.literal('')).optional().default('N'),
+    vwpDenialExplanation: explanationText,
 });
 
 // ============================================================
 // 9. FAMILY 1 (Pais)
 // ============================================================
 const ParentSchema = z.object({
-    surname: requiredText(33),
-    givenName: requiredText(33),
-    dob: dobSchema,
+    surname: requiredText(33).or(z.literal('DNA')),
+    givenName: requiredText(33).or(z.literal('DNA')),
+    dob: dobSchema.nullable().optional(),
     inUS: yesNo.optional().default('N'),
     usStatus: optionalText(40).optional(),
 });

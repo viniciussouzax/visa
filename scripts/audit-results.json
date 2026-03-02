@@ -1,0 +1,26 @@
+{
+  "issues": [
+    "Array relatives (dlUSRelatives) sempre coleta mesmo quando rblUS_IMMED_RELATIVE_IND='N'",
+    "Array relatives sempre coleta entradas mesmo com radio='N'"
+  ],
+  "ok": [
+    "Array otherNames é condicional em rblOtherNames",
+    "Array otherNationalities é condicional em rblAPP_OTH_NATL_IND",
+    "Array permanentResidentCountries é condicional em rblPermResOtherCntryInd",
+    "Array companions é condicional em rblOtherPersonsTravelingWithYou",
+    "Array previousVisits é condicional em rblPREV_US_TRAVEL_IND",
+    "Array driversLicenses é condicional em rblPREV_US_DRIVER_LIC_IND",
+    "Array lostPassports é condicional em rblLOST_PPT_IND",
+    "Array previousEmployment é condicional em rblPreviouslyEmployed",
+    "Array additionalPhoneNumbers é condicional em rblAddPhone",
+    "Array additionalEmailAddresses é condicional em rblAddEmail",
+    "Array additionalSocialMediaAccounts é condicional em rblAddSocial",
+    "Objeto mailingAddress é condicional",
+    "Objeto previousVisa é condicional",
+    "Objeto family2 é condicional",
+    "Objeto deceasedSpouse é condicional",
+    "Objeto prevSpouse é condicional"
+  ],
+  "naCheckboxes": 30,
+  "timestamp": "2026-03-02T01:06:26.331Z"
+}
