@@ -410,6 +410,21 @@
 
         .br.open {
             display: block;
+            background: #f8fafc;
+            border: 1px solid #60a5fa;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        /* Nested entries inside branches — lighter style to avoid double-card look */
+        .br.open .entry {
+            background: #fff;
+            border-color: #cbd5e1;
+        }
+
+        .br.open .fg:has(.na-lbl) {
+            background: #fff;
+            border-color: #cbd5e1;
         }
 
         .entry {
@@ -474,8 +489,9 @@
         }
 
         .section-disabled {
-            opacity: .5;
+            opacity: .45;
             pointer-events: none;
+            filter: grayscale(0.3);
         }
 
         .page h2 {
