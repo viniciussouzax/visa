@@ -836,7 +836,7 @@ function buildDynamicFieldMap(a) {
   // Actual IDs: tbxSpouseSurname, tbxSpouseGivenName, ddlSpouseNatDropDownList,
   //             ddlSpousePOBCountry, tbxSpousePOBCity, ddlSpouseAddressType
   // DOB uses generic ddlDOBDay/ddlDOBMonth/tbxDOBYear (handled via page override in fill-form)
-  const needsSpouse = a.maritalStatus !== "S";
+  const needsSpouse = a.maritalStatus !== "S" && a.maritalStatus !== "W";
   if (needsSpouse && a.spouse) {
     map.push(
       { pattern: /tbxSpouseSurname$/i, value: a.spouse.surname, type: "text" },
