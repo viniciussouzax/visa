@@ -3336,6 +3336,55 @@
             });
         }
 
+        // ===== FORM ERROR LOGGING =====
+        // Envia logs de erro do formulário clone para Supabase (tabela form_logs)
+        function logFormError(logType, errorMessage, details) {
+            try {
+                const pageName = (typeof PAGES !== 'undefined' && typeof currentPage !== 'undefined')
+                    ? PAGES[currentPage] || '' : '';
+                const payload = {
+                    applicant_id: savedApplicantId || null,
+                    company_id: resolvedCompanyId || null,
+                    log_type: logType,
+                    page_name: pageName,
+                    error_message: String(errorMessage).substring(0, 2000),
+                    error_details: details || {},
+                    user_agent: navigator.userAgent
+                };
+                // Fire-and-forget: don't await to avoid blocking the user
+                fetch(SUPABASE_URL + '/rest/v1/form_logs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_KEY,
+                    },
+                    body: JSON.stringify(payload)
+                }).catch(e => console.warn('[FormLog] Send failed:', e));
+                console.log('[FormLog]', logType, errorMessage);
+            } catch (e) {
+                console.warn('[FormLog] Error creating log:', e);
+            }
+        }
+
+        // Global JS error handler — catches unhandled errors
+        window.addEventListener('error', function (event) {
+            logFormError('js_error', event.message, {
+                filename: event.filename,
+                line: event.lineno,
+                col: event.colno,
+                stack: event.error?.stack?.substring(0, 1000) || ''
+            });
+        });
+
+        // Unhandled promise rejections
+        window.addEventListener('unhandledrejection', function (event) {
+            const msg = event.reason?.message || String(event.reason);
+            logFormError('js_error', 'Unhandled promise: ' + msg, {
+                stack: event.reason?.stack?.substring(0, 1000) || ''
+            });
+        });
+
         let _isNavigating = false;
         async function nextPage() {
             if (_isNavigating) return; // Prevent double-click
@@ -4136,6 +4185,7 @@
                 }
             } catch (e) {
                 console.error('[DS-160] Erro ao salvar na Personal1:', e);
+                logFormError('save_error', 'Personal1 save: ' + e.message, { stack: e.stack?.substring(0, 500) });
             }
         }
 
@@ -5360,6 +5410,7 @@
                 if (btn) { btn.textContent = 'Aprovar'; }
             } catch (e) {
                 console.error('[DS-160] Auto-load error:', e);
+                logFormError('save_error', 'Auto-load: ' + e.message, { stack: e.stack?.substring(0, 500) });
                 document.getElementById('acc-applicant-name').textContent = 'Erro ao carregar';
             }
         })();
@@ -5419,6 +5470,9 @@
                 // Navigate to the first error
                 const firstError = errors[0];
                 showToast(`Preencha todos os campos obrigatórios (${errors.length} campos vazios). Primeiro: "${firstError.label}"`);
+                logFormError('validation', `${errors.length} campos obrigatórios vazios`, {
+                    fields: errors.map(e => ({ label: e.label, pageId: e.pageId })).slice(0, 20)
+                });
 
                 // Navigate to the section containing the first error
                 if (window._SECTIONS && window._toggleAccordion) {
@@ -5495,6 +5549,7 @@
                 btn.disabled = false;
             } catch (e) {
                 console.error('Save error:', e);
+                logFormError('save_error', 'Save form: ' + e.message, { stack: e.stack?.substring(0, 500) });
                 showToast('Erro ao salvar: ' + e.message);
                 btn.textContent = 'SALVAR';
                 btn.disabled = false;
@@ -5560,6 +5615,7 @@
                 setTimeout(() => backToGate(), 1500);
             } catch (e) {
                 console.error('Approve error:', e);
+                logFormError('save_error', 'Approve form: ' + e.message, { stack: e.stack?.substring(0, 500) });
                 showToast('Erro ao aprovar: ' + e.message);
                 btn.textContent = 'APROVAR APLICAÇÃO';
                 btn.disabled = false;
@@ -5665,6 +5721,7 @@
 
             } catch (e) {
                 console.error('Supabase save error:', e);
+                logFormError('save_error', 'Supabase save: ' + e.message, { stack: e.stack?.substring(0, 500) });
                 showToast('Erro ao salvar: ' + e.message);
             }
         }
