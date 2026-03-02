@@ -589,16 +589,12 @@ class QueueRunner {
             app.fill_status = 'pending';
         }
 
-        // Claim: set application to filling (atomic: only if still pending)
-        const { data: claimed, error: claimErr } = await this.supabase.from('applications').update({
-            fill_status: 'filling',
-            fill_started_at: new Date().toISOString(),
-            fill_worker_id: this.workerId
-        }).eq('id', app.id).eq('fill_status', 'pending').select().maybeSingle();
+        // Claim: use RPC (SECURITY DEFINER, bypasses RLS)
+        const { data: claimed, error: claimErr } = await this.supabase
+            .rpc('claim_application', { app_id: app.id, worker: this.workerId });
 
-        // ROB-4: If another worker claimed between SELECT and UPDATE, claimed will be null
         if (!claimed || claimErr) {
-            console.warn(`[Queue] Claim race lost for ${app.id} — another worker claimed it`);
+            console.warn(`[Queue] Claim failed for ${app.id}: ${claimErr?.message || 'already claimed'}`);
             return null;
         }
 
@@ -610,7 +606,7 @@ class QueueRunner {
 
         const priority = app.fill_priority || 0;
         const priorityLabel = priority >= 3 ? '🚨 III - EMERGÊNCIA' : priority >= 2 ? '⚡ II - URGÊNCIA' : 'I - Indefinido';
-        console.log(`[Queue] Claimed ${claimed.id} → doing (${priorityLabel})`);
+        console.log(`[Queue] Claimed ${app.id} → doing (${priorityLabel})`);
 
         return { ...claimed, fill_status: 'filling' };
     }
