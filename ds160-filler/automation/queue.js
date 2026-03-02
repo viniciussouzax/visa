@@ -571,6 +571,22 @@ class QueueRunner {
         } else if (app.fill_status === 'system_error') {
             // System error — requires dev/AI fix, skip until manually released
             return null;
+        } else if (app.fill_status === 'queued' || app.fill_status === 'needs_attention' || app.fill_status === 'error') {
+            // Reset to pending so it can be claimed
+            console.log(`[Queue] Resetting ${app.fill_status} application ${app.id} to pending`);
+            const { error: resetErr } = await this.supabase.from('applications').update({
+                fill_status: 'pending',
+                fill_error: null,
+                fill_worker_id: null,
+                fill_started_at: null,
+                retry_count: 0,
+                last_error_at: null
+            }).eq('id', app.id);
+            if (resetErr) {
+                console.error('[Queue] Failed to reset application:', resetErr.message);
+                return null;
+            }
+            app.fill_status = 'pending';
         }
 
         // Claim: set application to filling (atomic: only if still pending)
