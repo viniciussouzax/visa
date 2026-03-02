@@ -204,6 +204,7 @@
         /* "Não se Aplica" checkbox labels — compact inline style */
         .na-lbl {
             display: inline-flex !important;
+            flex-direction: row !important;
             align-items: center;
             gap: 6px;
             font-size: 12px !important;
@@ -220,6 +221,8 @@
             user-select: none;
             order: 4 !important;
             align-self: flex-start;
+            white-space: nowrap;
+            line-height: 1;
         }
 
         .na-lbl:hover {
