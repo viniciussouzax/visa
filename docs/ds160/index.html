@@ -142,8 +142,8 @@
         .fg {
             display: flex;
             flex-direction: column;
-            margin-bottom: 24px;
-            gap: 4px;
+            margin-bottom: 20px;
+            gap: 6px;
         }
 
         /* Card style for fields with "Não se Aplica" / "Não Sei" */
@@ -151,7 +151,14 @@
             background: #f8fafc;
             border: 1px solid #60a5fa;
             border-radius: 8px;
-            padding: 16px;
+            padding: 14px 16px;
+        }
+
+        /* Last .fg in a section should not have bottom margin */
+        .section>.fg:last-child,
+        .br>.fg:last-child,
+        .entry>.fg:last-child {
+            margin-bottom: 0;
         }
 
         .fg label {
@@ -377,7 +384,11 @@
 
         .section {
             padding: 0;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
         }
 
         .section h3 {
@@ -391,7 +402,7 @@
 
         .br {
             display: none;
-            margin-top: 8px;
+            margin-top: 12px;
         }
 
         .br.open {
@@ -403,8 +414,12 @@
             border: 1px solid #60a5fa;
             border-radius: 8px;
             padding: 16px;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
             position: relative;
+        }
+
+        .entry:last-child {
+            margin-bottom: 0;
         }
 
         .entry .remove-btn {
@@ -468,8 +483,9 @@
         .page-btns {
             display: flex;
             gap: 10px;
-            margin-top: 16px;
-            padding-top: 12px;
+            margin-top: 32px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
         }
 
         .btn {
