@@ -1624,7 +1624,17 @@ function normalizeProfile(data) {
 
         // === TRAVEL COMPANIONS ===
         travelingWithOthers: tc.travelingWithOthers === 'Y' || tc.traveling_with_others === 'Y',
-        companions: tc.companions || [],
+        companions: (() => {
+            const comps = tc.companions || [];
+            // Deduplicate by surname+givenName (DS-160 rejects duplicates)
+            const seen = new Set();
+            return comps.filter(c => {
+                const key = `${(c.surname || '').toUpperCase()}|${(c.givenName || '').toUpperCase()}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        })(),
         partOfGroup: tc.partOfGroup === 'Y' || tc.part_of_group === 'Y',
         groupName: tc.groupName || tc.group_name || '',
 
