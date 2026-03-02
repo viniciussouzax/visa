@@ -735,10 +735,19 @@ function buildDynamicFieldMap(a) {
   // ===================================================================
   // FAMILY
   // ===================================================================
-  map.push(
-    { pattern: /tbxFATHER_SURNAME$/i, value: a.father.surname, type: "text" },
-    { pattern: /tbxFATHER_GIVEN_NAME$/i, value: a.father.givenName, type: "text" },
-  );
+  if (a.father.nameUnknown) {
+    map.push(
+      { pattern: /cbxFATHER_SURNAME_UNK_IND$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbexFATHER_SURNAME_UNK_IND$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbxFATHER_SURNAME_NA$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbexFATHER_SURNAME_NA$/i, value: "", type: "checkbox-check" },
+    );
+  } else {
+    map.push(
+      { pattern: /tbxFATHER_SURNAME$/i, value: a.father.surname, type: "text" },
+      { pattern: /tbxFATHER_GIVEN_NAME$/i, value: a.father.givenName, type: "text" },
+    );
+  }
   if (a.father.dobUnknown) {
     map.push(
       { pattern: /cbxFATHER_DOB_UNK_IND$/i, value: "", type: "checkbox-check" },
@@ -756,10 +765,19 @@ function buildDynamicFieldMap(a) {
       { pattern: /tbxFATHER_DOBYear$/i, value: a.father.dob.year, type: "text" },
     );
   }
-  map.push(
-    { pattern: /tbxMOTHER_SURNAME$/i, value: a.mother.surname, type: "text" },
-    { pattern: /tbxMOTHER_GIVEN_NAME$/i, value: a.mother.givenName, type: "text" },
-  );
+  if (a.mother.nameUnknown) {
+    map.push(
+      { pattern: /cbxMOTHER_SURNAME_UNK_IND$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbexMOTHER_SURNAME_UNK_IND$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbxMOTHER_SURNAME_NA$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbexMOTHER_SURNAME_NA$/i, value: "", type: "checkbox-check" },
+    );
+  } else {
+    map.push(
+      { pattern: /tbxMOTHER_SURNAME$/i, value: a.mother.surname, type: "text" },
+      { pattern: /tbxMOTHER_GIVEN_NAME$/i, value: a.mother.givenName, type: "text" },
+    );
+  }
   if (a.mother.dobUnknown) {
     map.push(
       { pattern: /cbxMOTHER_DOB_UNK_IND$/i, value: "", type: "checkbox-check" },

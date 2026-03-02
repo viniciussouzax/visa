@@ -1754,9 +1754,12 @@ function normalizeProfile(data) {
         // === FAMILY ===
         father: (() => {
             const f = fam1.father || {};
+            const sn = na(f.surname) || '';
+            const gn = na(f.givenName || f.given_name) || '';
             return {
-                surname: na(f.surname) || '',
-                givenName: na(f.givenName || f.given_name) || '',
+                surname: sn,
+                givenName: gn,
+                nameUnknown: !sn && !gn,
                 dob: f.dob || { day: '', month: '', year: '' },
                 dobUnknown: !f.dob || f.dobUnknown || f.dob_unknown || false,
                 inUS: f.inUS || f.in_us || 'N',
@@ -1765,9 +1768,12 @@ function normalizeProfile(data) {
         })(),
         mother: (() => {
             const m = fam1.mother || {};
+            const sn = na(m.surname) || '';
+            const gn = na(m.givenName || m.given_name) || '';
             return {
-                surname: na(m.surname) || '',
-                givenName: na(m.givenName || m.given_name) || '',
+                surname: sn,
+                givenName: gn,
+                nameUnknown: !sn && !gn,
                 dob: m.dob || { day: '', month: '', year: '' },
                 dobUnknown: !m.dob || m.dobUnknown || m.dob_unknown || false,
                 inUS: m.inUS || m.in_us || 'N',
