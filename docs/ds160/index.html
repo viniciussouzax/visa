@@ -201,6 +201,41 @@
             width: auto;
         }
 
+        /* "Não se Aplica" checkbox labels — compact inline style */
+        .na-lbl {
+            display: inline-flex !important;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            color: #64748b !important;
+            cursor: pointer;
+            padding: 4px 10px;
+            margin-top: 4px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            transition: all .2s;
+            width: fit-content !important;
+            user-select: none;
+        }
+
+        .na-lbl:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .na-lbl input[type="checkbox"] {
+            width: 16px !important;
+            height: 16px !important;
+            min-height: 16px !important;
+            min-width: 16px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            cursor: pointer;
+            accent-color: #3b82f6;
+        }
+
         /* Custom radio buttons — larger, more visible */
         .fg input[type="radio"] {
             appearance: none;
