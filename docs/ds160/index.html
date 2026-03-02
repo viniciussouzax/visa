@@ -3286,13 +3286,17 @@
         const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
 
+        // Read auth token from URL (passed by dashboard iframe)
+        const _authToken = new URLSearchParams(location.search).get('auth');
+
         async function sbFetch(path, method, body) {
+            const bearerToken = _authToken || SUPABASE_KEY;
             const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
                 method,
                 headers: {
                     'Content-Type': 'application/json',
                     'apikey': SUPABASE_KEY,
-                    'Authorization': 'Bearer ' + SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + bearerToken,
                     'Prefer': 'return=representation',
                 },
                 body: body ? JSON.stringify(body) : undefined,

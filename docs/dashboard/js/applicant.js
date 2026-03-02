@@ -204,7 +204,9 @@ async function openProcessModal(applicantId) {
     const stage = STAGES[applicant.pipeline_status] || STAGES.new;
     $('process-modal-name').textContent = applicant.full_name;
     $('process-modal-sub').innerHTML = `<span style="background:${stage.color}18;color:${stage.color};padding:2px 10px;border-radius:4px;font-size:11px;font-weight:400">${stage.label}</span>`;
-    $('process-modal-iframe').src = `../ds160/index.html?id=${applicantId}${userCompanyShortId ? '&org=' + userCompanyShortId : ''}`;
+    const { data: { session } } = await sb.auth.getSession();
+    const tokenParam = session?.access_token ? `&auth=${session.access_token}` : '';
+    $('process-modal-iframe').src = `../ds160/index.html?id=${applicantId}${userCompanyShortId ? '&org=' + userCompanyShortId : ''}${tokenParam}`;
     $('process-modal').style.display = 'flex';
 }
 
