@@ -146,6 +146,11 @@
             gap: 6px;
         }
 
+        /* Date fields that need wrapping */
+        .fg-date {
+            flex-wrap: wrap;
+        }
+
         /* Card style for fields with "Não se Aplica" / "Não Sei" */
         .fg:has(.na-lbl) {
             background: #f8fafc;
@@ -475,18 +480,7 @@
             gap: 8px;
         }
 
-        .na-check {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 4px;
-        }
 
-        .na-check label {
-            font-size: 13px;
-            color: #6b7280;
-            line-height: 1.5;
-        }
 
         .section-disabled {
             opacity: .45;
@@ -587,7 +581,6 @@
         .btn-add {
             padding: 8px 16px;
             margin-top: 16px;
-            padding-top: 8px;
             background: #f0f9ff;
             color: #3b82f6;
             border: 1px solid #93c5fd;
@@ -971,7 +964,7 @@
         <div class="section">
             <h3>Local da Entrevista</h3>
             <div class="fg"><label>Escolha o posto consular mais próximo de você *</label>
-                <small style="color:#888">Selecione a Embaixada ou Consulado dos EUA onde será realizada a entrevista do
+                <small>Selecione a Embaixada ou Consulado dos EUA onde será realizada a entrevista do
                     visto.</small>
                 <select id="ddlLocation" class="sel-location"></select>
             </div>
@@ -987,22 +980,22 @@
             <h3>Nome</h3>
             <div class="fg"><label>Sobrenome(s) *</label><input type="text" id="tbxAPP_SURNAME" maxlength="33" required
                     placeholder="Ex: FERNANDEZ GARCIA">
-                <small style="color:#888">Insira todos os sobrenomes conforme consta no passaporte.</small>
+                <small>Insira todos os sobrenomes conforme consta no passaporte.</small>
             </div>
             <div class="fg"><label>Nome(s) *</label><input type="text" id="tbxAPP_GIVEN_NAME" maxlength="33" required
                     placeholder="Ex: JUAN MIGUEL">
-                <small style="color:#888">Se o passaporte não tiver nome, insira "FNU".</small>
+                <small>Se o passaporte não tiver nome, insira "FNU".</small>
             </div>
             <div class="fg"><label>Nome Completo no Alfabeto Nativo *</label><input type="text"
                     id="tbxAPP_FULL_NAME_NATIVE" maxlength="100" placeholder="Ex: MARCOS SILVA">
-                <small style="color:#888">Escreva seu nome completo no alfabeto do seu país.</small>
+                <small>Escreva seu nome completo no alfabeto do seu país.</small>
             </div>
         </div>
         <div class="section">
             <h3>Outros Nomes</h3>
             <div class="fg"><label>Já usou outros nomes (solteiro(a), religioso, profissional, apelido, etc.)?
                     *</label>
-                <small style="color:#888">Inclui nome de solteiro(a), nome religioso, nome profissional, apelido ou
+                <small>Inclui nome de solteiro(a), nome religioso, nome profissional, apelido ou
                     qualquer outro nome pelo qual você é ou foi conhecido(a).</small><span class="rg"><label><input
                             type="radio" name="rblOtherNames" value="Y" data-branch="rblOtherNames">
                         Sim</label><label><input type="radio" name="rblOtherNames" value="N"
@@ -1024,12 +1017,12 @@
         <div class="section section-disabled">
             <h3>Telecode</h3>
             <div class="fg"><label>Possui um telecode que represente seu nome? *</label>
-                <small style="color:#888">Telecodes são códigos numéricos de 4 dígitos que representam caracteres em
+                <small>Telecodes são códigos numéricos de 4 dígitos que representam caracteres em
                     nomes com alfabeto não-romano.</small><span class="rg"><label><input type="radio"
                             name="rblTelecodeQuestion" value="Y" data-branch="rblTelecodeQuestion" disabled>
                         Sim</label><label><input type="radio" name="rblTelecodeQuestion" value="N"
                             data-branch="rblTelecodeQuestion" checked disabled> Não</label></span>
-                <span style="font-size:11px;color:#888;margin-left:8px">(sempre Não)</span>
+                <small>(sempre Não)</small>
             </div>
             <div class="br" id="br-rblTelecodeQuestion">
                 <div class="fg"><label>Telecode Sobrenome</label><input type="text" id="tbxAPP_TelecodeSURNAME"
@@ -1069,7 +1062,7 @@
                 <div class="date-row"><select id="ddlDOBDay" class="sel-day"></select><select id="ddlDOBMonth"
                         class="sel-month"></select><input type="text" id="tbxDOBYear" maxlength="4" placeholder="AAAA">
                 </div>
-                <small style="color:#888">Formato: DD-MMM-AAAA. Se dia ou mês desconhecido, insira conforme consta no
+                <small>Formato: DD-MMM-AAAA. Se dia ou mês desconhecido, insira conforme consta no
                     passaporte.</small>
             </div>
             <div class="fg"><label>Cidade de Nascimento *</label><input type="text" id="tbxAPP_POB_CITY"
@@ -1078,7 +1071,7 @@
                     id="tbxAPP_POB_ST_PROVINCE" placeholder="Ex: SP"></div>
             <div class="fg"><label>País / Região de Nascimento *</label><select id="ddlAPP_POB_CNTRY"
                     class="sel-country"></select>
-                <small style="color:#888">Selecione o nome atualmente usado para o local onde você nasceu.</small>
+                <small>Selecione o nome atualmente usado para o local onde você nasceu.</small>
             </div>
         </div>
         <div class="page-btns"><span></span><button class="btn btn-next" onclick="nextPage()">Próximo</button></div>
@@ -1096,7 +1089,7 @@
             <h3>Outra Nacionalidade</h3>
             <div class="fg"><label>Você possui ou já possuiu alguma nacionalidade diferente da indicada acima?
                     *</label>
-                <small style="color:#888">Informe todas as nacionalidades que você possui atualmente e todas que já
+                <small>Informe todas as nacionalidades que você possui atualmente e todas que já
                     possuiu anteriormente, independente de ter renunciado formalmente ou não. Se o país da nacionalidade
                     anterior não existir mais como entidade política, selecione a nacionalidade que corresponde ao nome
                     atualmente usado para aquele local.</small><span class="rg"><label><input type="radio"
@@ -1105,7 +1098,7 @@
                             data-branch="rblAPP_OTH_NATL_IND"> Não</label></span>
             </div>
             <div class="br" id="br-rblAPP_OTH_NATL_IND">
-                <small style="color:#888">Forneça as seguintes informações:</small>
+                <small>Forneça as seguintes informações:</small>
                 <div class="as" data-list="dtlOTHER_NATL">
                     <div class="entry" data-idx="0">
                         <div class="fg"><label>Outro País / Região de Origem</label><select
@@ -1130,7 +1123,7 @@
             <h3>Residente Permanente</h3>
             <div class="fg"><label>Você é residente permanente de algum país / região diferente do seu país / região de
                     origem (nacionalidade) indicado acima? *</label>
-                <small style="color:#888">Residente permanente é qualquer pessoa que recebeu de um país / região
+                <small>Residente permanente é qualquer pessoa que recebeu de um país / região
                     permissão legal para viver e trabalhar sem limitação de tempo naquele país / região.</small><span
                     class="rg"><label><input type="radio" name="rblPermResOtherCntryInd" value="Y"
                             data-branch="rblPermResOtherCntryInd">
@@ -1138,7 +1131,7 @@
                             data-branch="rblPermResOtherCntryInd"> Não</label></span>
             </div>
             <div class="br" id="br-rblPermResOtherCntryInd">
-                <small style="color:#888">Forneça as seguintes informações:</small>
+                <small>Forneça as seguintes informações:</small>
                 <div class="as" data-list="dtlOthPermResCntry">
                     <div class="entry" data-idx="0">
                         <div class="fg"><label>Outro País / Região de Residência Permanente</label><select
@@ -1151,7 +1144,7 @@
         <div class="section">
             <h3>Números de Identificação</h3>
             <div class="fg"><label>Número de Identificação Nacional (CPF) *</label>
-                <small style="color:#888">O Número de Identificação Nacional é um número único fornecido pelo seu
+                <small>O Número de Identificação Nacional é um número único fornecido pelo seu
                     governo (ex: CPF para brasileiros). O governo dos EUA fornece números únicos para quem busca emprego
                     ou paga impostos.</small><input type="text" id="tbxAPP_NATIONAL_ID" maxlength="20"
                     placeholder="Ex: 123.456.789-00"><label class="na-lbl"><input type="checkbox" class="na-cb"
@@ -1201,33 +1194,33 @@
 
             <!-- === SIM: Itinerário completo === -->
             <div class="br" id="br-rblSpecificTravel">
-                <small style="color:#888">Forneça o itinerário completo da sua viagem aos EUA:</small>
-                <small style="color:#888">Se não tiver certeza das datas de chegada ou partida, forneça uma
+                <small>Forneça o itinerário completo da sua viagem aos EUA:</small>
+                <small>Se não tiver certeza das datas de chegada ou partida, forneça uma
                     estimativa.</small>
-                <div class="fg" style="flex-wrap:wrap"><label>Data de Chegada nos EUA
+                <div class="fg fg-date"><label>Data de Chegada nos EUA
                         *</label>
                     <div class="date-row"><select id="ddlARRIVAL_US_DTEDay" class="sel-day"></select><select
                             id="ddlARRIVAL_US_DTEMonth" class="sel-month"></select><input type="text"
                             id="tbxARRIVAL_US_DTEYear" maxlength="4" placeholder="AAAA"></div>
-                    <small style="color:#888;width:100%;margin-top:2px">Formato: DD-MMM-AAAA</small>
+                    <small>Formato: DD-MMM-AAAA</small>
                 </div>
                 <div class="fg"><label>Voo de Chegada — se souber</label><input type="text" id="tbxArriveFlight"
                         placeholder="Ex: AA1234"></div>
                 <div class="fg"><label>Cidade de Chegada</label><input type="text" id="tbxArriveCity"
                         placeholder="Ex: NEW YORK"></div>
-                <div class="fg" style="flex-wrap:wrap"><label>Data de Partida dos EUA
+                <div class="fg fg-date"><label>Data de Partida dos EUA
                         *</label>
                     <div class="date-row"><select id="ddlDEPARTURE_US_DTEDay" class="sel-day"></select><select
                             id="ddlDEPARTURE_US_DTEMonth" class="sel-month"></select><input type="text"
                             id="tbxDEPARTURE_US_DTEYear" maxlength="4" placeholder="AAAA"></div>
-                    <small style="color:#888;width:100%;margin-top:2px">Formato: DD-MMM-AAAA</small>
+                    <small>Formato: DD-MMM-AAAA</small>
                 </div>
                 <div class="fg"><label>Voo de Partida — se souber</label><input type="text" id="tbxDepartFlight"
                         placeholder="Ex: AA5678"></div>
                 <div class="fg"><label>Cidade de Partida</label><input type="text" id="tbxDepartCity"
                         placeholder="Ex: MIAMI"></div>
 
-                <small style="color:#888">Informe os locais que pretende visitar nos EUA:</small>
+                <small>Informe os locais que pretende visitar nos EUA:</small>
                 <div class="as" data-list="dtlTravelLoc">
                     <div class="entry" data-idx="0">
                         <div class="fg"><label>Local</label><input type="text"
@@ -1239,22 +1232,21 @@
 
             <!-- === NÃO: Datas estimadas === -->
             <div class="br" id="br-rblSpecificTravel-N">
-                <small style="color:#888">Se não tiver certeza dos seus planos de viagem, forneça uma
+                <small>Se não tiver certeza dos seus planos de viagem, forneça uma
                     estimativa.</small>
-                <div class="fg" style="flex-wrap:wrap"><label>Data Prevista de Chegada
+                <div class="fg fg-date"><label>Data Prevista de Chegada
                         *</label>
                     <div class="date-row"><select id="ddlARRIVAL_US_NSDTEDay" class="sel-day"></select><select
                             id="ddlARRIVAL_US_NSDTEMonth" class="sel-month"></select><input type="text"
                             id="tbxARRIVAL_US_NSDTEYear" maxlength="4" placeholder="AAAA"></div>
-                    <small style="color:#888;width:100%;margin-top:2px">Formato: DD-MMM-AAAA</small>
+                    <small>Formato: DD-MMM-AAAA</small>
                 </div>
-                <div class="fg" style="flex-wrap:wrap"><label style="width:100%">Tempo Estimado de Permanência nos EUA
+                <div class="fg fg-date"><label>Tempo Estimado de Permanência nos EUA
                         *</label>
-                    <div style="display:flex;gap:6px;align-items:center">
-                        <input type="text" id="tbxAPP_LOS" placeholder="Quantidade"
-                            style="flex:1;min-width:60px;max-width:120px;padding:8px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px">
-                        <select id="ddlAPP_LOS_CD"
-                            style="flex:2;min-width:120px;padding:8px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px">
+                    <div class="ssn-row">
+                        <input type="text" id="tbxAPP_LOS" placeholder="Quantidade" maxlength="4"
+                            style="max-width:120px">
+                        <select id="ddlAPP_LOS_CD">
                             <option value="">- Período -</option>
                             <option value="Y">Ano(s)</option>
                             <option value="M">Mês(es)</option>
@@ -1297,7 +1289,7 @@
             <!-- === Outra Pessoa === -->
             <div class="br" id="br-payerPerson">
                 <div class="fg"><label>Sobrenome da Pessoa que Pagará</label>
-                    <small style="color:#888">Forneça as seguintes informações:</small>
+                    <small>Forneça as seguintes informações:</small>
                     <input type="text" id="tbxPayerSurname" maxlength="33" placeholder="Ex: FERNANDEZ GARCIA">
                 </div>
                 <div class="fg"><label>Nome da Pessoa que Pagará</label>
@@ -1313,7 +1305,7 @@
                         <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPAYER_EMAIL_ADDR_NA"
                                 data-target="tbxPAYER_EMAIL_ADDR"> Não se Aplica</label>
                     </div>
-                    <small style="color:#888">Ex: email@exemplo.com</small>
+                    <small>Ex: email@exemplo.com</small>
                 </div>
                 <div class="fg"><label>Relação com Você</label>
                     <select id="ddlPayerRelationship">
@@ -1335,7 +1327,7 @@
                 </div>
                 <div class="br" id="br-payerAddr">
                     <div class="fg"><label>Endereço - Linha 1</label>
-                        <small style="color:#888">Endereço da Pessoa que Pagará</small>
+                        <small>Endereço da Pessoa que Pagará</small>
                         <input type="text" id="tbxPayerStreetAddress1" placeholder="Endereço linha 1" maxlength="40">
                     </div>
                     <div class="fg"><label>Endereço - Linha 2 <em>*Opcional</em></label>
@@ -1369,7 +1361,7 @@
             <!-- === Empresa / Organização === -->
             <div class="br" id="br-payerCompany">
                 <div class="fg"><label>Nome da Empresa / Organização</label>
-                    <small style="color:#888">Forneça as seguintes informações:</small>
+                    <small>Forneça as seguintes informações:</small>
                     <input type="text" id="tbxPayingCompany" placeholder="Nome da empresa ou organização">
                 </div>
                 <div class="fg"><label>Telefone da Empresa</label>
@@ -1379,7 +1371,7 @@
                     <input type="text" id="tbxCompanyRelation" placeholder="Ex: Funcionário, Cliente">
                 </div>
                 <div class="fg"><label>Endereço - Linha 1</label>
-                    <small style="color:#888">Endereço da empresa ou organização que pagará pela viagem</small>
+                    <small>Endereço da empresa ou organização que pagará pela viagem</small>
                     <input type="text" id="tbxPayerStreetAddress1C" placeholder="Endereço da empresa" maxlength="40">
                 </div>
                 <div class="fg"><label>Endereço - Linha 2 <em>*Opcional</em></label>
@@ -1420,7 +1412,7 @@
             <h3>Pessoas Viajando com Você</h3>
             <div class="fg"><label>Há outras pessoas viajando com você?
                     *</label>
-                <small style="color:#888">Informe se algum familiar, amigo ou colega fará a viagem junto com
+                <small>Informe se algum familiar, amigo ou colega fará a viagem junto com
                     você.</small><span class="rg"><label><input type="radio" name="rblOtherPersonsTravelingWithYou"
                             value="Y" data-branch="rblOtherPersonsTravelingWithYou"> Sim</label><label><input
                             type="radio" name="rblOtherPersonsTravelingWithYou" value="N"
@@ -1428,7 +1420,7 @@
             </div>
             <div class="br" id="br-rblOtherPersonsTravelingWithYou">
                 <div class="fg"><label>Você está viajando como parte de um grupo ou organização? *</label>
-                    <small style="color:#888">Selecione "Sim" se você faz parte de uma excursão, grupo religioso,
+                    <small>Selecione "Sim" se você faz parte de uma excursão, grupo religioso,
                         delegação ou viagem organizada.</small>
                     <span class="rg"><label><input type="radio" name="rblGroupTravel" value="Y"
                                 onchange="updateGroupBranch()"> Sim</label><label><input type="radio"
@@ -1439,28 +1431,28 @@
                 <!-- === Grupo: Sim → Nome do Grupo === -->
                 <div class="br" id="br-groupYes">
                     <div class="fg"><label>Nome do Grupo</label>
-                        <small style="color:#888">Informe o nome do grupo com o qual você está viajando</small>
+                        <small>Informe o nome do grupo com o qual você está viajando</small>
                         <input type="text" id="tbxGroupName" placeholder="Nome do grupo ou organização" maxlength="60">
                     </div>
                 </div>
 
                 <!-- === Grupo: Não → Lista de Pessoas === -->
                 <div class="br" id="br-groupNo">
-                    <small style="color:#888">Informe os dados de cada pessoa que viajará com você.</small>
+                    <small>Informe os dados de cada pessoa que viajará com você.</small>
                     <div class="as" data-list="dlTravelCompanions">
                         <div class="entry" data-idx="0">
                             <div class="fg"><label>Sobrenome(s) do Acompanhante</label>
-                                <small style="color:#888">Conforme consta no passaporte do acompanhante.</small>
+                                <small>Conforme consta no passaporte do acompanhante.</small>
                                 <input type="text" id="dlTravelCompanions_ctl00_tbxTC_SURNAME"
                                     placeholder="Ex: FERNANDEZ GARCIA" maxlength="33">
                             </div>
                             <div class="fg"><label>Nome(s) do Acompanhante</label>
-                                <small style="color:#888">Primeiro nome conforme consta no passaporte.</small>
+                                <small>Primeiro nome conforme consta no passaporte.</small>
                                 <input type="text" id="dlTravelCompanions_ctl00_tbxTC_GIVEN_NAME"
                                     placeholder="Ex: JUAN MIGUEL" maxlength="33">
                             </div>
                             <div class="fg"><label>Relação com Você</label>
-                                <small style="color:#888">Selecione o parentesco ou vínculo com essa pessoa.</small>
+                                <small>Selecione o parentesco ou vínculo com essa pessoa.</small>
                                 <select id="dlTravelCompanions_ctl00_ddlTCRelationship">
                                     <option value="">- Selecione -</option>
                                     <option value="P">Pais</option>
@@ -1493,7 +1485,7 @@
 
             <!-- Q1: Have you ever been in the U.S.? -->
             <div class="fg"><label>Você já esteve nos Estados Unidos? *</label>
-                <small style="color:#888">Inclui qualquer entrada anterior nos EUA, mesmo que apenas em trânsito ou por
+                <small>Inclui qualquer entrada anterior nos EUA, mesmo que apenas em trânsito ou por
                     poucas horas.</small>
                 <span class="rg"><label><input type="radio" name="rblPREV_US_TRAVEL_IND" value="Y"
                             data-branch="rblPREV_US_TRAVEL_IND"> Sim</label><label><input type="radio"
@@ -1501,22 +1493,22 @@
                         Não</label></span>
             </div>
             <div class="br" id="br-rblPREV_US_TRAVEL_IND">
-                <small style="color:#888">Informe suas últimas cinco visitas aos EUA, da mais recente para a mais
+                <small>Informe suas últimas cinco visitas aos EUA, da mais recente para a mais
                     antiga.</small>
                 <div class="as" data-list="dtlPREV_US_VISIT">
                     <div class="entry" data-idx="0">
                         <div class="fg"><label>Data de Chegada aos EUA</label>
-                            <small style="color:#888">Data em que você entrou nos EUA nesta viagem.</small>
+                            <small>Data em que você entrou nos EUA nesta viagem.</small>
                             <div class="date-row"><select id="dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_DTEDay"
                                     class="sel-day"></select><select
                                     id="dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_DTEMonth"
                                     class="sel-month"></select><input type="text"
                                     id="dtlPREV_US_VISIT_ctl00_tbxPREV_US_VISIT_DTEYear" maxlength="4"
                                     placeholder="AAAA"></div>
-                            <small style="color:#888">Formato: Dia-Mês-Ano (ex: 15-JAN-2020)</small>
+                            <small>Formato: Dia-Mês-Ano (ex: 15-JAN-2020)</small>
                         </div>
                         <div class="fg"><label>Tempo de Permanência nos EUA</label>
-                            <small style="color:#888">Quanto tempo você ficou nos EUA nesta viagem.</small>
+                            <small>Quanto tempo você ficou nos EUA nesta viagem.</small>
                             <input type="text" id="dtlPREV_US_VISIT_ctl00_tbxPREV_US_VISIT_LOS" placeholder="Ex: 10"
                                 style="max-width:80px" maxlength="3">
                             <select id="dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_LOS_CD">
@@ -1534,9 +1526,9 @@
                 </div>
 
                 <!-- Driver's License -->
-                <div class="fg" style="margin-top:16px"><label>Você possui ou já possuiu carteira de motorista dos EUA?
+                <div class="fg"><label>Você possui ou já possuiu carteira de motorista dos EUA?
                         *</label>
-                    <small style="color:#888">Inclui carteiras válidas, expiradas ou de qualquer estado
+                    <small>Inclui carteiras válidas, expiradas ou de qualquer estado
                         americano.</small>
                     <span class="rg"><label><input type="radio" name="rblPREV_US_DRIVER_LIC_IND" value="Y"
                                 data-branch="rblPREV_US_DRIVER_LIC_IND"> Sim</label><label><input type="radio"
@@ -1588,7 +1580,7 @@
                             data-target="tbxPREV_VISA_FOIL_NUMBER"> Não Sei</label>
                 </div>
                 <div class="fg"><label>Você está solicitando o mesmo tipo de visto? *</label>
-                    <small style="color:#888">Compare com o tipo de visto que recebeu anteriormente (ex: B1/B2, F1,
+                    <small>Compare com o tipo de visto que recebeu anteriormente (ex: B1/B2, F1,
                         etc.).</small>
                     <span class="rg"><label><input type="radio" name="rblPREV_VISA_SAME_TYPE_IND" value="Y">
                             Sim</label><label><input type="radio" name="rblPREV_VISA_SAME_TYPE_IND" value="N">
@@ -1596,7 +1588,7 @@
                 </div>
                 <div class="fg"><label>Você está solicitando no mesmo país ou local onde o visto anterior foi emitido, e
                         este é o local do seu domicílio principal? *</label>
-                    <small style="color:#888">Responda "Sim" se você está aplicando na mesma embaixada/consulado de
+                    <small>Responda "Sim" se você está aplicando na mesma embaixada/consulado de
                         antes e ainda mora nesse país.</small>
                     <span class="rg"><label><input type="radio" name="rblPREV_VISA_SAME_CNTRY_IND" value="Y">
                             Sim</label><label><input type="radio" name="rblPREV_VISA_SAME_CNTRY_IND" value="N">
@@ -1604,14 +1596,14 @@
                 </div>
                 <div class="fg"><label>Foram coletadas as suas 10 impressões digitais na última solicitação de visto?
                         *</label>
-                    <small style="color:#888">Normalmente as impressões são coletadas na entrevista do visto. Se não
+                    <small>Normalmente as impressões são coletadas na entrevista do visto. Se não
                         lembrar, selecione "Não".</small>
                     <span class="rg"><label><input type="radio" name="rblPREV_VISA_TEN_PRINT_IND" value="Y">
                             Sim</label><label><input type="radio" name="rblPREV_VISA_TEN_PRINT_IND" value="N">
                             Não</label></span>
                 </div>
                 <div class="fg"><label>Seu visto americano já foi perdido ou roubado? *</label>
-                    <small style="color:#888">Informe se algum visto americano seu foi extraviado, perdido ou roubado em
+                    <small>Informe se algum visto americano seu foi extraviado, perdido ou roubado em
                         algum momento.</small>
                     <span class="rg"><label><input type="radio" name="rblPREV_VISA_LOST_IND" value="Y"
                                 data-branch="rblPREV_VISA_LOST_IND"> Sim</label><label><input type="radio"
@@ -1620,7 +1612,7 @@
                 </div>
                 <div class="br" id="br-rblPREV_VISA_LOST_IND">
                     <div class="fg"><label>Ano</label>
-                        <small style="color:#888">Informe o ano em que o visto foi perdido ou roubado</small>
+                        <small>Informe o ano em que o visto foi perdido ou roubado</small>
                         <input type="text" id="tbxLOST_VISA_YEAR" maxlength="4" placeholder="AAAA"
                             style="max-width:100px">
                     </div>
@@ -1629,7 +1621,7 @@
                     </div>
                 </div>
                 <div class="fg"><label>Seu visto americano já foi cancelado ou revogado? *</label>
-                    <small style="color:#888">Informe se algum visto americano seu já foi cancelado ou revogado pelas
+                    <small>Informe se algum visto americano seu já foi cancelado ou revogado pelas
                         autoridades.</small>
                     <span class="rg"><label><input type="radio" name="rblPREV_VISA_CANCELLED_IND" value="Y"
                                 data-branch="rblPREV_VISA_CANCELLED_IND"> Sim</label><label><input type="radio"
@@ -1651,7 +1643,7 @@
             <!-- Q3: Has your visa ever been refused? -->
             <div class="fg"><label>Você já teve um visto americano recusado, ou foi impedido(a) de entrar nos EUA, ou
                     retirou sua solicitação de entrada em um porto de entrada? *</label>
-                <small style="color:#888">Inclui qualquer recusa de visto (stamp vermelho), negação de entrada na
+                <small>Inclui qualquer recusa de visto (stamp vermelho), negação de entrada na
                     imigração, ou desistência voluntária de entrada nos EUA.</small>
                 <span class="rg"><label><input type="radio" name="rblPREV_VISA_REFUSED_IND" value="Y"
                             data-branch="rblPREV_VISA_REFUSED_IND"> Sim</label><label><input type="radio"
@@ -1668,7 +1660,7 @@
             <!-- Q4: Has anyone ever filed an immigrant petition? -->
             <div class="fg"><label>Alguém já apresentou uma petição de imigrante em seu nome junto ao Serviço de
                     Cidadania e Imigração dos EUA (USCIS)? *</label>
-                <small style="color:#888">Inclui petições de green card feitas por familiares, empregadores ou outros.
+                <small>Inclui petições de green card feitas por familiares, empregadores ou outros.
                     Se não souber, selecione "Não".</small>
                 <span class="rg"><label><input type="radio" name="rblIV_PETITION_IND" value="Y"
                             data-branch="rblIV_PETITION_IND"> Sim</label><label><input type="radio"
@@ -1694,11 +1686,11 @@
         <div class="section">
             <h3>Endereço Residencial</h3>
             <div class="fg"><label>Endereço - Linha 1 *</label>
-                <small style="color:#888">Rua, número e bairro onde você mora atualmente.</small>
+                <small>Rua, número e bairro onde você mora atualmente.</small>
                 <input type="text" id="tbxAPP_ADDR_LN1" maxlength="40" required placeholder="Ex: RUA EXEMPLO 123">
             </div>
             <div class="fg"><label>Endereço - Linha 2 <em>*Opcional</em></label>
-                <small style="color:#888">Complemento, apartamento, bloco, sala, etc.</small>
+                <small>Complemento, apartamento, bloco, sala, etc.</small>
                 <input type="text" id="tbxAPP_ADDR_LN2" maxlength="40" placeholder="Ex: APTO 101 BLOCO B">
             </div>
             <div class="fg"><label>Cidade *</label>
@@ -1723,7 +1715,7 @@
         <div class="section">
             <h3>Endereço de Correspondência</h3>
             <div class="fg"><label>Seu endereço de correspondência é o mesmo que o residencial? *</label>
-                <small style="color:#888">Endereço de correspondência é onde você recebe cartas e documentos. Se for o
+                <small>Endereço de correspondência é onde você recebe cartas e documentos. Se for o
                     mesmo, selecione "Sim".</small>
                 <span class="rg"><label><input type="radio" name="rblMailingAddrSame" value="Y"
                             data-branch="mailingAddr"> Sim</label>
@@ -1732,7 +1724,7 @@
             </div>
             <div class="br" id="br-mailingAddr">
                 <div class="fg"><label>Endereço de Correspondência - Linha 1 *</label>
-                    <small style="color:#888">Informe o endereço onde você recebe correspondências.</small>
+                    <small>Informe o endereço onde você recebe correspondências.</small>
                     <input type="text" id="tbxMAILING_ADDR_LN1" maxlength="40" placeholder="Ex: RUA DAS FLORES 456">
                 </div>
                 <div class="fg"><label>Endereço de Correspondência - Linha 2 <em>*Opcional</em></label>
@@ -1761,12 +1753,12 @@
         <div class="section">
             <h3>Telefone</h3>
             <div class="fg"><label>Telefone Principal *</label>
-                <small style="color:#888">Número com código do país + DDD + número. Para Brasil: 55 + DDD +
+                <small>Número com código do país + DDD + número. Para Brasil: 55 + DDD +
                     número.</small>
                 <input type="text" id="tbxAPP_HOME_TEL" maxlength="20" required placeholder="Ex: 5511999998888">
             </div>
             <div class="fg"><label>Telefone Secundário</label>
-                <small style="color:#888">Outro número de celular, se tiver.</small>
+                <small>Outro número de celular, se tiver.</small>
                 <input type="text" id="tbxAPP_MOBILE_TEL" maxlength="20" placeholder="Ex: 5511988887777">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexAPP_MOBILE_TEL_NA"
                         data-target="tbxAPP_MOBILE_TEL"> Não se Aplica</label>
@@ -1777,7 +1769,7 @@
                         data-target="tbxAPP_BUS_TEL"> Não se Aplica</label>
             </div>
             <div class="fg"><label>Você usou outros números de telefone nos últimos cinco anos? *</label>
-                <small style="color:#888">Inclui números antigos de celular ou telefone fixo que usou nos últimos 5
+                <small>Inclui números antigos de celular ou telefone fixo que usou nos últimos 5
                     anos.</small>
                 <span class="rg"><label><input type="radio" name="rblAddPhone" value="Y" data-branch="rblAddPhone">
                         Sim</label><label><input type="radio" name="rblAddPhone" value="N" data-branch="rblAddPhone">
@@ -1801,11 +1793,11 @@
         <div class="section">
             <h3>Endereço de Email</h3>
             <div class="fg"><label>Email *</label>
-                <small style="color:#888">Seu email principal. Use o mesmo email que você acessa regularmente.</small>
+                <small>Seu email principal. Use o mesmo email que você acessa regularmente.</small>
                 <input type="email" id="tbxAPP_EMAIL_ADDR" maxlength="50" required placeholder="Ex: seunome@email.com">
             </div>
             <div class="fg"><label>Você usou outros endereços de email nos últimos cinco anos? *</label>
-                <small style="color:#888">Inclui endereços de email antigos que você usou nos últimos 5 anos.</small>
+                <small>Inclui endereços de email antigos que você usou nos últimos 5 anos.</small>
                 <span class="rg"><label><input type="radio" name="rblAddEmail" value="Y" data-branch="rblAddEmail">
                         Sim</label><label><input type="radio" name="rblAddEmail" value="N" data-branch="rblAddEmail">
                         Não</label></span>
@@ -1827,17 +1819,17 @@
         <!-- === Social Media === -->
         <div class="section">
             <h3>Redes Sociais</h3>
-            <small style="color:#888">Selecione cada rede social que você utilizou nos últimos cinco anos e informe seu
+            <small>Selecione cada rede social que você utilizou nos últimos cinco anos e informe seu
                 nome de usuário.</small>
             <div class="as" data-list="dtlSocialMedia">
                 <div class="entry" data-idx="0">
                     <div class="fg"><label>Plataforma de Rede Social</label>
-                        <small style="color:#888">Selecione a rede social (Instagram, Facebook, X/Twitter,
+                        <small>Selecione a rede social (Instagram, Facebook, X/Twitter,
                             etc.).</small>
                         <select id="dtlSocialMedia_ctl00_ddlSocialMedia" class="sel-social"></select>
                     </div>
                     <div class="fg"><label>Nome de Usuário</label>
-                        <small style="color:#888">Seu @usuário ou nome público nessa rede social.</small>
+                        <small>Seu @usuário ou nome público nessa rede social.</small>
                         <input type="text" id="dtlSocialMedia_ctl00_tbxSocialMediaIdent" maxlength="50"
                             placeholder="Ex: @seunome">
                     </div>
@@ -1846,28 +1838,28 @@
                     Social</button>
             </div>
 
-            <div class="fg" style="margin-top:16px"><label>Você deseja informar sobre sua presença em outros sites ou
+            <div class="fg"><label>Você deseja informar sobre sua presença em outros sites ou
                     aplicativos que utilizou nos últimos cinco anos para criar ou compartilhar conteúdo (fotos, vídeos,
                     publicações, etc.)? *</label>
-                <small style="color:#888">Inclui blogs, YouTube, TikTok ou outros sites onde você criou conteúdo. Não
+                <small>Inclui blogs, YouTube, TikTok ou outros sites onde você criou conteúdo. Não
                     inclui apps de mensagens privadas como WhatsApp.</small>
                 <span class="rg"><label><input type="radio" name="rblAddSocial" value="Y" data-branch="rblAddSocial">
                         Sim</label><label><input type="radio" name="rblAddSocial" value="N" data-branch="rblAddSocial">
                         Não</label></span>
             </div>
             <div class="br" id="br-rblAddSocial">
-                <small style="color:#888">Informe o nome da plataforma e o identificador (nome de usuário ou handle)
+                <small>Informe o nome da plataforma e o identificador (nome de usuário ou handle)
                     para cada plataforma que deseja listar. Isso não inclui serviços de mensagens privadas, como
                     WhatsApp.</small>
                 <div class="as" data-list="dtlAddSocial">
                     <div class="entry" data-idx="0">
                         <div class="fg"><label>Nome da Plataforma ou Site</label>
-                            <small style="color:#888">Ex: YouTube, TikTok, Blog pessoal, etc.</small>
+                            <small>Ex: YouTube, TikTok, Blog pessoal, etc.</small>
                             <input type="text" id="dtlAddSocial_ctl00_tbxAddSocialPlatform" maxlength="50"
                                 placeholder="Ex: YouTube">
                         </div>
                         <div class="fg"><label>Nome de Usuário / Link</label>
-                            <small style="color:#888">Seu nome de usuário ou link do perfil nessa plataforma.</small>
+                            <small>Seu nome de usuário ou link do perfil nessa plataforma.</small>
                             <input type="text" id="dtlAddSocial_ctl00_tbxSocialMediaIdent" maxlength="50"
                                 placeholder="Ex: @seunome ou link do canal">
                         </div>
@@ -1891,7 +1883,7 @@
             <h3>Informações do Passaporte/Documento de Viagem</h3>
 
             <div class="fg"><label>Tipo de Passaporte/Documento de Viagem *</label>
-                <small style="color:#888">A maioria dos passaportes comuns é do tipo "Regular".</small>
+                <small>A maioria dos passaportes comuns é do tipo "Regular".</small>
                 <select id="ddlPPT_TYPE" onchange="updatePptTypeBranch()">
                     <option value="">- Selecione -</option>
                     <option value="R">Regular (Comum)</option>
@@ -1908,7 +1900,7 @@
             </div>
 
             <div class="fg"><label>Número do Passaporte *</label>
-                <small style="color:#888">Número impresso na página de identificação do seu passaporte.</small>
+                <small>Número impresso na página de identificação do seu passaporte.</small>
                 <input type="text" id="tbxPPT_NUM" maxlength="12" required placeholder="Ex: FX123456">
             </div>
 
@@ -1919,17 +1911,17 @@
             </div>
 
             <div class="fg"><label>País/Autoridade que Emitiu o Passaporte *</label>
-                <small style="color:#888">Selecione o país que emitiu seu passaporte.</small>
+                <small>Selecione o país que emitiu seu passaporte.</small>
                 <select id="ddlPPT_ISSUED_CNTRY" class="sel-country"></select>
             </div>
 
 
             <div class="fg"><label>Cidade de Emissão do Passaporte *</label>
-                <small style="color:#888">Cidade onde o passaporte foi emitido. Geralmente consta no documento.</small>
+                <small>Cidade onde o passaporte foi emitido. Geralmente consta no documento.</small>
                 <input type="text" id="tbxPPT_ISSUED_IN_CITY" maxlength="20" required placeholder="Ex: BRASILIA">
             </div>
             <div class="fg"><label>Estado/Província <em>*Se constar no passaporte</em></label>
-                <small style="color:#888">Informe apenas se o estado aparecer no seu passaporte.</small>
+                <small>Informe apenas se o estado aparecer no seu passaporte.</small>
                 <input type="text" id="tbxPPT_ISSUED_IN_STATE" maxlength="20" placeholder="Ex: DF">
             </div>
             <div class="fg"><label>País/Região *</label>
@@ -1937,7 +1929,7 @@
             </div>
 
             <div class="fg"><label>Data de Emissão do Passaporte *</label>
-                <small style="color:#888">Data em que o passaporte foi emitido. Consta na página de
+                <small>Data em que o passaporte foi emitido. Consta na página de
                     identificação.</small>
                 <div class="date-row"><select id="ddlPPT_ISSUED_DTEDay" class="sel-day"></select><select
                         id="ddlPPT_ISSUED_DTEMonth" class="sel-month"></select><input type="text" id="tbxPPT_ISSUEDYear"
@@ -1945,7 +1937,7 @@
             </div>
 
             <div class="fg"><label>Data de Validade do Passaporte *</label>
-                <small style="color:#888">Data de expiração do passaporte. Marque "Sem Validade" se não houver data de
+                <small>Data de expiração do passaporte. Marque "Sem Validade" se não houver data de
                     expiração.</small>
                 <div class="date-row"><select id="ddlPPT_EXPIRE_DTEDay" class="sel-day"></select><select
                         id="ddlPPT_EXPIRE_DTEMonth" class="sel-month"></select><input type="text" id="tbxPPT_EXPIREYear"
@@ -1961,7 +1953,7 @@
         <div class="section">
             <h3>Passaporte Perdido/Roubado</h3>
             <div class="fg"><label>Você já perdeu um passaporte ou teve um roubado? *</label>
-                <small style="color:#888">Inclui qualquer passaporte (válido ou expirado) que foi perdido, extraviado ou
+                <small>Inclui qualquer passaporte (válido ou expirado) que foi perdido, extraviado ou
                     roubado.</small>
                 <span class="rg"><label><input type="radio" name="rblLOST_PPT_IND" value="Y"
                             data-branch="rblLOST_PPT_IND"> Sim</label><label><input type="radio" name="rblLOST_PPT_IND"
@@ -1969,11 +1961,11 @@
                         Não</label></span>
             </div>
             <div class="br" id="br-rblLOST_PPT_IND">
-                <small style="color:#888">Informe os dados do passaporte perdido ou roubado.</small>
+                <small>Informe os dados do passaporte perdido ou roubado.</small>
                 <div class="as" data-list="dtlLostPPT">
                     <div class="entry" data-idx="0">
                         <div class="fg"><label>Número do Passaporte Perdido/Roubado</label>
-                            <small style="color:#888">Se não lembrar, marque "Não Sei".</small>
+                            <small>Se não lembrar, marque "Não Sei".</small>
                             <input type="text" id="dtlLostPPT_ctl00_tbxLOST_PPT_NUM"
                                 placeholder="Nº do passaporte perdido/roubado" maxlength="12">
                             <label class="na-lbl"><input type="checkbox" class="na-cb"
@@ -1985,7 +1977,7 @@
                             <select id="dtlLostPPT_ctl00_ddlLOST_PPT_NATL" class="sel-country"></select>
                         </div>
                         <div class="fg"><label>Explique as Circunstâncias</label>
-                            <small style="color:#888">Descreva brevemente como perdeu ou teve o passaporte
+                            <small>Descreva brevemente como perdeu ou teve o passaporte
                                 roubado.</small>
                             <textarea id="dtlLostPPT_ctl00_tbxLOST_PPT_EXPL"
                                 placeholder="Ex: Perdi o passaporte durante viagem a Paris em 2019."
@@ -2011,12 +2003,12 @@
 
             <!-- Contact Person -->
             <div class="fg"><label>Sobrenome(s) do Contato *</label>
-                <small style="color:#888">Informe o sobrenome da pessoa que será seu contato nos EUA (familiar, amigo,
+                <small>Informe o sobrenome da pessoa que será seu contato nos EUA (familiar, amigo,
                     hotel, empresa, etc.).</small>
                 <input type="text" id="tbxUS_POC_SURNAME" maxlength="33" placeholder="Ex: SMITH">
             </div>
             <div class="fg"><label>Nome(s) do Contato *</label>
-                <small style="color:#888">Primeiro nome da pessoa de contato nos EUA.</small>
+                <small>Primeiro nome da pessoa de contato nos EUA.</small>
                 <input type="text" id="tbxUS_POC_GIVEN_NAME" maxlength="33" placeholder="Ex: JOHN">
             </div>
             <div class="fg">
@@ -2026,7 +2018,7 @@
 
             <!-- Organization -->
             <div class="fg"><label>Nome da Organização</label>
-                <small style="color:#888">Se seu contato for um hotel, empresa ou organização, informe o nome
+                <small>Se seu contato for um hotel, empresa ou organização, informe o nome
                     aqui.</small>
                 <input type="text" id="tbxUS_POC_ORGANIZATION" maxlength="40" placeholder="Ex: MARRIOTT HOTEL">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxUS_POC_ORG_NA_IND"
@@ -2035,7 +2027,7 @@
 
             <!-- Relationship -->
             <div class="fg"><label>Relação com Você *</label>
-                <small style="color:#888">Qual o vínculo com a pessoa ou organização de contato nos EUA?</small>
+                <small>Qual o vínculo com a pessoa ou organização de contato nos EUA?</small>
                 <select id="ddlUS_POC_REL_TO_APP">
                     <option value="">- Selecione -</option>
                     <option value="R">Parente</option>
@@ -2052,7 +2044,7 @@
             <!-- Address and Phone -->
 
             <div class="fg"><label>Endereço nos EUA - Linha 1 *</label>
-                <small style="color:#888">Endereço da pessoa ou organização de contato nos EUA.</small>
+                <small>Endereço da pessoa ou organização de contato nos EUA.</small>
                 <input type="text" id="tbxUS_POC_ADDR_LN1" maxlength="40" placeholder="Ex: 123 MAIN STREET">
             </div>
             <div class="fg"><label>Endereço nos EUA - Linha 2 <em>*Opcional</em></label>
@@ -2065,15 +2057,15 @@
                 <select id="ddlUS_POC_ADDR_STATE" class="sel-state"></select>
             </div>
             <div class="fg"><label>CEP</label>
-                <small style="color:#888">Informe se souber o código postal (ZIP Code) do contato.</small>
+                <small>Informe se souber o código postal (ZIP Code) do contato.</small>
                 <input type="text" id="tbxUS_POC_ADDR_POSTAL_CD" maxlength="10" placeholder="Ex: 55555 ou 55555-5555">
             </div>
             <div class="fg"><label>Telefone do Contato *</label>
-                <small style="color:#888">Número de telefone nos EUA com código de área.</small>
+                <small>Número de telefone nos EUA com código de área.</small>
                 <input type="text" id="tbxUS_POC_HOME_TEL" maxlength="20" placeholder="Ex: 2125551234">
             </div>
             <div class="fg"><label>Email do Contato</label>
-                <small style="color:#888">Email da pessoa ou organização de contato nos EUA.</small>
+                <small>Email da pessoa ou organização de contato nos EUA.</small>
                 <input type="email" id="tbxUS_POC_EMAIL_ADDR" maxlength="50" placeholder="Ex: contato@email.com">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexUS_POC_EMAIL_ADDR_NA"
                         data-target="tbxUS_POC_EMAIL_ADDR"> Não se Aplica</label>
@@ -2092,20 +2084,20 @@
         <div class="section">
             <h3>Dados do Pai</h3>
             <div class="fg"><label>Sobrenome(s) do Pai *</label>
-                <small style="color:#888">Conforme consta no documento de identidade do seu pai. Se não souber, marque
+                <small>Conforme consta no documento de identidade do seu pai. Se não souber, marque
                     "Não Sei".</small>
                 <input type="text" id="tbxFATHER_SURNAME" maxlength="33" required placeholder="Ex: SILVA">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxFATHER_SURNAME_UNK_IND"
                         data-target="tbxFATHER_SURNAME"> Não Sei</label>
             </div>
             <div class="fg"><label>Nome(s) do Pai *</label>
-                <small style="color:#888">Primeiro nome do seu pai.</small>
+                <small>Primeiro nome do seu pai.</small>
                 <input type="text" id="tbxFATHER_GIVEN_NAME" maxlength="33" required placeholder="Ex: JOSE">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxFATHER_GIVEN_NAME_UNK_IND"
                         data-target="tbxFATHER_GIVEN_NAME"> Não Sei</label>
             </div>
             <div class="fg"><label>Data de Nascimento do Pai</label>
-                <small style="color:#888">Se não souber a data exata, marque "Não Sei".</small>
+                <small>Se não souber a data exata, marque "Não Sei".</small>
                 <div class="date-row"><select id="ddlFathersDOBDay" class="sel-day"></select><select
                         id="ddlFathersDOBMonth" class="sel-month"></select><input type="text" id="tbxFathersDOBYear"
                         maxlength="4" placeholder="AAAA">
@@ -2114,7 +2106,7 @@
                 </div>
             </div>
             <div class="fg"><label>Seu pai está nos Estados Unidos? *</label>
-                <small style="color:#888">Informe se seu pai mora ou está atualmente nos EUA.</small>
+                <small>Informe se seu pai mora ou está atualmente nos EUA.</small>
                 <span class="rg"><label><input type="radio" name="rblFATHER_LIVE_IN_US_IND" value="Y"
                             data-branch="rblFATHER_LIVE_IN_US_IND"> Sim</label><label><input type="radio"
                             name="rblFATHER_LIVE_IN_US_IND" value="N" data-branch="rblFATHER_LIVE_IN_US_IND">
@@ -2122,7 +2114,7 @@
             </div>
             <div class="br" id="br-rblFATHER_LIVE_IN_US_IND">
                 <div class="fg"><label>Status Imigratório do Pai nos EUA *</label>
-                    <small style="color:#888">Selecione a situação imigratória atual do seu pai nos EUA.</small>
+                    <small>Selecione a situação imigratória atual do seu pai nos EUA.</small>
                     <select id="ddlFATHER_US_STATUS">
                         <option value="">- Selecione -</option>
                         <option value="S">Cidadão Americano</option>
@@ -2138,20 +2130,20 @@
         <div class="section">
             <h3>Dados da Mãe</h3>
             <div class="fg"><label>Sobrenome(s) da Mãe *</label>
-                <small style="color:#888">Conforme consta no documento de identidade da sua mãe. Se não souber, marque
+                <small>Conforme consta no documento de identidade da sua mãe. Se não souber, marque
                     "Não Sei".</small>
                 <input type="text" id="tbxMOTHER_SURNAME" maxlength="33" required placeholder="Ex: OLIVEIRA">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxMOTHER_SURNAME_UNK_IND"
                         data-target="tbxMOTHER_SURNAME"> Não Sei</label>
             </div>
             <div class="fg"><label>Nome(s) da Mãe *</label>
-                <small style="color:#888">Primeiro nome da sua mãe.</small>
+                <small>Primeiro nome da sua mãe.</small>
                 <input type="text" id="tbxMOTHER_GIVEN_NAME" maxlength="33" required placeholder="Ex: MARIA">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxMOTHER_GIVEN_NAME_UNK_IND"
                         data-target="tbxMOTHER_GIVEN_NAME"> Não Sei</label>
             </div>
             <div class="fg"><label>Data de Nascimento da Mãe</label>
-                <small style="color:#888">Se não souber a data exata, marque "Não Sei".</small>
+                <small>Se não souber a data exata, marque "Não Sei".</small>
                 <div class="date-row"><select id="ddlMothersDOBDay" class="sel-day"></select><select
                         id="ddlMothersDOBMonth" class="sel-month"></select><input type="text" id="tbxMothersDOBYear"
                         maxlength="4" placeholder="AAAA">
@@ -2160,7 +2152,7 @@
                 </div>
             </div>
             <div class="fg"><label>Sua mãe está nos Estados Unidos? *</label>
-                <small style="color:#888">Informe se sua mãe mora ou está atualmente nos EUA.</small>
+                <small>Informe se sua mãe mora ou está atualmente nos EUA.</small>
                 <span class="rg"><label><input type="radio" name="rblMOTHER_LIVE_IN_US_IND" value="Y"
                             data-branch="rblMOTHER_LIVE_IN_US_IND"> Sim</label><label><input type="radio"
                             name="rblMOTHER_LIVE_IN_US_IND" value="N" data-branch="rblMOTHER_LIVE_IN_US_IND">
@@ -2168,7 +2160,7 @@
             </div>
             <div class="br" id="br-rblMOTHER_LIVE_IN_US_IND">
                 <div class="fg"><label>Status Imigratório da Mãe nos EUA *</label>
-                    <small style="color:#888">Selecione a situação imigratória atual da sua mãe nos EUA.</small>
+                    <small>Selecione a situação imigratória atual da sua mãe nos EUA.</small>
                     <select id="ddlMOTHER_US_STATUS">
                         <option value="">- Selecione -</option>
                         <option value="S">Cidadão Americano</option>
@@ -2184,7 +2176,7 @@
         <div class="section">
             <h3>Parentes Imediatos nos EUA</h3>
             <div class="fg"><label>Você tem algum parente imediato (exceto pai e mãe) nos Estados Unidos? *</label>
-                <small style="color:#888">Inclui cônjuge, filhos, irmãos ou outros parentes próximos que moram nos
+                <small>Inclui cônjuge, filhos, irmãos ou outros parentes próximos que moram nos
                     EUA.</small>
                 <span class="rg"><label><input type="radio" name="rblUS_IMMED_RELATIVE_IND" value="Y"
                             data-branch="rblUS_IMMED_RELATIVE_IND"> Sim</label><label><input type="radio"
@@ -2192,7 +2184,7 @@
                         Não</label></span>
             </div>
             <div class="br" id="br-rblUS_IMMED_RELATIVE_IND">
-                <small style="color:#888">Informe os dados de cada parente nos EUA.</small>
+                <small>Informe os dados de cada parente nos EUA.</small>
                 <div class="as" data-list="dlUSRelatives">
                     <div class="entry" data-idx="0">
                         <div class="fg"><label>Sobrenomes</label>
@@ -2229,7 +2221,7 @@
             </div>
 
             <!-- Other Relatives (shown when immediate = No) -->
-            <div class="fg" style="margin-top:16px"><label>Você tem algum outro parente nos Estados Unidos? (Do you have
+            <div class="fg"><label>Você tem algum outro parente nos Estados Unidos? (Do you have
                     any other relatives in the United States?) *</label>
                 <span class="rg"><label><input type="radio" name="rblUS_OTHER_RELATIVE_IND" value="Y"> Sim</label>
                     <label><input type="radio" name="rblUS_OTHER_RELATIVE_IND" value="N"> Não</label></span>
@@ -2267,7 +2259,7 @@
             </div>
 
             <div class="fg"><label>Cidade</label>
-                <small style="color:#888">Local de Nascimento do Cônjuge (Spouse's Place of Birth)</small>
+                <small>Local de Nascimento do Cônjuge (Spouse's Place of Birth)</small>
                 <input type="text" id="tbxSpousePOBCity" maxlength="20" placeholder="Cidade natal do cônjuge">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexSPOUSE_POB_CITY_NA"
                         data-target="tbxSpousePOBCity"> Não Sei</label>
@@ -2347,7 +2339,7 @@
             </div>
 
             <div class="fg"><label>Cidade</label>
-                <small style="color:#888">Local de Nascimento do Cônjuge Falecido</small>
+                <small>Local de Nascimento do Cônjuge Falecido</small>
                 <input type="text" id="tbxDECEASED_SPOUSE_POB_CITY" maxlength="20" placeholder="Cidade natal">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexDECEASED_SPOUSE_POB_CITY_NA"
                         data-target="tbxDECEASED_SPOUSE_POB_CITY"> Não Sei</label>
@@ -2371,7 +2363,7 @@
                     style="max-width:80px">
             </div>
 
-            <small style="color:#888"><strong>Informações do Ex-Cônjuge (Former Spouse Information)</strong></small>
+            <small><strong>Informações do Ex-Cônjuge (Former Spouse Information)</strong></small>
 
             <div class="as" data-list="dlPrevSpouse">
                 <div class="entry" data-idx="0">
@@ -2396,7 +2388,7 @@
                     </div>
 
                     <div class="fg"><label>Cidade</label>
-                        <small style="color:#888">Local de Nascimento do Ex-Cônjuge</small>
+                        <small>Local de Nascimento do Ex-Cônjuge</small>
                         <input type="text" id="dlPrevSpouse_ctl00_tbxPREV_SPOUSE_CITY" maxlength="20"
                             placeholder="Cidade natal do ex-cônjuge">
                         <label class="na-lbl"><input type="checkbox" class="na-cb"
@@ -2445,14 +2437,14 @@
         <div class="section">
 
             <div class="fg"><label>Ocupação Principal *</label>
-                <small style="color:#888">Informe os dados sobre seu emprego ou educação atual.</small>
+                <small>Informe os dados sobre seu emprego ou educação atual.</small>
                 <select id="ddlPresentOccupation" class="sel-occupation"></select>
             </div>
 
             <!-- Specify Other (shown when occupation = O) -->
             <div class="br" id="br-specifyOther">
                 <div class="fg"><label>Especifique Outro *</label>
-                    <small style="color:#888">Descreva sua ocupação se não encontrou nas opções acima.</small>
+                    <small>Descreva sua ocupação se não encontrou nas opções acima.</small>
                     <textarea id="tbxOtherOccupation" rows="3" maxlength="200"
                         placeholder="Especifique sua ocupação"></textarea>
                 </div>
@@ -2467,7 +2459,7 @@
 
 
             <div class="fg"><label>Endereço Linha 1 (Street Address (Line 1)) *</label>
-                <small style="color:#888">Endereço do empregador ou escola atual :</small>
+                <small>Endereço do empregador ou escola atual :</small>
                 <input type="text" id="tbxEmpSchAddr1" maxlength="40" placeholder="Endereço linha 1">
             </div>
             <div class="fg"><label>Endereço Linha 2 (Street Address (Line 2)) <em>*Opcional</em></label>
