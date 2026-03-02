@@ -741,6 +741,10 @@ function buildDynamicFieldMap(a) {
       { pattern: /cbexFATHER_SURNAME_UNK_IND$/i, value: "", type: "checkbox-check" },
       { pattern: /cbxFATHER_SURNAME_NA$/i, value: "", type: "checkbox-check" },
       { pattern: /cbexFATHER_SURNAME_NA$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbxFATHER_GIVEN_NAME_UNK_IND$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbexFATHER_GIVEN_NAME_UNK_IND$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbxFATHER_GIVEN_NAME_NA$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbexFATHER_GIVEN_NAME_NA$/i, value: "", type: "checkbox-check" },
     );
   } else {
     map.push(
@@ -771,6 +775,10 @@ function buildDynamicFieldMap(a) {
       { pattern: /cbexMOTHER_SURNAME_UNK_IND$/i, value: "", type: "checkbox-check" },
       { pattern: /cbxMOTHER_SURNAME_NA$/i, value: "", type: "checkbox-check" },
       { pattern: /cbexMOTHER_SURNAME_NA$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbxMOTHER_GIVEN_NAME_UNK_IND$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbexMOTHER_GIVEN_NAME_UNK_IND$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbxMOTHER_GIVEN_NAME_NA$/i, value: "", type: "checkbox-check" },
+      { pattern: /cbexMOTHER_GIVEN_NAME_NA$/i, value: "", type: "checkbox-check" },
     );
   } else {
     map.push(
