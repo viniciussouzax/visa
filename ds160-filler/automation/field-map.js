@@ -1220,9 +1220,19 @@ function buildDynamicFieldMap(a) {
       { pattern: /ddlDECEASED_SPOUSE_DOBMonth$|ddlSpouseDOBMonth$|ddlDOBMonth$/i, value: ds.dob?.month || "", type: "select" },
       { pattern: /tbxDECEASED_SPOUSE_DOBYear$|tbxSpouseDOBYear$|tbxDOBYear$/i, value: ds.dob?.year || "", type: "text" },
       { pattern: /ddlDECEASED_SPOUSE_NATL$|ddlSpouseNatDropDownList$/i, value: ds.nationality, type: "select-label" },
-      { pattern: /tbxDECEASED_SPOUSE_POB_CITY$|tbxSpousePOBCity$/i, value: ds.cityOfBirth || "", type: "text" },
       { pattern: /ddlDECEASED_SPOUSE_POB_CNTRY$|ddlSpousePOBCountry$/i, value: ds.countryOfBirth, type: "select-label" },
     );
+    if (ds.cityOfBirth) {
+      map.push(
+        { pattern: /tbxDECEASED_SPOUSE_POB_CITY$|tbxSpousePOBCity$/i, value: ds.cityOfBirth, type: "text" },
+      );
+    } else {
+      map.push(
+        { pattern: /cbxDECEASED_SPOUSE_POB_CITY_NA$|cbexDECEASED_SPOUSE_POB_CITY_NA$/i, value: "", type: "checkbox-check" },
+        { pattern: /cbxSpousePOBCity_NA$|cbexSpousePOBCity_NA$/i, value: "", type: "checkbox-check" },
+        { pattern: /cbxPOB_CITY_NA$|cbexPOB_CITY_NA$/i, value: "", type: "checkbox-check" },
+      );
+    }
   }
 
   // =========================================================================
