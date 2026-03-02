@@ -340,6 +340,8 @@ function buildDynamicFieldMap(a) {
 
       map.push(
         { pattern: new RegExp(`dlTravelCompanions_${ctl}_tbxTC_SURNAME$`, 'i'), value: comp.surname || "", type: "text", ...base },
+        // DS-160 uses tbxGivenName (NOT tbxTC_GIVEN_NAME) for travel companions
+        { pattern: new RegExp(`dlTravelCompanions_${ctl}_tbxGivenName$`, 'i'), value: comp.givenName || "", type: "text", ...base },
         { pattern: new RegExp(`dlTravelCompanions_${ctl}_tbxTC_GIVEN_NAME$`, 'i'), value: comp.givenName || "", type: "text", ...base },
         { pattern: new RegExp(`dlTravelCompanions_${ctl}_ddlTCRelationship$`, 'i'), value: comp.relationship || "", type: "select", ...base },
       );
@@ -348,7 +350,6 @@ function buildDynamicFieldMap(a) {
         map.push(
           { pattern: /tbxTC_SURNAME$/i, value: comp.surname || "", type: "text" },
           { pattern: /tbxTC_GIVEN_NAME$/i, value: comp.givenName || "", type: "text" },
-          // Some DS-160 pages use simpler IDs (tbxSurname, tbxGivenName)
           { pattern: /tbxSurname$/i, value: comp.surname || "", type: "text" },
           { pattern: /tbxGivenName$/i, value: comp.givenName || "", type: "text" },
           { pattern: /ddlTCRelationship$/i, value: comp.relationship || "", type: "select" },
