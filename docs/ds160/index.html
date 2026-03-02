@@ -5517,14 +5517,16 @@
 
         // Save form data — persists to Supabase, and if all sections complete, moves new→review
         async function saveFormData() {
-            // Validate current page first
-            if (!validateCurrentPage()) return;
+            // Run validation but do NOT block saving — just show warnings
+            const hasErrors = !validateCurrentPage();
 
-            // Mark current section as complete
-            const curPageId = 'pg-' + (window._PAGES_NAMES?.[currentPage] || '');
-            const curSecIdx = window._pageToSection?.[curPageId];
-            if (curSecIdx !== undefined && window._markComplete) {
-                window._markComplete(curSecIdx);
+            // Mark current section as complete (if no errors)
+            if (!hasErrors) {
+                const curPageId = 'pg-' + (window._PAGES_NAMES?.[currentPage] || '');
+                const curSecIdx = window._pageToSection?.[curPageId];
+                if (curSecIdx !== undefined && window._markComplete) {
+                    window._markComplete(curSecIdx);
+                }
             }
 
             const btn = document.getElementById('btnSaveForm');
@@ -5532,6 +5534,7 @@
             btn.textContent = 'Salvando...';
 
             try {
+                // Always save — never lose data
                 await saveToSupabase();
 
                 // Check if all sections are complete
@@ -5579,7 +5582,12 @@
             btn.disabled = true;
             btn.textContent = 'Validando...';
             try {
+                // Save data FIRST so nothing is ever lost
+                btn.textContent = 'Salvando...';
+                await saveToSupabase();
+
                 // === ZOD VALIDATION CHECK ===
+                btn.textContent = 'Validando...';
                 const data = generateJSON();
                 if (window.DS160Validation) {
                     const result = window.DS160Validation.validateAll(data);
@@ -5597,7 +5605,7 @@
                         ).join('');
                         const totalErrors = result.errors.length;
                         console.warn('[ZOD] Validation failed:', result.errors);
-                        showToast(`⚠️ ${totalErrors} erro(s) encontrado(s). Corrija antes de aprovar.`);
+                        showToast(`⚠️ ${totalErrors} erro(s) — dados salvos, corrija para aprovar.`);
                         // Show detailed modal
                         const modal = document.getElementById('gateModalOverlay');
                         if (modal) {
@@ -5616,7 +5624,6 @@
                 }
 
                 btn.textContent = 'Aprovando...';
-                await saveToSupabase();
                 if (savedApplicantId) {
                     await sbFetch('rpc/approve_applicant', 'POST', {
                         applicant_id: savedApplicantId
