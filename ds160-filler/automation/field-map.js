@@ -1228,8 +1228,9 @@ function buildDynamicFieldMap(a) {
       );
     } else {
       map.push(
+        { pattern: /cbxSPOUSE_POB_CITY_NA$/i, value: "", type: "checkbox-check" },
+        { pattern: /cbexSPOUSE_POB_CITY_NA$/i, value: "", type: "checkbox-check" },
         { pattern: /cbxDECEASED_SPOUSE_POB_CITY_NA$|cbexDECEASED_SPOUSE_POB_CITY_NA$/i, value: "", type: "checkbox-check" },
-        { pattern: /cbxSpousePOBCity_NA$|cbexSpousePOBCity_NA$/i, value: "", type: "checkbox-check" },
         { pattern: /cbxPOB_CITY_NA$|cbexPOB_CITY_NA$/i, value: "", type: "checkbox-check" },
       );
     }
