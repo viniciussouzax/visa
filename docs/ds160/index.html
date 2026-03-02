@@ -142,8 +142,16 @@
         .fg {
             display: flex;
             flex-direction: column;
-            margin-bottom: 16px;
+            margin-bottom: 24px;
             gap: 4px;
+        }
+
+        /* Card style for fields with "Não se Aplica" / "Não Sei" */
+        .fg:has(.na-lbl) {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
         }
 
         .fg label {
@@ -211,10 +219,10 @@
             font-weight: 500 !important;
             color: #64748b !important;
             cursor: pointer;
-            padding: 4px 10px;
-            margin-top: 4px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            padding: 5px 12px;
+            margin-top: 6px;
+            background: #fff;
+            border: 1px solid #cbd5e1;
             border-radius: 6px;
             transition: all .2s;
             width: fit-content !important;
@@ -1534,7 +1542,7 @@
                     <input type="text" id="tbxPREV_VISA_FOIL_NUMBER"
                         placeholder="Número de 8 dígitos em vermelho no visto" maxlength="12">
                     <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxDNAPREV_VISA_FOIL_NUMBER"
-                            data-target="tbxPREV_VISA_FOIL_NUMBER"> Não sei </label>
+                            data-target="tbxPREV_VISA_FOIL_NUMBER"> Não Sei</label>
                 </div>
                 <div class="fg"><label>Você está solicitando o mesmo tipo de visto? *</label>
                     <small style="color:#888">Compare com o tipo de visto que recebeu anteriormente (ex: B1/B2, F1,
@@ -1927,7 +1935,7 @@
                                 placeholder="Nº do passaporte perdido/roubado" maxlength="12">
                             <label class="na-lbl"><input type="checkbox" class="na-cb"
                                     id="dtlLostPPT_ctl00_cbxLOST_PPT_NUM_UNKN_IND"
-                                    data-target="dtlLostPPT_ctl00_tbxLOST_PPT_NUM"> Não sei </label>
+                                    data-target="dtlLostPPT_ctl00_tbxLOST_PPT_NUM"> Não Sei</label>
                         </div>
                         <div class="fg"><label>País/Autoridade que Emitiu o Passaporte/Documento de Viagem
                             </label>
@@ -1970,7 +1978,7 @@
             </div>
             <div class="fg" style="text-align:right">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxUS_POC_NAME_NA"
-                        data-target="tbxUS_POC_SURNAME,tbxUS_POC_GIVEN_NAME"> Não sei </label>
+                        data-target="tbxUS_POC_SURNAME,tbxUS_POC_GIVEN_NAME"> Não Sei</label>
             </div>
 
             <!-- Organization -->
@@ -2045,13 +2053,13 @@
                     "Não Sei".</small>
                 <input type="text" id="tbxFATHER_SURNAME" maxlength="33" required placeholder="Ex: SILVA">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxFATHER_SURNAME_UNK_IND"
-                        data-target="tbxFATHER_SURNAME"> Não sei </label>
+                        data-target="tbxFATHER_SURNAME"> Não Sei</label>
             </div>
             <div class="fg"><label>Nome(s) do Pai *</label>
                 <small style="color:#888">Primeiro nome do seu pai.</small>
                 <input type="text" id="tbxFATHER_GIVEN_NAME" maxlength="33" required placeholder="Ex: JOSE">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxFATHER_GIVEN_NAME_UNK_IND"
-                        data-target="tbxFATHER_GIVEN_NAME"> Não sei </label>
+                        data-target="tbxFATHER_GIVEN_NAME"> Não Sei</label>
             </div>
             <div class="fg"><label>Data de Nascimento do Pai</label>
                 <small style="color:#888">Se não souber a data exata, marque "Não Sei".</small>
@@ -2091,13 +2099,13 @@
                     "Não Sei".</small>
                 <input type="text" id="tbxMOTHER_SURNAME" maxlength="33" required placeholder="Ex: OLIVEIRA">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxMOTHER_SURNAME_UNK_IND"
-                        data-target="tbxMOTHER_SURNAME"> Não sei </label>
+                        data-target="tbxMOTHER_SURNAME"> Não Sei</label>
             </div>
             <div class="fg"><label>Nome(s) da Mãe *</label>
                 <small style="color:#888">Primeiro nome da sua mãe.</small>
                 <input type="text" id="tbxMOTHER_GIVEN_NAME" maxlength="33" required placeholder="Ex: MARIA">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbxMOTHER_GIVEN_NAME_UNK_IND"
-                        data-target="tbxMOTHER_GIVEN_NAME"> Não sei </label>
+                        data-target="tbxMOTHER_GIVEN_NAME"> Não Sei</label>
             </div>
             <div class="fg"><label>Data de Nascimento da Mãe</label>
                 <small style="color:#888">Se não souber a data exata, marque "Não Sei".</small>
@@ -2219,7 +2227,7 @@
                 <small style="color:#888">Local de Nascimento do Cônjuge (Spouse's Place of Birth)</small>
                 <input type="text" id="tbxSpousePOBCity" maxlength="20" placeholder="Cidade natal do cônjuge">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexSPOUSE_POB_CITY_NA"
-                        data-target="tbxSpousePOBCity"> Não sei </label>
+                        data-target="tbxSpousePOBCity"> Não Sei</label>
             </div>
             <div class="fg"><label>País/Região *</label>
                 <select id="ddlSpousePOBCountry" class="sel-country"></select>
@@ -2299,7 +2307,7 @@
                 <small style="color:#888">Local de Nascimento do Cônjuge Falecido</small>
                 <input type="text" id="tbxDECEASED_SPOUSE_POB_CITY" maxlength="20" placeholder="Cidade natal">
                 <label class="na-lbl"><input type="checkbox" class="na-cb" id="cbexDECEASED_SPOUSE_POB_CITY_NA"
-                        data-target="tbxDECEASED_SPOUSE_POB_CITY"> Não sei </label>
+                        data-target="tbxDECEASED_SPOUSE_POB_CITY"> Não Sei</label>
             </div>
             <div class="fg"><label>País/Região *</label>
                 <select id="ddlDECEASED_SPOUSE_POB_CNTRY" class="sel-country"></select>
@@ -2349,7 +2357,7 @@
                         <input type="text" id="dlPrevSpouse_ctl00_tbxPREV_SPOUSE_CITY" maxlength="20"
                             placeholder="Cidade natal do ex-cônjuge">
                         <label class="na-lbl"><input type="checkbox" class="na-cb"
-                                data-target="dlPrevSpouse_ctl00_tbxPREV_SPOUSE_CITY"> Não sei </label>
+                                data-target="dlPrevSpouse_ctl00_tbxPREV_SPOUSE_CITY"> Não Sei</label>
                     </div>
                     <div class="fg"><label>País/Região *</label>
                         <select id="dlPrevSpouse_ctl00_ddlPREV_SPOUSE_CNTRY" class="sel-country"></select>
