@@ -3524,21 +3524,25 @@
                 const el = document.getElementById(id);
                 if (!el) return;
                 // Skip disabled or hidden fields
-                if (el.disabled || el.closest('.br:not(.open)') || el.closest('.section-disabled')) return;
+                if (el.disabled || el.closest('.br:not(.open)') || el.closest('.section-disabled') || el.closest('[style*="display: none"]') || el.closest('[style*="display:none"]')) return;
                 autoTrim(id);
                 if (!el.value || !el.value.trim()) { markError(el, msg); errors++; }
             }
             function reqSelect(id, msg) {
                 const el = document.getElementById(id);
                 if (!el) return;
-                if (el.disabled || el.closest('.br:not(.open)') || el.closest('.section-disabled')) return;
+                if (el.disabled || el.closest('.br:not(.open)') || el.closest('.section-disabled') || el.closest('[style*="display: none"]') || el.closest('[style*="display:none"]')) return;
                 if (!el.value) { markError(el, msg); errors++; }
             }
             function reqRadio(name, msg) {
                 const checked = document.querySelector(`input[name="${name}"]:checked`);
                 if (!checked) {
                     const first = document.querySelector(`input[name="${name}"]`);
-                    if (first && !first.disabled && !first.closest('.section-disabled')) {
+                    if (first && !first.disabled
+                        && !first.closest('.br:not(.open)')
+                        && !first.closest('.section-disabled')
+                        && !first.closest('[style*="display: none"]')
+                        && !first.closest('[style*="display:none"]')) {
                         markError(first, msg); errors++;
                     }
                 }
