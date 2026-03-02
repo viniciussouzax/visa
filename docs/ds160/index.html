@@ -4611,6 +4611,12 @@
         function val(id) {
             const el = document.getElementById(id);
             if (!el) return '';
+            // If field is disabled by an N/A checkbox, return 'DNA' (Does Not Apply)
+            if (el.disabled) {
+                // Check if there's an N/A checkbox targeting this field
+                const naCb = document.querySelector(`.na-cb[data-target*="${id}"]`);
+                if (naCb && naCb.checked) return 'DNA';
+            }
             // Return actual value even for disabled fields (e.g. purposeOfTrip selects)
             return el.value || '';
         }
@@ -4620,6 +4626,8 @@
         }
         function dateVal(dayId, monthId, yearId) {
             const d = val(dayId), m = val(monthId), y = val(yearId);
+            // If any field returns DNA (N/A checkbox checked), whole date is DNA
+            if (d === 'DNA' || m === 'DNA' || y === 'DNA') return 'DNA';
             if (!d && !m && !y) return null;
             return { day: d, month: m, year: y };
         }
@@ -4831,15 +4839,13 @@
                 // Family1
                 family1: {
                     father: {
-                        surname: document.getElementById('cbxFATHER_SURNAME_UNK_IND')?.checked ? 'DNA' : val('tbxFATHER_SURNAME'),
-                        givenName: document.getElementById('cbxFATHER_GIVEN_NAME_UNK_IND')?.checked ? 'DNA' : val('tbxFATHER_GIVEN_NAME'),
-                        dob: document.getElementById('cbxFATHER_DOB_UNK_IND')?.checked ? 'DNA' : dateVal('ddlFathersDOBDay', 'ddlFathersDOBMonth', 'tbxFathersDOBYear'),
+                        surname: val('tbxFATHER_SURNAME'), givenName: val('tbxFATHER_GIVEN_NAME'),
+                        dob: dateVal('ddlFathersDOBDay', 'ddlFathersDOBMonth', 'tbxFathersDOBYear'),
                         inUS: radioVal('rblFATHER_LIVE_IN_US_IND'), usStatus: val('ddlFATHER_US_STATUS'),
                     },
                     mother: {
-                        surname: document.getElementById('cbxMOTHER_SURNAME_UNK_IND')?.checked ? 'DNA' : val('tbxMOTHER_SURNAME'),
-                        givenName: document.getElementById('cbxMOTHER_GIVEN_NAME_UNK_IND')?.checked ? 'DNA' : val('tbxMOTHER_GIVEN_NAME'),
-                        dob: document.getElementById('cbxMOTHER_DOB_UNK_IND')?.checked ? 'DNA' : dateVal('ddlMothersDOBDay', 'ddlMothersDOBMonth', 'tbxMothersDOBYear'),
+                        surname: val('tbxMOTHER_SURNAME'), givenName: val('tbxMOTHER_GIVEN_NAME'),
+                        dob: dateVal('ddlMothersDOBDay', 'ddlMothersDOBMonth', 'tbxMothersDOBYear'),
                         inUS: radioVal('rblMOTHER_LIVE_IN_US_IND'), usStatus: val('ddlMOTHER_US_STATUS'),
                     },
                     immediateRelativesInUS: radioVal('rblUS_IMMED_RELATIVE_IND'),
