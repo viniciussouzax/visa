@@ -4734,7 +4734,7 @@
                 // PreviousUSTravel
                 previousUSTravel: {
                     hasBeenInUS: radioVal('rblPREV_US_TRAVEL_IND'),
-                    previousVisits: collectEntries('dtlPREV_US_VISIT', e => ({
+                    previousVisits: radioVal('rblPREV_US_TRAVEL_IND') === 'Y' ? collectEntries('dtlPREV_US_VISIT', e => ({
                         arrivalDate: {
                             day: entryVal(e, 'ddlPREV_US_VISIT_DTEDay'),
                             month: entryVal(e, 'ddlPREV_US_VISIT_DTEMonth'),
@@ -4742,12 +4742,12 @@
                         },
                         lengthOfStay: entryVal(e, 'tbxPREV_US_VISIT_LOS'),
                         lengthOfStayUnit: entryVal(e, 'ddlPREV_US_VISIT_LOS_CD'),
-                    })),
+                    })) : [],
                     hasDriversLicense: radioVal('rblPREV_US_DRIVER_LIC_IND'),
-                    driversLicenses: collectEntries('dtlUS_DRIVER_LICENSE', e => ({
+                    driversLicenses: radioVal('rblPREV_US_DRIVER_LIC_IND') === 'Y' ? collectEntries('dtlUS_DRIVER_LICENSE', e => ({
                         number: entryVal(e, 'tbxUS_DRIVER_LICENSE'),
                         state: entryVal(e, 'ddlUS_DRIVER_LICENSE_STATE'),
-                    })),
+                    })) : [],
                     hasUSVisa: radioVal('rblPREV_VISA_IND'),
                     previousVisa: {
                         issueDate: dateVal('ddlPREV_VISA_ISSUED_DTEDay', 'ddlPREV_VISA_ISSUED_DTEMonth', 'tbxPREV_VISA_ISSUED_DTEYear'),
@@ -4778,11 +4778,11 @@
                         postalCode: val('tbxAPP_ADDR_POSTAL_CD'), country: val('ddlCountry'),
                     },
                     mailingAddressSame: radioVal('rblMailingAddrSame'),
-                    mailingAddress: {
+                    mailingAddress: radioVal('rblMailingAddrSame') === 'N' ? {
                         street1: val('tbxMAILING_ADDR_LN1'), street2: val('tbxMAILING_ADDR_LN2'),
                         city: val('tbxMAILING_ADDR_CITY'), state: val('tbxMAILING_ADDR_STATE'),
                         postalCode: val('tbxMAILING_ADDR_POSTAL_CD'), country: val('ddlMailCountry'),
-                    },
+                    } : undefined,
                     phone: val('tbxAPP_HOME_TEL'),
                     mobilePhone: val('tbxAPP_MOBILE_TEL'),
                     businessPhone: val('tbxAPP_BUS_TEL'),
@@ -4809,11 +4809,11 @@
                     issuanceDate: dateVal('ddlPPT_ISSUED_DTEDay', 'ddlPPT_ISSUED_DTEMonth', 'tbxPPT_ISSUEDYear'),
                     expirationDate: dateVal('ddlPPT_EXPIRE_DTEDay', 'ddlPPT_EXPIRE_DTEMonth', 'tbxPPT_EXPIREYear'),
                     lostOrStolen: radioVal('rblLOST_PPT_IND'),
-                    lostPassports: collectEntries('dtlLostPPT', e => ({
+                    lostPassports: radioVal('rblLOST_PPT_IND') === 'Y' ? collectEntries('dtlLostPPT', e => ({
                         number: entryVal(e, 'tbxLOST_PPT_NUM'),
                         country: entryVal(e, 'ddlLOST_PPT_NATL'),
                         explanation: entryVal(e, 'tbxLOST_PPT_EXPL'),
-                    })),
+                    })) : [],
                 },
                 usContact: {
                     surname: val('tbxUS_POC_SURNAME'), givenName: val('tbxUS_POC_GIVEN_NAME'),
@@ -4847,30 +4847,30 @@
                         type: entryVal(e, 'ddlUS_REL_TYPE'), status: entryVal(e, 'ddlUS_REL_STATUS'),
                     })),
                 },
-                // Family2 (Spouse)
-                family2: {
+                // Family2 (Spouse) — only include if spouse page is visible
+                family2: (document.getElementById('pg-Family2')?.style.display !== 'none') ? {
                     surname: val('tbxSpouseSurname'), givenName: val('tbxSpouseGivenName'),
                     dob: dateVal('ddlSpouseDOBDay', 'ddlSpouseDOBMonth', 'tbxSpouseDOBYear'),
                     nationality: val('ddlSpouseNatDropDownList'),
                     cityOfBirth: val('tbxSpousePOBCity'), countryOfBirth: val('ddlSpousePOBCountry'),
                     addressType: val('ddlSpouseAddressType'),
-                    address: {
+                    address: val('ddlSpouseAddressType') === 'O' ? {
                         street1: val('tbxSPOUSE_ADDR_LN1'), street2: val('tbxSPOUSE_ADDR_LN2'),
                         city: val('tbxSPOUSE_ADDR_CITY'), state: val('tbxSPOUSE_ADDR_STATE'),
                         postalCode: val('tbxSPOUSE_ADDR_POSTAL_CD'), country: val('ddlSPOUSE_ADDR_CNTRY'),
-                    },
-                },
-                // DeceasedSpouse
-                deceasedSpouse: {
+                    } : undefined,
+                } : undefined,
+                // DeceasedSpouse — only include if page is visible
+                deceasedSpouse: (document.getElementById('pg-DeceasedSpouse')?.style.display !== 'none') ? {
                     surname: val('tbxDECEASED_SPOUSE_SURNAME'),
                     givenName: val('tbxDECEASED_SPOUSE_GIVEN_NAME'),
                     dob: dateVal('ddlDECEASED_SPOUSE_DOBDay', 'ddlDECEASED_SPOUSE_DOBMonth', 'tbxDECEASED_SPOUSE_DOBYear'),
                     nationality: val('ddlDECEASED_SPOUSE_NATL'),
                     cityOfBirth: val('tbxDECEASED_SPOUSE_POB_CITY'),
                     countryOfBirth: val('ddlDECEASED_SPOUSE_POB_CNTRY'),
-                },
-                // PrevSpouse
-                prevSpouse: {
+                } : undefined,
+                // PrevSpouse — only include if page is visible
+                prevSpouse: (document.getElementById('pg-PrevSpouse')?.style.display !== 'none') ? {
                     numberOfPrevious: val('tbxNumberOfPreviousSpouses'),
                     spouses: collectEntries('dlPrevSpouse', e => ({
                         surname: entryVal(e, 'tbxPREV_SPOUSE_SURNAME'),
@@ -4896,7 +4896,7 @@
                         howEnded: entryVal(e, 'tbxHOW_MARRIAGE_ENDED'),
                         countryTerminated: entryVal(e, 'ddlCNTRY_MARRIAGE_TERMINATED'),
                     })),
-                },
+                } : undefined,
                 // WorkEducation1
                 workEducation1: {
                     occupation: val('ddlPresentOccupation'),
@@ -4912,7 +4912,7 @@
                 // WorkEducation2
                 workEducation2: {
                     hasPreviousEmployment: radioVal('rblPreviouslyEmployed'),
-                    previousEmployment: collectEntries('dtlPrevEmpl', e => ({
+                    previousEmployment: radioVal('rblPreviouslyEmployed') === 'Y' ? collectEntries('dtlPrevEmpl', e => ({
                         name: entryVal(e, 'tbEmployerName'), street1: entryVal(e, 'tbEmployerStreetAddress1'),
                         street2: entryVal(e, 'tbEmployerStreetAddress2'),
                         city: entryVal(e, 'tbEmployerCity'),
@@ -4925,9 +4925,9 @@
                         startDate: { day: entryVal(e, 'ddlPREV_EMPL_DTEFromDay') || '1', month: entryVal(e, 'ddlPREV_EMPL_DTEFromMonth'), year: entryVal(e, 'tbxPREV_EMPL_DTEFromYear') },
                         endDate: { day: entryVal(e, 'ddlPREV_EMPL_DTEToDay') || '1', month: entryVal(e, 'ddlPREV_EMPL_DTEToMonth'), year: entryVal(e, 'tbxPREV_EMPL_DTEToYear') },
                         duties: entryVal(e, 'tbDescribeDuties'),
-                    })),
+                    })) : [],
                     hasEducation: radioVal('rblOtherEduc'),
-                    education: collectEntries('dtlPrevEduc', e => ({
+                    education: radioVal('rblOtherEduc') === 'Y' ? collectEntries('dtlPrevEduc', e => ({
                         name: entryVal(e, 'tbxSchoolName'),
                         street1: entryVal(e, 'tbxSchoolAddr1'),
                         street2: entryVal(e, 'tbxSchoolAddr2'),
@@ -4938,7 +4938,7 @@
                         course: entryVal(e, 'tbxSchoolCourseOfStudy'),
                         startDate: { day: entryVal(e, 'ddlEDUC_INST_DTEFromDay') || '1', month: entryVal(e, 'ddlEDUC_INST_DTEFromMonth'), year: entryVal(e, 'tbxEDUC_INST_DTEFromYear') },
                         endDate: { day: entryVal(e, 'ddlEDUC_INST_DTEToDay') || '1', month: entryVal(e, 'ddlEDUC_INST_DTEToMonth'), year: entryVal(e, 'tbxEDUC_INST_DTEToYear') },
-                    })),
+                    })) : [],
                 },
                 // WorkEducation3
                 workEducation3: {
@@ -4951,7 +4951,7 @@
                     specializedSkills: radioVal('rblSPECIALIZED_SKILLS_IND'),
                     specializedSkillsExplanation: val('tbxSPECIALIZED_SKILLS_EXPL'),
                     militaryService: radioVal('rblMILITARY_SERVICE_IND'),
-                    military: collectEntries('dtlMILITARY_SERVICE', e => ({
+                    military: radioVal('rblMILITARY_SERVICE_IND') === 'Y' ? collectEntries('dtlMILITARY_SERVICE', e => ({
                         country: entryVal(e, 'ddlMILITARY_SVC_CNTRY'), branch: entryVal(e, 'tbxMILITARY_SVC_BRANCH'),
                         rank: entryVal(e, 'tbxMILITARY_SVC_RANK'), specialty: entryVal(e, 'tbxMILITARY_SVC_SPECIALTY'),
                         startDate: {
@@ -4962,7 +4962,7 @@
                             day: entryVal(e, 'ddlMILITARY_SVC_TODay'), month: entryVal(e, 'ddlMILITARY_SVC_TOMonth'),
                             year: entryVal(e, 'tbxMILITARY_SVC_TOYear')
                         },
-                    })),
+                    })) : [],
                     insurgentOrg: radioVal('rblINSURGENT_ORG_IND'),
                     insurgentOrgExplanation: val('tbxINSURGENT_ORG_EXPL'),
                 },
