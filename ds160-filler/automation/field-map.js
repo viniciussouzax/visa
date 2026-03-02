@@ -1163,7 +1163,8 @@ function buildDynamicFieldMap(a) {
   // ===================================================================
   const needsPrevSpouse = ["D", "W", "L"].includes(a.maritalStatus);
   // Support multiple previous spouses via array (from form clone) or singular object (legacy)
-  const prevSpouseEntries = a.previousSpouses || (a.previousSpouse ? [a.previousSpouse] : []);
+  const prevSpouseEntries = (a.previousSpouses || (a.previousSpouse ? [a.previousSpouse] : []))
+    .filter(ps => ps.surname || ps.givenName); // filter out empty entries
   if (needsPrevSpouse && prevSpouseEntries.length > 0) {
     // Number of former spouses
     map.push({ pattern: /NumberOfFormerSpouses$|NUM_PREV_SPOUSES$|ddlNumberPrevSpouses$|tbxNumberPrevSpouses$/i, value: prevSpouseEntries[0].numberOfFormerSpouses || String(prevSpouseEntries.length), type: "text" });
@@ -1194,8 +1195,8 @@ function buildDynamicFieldMap(a) {
         { pattern: new RegExp(`ddlCNTRY_MARRIAGE_TERMINATED$|dlPrevSpouse_${ctl}_ddlCNTRY_MARRIAGE_TERMINATED$`, 'i'), value: ps.countryMarriageTerminated || ps.countryTerminated || "", type: "select-label", ...base },
       );
     });
-    // Generic fallbacks for single-entry compat
-    if (prevSpouseEntries.length === 1) {
+    // Generic fallbacks for single-entry compat (skip for W/widowed — DeceasedSpouse handles it)
+    if (prevSpouseEntries.length === 1 && a.maritalStatus !== 'W') {
       const ps = prevSpouseEntries[0];
       map.push(
         { pattern: /FormView1_tbxSURNAME$/i, value: ps.surname, type: "text" },
