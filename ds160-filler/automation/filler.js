@@ -1730,20 +1730,22 @@ function normalizeProfile(data) {
         usContact: (() => {
             const uc = data.usContact || data.us_contact || data.travel?.usContact || data.travel?.us_contact || {};
             const ucAddr = uc.address || {};
-            const nameNA = uc.nameDoNotKnow || uc.name_do_not_know || (!uc.surname && !uc.givenName);
+            const sn = na(uc.surname) || '';
+            const gn = na(uc.givenName || uc.given_name) || '';
+            const nameNA = uc.nameDoNotKnow || uc.name_do_not_know || (!sn && !gn);
             const orgNA = uc.orgDoNotKnow || uc.org_do_not_know || false;
             return {
-                surname: uc.surname || '',
-                givenName: uc.givenName || uc.given_name || '',
+                surname: sn,
+                givenName: gn,
                 nameDoNotKnow: nameNA,
-                organization: uc.organization || '',
+                organization: na(uc.organization) || '',
                 orgDoNotKnow: orgNA,
                 relationship: uc.relationship || '',
-                street1: uc.street1 || ucAddr.street1 || '',
-                street2: uc.street2 || ucAddr.street2 || '',
-                city: uc.city || ucAddr.city || '',
-                state: uc.state || ucAddr.state || '',
-                zip: uc.zip || ucAddr.zip || '',
+                street1: na(uc.street1 || ucAddr.street1) || '',
+                street2: na(uc.street2 || ucAddr.street2) || '',
+                city: na(uc.city || ucAddr.city) || '',
+                state: na(uc.state || ucAddr.state) || '',
+                zip: na(uc.zip || ucAddr.zip) || '',
                 phone: uc.phone || '',
                 email: na(uc.email) || '',
             };
