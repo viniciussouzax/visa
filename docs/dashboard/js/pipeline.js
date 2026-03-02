@@ -69,7 +69,8 @@ async function loadPipeline() {
 
     const counts = { new: 0, review: 0, approved: 0, done: 0 };
     (allApplicants || []).forEach(a => {
-        if (counts[a.pipeline_status] !== undefined) counts[a.pipeline_status]++;
+        if (a.pipeline_status === 'doing') counts.approved++;
+        else if (counts[a.pipeline_status] !== undefined) counts[a.pipeline_status]++;
     });
 
     Object.keys(counts).forEach(k => {
@@ -89,7 +90,10 @@ async function loadPipelineList() {
         .is('primary_applicant_id', null)
         .neq('pipeline_status', 'archived');
 
-    if (currentFilter) query = query.eq('pipeline_status', currentFilter);
+    if (currentFilter) {
+        if (currentFilter === 'approved') query = query.in('pipeline_status', ['approved', 'doing']);
+        else query = query.eq('pipeline_status', currentFilter);
+    }
     if (userCompanyId) query = query.eq('company_id', userCompanyId);
     if (searchQuery) {
         const safe = sanitizeSearch(searchQuery);
