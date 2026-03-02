@@ -4630,8 +4630,8 @@
         }
         function dateVal(dayId, monthId, yearId) {
             const d = val(dayId), m = val(monthId), y = val(yearId);
-            // If any field returns DNA (N/A checkbox checked), whole date is DNA
-            if (d === 'DNA' || m === 'DNA' || y === 'DNA') return 'DNA';
+            // If any field returns DNA (N/A checkbox checked), return null (Zod expects object or null)
+            if (d === 'DNA' || m === 'DNA' || y === 'DNA') return null;
             if (!d && !m && !y) return null;
             return { day: d, month: m, year: y };
         }
@@ -4691,7 +4691,7 @@
                         country: entryVal(e, 'ddlOthPermResCntry')
                     })) : [],
                     nationalId: val('tbxAPP_NATIONAL_ID'),
-                    ssn: [val('tbxAPP_SSN1'), val('tbxAPP_SSN2'), val('tbxAPP_SSN3')].filter(s => s).join('-') || 'N/A',
+                    ssn: (() => { const parts = [val('tbxAPP_SSN1'), val('tbxAPP_SSN2'), val('tbxAPP_SSN3')]; if (parts.some(p => p === 'DNA')) return 'DNA'; const valid = parts.filter(s => s); return valid.length === 3 ? valid.join('-') : 'N/A'; })(),
                     taxId: val('tbxAPP_TAX_ID'),
                 },
                 // Travel
