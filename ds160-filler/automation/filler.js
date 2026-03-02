@@ -964,6 +964,35 @@ async function fillPageCompletely(page, fieldMap) {
 }
 
 async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new Set()) {
+    // Dismiss any modal that appeared DURING filling (e.g., Travel address warnings)
+    // This prevents modals from blocking field visibility in subsequent phases
+    try {
+        const modalBg = page.locator('div.modalBackground, div[id*="modalBackground"]').first();
+        if (await modalBg.isVisible({ timeout: 200 }).catch(() => false)) {
+            console.log('[Filler] 🔔 Modal detectado no autoFillPass — fechando...');
+            const okBtns = ['input[id*="btnOkWarning"]', 'input[id*="btnOKWarning"]', 'a[id*="btnOk"]',
+                'div[id*="modal"] input[value*="OK"]', 'div[id*="modal"] input[value*="Yes"]',
+                'div[id*="modal"] input[value*="Continue"]'];
+            let closed = false;
+            for (const sel of okBtns) {
+                const btn = page.locator(sel).first();
+                if (await btn.isVisible({ timeout: 200 }).catch(() => false)) {
+                    await btn.click({ force: true });
+                    console.log(`[Filler] ✅ Modal fechado via: ${sel}`);
+                    await waitForPostback(page);
+                    closed = true;
+                    break;
+                }
+            }
+            if (!closed) {
+                await page.evaluate(() => {
+                    document.querySelectorAll('div.modalBackground, div[id*="modalBackground"]').forEach(el => el.remove());
+                    document.querySelectorAll('div[id*="modal_foreground"], div[id*="ModalPanel"]').forEach(el => { el.style.display = 'none'; });
+                }).catch(() => { });
+            }
+        }
+    } catch { }
+
     // Scroll page to ensure all elements are rendered (single round-trip, reduced delay)
     await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); window.scrollTo(0, 0); }).catch(() => { });
     await sleep(50);
@@ -1196,22 +1225,17 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                 continue;
             }
 
-            // Wait for the target field to appear by detecting new fields on page
-            // Uses element-based waiting instead of fixed timeouts
+            // Wait for the target field using Playwright's native waitForSelector
+            // Much more efficient than polling discoverFields repeatedly
             try {
                 const targetIdx = entry.addAnother.idx;
                 const targetCtl = `_ctl${String(targetIdx).padStart(2, '0')}_`;
-                // Wait up to 3s for the new entry's fields to appear (reduced from 8s)
-                for (let wait = 0; wait < 15; wait++) {
-                    await sleep(200);
-                    const newFields = await discoverFields(page);
-                    const hasTarget = newFields.some(f => f.id && f.id.includes(listName) && f.id.includes(targetCtl) && f.visible);
-                    if (hasTarget) {
-                        console.log(`[Filler] ✅ Novo entry (${targetCtl}) detectado para "${listName}"`);
-                        break;
-                    }
-                }
-            } catch { }
+                const targetSelector = `[id*="${listName}"][id*="${targetCtl}"]`;
+                await page.waitForSelector(targetSelector, { state: 'visible', timeout: 5000 });
+                console.log(`[Filler] ✅ Novo entry (${targetCtl}) detectado para "${listName}"`);
+            } catch {
+                console.warn(`[Filler] ⚠️ Timeout esperando novo entry para "${listName}" — continuando`);
+            }
 
             return { needsRescan: true, postbackField: `AddAnother:${listName}` };
         }
@@ -1322,7 +1346,36 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
         }
     }
 
-    if (textBatch.length > 0) {
+    // Phase 4: Fill text fields
+    // Critical fields (address, payer, travel) use locator.fill() for ASP.NET validator compatibility
+    // Non-critical fields use batch evaluate() for performance
+    const criticalPatterns = /Address|Street|City|Phone|Payer|Employer|tbx|txtExplain/i;
+    const criticalBatch = [];
+    const fastBatch = [];
+    for (const item of textBatch) {
+        if (criticalPatterns.test(item.id)) {
+            criticalBatch.push(item);
+        } else {
+            fastBatch.push(item);
+        }
+    }
+
+    // Fill critical fields individually via locator.fill() (simulates human typing)
+    for (const { id, value } of criticalBatch) {
+        try {
+            const loc = page.locator(`#${id.replace(/\$/g, '\\$')}`);
+            const isVis = await loc.isVisible({ timeout: 500 }).catch(() => false);
+            if (isVis) {
+                await loc.fill(value);
+                filled++;
+            }
+        } catch (e) {
+            console.warn(`[Filler] \u26a0\ufe0f Phase 4 critical fill falhou para ${id}: ${e.message}`);
+        }
+    }
+
+    // Fill non-critical fields in batch (fast path)
+    if (fastBatch.length > 0) {
         const batchFilled = await page.evaluate((batch) => {
             let count = 0;
             batch.forEach(({ id, value }) => {
@@ -1338,15 +1391,16 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                     } catch { el.value = value; }
                     el.dispatchEvent(new Event('input', { bubbles: true }));
                     el.dispatchEvent(new Event('change', { bubbles: true }));
-                    // Dispatch blur to trigger ASP.NET validators
                     el.dispatchEvent(new Event('blur', { bubbles: true }));
                     count++;
                 }
             });
             return count;
-        }, textBatch);
+        }, fastBatch);
         filled += batchFilled;
-        console.log(`[Filler] Batch fill: ${batchFilled} text fields`);
+    }
+    if (criticalBatch.length > 0 || fastBatch.length > 0) {
+        console.log(`[Filler] Phase 4: ${criticalBatch.length} critical (fill) + ${fastBatch.length} fast (batch)`);
     }
 
     if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} sem match:`, unmatched.slice(0, 10).join(', '));
