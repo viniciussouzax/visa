@@ -1638,7 +1638,11 @@ function normalizeProfile(data) {
             return (pt && pt !== 'N/A') ? pt : null;
         })(),
         purposeCategory: g(trav, 'purposeCategory', 'purpose_category') || null,
-        purposeSubCategory: g(trav, 'purposeSubCategory', 'purpose_sub_category') || null,
+        purposeSubCategory: (() => {
+            const raw = g(trav, 'purposeSubCategory', 'purpose_sub_category');
+            if (!raw) return null;
+            return raw.replace(/\//g, '-'); // DS-160 uses B1-B2, clone may use B1/B2
+        })(),
         hasSpecificPlans: trav.hasSpecificPlans === 'Y' || trav.hasSpecificPlans === true || trav.has_specific_plans === 'Y',
         travel: {
             arrivalDate: (() => {
@@ -1682,8 +1686,13 @@ function normalizeProfile(data) {
             const p = trav.payer;
             if (!p) return null;
             const addr = p.address || {};
+            // Treat placeholder/invalid values as null (triggers N/A checkbox in field-map)
+            const INVALID = ['DNA', 'N/A', 'N-A', 'NA', 'XXX', 'NONE', 'N/D', ''];
+            const cleanVal = (v) => (v && !INVALID.includes(String(v).trim().toUpperCase())) ? v : null;
             return {
                 ...p,
+                email: cleanVal(p.email),
+                phone: cleanVal(p.phone),
                 street1: p.street1 || addr.street1 || '',
                 street2: p.street2 || addr.street2 || '',
                 city: p.city || addr.city || '',
