@@ -1005,7 +1005,7 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
             postbackNeeded = true;
             postbackField = field.id;
             break; // One postback at a time
-        } catch { }
+        } catch (e) { console.warn(`[Filler] Phase1 click error: ${field.id}`, e.message); }
     }
 
     // Phase 2: Selects with postback (e.g. WhoIsPaying dropdown, ddlLocation)
@@ -1060,7 +1060,7 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                 postbackNeeded = true;
                 postbackField = field.id;
                 break;
-            } catch { }
+            } catch (e) { console.warn(`[Filler] Phase2 select error: ${field.id}`, e.message); }
         }
     }
 
@@ -1074,6 +1074,19 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
         const visibleAfter = fieldsAfter.filter(f => f.visible && f.id).length;
         const delta = visibleAfter - fieldsBeforeCount;
         if (delta !== 0) console.log(`[Filler] Postback ${postbackField}: ${delta > 0 ? '+' : ''}${delta} campos`);
+
+        // Wait-and-Verify: se postback não gerou campos novos, aguarda estabilização extra
+        if (delta === 0) {
+            await waitForPageReady(page, 1500);
+            const recheck = await discoverFields(page);
+            const recheckCount = recheck.filter(f => f.visible && f.id).length;
+            const delta2 = recheckCount - fieldsBeforeCount;
+            if (delta2 !== 0) {
+                console.log(`[Filler] Postback tardio ${postbackField}: +${delta2} campos após espera extra`);
+            } else {
+                console.log(`[Filler] Postback ${postbackField}: sem novos campos (postback de opções)`);
+            }
+        }
 
         return { needsRescan: true, postbackField };
     }
@@ -1218,7 +1231,7 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                         break;
                     }
                 }
-            } catch { }
+            } catch (e) { console.warn(`[Filler] Add Another wait error: ${listName}`, e.message); }
 
             return { needsRescan: true, postbackField: `AddAnother:${listName}` };
         }
@@ -1306,7 +1319,7 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                     break;
                 }
             }
-        } catch { }
+        } catch (e) { console.warn(`[Filler] Phase3 error: ${field.id}`, e.message); }
     }
 
     // Phase 4: Batch fill ALL empty text fields in one evaluate() call
