@@ -207,6 +207,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 await locSelect.selectOption(location);
                 console.log(`[Filler] Location selected: ${location}`);
                 await waitForPostback(page);
+                await sleep(2000); // Wait for modal to appear after postback
             }
 
             // 2) Dismiss location info modal if present
@@ -217,7 +218,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 .or(page.locator('[id*="pnlPopup"]'))
                 .or(page.locator('[id*="pnlModal"]'))
                 .first();
-            if (await modalOverlay.isVisible({ timeout: 2000 }).catch(() => false)) {
+            if (await modalOverlay.isVisible({ timeout: 5000 }).catch(() => false)) {
                 console.log('[Filler] Location info modal detected — clicking Close...');
                 const closeBtn = page.locator('a:text("Close")')
                     .or(page.locator('a:text("close")'))
@@ -231,8 +232,9 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 if (await firstClose.isVisible({ timeout: 3000 }).catch(() => false)) {
                     console.log('[Filler] Clicking modal close button');
                     await firstClose.click();
+                    await sleep(1000);
                 }
-                await modalOverlay.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => { });
+                await modalOverlay.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => { });
                 await waitForPageReady(page);
                 console.log('[Filler] Modal dismissed — page ready for captcha');
             }
@@ -244,7 +246,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 try {
                     const keys = { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key };
                     const imgEl = page.locator("img[id$='_CaptchaImage'], img[src*='captcha'], img[id$='c_default_ctl00_sitecontentplaceholder_uclocation_identifycaptcha1_captchaimage']").first();
-                    await imgEl.waitFor({ state: 'visible', timeout: 5000 });
+                    await imgEl.waitFor({ state: 'visible', timeout: 10000 });
                     const imgPath = path.join(TMP, 'captcha.png');
                     await imgEl.screenshot({ path: imgPath });
                     const answer = await solveCaptcha(imgPath, captchaMode, keys);
@@ -256,20 +258,21 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     await input.fill(answer);
                 } catch (e) {
                     console.warn(`[Filler] Captcha attempt ${attempt} failed:`, e.message);
-                    if (attempt < 3) { await sleep(1000); continue; }
+                    if (attempt < 3) { await sleep(2000); continue; }
                     return { success: false, error: 'Captcha não resolvido após 3 tentativas' };
                 }
 
                 // Dismiss any modal that might be covering buttons
                 const modalBg = page.locator('.modalBackground').first();
-                if (await modalBg.isVisible({ timeout: 500 }).catch(() => false)) {
+                if (await modalBg.isVisible({ timeout: 1000 }).catch(() => false)) {
                     console.log('[Filler] Modal covering buttons — dismissing...');
                     const closeBtns = page.locator('a:text("Close"), a:text("close"), [id*="btnClose"], [id*="lnkClose"], input[value="Close"], input[value="OK"], .modalPopup a, .modalPopup input[type="button"]');
                     const closeBtn = closeBtns.first();
                     if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
                         await closeBtn.click();
+                        await sleep(1000);
                     }
-                    await modalBg.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => { });
+                    await modalBg.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => { });
                     await waitForPageReady(page);
                     console.log('[Filler] Modal dismissed');
                 }
@@ -294,8 +297,9 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     // Click Retrieve button
                     const retrieveBtn = page.locator("a[id$='_lnkRetrieve'], input[id$='_btnRetrieve']").first();
                     const urlBefore = page.url();
-                    await retrieveBtn.click({ timeout: 5000 });
-                    await waitForUrlChange(page, urlBefore);
+                    await retrieveBtn.click({ timeout: 15000 });
+                    await sleep(2000);
+                    await waitForPageReady(page);
 
                     const currentUrl = page.url();
                     if (currentUrl.includes('SessionTimedOut') || currentUrl.includes('TimedOut')) {
@@ -327,9 +331,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         const targetX = box.x + box.width * (0.3 + Math.random() * 0.4);
                         const targetY = box.y + box.height * (0.3 + Math.random() * 0.4);
                         await page.mouse.move(targetX, targetY, { steps: 5 + Math.floor(Math.random() * 10) });
-                        await sleep(50 + Math.floor(Math.random() * 100));
+                        await sleep(100 + Math.floor(Math.random() * 200));
                     }
                     await startBtn.click({ timeout: 15000 });
+                    await sleep(2000);
                     await waitForPageReady(page);
 
                     const currentUrl = page.url();
@@ -343,7 +348,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
                     if (hasError || stillOnLanding) {
                         console.warn(`[Filler] Captcha likely wrong (attempt ${attempt}) — page didn't advance. Retrying...`);
-                        if (attempt < 3) await sleep(500);
+                        if (attempt < 3) await sleep(1000);
                         continue;
                     }
 
@@ -449,7 +454,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         console.log(`[Filler] 🆔 Application ID (from #content-main): ${contentMatch[1]}`);
                         if (typeof onAppId === 'function') onAppId(contentMatch[1]);
                     }
-                } catch (e) { console.warn('[Filler] AppID Strategy 0 failed:', e.message); }
+                } catch { }
 
                 // Strategy 1: Header selectors (Application bar at top of DS-160 pages)
                 if (!application.application_id) {
@@ -477,7 +482,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                                     break;
                                 }
                             }
-                        } catch (e) { console.warn(`[Filler] AppID header ${sel} failed:`, e.message); }
+                        } catch { }
                     }
                 }
 
@@ -602,6 +607,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         console.warn('[Filler] Recovery: botão Retrieve não encontrado');
                     }
 
+                    await sleep(3000);
                     await waitForPageReady(page);
 
                     const newUrl = page.url();
@@ -865,19 +871,16 @@ function isSelectEmpty(val) {
 
 async function waitForPostback(page) {
     const start = Date.now();
-    // Wait for ASP.NET postback manager to finish (reduced from 8s to 3s)
+    // Wait for ASP.NET postback manager to finish
     await page.waitForFunction(() => {
         const mgr = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
         return !mgr || !mgr.get_isInAsyncPostBack();
-    }, { timeout: 3000 }).catch(() => { });
+    }, { timeout: 8000 }).catch(() => { });
 
-    await sleep(50);
+    await sleep(150);
 
-    // Quick field count stabilization check (reduced from 3s to 800ms)
+    // Quick field count stabilization check
     const countFields = () => page.evaluate(() => {
-        // Force render by scrolling
-        window.scrollTo(0, document.body.scrollHeight);
-        window.scrollTo(0, 0);
         let c = 0;
         document.querySelectorAll('select, input:not([type="hidden"]), textarea').forEach(el => {
             if (el.offsetParent !== null || el.type === 'radio' || el.type === 'checkbox') c++;
@@ -887,41 +890,44 @@ async function waitForPostback(page) {
 
     const initial = await countFields();
     let last = initial, stable = 0;
-    while (Date.now() - start < 800) {
-        await sleep(80);
+    while (Date.now() - start < 3000) {
+        await sleep(150);
         const cur = await countFields();
-        if (cur !== initial && cur === last) { stable += 80; if (stable >= 160) break; }
-        else if (cur === initial && Date.now() - start > 300) break;
+        if (cur !== initial && cur === last) { stable += 150; if (stable >= 300) break; }
+        else if (cur === initial && Date.now() - start > 800) break;
         else stable = 0;
         last = cur;
     }
 }
 
-async function waitForPageReady(page, timeout = 2000) {
+async function waitForPageReady(page, timeout = 5000) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
-        // Single evaluate: scroll + count + postback check (reduces round-trips)
-        const result = await page.evaluate(() => {
-            window.scrollTo(0, document.body.scrollHeight);
-            window.scrollTo(0, 0);
+        // Scroll to force lazy elements to render
+        await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); window.scrollTo(0, 0); }).catch(() => { });
+        const count = await page.evaluate(() => {
             let c = 0;
             document.querySelectorAll("select, input[type='text'], input[type='radio'], textarea").forEach(el => {
                 if (el.offsetParent !== null || el.type === 'radio' || el.type === 'checkbox') c++;
             });
-            const m = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
-            const inPB = m?.get_isInAsyncPostBack?.() || false;
-            return { count: c, inPB };
-        }).catch(() => ({ count: 0, inPB: false }));
-        if (result.count > 0 && !result.inPB) return result.count;
-        await sleep(100);
+            return c;
+        }).catch(() => 0);
+        if (count > 0) {
+            const inPB = await page.evaluate(() => {
+                const m = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
+                return m?.get_isInAsyncPostBack?.() || false;
+            }).catch(() => false);
+            if (!inPB && (count >= 3 || Date.now() - start > 1500)) return count;
+        }
+        await sleep(200);
     }
     return 0;
 }
 
-async function waitForUrlChange(page, urlBefore, timeout = 4000) {
+async function waitForUrlChange(page, urlBefore, timeout = 10000) {
     const start = Date.now();
     while (page.url() === urlBefore && Date.now() - start < timeout) {
-        await sleep(150);
+        await sleep(300);
     }
     await waitForPageReady(page);
 }
@@ -940,7 +946,6 @@ async function fillPageCompletely(page, fieldMap) {
         }
         pass++;
     }
-
     const elapsed = ((Date.now() - pageStart) / 1000).toFixed(1);
     if (postbackLog.length > 0) {
         console.log(`[Filler] Postback triggers nesta página: ${postbackLog.join(' → ')}`);
@@ -964,38 +969,11 @@ async function fillPageCompletely(page, fieldMap) {
 }
 
 async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new Set()) {
-    // Dismiss any modal that appeared DURING filling (e.g., Travel address warnings)
-    // This prevents modals from blocking field visibility in subsequent phases
-    try {
-        const modalBg = page.locator('div.modalBackground, div[id*="modalBackground"]').first();
-        if (await modalBg.isVisible({ timeout: 200 }).catch(() => false)) {
-            console.log('[Filler] 🔔 Modal detectado no autoFillPass — fechando...');
-            const okBtns = ['input[id*="btnOkWarning"]', 'input[id*="btnOKWarning"]', 'a[id*="btnOk"]',
-                'div[id*="modal"] input[value*="OK"]', 'div[id*="modal"] input[value*="Yes"]',
-                'div[id*="modal"] input[value*="Continue"]'];
-            let closed = false;
-            for (const sel of okBtns) {
-                const btn = page.locator(sel).first();
-                if (await btn.isVisible({ timeout: 200 }).catch(() => false)) {
-                    await btn.click({ force: true });
-                    console.log(`[Filler] ✅ Modal fechado via: ${sel}`);
-                    await waitForPostback(page);
-                    closed = true;
-                    break;
-                }
-            }
-            if (!closed) {
-                await page.evaluate(() => {
-                    document.querySelectorAll('div.modalBackground, div[id*="modalBackground"]').forEach(el => el.remove());
-                    document.querySelectorAll('div[id*="modal_foreground"], div[id*="ModalPanel"]').forEach(el => { el.style.display = 'none'; });
-                }).catch(() => { });
-            }
-        }
-    } catch { }
-
-    // Scroll page to ensure all elements are rendered (single round-trip, reduced delay)
-    await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); window.scrollTo(0, 0); }).catch(() => { });
-    await sleep(50);
+    // Scroll page to ensure all elements are rendered (DS-160 lazy-loads some fields)
+    await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); }).catch(() => { });
+    await sleep(200);
+    await page.evaluate(() => { window.scrollTo(0, 0); }).catch(() => { });
+    await sleep(200);
     const fields = await discoverFields(page);
     const visible = fields.filter(f => f.visible && f.id);
     let postbackNeeded = false, filled = 0;
@@ -1027,7 +1005,7 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
             postbackNeeded = true;
             postbackField = field.id;
             break; // One postback at a time
-        } catch (e) { console.warn(`[Filler] Phase 1 click falhou para ${field.id}: ${e.message}`); }
+        } catch { }
     }
 
     // Phase 2: Selects with postback (e.g. WhoIsPaying dropdown, ddlLocation)
@@ -1082,7 +1060,7 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                 postbackNeeded = true;
                 postbackField = field.id;
                 break;
-            } catch (e) { console.warn(`[Filler] Phase 2 select falhou para ${field.id}: ${e.message}`); }
+            } catch { }
         }
     }
 
@@ -1225,17 +1203,22 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                 continue;
             }
 
-            // Wait for the target field using Playwright's native waitForSelector
-            // Much more efficient than polling discoverFields repeatedly
+            // Wait for the target field to appear by detecting new fields on page
+            // This is more reliable than fixed timeouts — we check for actual DOM changes
             try {
                 const targetIdx = entry.addAnother.idx;
                 const targetCtl = `_ctl${String(targetIdx).padStart(2, '0')}_`;
-                const targetSelector = `[id*="${listName}"][id*="${targetCtl}"]`;
-                await page.waitForSelector(targetSelector, { state: 'visible', timeout: 5000 });
-                console.log(`[Filler] ✅ Novo entry (${targetCtl}) detectado para "${listName}"`);
-            } catch {
-                console.warn(`[Filler] ⚠️ Timeout esperando novo entry para "${listName}" — continuando`);
-            }
+                // Wait up to 8s for the new entry's fields to appear
+                for (let wait = 0; wait < 16; wait++) {
+                    await sleep(500);
+                    const newFields = await discoverFields(page);
+                    const hasTarget = newFields.some(f => f.id && f.id.includes(listName) && f.id.includes(targetCtl) && f.visible);
+                    if (hasTarget) {
+                        console.log(`[Filler] ✅ Novo entry (${targetCtl}) detectado para "${listName}"`);
+                        break;
+                    }
+                }
+            } catch { }
 
             return { needsRescan: true, postbackField: `AddAnother:${listName}` };
         }
@@ -1244,11 +1227,7 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
 
 
     // Phase 3: Non-postback selects, clicks, checkboxes
-    // IMPORTANT: Re-scan DOM to get FRESH field state after all postbacks completed
-    // This prevents using stale snapshots where fields revealed by postbacks are missing
-    const freshFields = await discoverFields(page);
-    const freshVisible = freshFields.filter(f => f.visible && f.id);
-    for (const field of freshVisible) {
+    for (const field of visible) {
         if (!field.id) continue;
         if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
         if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
@@ -1261,9 +1240,9 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
 
         const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
         try {
-            const isVis = await loc.isVisible({ timeout: 1000 }).catch(() => false);
+            const isVis = await loc.isVisible({ timeout: 300 }).catch(() => false);
             if (!isVis) continue;
-            await loc.scrollIntoViewIfNeeded({ timeout: 1000 }).catch(() => { });
+            await loc.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
 
             switch (match.type) {
                 case 'select':
@@ -1327,15 +1306,12 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                     break;
                 }
             }
-        } catch (e) {
-            console.warn(`[Filler] ⚠️ Phase 3 falhou para ${field.id}: ${e.message}`);
-        }
+        } catch { }
     }
 
     // Phase 4: Batch fill ALL empty text fields in one evaluate() call
-    // Uses freshVisible (fresh DOM scan) to include fields revealed by postbacks
     const textBatch = [];
-    for (const field of freshVisible) {
+    for (const field of visible) {
         if (!field.id) continue;
         if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
         if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
@@ -1346,36 +1322,7 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
         }
     }
 
-    // Phase 4: Fill text fields
-    // Critical fields (address, payer, travel) use locator.fill() for ASP.NET validator compatibility
-    // Non-critical fields use batch evaluate() for performance
-    const criticalPatterns = /Address|Street|City|Phone|Payer|Employer|tbx|txtExplain/i;
-    const criticalBatch = [];
-    const fastBatch = [];
-    for (const item of textBatch) {
-        if (criticalPatterns.test(item.id)) {
-            criticalBatch.push(item);
-        } else {
-            fastBatch.push(item);
-        }
-    }
-
-    // Fill critical fields individually via locator.fill() (simulates human typing)
-    for (const { id, value } of criticalBatch) {
-        try {
-            const loc = page.locator(`#${id.replace(/\$/g, '\\$')}`);
-            const isVis = await loc.isVisible({ timeout: 500 }).catch(() => false);
-            if (isVis) {
-                await loc.fill(value);
-                filled++;
-            }
-        } catch (e) {
-            console.warn(`[Filler] \u26a0\ufe0f Phase 4 critical fill falhou para ${id}: ${e.message}`);
-        }
-    }
-
-    // Fill non-critical fields in batch (fast path)
-    if (fastBatch.length > 0) {
+    if (textBatch.length > 0) {
         const batchFilled = await page.evaluate((batch) => {
             let count = 0;
             batch.forEach(({ id, value }) => {
@@ -1391,16 +1338,13 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                     } catch { el.value = value; }
                     el.dispatchEvent(new Event('input', { bubbles: true }));
                     el.dispatchEvent(new Event('change', { bubbles: true }));
-                    el.dispatchEvent(new Event('blur', { bubbles: true }));
                     count++;
                 }
             });
             return count;
-        }, fastBatch);
+        }, textBatch);
         filled += batchFilled;
-    }
-    if (criticalBatch.length > 0 || fastBatch.length > 0) {
-        console.log(`[Filler] Phase 4: ${criticalBatch.length} critical (fill) + ${fastBatch.length} fast (batch)`);
+        console.log(`[Filler] Batch fill: ${batchFilled} text fields`);
     }
 
     if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} sem match:`, unmatched.slice(0, 10).join(', '));
@@ -1460,11 +1404,12 @@ async function clickNextAndWait(page) {
                     if (await btn.isVisible({ timeout: 500 }).catch(() => false)) {
                         await btn.click({ force: true });
                         console.log(`[Filler] ✅ Modal fechado via: ${sel}`);
+                        await sleep(500);
                         await waitForPostback(page);
                         dismissed = true;
                         break;
                     }
-                } catch (e) { console.warn(`[Filler] Modal btn ${sel} error:`, e.message); }
+                } catch { }
             }
 
             // Fallback: remove modal overlay via JavaScript
@@ -1480,7 +1425,7 @@ async function clickNextAndWait(page) {
                         el.style.display = 'none';
                     });
                 }).catch(() => { });
-                await sleep(100);
+                await sleep(300);
             }
         }
     } catch (e) {
@@ -1489,19 +1434,19 @@ async function clickNextAndWait(page) {
 
     const next = page.locator("input[type=submit][value*='Next']").first();
 
-    // Use waitForResponse to detect navigation (reduced from 15s to 6s)
+    // Use waitForResponse to detect navigation instead of polling
     const [response] = await Promise.all([
         page.waitForResponse(
             r => r.url().includes('.aspx') && r.status() === 200,
-            { timeout: 6000 }
+            { timeout: 15000 }
         ).catch(() => null),
         next.click()
     ]);
 
-    // Wait for URL change (reduced from 5s/300ms to 2s/150ms)
+    // Also wait for URL change as fallback
     const start = Date.now();
-    while (page.url() === urlBefore && Date.now() - start < 2000) {
-        await sleep(150);
+    while (page.url() === urlBefore && Date.now() - start < 5000) {
+        await sleep(300);
     }
     await waitForPageReady(page);
     return { navigated: page.url() !== urlBefore, newPage: identifyPage(page.url()) };
