@@ -112,8 +112,13 @@
                 permitindo refazer o preenchimento do zero.</p>
             <div class="flex gap-3 justify-center">
                 <button onclick="closeResetModal()"
-                    class="btn bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300">Cancelar</button>
-                <button onclick="confirmReset()" class="btn bg-amber-500 hover:bg-amber-600 text-white">Resetar</button>
+                    style="padding:8px 20px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:1px solid #d1d5db;background:#fff;color:#6b7280;transition:all 0.15s"
+                    onmouseover="this.style.borderColor='#9ca3af'"
+                    onmouseout="this.style.borderColor='#d1d5db'">Cancelar</button>
+                <button onclick="confirmReset()"
+                    style="padding:8px 20px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;background:#f59e0b;color:#fff;transition:all 0.15s"
+                    onmouseover="this.style.background='#d97706'"
+                    onmouseout="this.style.background='#f59e0b'">Resetar</button>
             </div>
         </div>
     </div>
