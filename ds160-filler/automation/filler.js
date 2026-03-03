@@ -9,9 +9,8 @@ const { solveCaptcha, solveCaptchaBase64 } = require('./captcha');
 // MODULES — modular architecture (helpers + generic page filler)
 // ====================================================================
 const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = require('./field-map');
-const { sleep, waitForPostback, waitForPageReady, waitForUrlChange, discoverFields } = require('./helpers/postback');
 const { fillPage, verifyPage } = require('./pages/generic-page');
-const { verifyPageFields, getValidationErrors } = require('./helpers/verify');
+const { getValidationErrors } = require('./helpers/verify');
 
 const TMP = path.join(__dirname, '..', 'tmp');
 
@@ -701,6 +700,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 let count = await noRadios.count();
                 for (let i = 0; i < count; i++) {
                     const radio = noRadios.nth(i);
+                    // Only click "No" if neither Yes nor No is already selected
                     const radioName = await radio.getAttribute('name').catch(() => '');
                     if (radioName) {
                         const anyChecked = await page.locator(`input[type=radio][name="${radioName}"]:checked`).count().catch(() => 0);
@@ -709,10 +709,12 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         }
                     }
                 }
+                // Log Security responses summary
                 const answeredYes = await page.locator("input[type=radio][id$='_0']:checked").count().catch(() => 0);
                 const answeredNo = await page.locator("input[type=radio][id$='_1']:checked").count().catch(() => 0);
                 const totalRadioGroups = answeredYes + answeredNo;
                 if (answeredYes > 0) {
+                    // Identify which questions were answered Yes
                     const yesRadios = await page.locator("input[type=radio][id$='_0']:checked").all().catch(() => []);
                     const yesIds = [];
                     for (const r of yesRadios) {
@@ -722,6 +724,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     console.warn(`[Filler] ⚠️ SECURITY: ${answeredYes} respostas YES: ${yesIds.join(', ')}`);
                 }
                 console.log(`[Filler] Security: ${answeredYes} Yes, ${answeredNo} No (${totalRadioGroups} perguntas)`);
+                // Report security page stats via callback
                 if (onPageFilled) {
                     try { onPageFilled({ pageName, fieldsFilled: totalRadioGroups, fieldsTotal: totalRadioGroups, emptyFields: [], elapsed: 0, passes: 1 }); } catch { }
                 }
@@ -739,7 +742,6 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 const verification = await verifyPage(page);
                 if (!verification.ok && attempt < 3) {
                     console.warn(`[Filler] Verificação falhou (tentativa ${attempt}): ${verification.empty.length} vazios — re-preenchendo`);
-                    // Re-fill only (loop will verify again)
                     continue;
                 }
 
@@ -871,29 +873,109 @@ function identifyPage(url) {
 
 function isFinalPage(name) { return ['Review', 'Photo', 'Confirmation'].includes(name); }
 function isSecurityPage(url) { return url.includes('SecurityandBackground'); }
-        }
-pass++;
+function isSelectEmpty(val) {
+    if (!val) return true;
+    const v = val.trim();
+    return v === '' || v === '-1' || v === '0' || v === 'SONE' || v.toUpperCase().includes('SELECT');
+}
+
+async function waitForPostback(page) {
+    const start = Date.now();
+    // Wait for ASP.NET postback manager to finish
+    await page.waitForFunction(() => {
+        const mgr = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
+        return !mgr || !mgr.get_isInAsyncPostBack();
+    }, { timeout: 8000 }).catch(() => { });
+
+    await sleep(150);
+
+    // Quick field count stabilization check
+    const countFields = () => page.evaluate(() => {
+        let c = 0;
+        document.querySelectorAll('select, input:not([type="hidden"]), textarea').forEach(el => {
+            if (el.offsetParent !== null || el.type === 'radio' || el.type === 'checkbox') c++;
+        });
+        return c;
+    }).catch(() => 0);
+
+    const initial = await countFields();
+    let last = initial, stable = 0;
+    while (Date.now() - start < 3000) {
+        await sleep(150);
+        const cur = await countFields();
+        if (cur !== initial && cur === last) { stable += 150; if (stable >= 300) break; }
+        else if (cur === initial && Date.now() - start > 800) break;
+        else stable = 0;
+        last = cur;
     }
-const elapsed = ((Date.now() - pageStart) / 1000).toFixed(1);
-if (postbackLog.length > 0) {
-    console.log(`[Filler] Postback triggers nesta página: ${postbackLog.join(' → ')}`);
 }
-// Detect empty fields that should have been filled — helps diagnose validation errors
-const emptyFields = await page.evaluate(() => {
-    const empty = [];
-    document.querySelectorAll("select, input[type='text'], textarea").forEach(el => {
-        if (el.offsetParent !== null && !el.value && !el.disabled && el.id
-            && !/HelpButton|btnWarning|btnRecover|btnCancel|btnClient|btnNextPage/.test(el.id)) {
-            empty.push(el.id.split('_').pop());
+
+async function waitForPageReady(page, timeout = 5000) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+        // Scroll to force lazy elements to render
+        await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); window.scrollTo(0, 0); }).catch(() => { });
+        const count = await page.evaluate(() => {
+            let c = 0;
+            document.querySelectorAll("select, input[type='text'], input[type='radio'], textarea").forEach(el => {
+                if (el.offsetParent !== null || el.type === 'radio' || el.type === 'checkbox') c++;
+            });
+            return c;
+        }).catch(() => 0);
+        if (count > 0) {
+            const inPB = await page.evaluate(() => {
+                const m = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
+                return m?.get_isInAsyncPostBack?.() || false;
+            }).catch(() => false);
+            if (!inPB && (count >= 3 || Date.now() - start > 1500)) return count;
         }
-    });
-    return empty;
-}).catch(() => []);
-if (emptyFields.length > 0) {
-    console.warn(`[Filler] ⚠️ ${emptyFields.length} campos vazios após preenchimento: ${emptyFields.slice(0, 8).join(', ')}`);
+        await sleep(200);
+    }
+    return 0;
 }
-console.log(`[Filler] Página preenchida em ${pass} pass(es) [${elapsed}s]${emptyFields.length > 0 ? ` — ${emptyFields.length} vazios` : ''}`);
-return { passes: pass, postbackLog, elapsed: parseFloat(elapsed), emptyFields };
+
+async function waitForUrlChange(page, urlBefore, timeout = 10000) {
+    const start = Date.now();
+    while (page.url() === urlBefore && Date.now() - start < timeout) {
+        await sleep(300);
+    }
+    await waitForPageReady(page);
+}
+
+async function fillPageCompletely(page, fieldMap) {
+    await waitForPageReady(page);
+    const pageStart = Date.now();
+    let pass = 0, needsRescan = true;
+    const postbackLog = [];
+    const addAnotherClicked = new Set(); // Track "list:idx" to prevent infinite Add Another
+    while (needsRescan && pass < 10) {
+        const result = await autoFillPass(page, fieldMap, pass, addAnotherClicked);
+        needsRescan = result.needsRescan;
+        if (result.postbackField) {
+            postbackLog.push(result.postbackField);
+        }
+        pass++;
+    }
+    const elapsed = ((Date.now() - pageStart) / 1000).toFixed(1);
+    if (postbackLog.length > 0) {
+        console.log(`[Filler] Postback triggers nesta página: ${postbackLog.join(' → ')}`);
+    }
+    // Detect empty fields that should have been filled — helps diagnose validation errors
+    const emptyFields = await page.evaluate(() => {
+        const empty = [];
+        document.querySelectorAll("select, input[type='text'], textarea").forEach(el => {
+            if (el.offsetParent !== null && !el.value && !el.disabled && el.id
+                && !/HelpButton|btnWarning|btnRecover|btnCancel|btnClient|btnNextPage/.test(el.id)) {
+                empty.push(el.id.split('_').pop());
+            }
+        });
+        return empty;
+    }).catch(() => []);
+    if (emptyFields.length > 0) {
+        console.warn(`[Filler] ⚠️ ${emptyFields.length} campos vazios após preenchimento: ${emptyFields.slice(0, 8).join(', ')}`);
+    }
+    console.log(`[Filler] Página preenchida em ${pass} pass(es) [${elapsed}s]${emptyFields.length > 0 ? ` — ${emptyFields.length} vazios` : ''}`);
+    return { passes: pass, postbackLog, elapsed: parseFloat(elapsed), emptyFields };
 }
 
 async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new Set()) {
