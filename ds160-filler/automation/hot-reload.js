@@ -22,6 +22,20 @@ const GROUPS = [
         files: ['filler.js', 'field-map.js', 'queue.js', 'captcha.js', 'version.json'],
         critical: ['filler.js', 'field-map.js'],
     },
+    {
+        name: 'helpers',
+        remoteDir: 'ds160-filler/automation/helpers',
+        localDir: path.join(__dirname, 'helpers'),
+        files: ['postback.js', 'fill-field.js', 'add-another.js', 'verify.js'],
+        critical: ['postback.js', 'fill-field.js'],
+    },
+    {
+        name: 'pages',
+        remoteDir: 'ds160-filler/automation/pages',
+        localDir: path.join(__dirname, 'pages'),
+        files: ['generic-page.js'],
+        critical: ['generic-page.js'],
+    },
 ];
 
 // Legacy compat
