@@ -11,18 +11,30 @@ const { isPostbackSelect, isPostbackClick } = require('../field-map');
 const SKIP_PATTERN = /HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/;
 
 /**
+ * Pre-computa um mapa ID→entry para evitar O(n×m) regex matching.
+ * Chamado UMA VEZ por página, reutilizado em todos os passes.
+ */
+function buildFieldIndex(fieldMap, visibleFields) {
+    const index = new Map(); // fieldId → fieldMap entry
+    for (const field of visibleFields) {
+        if (!field.id || SKIP_PATTERN.test(field.id)) continue;
+        for (const entry of fieldMap) {
+            if (entry.pattern.test(field.id)) {
+                index.set(field.id, entry);
+                break; // 1 match por campo
+            }
+        }
+    }
+    return index;
+}
+
+/**
  * Preenche uma página DS-160 inteira usando as 4 fases:
  * 1. Postback clicks (condicionais)
  * 2. Postback selects (condicionais)
  * 2.5. Add Another (listas dinâmicas)
  * 3. Non-postback selects/clicks/checkboxes/radios
  * 4. Text fields (batch para normais, locator.fill para críticos)
- *
- * @param {Page} page - Playwright page
- * @param {Array} fieldMap - Array de { pattern, value, type, addAnother? }
- * @param {object} [options] - Opções
- * @param {number} [options.maxPasses=10] - Máximo de passes
- * @returns {{ passes, elapsed, emptyFields }}
  */
 async function fillPage(page, fieldMap, options = {}) {
     const { maxPasses = 10 } = options;
@@ -69,15 +81,12 @@ async function verifyPage(page) {
 // ==================== INTERNAL: Single Fill Pass ====================
 
 async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
-    // Scroll para forçar rendering (ASP.NET lazy-renders abaixo da dobra)
+    // Scroll rápido para forçar rendering (sem sleep excessivo)
     await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight);
-    }).catch(() => { });
-    await sleep(200);
-    await page.evaluate(() => {
         window.scrollTo(0, 0);
     }).catch(() => { });
-    await sleep(200);
+    await sleep(100); // 100ms ao invés de 400ms
 
     const fields = await discoverFields(page);
     const visible = fields.filter(f => f.visible && f.id);
@@ -85,11 +94,14 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
     let postbackField = null;
     const fieldsBeforeCount = visible.length;
 
+    // Pre-compute match index (feito UMA VEZ por pass, evita O(n×m) nas 4 fases)
+    const matchIndex = buildFieldIndex(fieldMap, visible);
+
     // ======================== PHASE 1: Postback Clicks ========================
     for (const field of visible) {
-        if (!field.id || SKIP_PATTERN.test(field.id)) continue;
+        if (!field.id) continue;
         if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
-        const match = fieldMap.find(m => m.pattern.test(field.id));
+        const match = matchIndex.get(field.id);
         if (!match || match.type !== 'click') continue;
         if (!isPostbackClick(field.id, field.type)) continue;
         if (field.checked) continue;
@@ -97,7 +109,6 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
         const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
         try {
             if (!await loc.isVisible({ timeout: 300 }).catch(() => false)) continue;
-            await loc.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
             await loc.click();
             filled++;
             postbackNeeded = true;
@@ -111,7 +122,7 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
         for (const field of visible) {
             if (!field.id || field.tag !== 'select') continue;
             if (!isPostbackSelect(field.id)) continue;
-            const match = fieldMap.find(m => m.pattern.test(field.id));
+            const match = matchIndex.get(field.id);
             if (!match) continue;
             if (!isSelectEmpty(field.value)) continue;
 
@@ -121,7 +132,7 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
                     filled++;
                     postbackNeeded = true;
                     postbackField = field.id;
-                    break; // 1 postback por vez
+                    break;
                 }
             } catch (e) { console.warn(`[Page] Phase2 error: ${field.id}`, e.message); }
         }
@@ -129,25 +140,8 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
 
     // Se postback necessário: espera e rescanneia
     if (postbackNeeded) {
-        console.log(`[Page] Pass ${passNum} — ${filled} preenchidos, ⏳ postback: ${postbackField}`);
+        console.log(`[Page] Pass ${passNum} — postback: ${postbackField}`);
         await waitForPostback(page);
-
-        // Wait-and-Verify: verifica se postback gerou campos novos
-        const fieldsAfter = await discoverFields(page);
-        const visibleAfter = fieldsAfter.filter(f => f.visible && f.id).length;
-        const delta = visibleAfter - fieldsBeforeCount;
-        if (delta !== 0) {
-            console.log(`[Page] Postback ${postbackField}: ${delta > 0 ? '+' : ''}${delta} campos`);
-        } else {
-            // Espera extra para postbacks tardios
-            await waitForPageReady(page, 1500);
-            const recheck = await discoverFields(page);
-            const delta2 = recheck.filter(f => f.visible && f.id).length - fieldsBeforeCount;
-            if (delta2 !== 0) {
-                console.log(`[Page] Postback tardio: +${delta2} campos`);
-            }
-        }
-
         return { needsRescan: true, postbackField };
     }
 
@@ -171,18 +165,15 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
             const trackKey = `${listName}:${entry.addAnother.idx}`;
             const listClickCount = [...addAnotherClicked].filter(k => k.startsWith(listName + ':')).length;
             if (listClickCount >= 5) {
-                console.warn(`[Page] ⚠️ Limite Add Another para "${listName}" (max 5)`);
                 addAnotherClicked.add(trackKey);
                 continue;
             }
 
-            // Guard: verifica se entry anterior está preenchido
+            // Guard simplificado: só verifica se ctl00 existe no DOM
             const prevIdx = entry.addAnother.idx - 1;
             const prevCtl = `_ctl${String(prevIdx).padStart(2, '0')}_`;
-            const prevFilled = visible.some(f => f.id && f.id.includes(listName) && f.id.includes(prevCtl) &&
-                ((f.tag === 'select' && !isSelectEmpty(f.value)) || (f.tag === 'input' && f.value && f.value.trim())));
-
-            if (!prevFilled) continue; // Precisa preencher o anterior primeiro
+            const prevExists = visible.some(f => f.id && f.id.includes(listName) && f.id.includes(prevCtl));
+            if (!prevExists && prevIdx > 0) continue;
 
             console.log(`[Page] 📋 Add Another: "${listName}" (idx ${entry.addAnother.idx})`);
             const ok = await clickAddAnother(page, listName, entry.addAnother.idx);
@@ -196,9 +187,9 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
 
     // ======================== PHASE 3: Non-postback Fields ========================
     for (const field of visible) {
-        if (!field.id || SKIP_PATTERN.test(field.id)) continue;
+        if (!field.id) continue;
         if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
-        const match = fieldMap.find(m => m.pattern.test(field.id));
+        const match = matchIndex.get(field.id);
         if (!match) continue;
         if (match.type === 'text') continue; // Phase 4
 
@@ -232,9 +223,9 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
     // ======================== PHASE 4: Text Fields (Hybrid) ========================
     const textBatch = [];
     for (const field of visible) {
-        if (!field.id || SKIP_PATTERN.test(field.id)) continue;
+        if (!field.id) continue;
         if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
-        const match = fieldMap.find(m => m.pattern.test(field.id));
+        const match = matchIndex.get(field.id);
         if (!match || match.type !== 'text') continue;
         if (field.value && field.value.trim() !== '') continue;
         if (match.value == null) continue;
@@ -252,15 +243,11 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
                 if (await fillText(page, id, value)) filled++;
             } catch (e) { console.warn(`[Page] Phase4 critical: ${id}`, e.message); }
         }
-        if (criticalBatch.length > 0) {
-            console.log(`[Page] Phase4: ${criticalBatch.length} críticos via locator.fill()`);
-        }
 
         // Campos normais: batch evaluate (rápido)
         if (normalBatch.length > 0) {
             const batchFilled = await fillTextBatch(page, normalBatch);
             filled += batchFilled;
-            console.log(`[Page] Phase4: ${batchFilled} normais via batch evaluate()`);
         }
     }
 
