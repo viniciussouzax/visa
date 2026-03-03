@@ -1,10 +1,34 @@
-// helpers/add-another.js — Lógica de Add Another com retry + waitForSelector
+// helpers/add-another.js — Lógica de Add Another com retry + force click
 'use strict';
 const { waitForPostback, sleep } = require('./postback');
 
 /**
+ * Remove tooltip overlays do DS-160 que interceptam pointer events.
+ * O ToolTipManager1 cria um <span id="bubble_tooltip_content"> que bloqueia clicks.
+ */
+async function dismissTooltip(page) {
+    await page.evaluate(() => {
+        // Remove tooltip overlay que intercepta pointer events
+        const tooltip = document.getElementById('ctl00_ToolTipManager1');
+        if (tooltip) tooltip.style.display = 'none';
+        const bubble = document.getElementById('bubble_tooltip_content');
+        if (bubble) {
+            const parent = bubble.closest('[style]');
+            if (parent) parent.style.display = 'none';
+        }
+        // Remove qualquer overlay com bubble_tooltip
+        document.querySelectorAll('[id*="bubble_tooltip"], [id*="ToolTipManager"]').forEach(el => {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+        });
+    }).catch(() => { });
+}
+
+/**
  * Clica em "Add Another" ou "InsertButton" para uma lista específica do DS-160,
  * depois espera o novo entry aparecer no DOM.
+ * 
+ * CORREÇÃO: usa { force: true } para ignorar tooltip interceptors do ASP.NET
  *
  * @param {Page} page - Playwright page
  * @param {string} listName - Nome da DataList no DS-160 (ex: 'DListAlias', 'dtlOTHER_NATL')
@@ -16,6 +40,9 @@ async function clickAddAnother(page, listName, targetIdx) {
     const targetSelector = `[id*="${listName}"][id*="${targetCtl}"]`;
     let clicked = false;
 
+    // CRITICAL: Remover tooltip que bloqueia clicks antes de qualquer tentativa
+    await dismissTooltip(page);
+
     // Strategy 1: InsertButton (para Permanent Resident e entries ctl01+)
     try {
         const insertBtns = await page.locator(`[id*="${listName}"][id*="InsertButton"]`).all();
@@ -23,7 +50,8 @@ async function clickAddAnother(page, listName, targetIdx) {
             const btn = insertBtns[i];
             if (await btn.isVisible({ timeout: 500 }).catch(() => false)) {
                 await btn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-                await btn.click();
+                await dismissTooltip(page); // Dismiss again after scroll
+                await btn.click({ force: true }); // force: true ignora tooltip overlay
                 const btnId = await btn.getAttribute('id').catch(() => '');
                 console.log(`[AddAnother] ✅ InsertButton clicado: ${btnId}`);
                 await waitForPostback(page);
@@ -50,7 +78,8 @@ async function clickAddAnother(page, listName, targetIdx) {
 
                 if (nearList) {
                     await link.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-                    await link.click();
+                    await dismissTooltip(page);
+                    await link.click({ force: true });
                     console.log(`[AddAnother] ✅ "Add Another" link clicado para "${listName}"`);
                     await waitForPostback(page);
                     clicked = true;
@@ -60,18 +89,33 @@ async function clickAddAnother(page, listName, targetIdx) {
         } catch (e) { console.warn(`[AddAnother] link error: ${e.message}`); }
     }
 
-    // Strategy 3: "Add Another" genérico (último recurso)
+    // Strategy 3: "Add Another" genérico via JavaScript (bypass total)
     if (!clicked) {
         try {
-            const genericAdd = page.getByRole('link', { name: 'Add Another' }).first();
-            if (await genericAdd.isVisible({ timeout: 500 }).catch(() => false)) {
-                await genericAdd.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-                await genericAdd.click();
-                console.log(`[AddAnother] ✅ "Add Another" genérico clicado para "${listName}"`);
+            // Use evaluate to click via JS directly — bypasses ALL overlays
+            const clickedViaJS = await page.evaluate((ln) => {
+                const links = document.querySelectorAll(`a[id*="${ln}"][id*="InsertButton"]`);
+                if (links.length > 0) {
+                    links[links.length - 1].click();
+                    return true;
+                }
+                // Fallback: any "Add Another" link
+                const allAddLinks = document.querySelectorAll('a');
+                for (const a of allAddLinks) {
+                    if (a.textContent.trim() === 'Add Another' && a.id.includes(ln)) {
+                        a.click();
+                        return true;
+                    }
+                }
+                return false;
+            }, listName).catch(() => false);
+
+            if (clickedViaJS) {
+                console.log(`[AddAnother] ✅ JS click bypass para "${listName}"`);
                 await waitForPostback(page);
                 clicked = true;
             }
-        } catch (e) { console.warn(`[AddAnother] generic error: ${e.message}`); }
+        } catch (e) { console.warn(`[AddAnother] JS fallback error: ${e.message}`); }
     }
 
     if (!clicked) {
@@ -85,17 +129,12 @@ async function clickAddAnother(page, listName, targetIdx) {
         console.log(`[AddAnother] ✅ Entry ${targetCtl} detectado para "${listName}"`);
         return true;
     } catch {
-        // Retry: re-clica e espera de novo
-        console.warn(`[AddAnother] ⚠️ Timeout ${targetSelector} — retry`);
-        const retryBtn = page.locator(`[id*="${listName}"][id*="InsertButton"]`).last();
-        if (await retryBtn.isVisible({ timeout: 500 }).catch(() => false)) {
-            await retryBtn.click();
-        } else {
-            const retryLink = page.getByRole('link', { name: 'Add Another' }).first();
-            if (await retryLink.isVisible({ timeout: 500 }).catch(() => false)) {
-                await retryLink.click();
-            }
-        }
+        // Retry: JS click bypass e espera de novo
+        console.warn(`[AddAnother] ⚠️ Timeout ${targetSelector} — retry via JS`);
+        await page.evaluate((ln) => {
+            const links = document.querySelectorAll(`a[id*="${ln}"][id*="InsertButton"]`);
+            if (links.length > 0) links[links.length - 1].click();
+        }, listName).catch(() => { });
         await waitForPostback(page);
 
         try {
