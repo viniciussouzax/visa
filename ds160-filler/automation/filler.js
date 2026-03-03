@@ -1671,7 +1671,13 @@ function normalizeProfile(data) {
             if (single) return [single];
             return [];
         })(),
-        payingForTrip: trav.whoIsPaying || trav.who_is_paying || null,
+        payingForTrip: (() => {
+            // Clone form uses OTH/SELF/COMPANY etc, DS-160 select uses O/S/C/P/H
+            const raw = trav.whoIsPaying || trav.who_is_paying || null;
+            if (!raw) return null;
+            const PAYER_MAP = { 'OTH': 'O', 'SELF': 'S', 'COMPANY': 'C', 'EMPLOYER': 'P', 'PETITIONER': 'H' };
+            return PAYER_MAP[raw.toUpperCase()] || raw;
+        })(),
         payer: (() => {
             const p = trav.payer;
             if (!p) return null;
