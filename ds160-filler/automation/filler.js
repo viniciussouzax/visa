@@ -1692,7 +1692,7 @@ function normalizeProfile(data) {
             return {
                 ...p,
                 email: cleanVal(p.email),
-                phone: cleanVal(p.phone),
+                // phone: keep original — DS-160 requires payer phone (no N/A checkbox)
                 street1: p.street1 || addr.street1 || '',
                 street2: p.street2 || addr.street2 || '',
                 city: p.city || addr.city || '',
