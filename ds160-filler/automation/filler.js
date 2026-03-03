@@ -1051,15 +1051,34 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
     }
 
     // If postback needed, stop here and rescan after postback
+    // "Wait-and-Verify" pattern: ensure new fields actually appeared
     if (postbackNeeded) {
         if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} campos sem match:`, unmatched.slice(0, 10).join(', '));
         console.log(`[Filler] Pass ${passNum} — ${filled}/${visible.length} preenchidos, ⏳ postback: ${postbackField}`);
 
         await waitForPostback(page);
+
+        // VERIFY: check that postback actually changed the DOM
         const fieldsAfter = await discoverFields(page);
         const visibleAfter = fieldsAfter.filter(f => f.visible && f.id).length;
         const delta = visibleAfter - fieldsBeforeCount;
-        if (delta !== 0) console.log(`[Filler] Postback ${postbackField}: ${delta > 0 ? '+' : ''}${delta} campos`);
+
+        if (delta === 0) {
+            // Postback didn't change field count — might have been silently ignored
+            // Retry: wait a bit more and re-check (ASP.NET may still be processing)
+            console.warn(`[Filler] ⚠️ Postback ${postbackField} não mudou campos (${fieldsBeforeCount}→${visibleAfter}). Aguardando estabilização...`);
+            await waitForPageReady(page, 1500);
+            const recheck = await discoverFields(page);
+            const recheckVisible = recheck.filter(f => f.visible && f.id).length;
+            const delta2 = recheckVisible - fieldsBeforeCount;
+            if (delta2 !== 0) {
+                console.log(`[Filler] ✅ Postback ${postbackField} estabilizou: ${delta2 > 0 ? '+' : ''}${delta2} campos`);
+            } else {
+                console.log(`[Filler] Postback ${postbackField}: sem mudança de campos (pode ser postback que apenas atualiza opções)`);
+            }
+        } else {
+            console.log(`[Filler] Postback ${postbackField}: ${delta > 0 ? '+' : ''}${delta} campos`);
+        }
 
         return { needsRescan: true, postbackField };
     }
@@ -1190,15 +1209,39 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
             }
 
             // Wait for the target field using Playwright's native waitForSelector
-            // Much more efficient than polling discoverFields repeatedly
+            // If it fails, retry the click once (ViewState might have dropped the first click)
             try {
                 const targetIdx = entry.addAnother.idx;
                 const targetCtl = `_ctl${String(targetIdx).padStart(2, '0')}_`;
                 const targetSelector = `[id*="${listName}"][id*="${targetCtl}"]`;
-                await page.waitForSelector(targetSelector, { state: 'visible', timeout: 5000 });
-                console.log(`[Filler] ✅ Novo entry (${targetCtl}) detectado para "${listName}"`);
-            } catch {
-                console.warn(`[Filler] ⚠️ Timeout esperando novo entry para "${listName}" — continuando`);
+
+                let entryFound = false;
+                for (let retry = 0; retry < 2; retry++) {
+                    try {
+                        await page.waitForSelector(targetSelector, { state: 'visible', timeout: 3000 });
+                        console.log(`[Filler] ✅ Novo entry (${targetCtl}) detectado para "${listName}"${retry > 0 ? ' (retry)' : ''}`);
+                        entryFound = true;
+                        break;
+                    } catch {
+                        if (retry === 0) {
+                            console.warn(`[Filler] ⚠️ Entry ${targetCtl} não apareceu — re-tentando clique...`);
+                            // Re-click: try InsertButton first (more reliable), then Add Another link
+                            const retryBtn = page.locator(`[id*="${listName}"][id*="InsertButton"]`).last();
+                            const retryLink = page.locator(`a:has-text("Add Another")`).first();
+                            if (await retryBtn.isVisible({ timeout: 500 }).catch(() => false)) {
+                                await retryBtn.click();
+                            } else if (await retryLink.isVisible({ timeout: 500 }).catch(() => false)) {
+                                await retryLink.click();
+                            }
+                            await waitForPostback(page);
+                        }
+                    }
+                }
+                if (!entryFound) {
+                    console.warn(`[Filler] ⚠️ Entry ${targetCtl} não apareceu após retry — continuando`);
+                }
+            } catch (e) {
+                console.warn(`[Filler] ⚠️ Erro no ensureEntryExists para "${listName}": ${e.message}`);
             }
 
             return { needsRescan: true, postbackField: `AddAnother:${listName}` };
