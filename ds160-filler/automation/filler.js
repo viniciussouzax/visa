@@ -436,44 +436,78 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             onPage(pageName);
             visited.push(pageName);
 
-            // Capture application_id — unified single evaluate (was 4 separate strategies with 10+ round-trips)
+            // Capture application_id — the ID format is AA00XXXXXX (2 letters + 8+ alphanumeric)
+            // e.g. AA00FCUFGX — contains LETTERS after the initial prefix, NOT just digits!
             if (!application.application_id) {
+                // Strategy 0: #content-main — the Application ID is visible on EVERY DS-160 page
                 try {
-                    const appId = await page.evaluate(() => {
-                        // Strategy 1: Header selectors (most reliable)
-                        const headerSels = ['[id$="_lblAppID"]', '[id$="_lblBarcode"]', '[id*="AppID"]',
-                            '[id*="ucApplicationBar"] span', '[id*="pnlAppID"] span'];
-                        for (const sel of headerSels) {
-                            const els = document.querySelectorAll(sel);
-                            for (const el of els) {
-                                const m = el.textContent?.match(/[A-Z]{2}[A-Z0-9]{8,}/);
-                                if (m) return m[0];
-                            }
-                        }
-                        // Strategy 2: #content-main text
-                        const main = document.getElementById('content-main');
-                        if (main) {
-                            const m = main.textContent?.match(/\b([A-Z]{2}[A-Z0-9]{8,})\b/);
-                            if (m) return m[1];
-                        }
-                        // Strategy 3: Full page text (last resort)
-                        const body = document.body?.innerText || '';
-                        const m = body.match(/Application\s*(?:ID|Id|id)[:\s]*([A-Z]{2}[A-Z0-9]{8,})/i)
-                            || body.match(/\b([A-Z]{2}[A-Z0-9]{8,})\b/);
-                        return m ? (m[1] || m[0]) : '';
-                    });
-
-                    // Strategy 4: URL (no browser round-trip needed)
-                    const urlMatch = !appId && (url.match(/[?&](?:c|appId|applicationId)=([A-Z]{2}[A-Z0-9]{8,})/i)
-                        || url.match(/\/([A-Z]{2}[A-Z0-9]{8,})\//));
-
-                    const finalId = appId || (urlMatch ? urlMatch[1] : '');
-                    if (finalId) {
-                        application.application_id = finalId;
-                        console.log(`[Filler] 🆔 Application ID: ${finalId}`);
-                        if (typeof onAppId === 'function') onAppId(finalId);
+                    const contentMain = page.locator('#content-main');
+                    const mainText = await contentMain.innerText({ timeout: 2000 }).catch(() => '');
+                    const contentMatch = mainText.match(/\b([A-Z]{2}[A-Z0-9]{8,})\b/);
+                    if (contentMatch) {
+                        application.application_id = contentMatch[1];
+                        console.log(`[Filler] 🆔 Application ID (from #content-main): ${contentMatch[1]}`);
+                        if (typeof onAppId === 'function') onAppId(contentMatch[1]);
                     }
-                } catch (e) { console.warn('[Filler] AppID capture failed:', e.message); }
+                } catch (e) { console.warn('[Filler] AppID Strategy 0 failed:', e.message); }
+
+                // Strategy 1: Header selectors (Application bar at top of DS-160 pages)
+                if (!application.application_id) {
+                    const headerSelectors = [
+                        "span[id$='_lblAppID']",
+                        "span[id$='_lblBarcode']",
+                        "span[id*='AppID']",
+                        "span[id*='Barcode']",
+                        "#ctl00_ucApplicationBar_lblAppID",
+                        "#ctl00_ucApplicationBar_lblBarcode",
+                        "[id*='ucApplicationBar'] span",
+                        "[id*='pnlAppID'] span",
+                    ];
+                    for (const sel of headerSelectors) {
+                        if (application.application_id) break;
+                        try {
+                            const els = await page.locator(sel).all();
+                            for (const el of els) {
+                                const text = await el.innerText().catch(() => '');
+                                const match = text.match(/[A-Z]{2}[A-Z0-9]{8,}/);
+                                if (match) {
+                                    application.application_id = match[0];
+                                    console.log(`[Filler] 🆔 Application ID (from header "${sel}"): ${match[0]}`);
+                                    if (typeof onAppId === 'function') onAppId(match[0]);
+                                    break;
+                                }
+                            }
+                        } catch (e) { console.warn(`[Filler] AppID header ${sel} failed:`, e.message); }
+                    }
+                }
+
+                // Strategy 2: URL query parameters or path
+                if (!application.application_id) {
+                    const urlAppIdMatch = url.match(/[?&](?:c|appId|applicationId)=([A-Z]{2}[A-Z0-9]{8,})/i)
+                        || url.match(/\/([A-Z]{2}[A-Z0-9]{8,})\//);
+                    if (urlAppIdMatch) {
+                        application.application_id = urlAppIdMatch[1];
+                        console.log(`[Filler] 🆔 Application ID (from URL): ${urlAppIdMatch[1]}`);
+                        if (typeof onAppId === 'function') onAppId(urlAppIdMatch[1]);
+                    }
+                }
+
+                // Strategy 3: Full page text search (last resort)
+                if (!application.application_id) {
+                    try {
+                        const bodyText = await page.evaluate(() => {
+                            const allText = document.body?.innerText || '';
+                            const m = allText.match(/Application\s*(?:ID|Id|id)[:\s]*([A-Z]{2}[A-Z0-9]{8,})/i)
+                                || allText.match(/\b([A-Z]{2}[A-Z0-9]{8,})\b/);
+                            return m ? m[1] || m[0] : '';
+                        });
+                        if (bodyText) {
+                            application.application_id = bodyText;
+                            console.log(`[Filler] 🆔 Application ID (from page text): ${bodyText}`);
+                            if (typeof onAppId === 'function') onAppId(bodyText);
+                        }
+                    } catch { }
+                }
             }
 
             // ====== RECOVERY PAGE: Retrieve a DS-160 Application ======
@@ -653,11 +687,12 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 await waitForPageReady(page);
                 // Step 1: Fill any security fields that have actual data from the user's JSON
                 await fillPageCompletely(page, fieldMap);
-                // Step 2: Default remaining unanswered radios to "No" via Playwright clicks
+                // Step 2: Default remaining unanswered radios to "No"
                 let noRadios = page.locator("input[type=radio][id$='_1']");
                 let count = await noRadios.count();
                 for (let i = 0; i < count; i++) {
                     const radio = noRadios.nth(i);
+                    // Only click "No" if neither Yes nor No is already selected
                     const radioName = await radio.getAttribute('name').catch(() => '');
                     if (radioName) {
                         const anyChecked = await page.locator(`input[type=radio][name="${radioName}"]:checked`).count().catch(() => 0);
@@ -671,6 +706,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 const answeredNo = await page.locator("input[type=radio][id$='_1']:checked").count().catch(() => 0);
                 const totalRadioGroups = answeredYes + answeredNo;
                 if (answeredYes > 0) {
+                    // Identify which questions were answered Yes
                     const yesRadios = await page.locator("input[type=radio][id$='_0']:checked").all().catch(() => []);
                     const yesIds = [];
                     for (const r of yesRadios) {
@@ -680,8 +716,9 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     console.warn(`[Filler] ⚠️ SECURITY: ${answeredYes} respostas YES: ${yesIds.join(', ')}`);
                 }
                 console.log(`[Filler] Security: ${answeredYes} Yes, ${answeredNo} No (${totalRadioGroups} perguntas)`);
+                // Report security page stats via callback
                 if (onPageFilled) {
-                    try { onPageFilled({ pageName, fieldsFilled: totalRadioGroups, fieldsTotal: totalRadioGroups, emptyFields: [], elapsed: 0, passes: 1 }); } catch (e) { console.warn('[Filler] onPageFilled error:', e.message); }
+                    try { onPageFilled({ pageName, fieldsFilled: totalRadioGroups, fieldsTotal: totalRadioGroups, emptyFields: [], elapsed: 0, passes: 1 }); } catch { }
                 }
                 await clickNextAndWait(page);
                 continue;
@@ -838,7 +875,7 @@ async function waitForPostback(page) {
 
     // Quick field count stabilization check (reduced from 3s to 800ms)
     const countFields = () => page.evaluate(() => {
-        // Scroll to force rendering of all elements (ASP.NET lazy-renders below fold)
+        // Force render by scrolling
         window.scrollTo(0, document.body.scrollHeight);
         window.scrollTo(0, 0);
         let c = 0;
@@ -1050,34 +1087,15 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
     }
 
     // If postback needed, stop here and rescan after postback
-    // "Wait-and-Verify" pattern: ensure new fields actually appeared
     if (postbackNeeded) {
         if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} campos sem match:`, unmatched.slice(0, 10).join(', '));
         console.log(`[Filler] Pass ${passNum} — ${filled}/${visible.length} preenchidos, ⏳ postback: ${postbackField}`);
 
         await waitForPostback(page);
-
-        // VERIFY: check that postback actually changed the DOM
         const fieldsAfter = await discoverFields(page);
         const visibleAfter = fieldsAfter.filter(f => f.visible && f.id).length;
         const delta = visibleAfter - fieldsBeforeCount;
-
-        if (delta === 0) {
-            // Postback didn't change field count — might have been silently ignored
-            // Retry: wait a bit more and re-check (ASP.NET may still be processing)
-            console.warn(`[Filler] ⚠️ Postback ${postbackField} não mudou campos (${fieldsBeforeCount}→${visibleAfter}). Aguardando estabilização...`);
-            await waitForPageReady(page, 1500);
-            const recheck = await discoverFields(page);
-            const recheckVisible = recheck.filter(f => f.visible && f.id).length;
-            const delta2 = recheckVisible - fieldsBeforeCount;
-            if (delta2 !== 0) {
-                console.log(`[Filler] ✅ Postback ${postbackField} estabilizou: ${delta2 > 0 ? '+' : ''}${delta2} campos`);
-            } else {
-                console.log(`[Filler] Postback ${postbackField}: sem mudança de campos (pode ser postback que apenas atualiza opções)`);
-            }
-        } else {
-            console.log(`[Filler] Postback ${postbackField}: ${delta > 0 ? '+' : ''}${delta} campos`);
-        }
+        if (delta !== 0) console.log(`[Filler] Postback ${postbackField}: ${delta > 0 ? '+' : ''}${delta} campos`);
 
         return { needsRescan: true, postbackField };
     }
@@ -1208,39 +1226,15 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
             }
 
             // Wait for the target field using Playwright's native waitForSelector
-            // If it fails, retry the click once (ViewState might have dropped the first click)
+            // Much more efficient than polling discoverFields repeatedly
             try {
                 const targetIdx = entry.addAnother.idx;
                 const targetCtl = `_ctl${String(targetIdx).padStart(2, '0')}_`;
                 const targetSelector = `[id*="${listName}"][id*="${targetCtl}"]`;
-
-                let entryFound = false;
-                for (let retry = 0; retry < 2; retry++) {
-                    try {
-                        await page.waitForSelector(targetSelector, { state: 'visible', timeout: 3000 });
-                        console.log(`[Filler] ✅ Novo entry (${targetCtl}) detectado para "${listName}"${retry > 0 ? ' (retry)' : ''}`);
-                        entryFound = true;
-                        break;
-                    } catch {
-                        if (retry === 0) {
-                            console.warn(`[Filler] ⚠️ Entry ${targetCtl} não apareceu — re-tentando clique...`);
-                            // Re-click: try InsertButton first (more reliable), then Add Another link
-                            const retryBtn = page.locator(`[id*="${listName}"][id*="InsertButton"]`).last();
-                            const retryLink = page.locator(`a:has-text("Add Another")`).first();
-                            if (await retryBtn.isVisible({ timeout: 500 }).catch(() => false)) {
-                                await retryBtn.click();
-                            } else if (await retryLink.isVisible({ timeout: 500 }).catch(() => false)) {
-                                await retryLink.click();
-                            }
-                            await waitForPostback(page);
-                        }
-                    }
-                }
-                if (!entryFound) {
-                    console.warn(`[Filler] ⚠️ Entry ${targetCtl} não apareceu após retry — continuando`);
-                }
-            } catch (e) {
-                console.warn(`[Filler] ⚠️ Erro no ensureEntryExists para "${listName}": ${e.message}`);
+                await page.waitForSelector(targetSelector, { state: 'visible', timeout: 5000 });
+                console.log(`[Filler] ✅ Novo entry (${targetCtl}) detectado para "${listName}"`);
+            } catch {
+                console.warn(`[Filler] ⚠️ Timeout esperando novo entry para "${listName}" — continuando`);
             }
 
             return { needsRescan: true, postbackField: `AddAnother:${listName}` };
