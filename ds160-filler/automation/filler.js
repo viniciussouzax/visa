@@ -653,34 +653,30 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 await waitForPageReady(page);
                 // Step 1: Fill any security fields that have actual data from the user's JSON
                 await fillPageCompletely(page, fieldMap);
-                // Step 2: Default remaining unanswered radios to "No" via batch evaluate
-                const { answeredYes, answeredNo, totalRadioGroups, yesIds } = await page.evaluate(() => {
-                    let yesCount = 0, noCount = 0;
-                    const yIds = [];
-                    // Find all radio groups and default unanswered to "No"
-                    const noRadios = document.querySelectorAll("input[type=radio][id$='_1']");
-                    noRadios.forEach(radio => {
-                        if (radio.offsetParent === null) return; // skip hidden
-                        const name = radio.name;
-                        if (!name) return;
-                        const checked = document.querySelector(`input[type=radio][name="${name}"]:checked`);
-                        if (!checked) {
-                            radio.checked = true;
-                            radio.dispatchEvent(new Event('change', { bubbles: true }));
-                            radio.dispatchEvent(new Event('click', { bubbles: true }));
+                // Step 2: Default remaining unanswered radios to "No" via Playwright clicks
+                let noRadios = page.locator("input[type=radio][id$='_1']");
+                let count = await noRadios.count();
+                for (let i = 0; i < count; i++) {
+                    const radio = noRadios.nth(i);
+                    const radioName = await radio.getAttribute('name').catch(() => '');
+                    if (radioName) {
+                        const anyChecked = await page.locator(`input[type=radio][name="${radioName}"]:checked`).count().catch(() => 0);
+                        if (anyChecked === 0 && await radio.isVisible().catch(() => false)) {
+                            await radio.click();
                         }
-                    });
-                    // Count all answered
-                    document.querySelectorAll("input[type=radio][id$='_0']:checked").forEach(r => {
-                        yesCount++;
-                        const id = r.id?.replace(/_0$/, '');
-                        if (id) yIds.push(id);
-                    });
-                    document.querySelectorAll("input[type=radio][id$='_1']:checked").forEach(() => noCount++);
-                    return { answeredYes: yesCount, answeredNo: noCount, totalRadioGroups: yesCount + noCount, yesIds: yIds };
-                }).catch(() => ({ answeredYes: 0, answeredNo: 0, totalRadioGroups: 0, yesIds: [] }));
-
+                    }
+                }
+                // Log Security responses summary
+                const answeredYes = await page.locator("input[type=radio][id$='_0']:checked").count().catch(() => 0);
+                const answeredNo = await page.locator("input[type=radio][id$='_1']:checked").count().catch(() => 0);
+                const totalRadioGroups = answeredYes + answeredNo;
                 if (answeredYes > 0) {
+                    const yesRadios = await page.locator("input[type=radio][id$='_0']:checked").all().catch(() => []);
+                    const yesIds = [];
+                    for (const r of yesRadios) {
+                        const id = await r.getAttribute('id').catch(() => '');
+                        if (id) yesIds.push(id.replace(/_0$/, ''));
+                    }
                     console.warn(`[Filler] ⚠️ SECURITY: ${answeredYes} respostas YES: ${yesIds.join(', ')}`);
                 }
                 console.log(`[Filler] Security: ${answeredYes} Yes, ${answeredNo} No (${totalRadioGroups} perguntas)`);
@@ -842,9 +838,11 @@ async function waitForPostback(page) {
 
     // Quick field count stabilization check (reduced from 3s to 800ms)
     const countFields = () => page.evaluate(() => {
+        // Scroll to force rendering of all elements (ASP.NET lazy-renders below fold)
+        window.scrollTo(0, document.body.scrollHeight);
+        window.scrollTo(0, 0);
         let c = 0;
-        const container = document.getElementById('content-main') || document;
-        container.querySelectorAll('select, input:not([type="hidden"]), textarea').forEach(el => {
+        document.querySelectorAll('select, input:not([type="hidden"]), textarea').forEach(el => {
             if (el.offsetParent !== null || el.type === 'radio' || el.type === 'checkbox') c++;
         });
         return c;
@@ -865,11 +863,12 @@ async function waitForPostback(page) {
 async function waitForPageReady(page, timeout = 2000) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
-        // Single evaluate: count + postback check (reduces round-trips)
+        // Single evaluate: scroll + count + postback check (reduces round-trips)
         const result = await page.evaluate(() => {
+            window.scrollTo(0, document.body.scrollHeight);
+            window.scrollTo(0, 0);
             let c = 0;
-            const container = document.getElementById('content-main') || document;
-            container.querySelectorAll("select, input[type='text'], input[type='radio'], textarea").forEach(el => {
+            document.querySelectorAll("select, input[type='text'], input[type='radio'], textarea").forEach(el => {
                 if (el.offsetParent !== null || el.type === 'radio' || el.type === 'checkbox') c++;
             });
             const m = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
@@ -1418,17 +1417,15 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
 async function discoverFields(page) {
     return page.evaluate(() => {
         const fields = [];
-        // Scope to #content-main to avoid scanning header/footer/nav elements
-        const container = document.getElementById('content-main') || document;
-        container.querySelectorAll('select').forEach(sel => {
+        document.querySelectorAll('select').forEach(sel => {
             if (sel.id.includes('ddlLanguage')) return;
             fields.push({ tag: 'select', id: sel.id, visible: sel.offsetParent !== null, value: sel.value, optCount: sel.options.length });
         });
-        container.querySelectorAll('input').forEach(inp => {
+        document.querySelectorAll('input').forEach(inp => {
             if (inp.type === 'hidden') return;
             fields.push({ tag: 'input', id: inp.id, type: inp.type, visible: inp.offsetParent !== null || inp.type === 'radio' || inp.type === 'checkbox', value: inp.value, checked: inp.checked });
         });
-        container.querySelectorAll('textarea').forEach(ta => {
+        document.querySelectorAll('textarea').forEach(ta => {
             fields.push({ tag: 'textarea', id: ta.id, visible: ta.offsetParent !== null, value: ta.value });
         });
         return fields;
