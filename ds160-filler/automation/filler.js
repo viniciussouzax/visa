@@ -1216,20 +1216,37 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
                 continue;
             }
 
-            // Wait for the target field to appear by detecting new fields on page
-            // This is more reliable than fixed timeouts — we check for actual DOM changes
+            // Wait for the target field to appear using Playwright's native waitForSelector
+            // Much faster and more reliable than polling loop (16×500ms + discoverFields)
             try {
                 const targetIdx = entry.addAnother.idx;
                 const targetCtl = `_ctl${String(targetIdx).padStart(2, '0')}_`;
-                // Wait up to 8s for the new entry's fields to appear
-                for (let wait = 0; wait < 16; wait++) {
-                    await sleep(500);
-                    const newFields = await discoverFields(page);
-                    const hasTarget = newFields.some(f => f.id && f.id.includes(listName) && f.id.includes(targetCtl) && f.visible);
-                    if (hasTarget) {
-                        console.log(`[Filler] ✅ Novo entry (${targetCtl}) detectado para "${listName}"`);
-                        break;
+                const targetSelector = `[id*="${listName}"][id*="${targetCtl}"]`;
+
+                try {
+                    await page.waitForSelector(targetSelector, { state: 'visible', timeout: 4000 });
+                    console.log(`[Filler] ✅ Novo entry (${targetCtl}) detectado para "${listName}"`);
+                } catch {
+                    // Retry: re-clica o último InsertButton/Add Another e tenta novamente
+                    console.warn(`[Filler] ⚠️ Timeout esperando ${targetSelector} — retry`);
+
+                    // Tenta re-clicar InsertButton
+                    const retryBtn = page.locator(`[id*="${listName}"][id*="InsertButton"]`).last();
+                    if (await retryBtn.isVisible({ timeout: 500 }).catch(() => false)) {
+                        await retryBtn.click();
+                    } else {
+                        // Fallback: re-clica Add Another link genérico
+                        const retryLink = page.getByRole('link', { name: 'Add Another' }).first();
+                        if (await retryLink.isVisible({ timeout: 500 }).catch(() => false)) {
+                            await retryLink.click();
+                        }
                     }
+                    await waitForPostback(page);
+
+                    // Segunda tentativa de esperar o campo
+                    await page.waitForSelector(targetSelector, { state: 'visible', timeout: 4000 })
+                        .then(() => console.log(`[Filler] ✅ Retry bem-sucedido: ${targetCtl} para "${listName}"`))
+                        .catch(() => console.error(`[Filler] ❌ Add Another falhou após retry: ${targetSelector}`));
                 }
             } catch (e) { console.warn(`[Filler] Add Another wait error: ${listName}`, e.message); }
 
