@@ -1339,7 +1339,9 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
         } catch (e) { console.warn(`[Filler] Phase3 error: ${field.id}`, e.message); }
     }
 
-    // Phase 4: Batch fill ALL empty text fields in one evaluate() call
+    // Phase 4: Fill text fields — hybrid approach
+    // Critical fields (address, phone, etc.) use locator.fill() for ASP.NET validator support
+    // Normal fields use batch evaluate for performance
     const textBatch = [];
     for (const field of visible) {
         if (!field.id) continue;
@@ -1353,28 +1355,51 @@ async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new
     }
 
     if (textBatch.length > 0) {
-        const batchFilled = await page.evaluate((batch) => {
-            let count = 0;
-            batch.forEach(({ id, value }) => {
-                const el = document.getElementById(id);
-                if (el && (!el.value || el.value.trim() === '')) {
-                    try {
-                        const proto = el.tagName === 'TEXTAREA'
-                            ? window.HTMLTextAreaElement.prototype
-                            : window.HTMLInputElement.prototype;
-                        const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
-                        if (setter) setter.call(el, value);
-                        else el.value = value;
-                    } catch { el.value = value; }
-                    el.dispatchEvent(new Event('input', { bubbles: true }));
-                    el.dispatchEvent(new Event('change', { bubbles: true }));
-                    count++;
+        // Separate critical fields that need Playwright native fill (dispara blur/validators ASP.NET)
+        const CRITICAL = /Address|Street|City|Phone|Payer|Employer|Salary|Income|Occupation/i;
+        const criticalBatch = textBatch.filter(f => CRITICAL.test(f.id));
+        const normalBatch = textBatch.filter(f => !CRITICAL.test(f.id));
+
+        // Critical fields: Playwright locator.fill() — triggers blur, change, validators
+        for (const { id, value } of criticalBatch) {
+            try {
+                const loc = page.locator(`#${id.replace(/\$/g, '\\$')}`);
+                const isVis = await loc.isVisible({ timeout: 300 }).catch(() => false);
+                if (isVis) {
+                    await loc.fill(value);
+                    filled++;
                 }
-            });
-            return count;
-        }, textBatch);
-        filled += batchFilled;
-        console.log(`[Filler] Batch fill: ${batchFilled} text fields`);
+            } catch (e) { console.warn(`[Filler] Phase4 critical fill error: ${id}`, e.message); }
+        }
+        if (criticalBatch.length > 0) {
+            console.log(`[Filler] Phase4 critical: ${criticalBatch.length} campos via locator.fill()`);
+        }
+
+        // Normal fields: batch evaluate (fast, single round-trip)
+        if (normalBatch.length > 0) {
+            const batchFilled = await page.evaluate((batch) => {
+                let count = 0;
+                batch.forEach(({ id, value }) => {
+                    const el = document.getElementById(id);
+                    if (el && (!el.value || el.value.trim() === '')) {
+                        try {
+                            const proto = el.tagName === 'TEXTAREA'
+                                ? window.HTMLTextAreaElement.prototype
+                                : window.HTMLInputElement.prototype;
+                            const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+                            if (setter) setter.call(el, value);
+                            else el.value = value;
+                        } catch { el.value = value; }
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                        count++;
+                    }
+                });
+                return count;
+            }, normalBatch);
+            filled += batchFilled;
+            console.log(`[Filler] Phase4 batch: ${batchFilled} campos via evaluate()`);
+        }
     }
 
     if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} sem match:`, unmatched.slice(0, 10).join(', '));
