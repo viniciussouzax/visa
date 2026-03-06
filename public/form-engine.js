@@ -1093,7 +1093,7 @@ class FormEngine {
     // =========================================
     editField(secId, fieldId, rowEl) {
         // Prevent double-click issues
-        if (rowEl.querySelector('.edit-inline')) return;
+        if (rowEl.querySelector('.edit-inline, .edit-radio')) return;
 
         const f = this._findField(secId, fieldId);
         if (!f) return;
@@ -1104,40 +1104,78 @@ class FormEngine {
 
         let editHtml = '';
         const opts = this._resolveOptions(f);
+        const clearBtn = val ? `<button class="edit-radio-btn cancel" onclick="event.stopPropagation();engine.saveEdit('${secId}', '${fieldId}', '')" title="Limpar resposta">🗑</button>` : '';
 
         switch (f.type) {
             case 'text': case 'phone': case 'email': case 'textarea':
-                editHtml = `<input type="text" class="edit-inline" value="${val === 'DNA' || val === 'UNKNOWN' ? '' : val}" 
+                editHtml = `<div style="display:flex;gap:4px;align-items:center;width:100%">
+                    <input type="text" class="edit-inline" value="${val === 'DNA' || val === 'UNKNOWN' ? '' : val}" 
                     maxlength="${f.maxLen || 100}" autofocus
                     onblur="engine.saveEdit('${secId}', '${fieldId}', this.value)"
-                    onkeydown="if(event.key==='Enter'){this.blur();}if(event.key==='Escape'){engine.cancelEdit();}">`;
+                    onkeydown="if(event.key==='Enter'){this.blur();}if(event.key==='Escape'){engine.cancelEdit();}">
+                    <button class="edit-radio-btn cancel" onclick="event.stopPropagation();engine.cancelEdit()" title="Cancelar">✕</button>
+                    ${clearBtn}
+                </div>`;
                 break;
 
             case 'select':
-                editHtml = `<select class="edit-inline" autofocus onchange="engine.saveEdit('${secId}', '${fieldId}', this.value)" onblur="engine.saveEdit('${secId}', '${fieldId}', this.value)">
+                editHtml = `<div style="display:flex;gap:4px;align-items:center;width:100%">
+                    <select class="edit-inline" autofocus onchange="engine.saveEdit('${secId}', '${fieldId}', this.value)">
                     <option value="">— Selecione —</option>
                     ${opts.map(o => `<option value="${o.value}" ${o.value === val ? 'selected' : ''}>${o.label}</option>`).join('')}
-                </select>`;
+                </select>
+                    <button class="edit-radio-btn cancel" onclick="event.stopPropagation();engine.cancelEdit()" title="Cancelar">✕</button>
+                    ${clearBtn}
+                </div>`;
                 break;
 
             case 'radio':
                 const radioOpts = opts.length ? opts : [{ value: "Y", label: "Sim" }, { value: "N", label: "Não" }];
-                editHtml = `<div class="edit-inline edit-radio">
+                editHtml = `<div class="edit-radio">
                     ${radioOpts.map(o => `<button class="edit-radio-btn ${o.value === val ? 'active' : ''}" 
-                        onclick="engine.saveEdit('${secId}', '${fieldId}', '${o.value}')">${o.label}</button>`).join('')}
-                    <button class="edit-radio-btn cancel" onclick="engine.cancelEdit()">✕</button>
+                        onclick="event.stopPropagation();engine.saveEdit('${secId}', '${fieldId}', '${o.value}')">${o.label}</button>`).join('')}
+                    ${clearBtn}
+                    <button class="edit-radio-btn cancel" onclick="event.stopPropagation();engine.cancelEdit()">✕</button>
+                </div>`;
+                break;
+
+            case 'date':
+                const dVal = val || {};
+                editHtml = `<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+                    <input type="text" class="edit-inline" placeholder="DD" maxlength="2" value="${dVal.day || ''}" 
+                        style="width:45px;text-align:center" id="_ed_day" onkeydown="if(event.key==='Enter'){document.getElementById('_ed_save').click();}">
+                    <span style="color:var(--text-muted)">/</span>
+                    <input type="text" class="edit-inline" placeholder="MM" maxlength="2" value="${dVal.month || ''}" 
+                        style="width:45px;text-align:center" id="_ed_month" onkeydown="if(event.key==='Enter'){document.getElementById('_ed_save').click();}">
+                    <span style="color:var(--text-muted)">/</span>
+                    <input type="text" class="edit-inline" placeholder="AAAA" maxlength="4" value="${dVal.year || ''}" 
+                        style="width:60px;text-align:center" id="_ed_year" onkeydown="if(event.key==='Enter'){document.getElementById('_ed_save').click();}">
+                    <button class="edit-radio-btn active" id="_ed_save" onclick="event.stopPropagation();engine.saveDateEdit('${secId}', '${fieldId}')">✓</button>
+                    <button class="edit-radio-btn cancel" onclick="event.stopPropagation();engine.cancelEdit()">✕</button>
+                    ${clearBtn}
                 </div>`;
                 break;
 
             default:
-                editHtml = `<input type="text" class="edit-inline" value="${val}" autofocus
+                editHtml = `<div style="display:flex;gap:4px;align-items:center;width:100%">
+                    <input type="text" class="edit-inline" value="${val}" autofocus
                     onblur="engine.saveEdit('${secId}', '${fieldId}', this.value)"
-                    onkeydown="if(event.key==='Enter'){this.blur();}">`;
+                    onkeydown="if(event.key==='Enter'){this.blur();}">
+                    <button class="edit-radio-btn cancel" onclick="event.stopPropagation();engine.cancelEdit()">✕</button>
+                </div>`;
         }
 
         valueEl.innerHTML = editHtml;
         const input = valueEl.querySelector('input, select');
         if (input) setTimeout(() => input.focus(), 10);
+    }
+
+    saveDateEdit(secId, fieldId) {
+        const day = (document.getElementById('_ed_day')?.value || '').replace(/\D/g, '');
+        const month = (document.getElementById('_ed_month')?.value || '').replace(/\D/g, '');
+        const year = (document.getElementById('_ed_year')?.value || '').replace(/\D/g, '');
+        const dateVal = (day || month || year) ? { day, month, year } : '';
+        this.saveEdit(secId, fieldId, dateVal);
     }
 
     saveEdit(secId, fieldId, newVal) {
