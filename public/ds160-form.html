@@ -461,33 +461,36 @@
         // STARTUP
         // ==========================================
         (async function startup() {
-            await resolveCompanyId();
+            try {
+                await resolveCompanyId();
 
-            // Validate assessor token explicitly
-            if (_isAssessor && _authToken && _authToken !== SUPABASE_KEY) {
-                try {
-                    await AppCore.sbFetch('applicants?select=id&limit=1', 'GET');
-                } catch (e) {
-                    console.warn('[Auth] Invalid token, downgrading to Solicitante view');
-                    _isAssessor = false;
-                    document.body.classList.add('role-solicitante');
+                // Validate assessor token explicitly
+                if (_isAssessor && _authToken && _authToken !== SUPABASE_KEY) {
+                    try {
+                        await AppCore.sbFetch('applicants?select=id&limit=1', 'GET');
+                    } catch (e) {
+                        console.warn('[Auth] Invalid token, downgrading to Solicitante view');
+                        _isAssessor = false;
+                        document.body.classList.add('role-solicitante');
+                    }
                 }
-            }
 
-            // If group param and no specific id, show group selector
-            if (_groupParam && !_applicantId) {
-                await showGroupSelector();
+                // If group param and no specific id, show group selector
+                if (_groupParam && !_applicantId) {
+                    await showGroupSelector();
+                    return;
+                }
+
+                await loadApplicantData();
+                // Open requested tab
+                if (_tabParam === 'assessor') showView('review');
+                else if (_tabParam === 'code') showView('code');
+                else showView('form');
+            } catch (e) {
+                console.error('[Startup] Error:', e);
+            } finally {
                 AppCore.hideLoading();
-                return;
             }
-
-            await loadApplicantData();
-            // Open requested tab
-            if (_tabParam === 'assessor') showView('review');
-            else if (_tabParam === 'code') showView('code');
-            else showView('form');
-            // Hide loading screen
-            AppCore.hideLoading();
         })();
     </script>
 </body>
