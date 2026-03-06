@@ -454,8 +454,12 @@
                         `Deseja vincular <strong>${dragApplicant.name}</strong> ao grupo <strong>${gc}</strong>?`,
                         async () => {
                             try {
-                                await sbFetch(`applicants?id=eq.${dragApplicant.id}`, 'PATCH', { group_code: gc });
+                                // Inherit group priority
+                                const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
+                                const groupPri = groupMembers.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
+                                await sbFetch(`applicants?id=eq.${dragApplicant.id}`, 'PATCH', { group_code: gc, priority: groupPri });
                                 dragApplicant.group_code = gc;
+                                dragApplicant.priority = groupPri;
                                 renderTable(); updateBadges();
                                 showToast('Vinculado ao grupo!', 'success');
                             } catch (err) { showToast('Erro: ' + err.message, 'error'); }
@@ -788,9 +792,13 @@
             const gc = select?.value;
             if (!gc) { showToast('Selecione um grupo', 'error'); return; }
             try {
-                await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { group_code: gc });
+                // Inherit group priority
+                const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
+                const groupMembers = applicants.filter(x => x.group_code === gc);
+                const groupPri = groupMembers.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
+                await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { group_code: gc, priority: groupPri });
                 const a = applicants.find(x => x.id === id);
-                if (a) a.group_code = gc;
+                if (a) { a.group_code = gc; a.priority = groupPri; }
                 closeManageMenu(); renderTable(); updateBadges();
                 showToast(`Vinculado ao grupo ${gc}!`, 'success');
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
