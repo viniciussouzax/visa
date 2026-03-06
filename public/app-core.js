@@ -216,4 +216,7 @@
         _injectLoading();
     }
 
+    // Safety timeout: auto-hide loading after 4s in case startup fails
+    setTimeout(hideLoading, 4000);
+
 })();
