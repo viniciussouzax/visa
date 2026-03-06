@@ -137,7 +137,6 @@ class FormEngine {
             card.innerHTML = `
                 <div class="section-header" onclick="engine.toggleSection(${idx})">
                     <div class="section-title">
-                        <span class="chevron ${isOpen ? 'open' : ''}" id="chev-${idx}">▶</span>
                         <span class="section-num" id="secnum-${idx}">${idx + 1}</span>
                         ${sec.label}
                     </div>
