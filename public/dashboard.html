@@ -283,6 +283,7 @@
 
         function getFilteredByPage() { return applicants.filter(a => a.stage === currentPage); }
         function getFiltered() {
+            const PRIORITY_ORDER = { emergencia: 0, urgente: 1, prioridade: 2, normal: 3 };
             let items = getFilteredByPage();
             if (currentFilter !== 'all') {
                 if (currentPage === 'concluido' || currentPage === 'arquivado') items = items.filter(a => a.result === currentFilter);
@@ -290,8 +291,13 @@
             }
             if (searchQuery) items = items.filter(a => a.name.toLowerCase().includes(searchQuery) || a.passport.toLowerCase().includes(searchQuery) || a.id.toString().toLowerCase().includes(searchQuery));
             items.sort((a, b) => {
+                // 1) Priority order (emergencia first, normal last)
+                const pa = PRIORITY_ORDER[a.priority] ?? 3, pb = PRIORITY_ORDER[b.priority] ?? 3;
+                if (pa !== pb) return pa - pb;
+                // 2) Sort order within same priority (drag-drop)
                 const sa = a.sort_order || 0, sb2 = b.sort_order || 0;
                 if (sa !== sb2) return sa - sb2;
+                // 3) Secondary sort field
                 let va = a[sortField], vb = b[sortField];
                 if (sortField === 'name') { va = (va || '').toLowerCase(); vb = (vb || '').toLowerCase(); }
                 if (va < vb) return sortDir === 'asc' ? -1 : 1; if (va > vb) return sortDir === 'asc' ? 1 : -1;
