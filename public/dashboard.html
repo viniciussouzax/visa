@@ -422,10 +422,44 @@
             e.preventDefault(); e.currentTarget.classList.remove('drag-over', 'drag-above', 'drag-below');
             if (!_dragId || _dragId === targetId) { _dragId = null; return; }
 
+            const dragApplicant = !isGroupId(_dragId) ? applicants.find(a => a.id === _dragId) : null;
+            const targetIsGroup = isGroupId(targetId);
+            const targetApplicant = !targetIsGroup ? applicants.find(a => a.id === targetId) : null;
+
+            // ─── CASE 1: Solo applicant dropped onto a group → LINK ───
+            if (dragApplicant && !dragApplicant.group_code && targetIsGroup) {
+                const gc = getGroupCode(targetId);
+                const groupMembers = applicants.filter(a => a.group_code === gc);
+                if (groupMembers.length === 0) { _dragId = null; return; }
+                showConfirmModal('Vincular ao Grupo',
+                    `Deseja vincular <strong>${dragApplicant.name}</strong> ao grupo <strong>${groupMembers[0].name.split(' ').slice(-1)[0]}</strong>?`,
+                    async () => {
+                        try {
+                            await sbFetch(`applicants?id=eq.${dragApplicant.id}`, 'PATCH', { group_code: gc });
+                            dragApplicant.group_code = gc;
+                            renderTable(); updateBadges();
+                            showToast('Vinculado ao grupo!', 'success');
+                        } catch (err) { showToast('Erro: ' + err.message, 'error'); }
+                    });
+                _dragId = null; return;
+            }
+
+            // ─── CASE 2: Group member dropped onto solo area → UNLINK ───
+            if (dragApplicant && dragApplicant.group_code && targetApplicant && !targetApplicant.group_code) {
+                const gc = dragApplicant.group_code;
+                const groupMembers = applicants.filter(a => a.group_code === gc);
+                // Don't allow unlinking the last member (group needs 2+)
+                if (groupMembers.length <= 1) {
+                    showToast('Não é possível desvincular o único membro do grupo.', 'error');
+                    _dragId = null; return;
+                }
+                showUnlinkModal(dragApplicant);
+                _dragId = null; return;
+            }
+
+            // ─── CASE 3: Normal reorder ───
             const items = getFiltered();
             let dragMembers = [];
-
-            // Collect dragged items (single or all group members)
             if (isGroupId(_dragId)) {
                 const gc = getGroupCode(_dragId);
                 dragMembers = items.filter(a => a.group_code === gc);
@@ -436,22 +470,64 @@
 
             const realTarget = resolveId(targetId);
             if (!realTarget || dragMembers.length === 0) { _dragId = null; return; }
-            // Prevent drop onto self
             if (dragMembers.some(m => m.id === realTarget)) { _dragId = null; return; }
 
-            // Remove dragged members, find new target pos, insert
             const remaining = items.filter(a => !dragMembers.includes(a));
             const newTargetIdx = remaining.findIndex(a => a.id === realTarget);
             if (newTargetIdx < 0) { _dragId = null; return; }
             remaining.splice(newTargetIdx, 0, ...dragMembers);
 
-            // Update sort_order for all
             const updates = remaining.map((a, i) => ({ id: a.id, sort_order: i + 1 }));
             updates.forEach(u => { const a = applicants.find(x => x.id === u.id); if (a) a.sort_order = u.sort_order; });
             renderTable();
             for (const u of updates) { try { await sbFetch(`applicants?id=eq.${u.id}`, 'PATCH', { sort_order: u.sort_order }); } catch { } }
             _dragId = null;
             showToast('Ordem atualizada!', 'success');
+        }
+
+        // ─── UNLINK MODAL (email required) ───
+        function showUnlinkModal(applicant) {
+            const id = 'unlinkModal';
+            const existing = document.getElementById(id); if (existing) existing.remove();
+            const html = `<div id="${id}" class="modal-overlay">
+            <div class="modal-box">
+                <h3 class="modal-title">Desvincular do Grupo</h3>
+                <p class="modal-body">Deseja remover <strong>${applicant.name}</strong> do grupo?<br>
+                <small style="color:var(--text-muted)">Informe o e-mail de vinculação para o solicitante avulso:</small></p>
+                <input type="email" id="unlinkEmail" class="field-input" placeholder="email@solicitante.com" style="margin:12px 0;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-body);color:var(--text-primary);font-size:13px">
+                <div id="unlinkError" style="color:#ef4444;font-size:12px;margin-bottom:8px;display:none"></div>
+                <div class="modal-actions">
+                    <button class="modal-btn" id="btnCancelUnlink">Cancelar</button>
+                    <button class="modal-btn danger" id="btnConfirmUnlink">Desvincular</button>
+                </div>
+            </div></div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+            const modalEl = document.getElementById(id);
+            const emailInput = document.getElementById('unlinkEmail');
+            const errEl = document.getElementById('unlinkError');
+            setTimeout(() => emailInput.focus(), 50);
+            modalEl.addEventListener('click', (e) => { if (e.target === modalEl) modalEl.remove(); });
+            document.getElementById('btnCancelUnlink').addEventListener('click', () => modalEl.remove());
+            document.getElementById('btnConfirmUnlink').addEventListener('click', async () => {
+                const email = emailInput.value.trim();
+                if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    errEl.textContent = 'Informe um e-mail válido'; errEl.style.display = 'block'; return;
+                }
+                try {
+                    // Update data with new email and remove group_code
+                    const updatedData = { ...(applicant.data || {}), email };
+                    await sbFetch(`applicants?id=eq.${applicant.id}`, 'PATCH', {
+                        group_code: null, data: updatedData
+                    });
+                    applicant.group_code = null;
+                    applicant.data = updatedData;
+                    modalEl.remove();
+                    renderTable(); updateBadges();
+                    showToast(`${applicant.name} desvinculado do grupo!`, 'success');
+                } catch (err) {
+                    errEl.textContent = 'Erro: ' + err.message; errEl.style.display = 'block';
+                }
+            });
         }
 
         // ==========================================
