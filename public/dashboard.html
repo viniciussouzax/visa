@@ -339,6 +339,7 @@
                     <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" style="width:${a.progress}%;background:${pc}"></div></div><span class="progress-label">${a.progress}%</span></div></td>
                     <td>${infoCell}</td>
                     <td><div class="row-actions">
+                        <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link do formulário">🔗</button>
                         <button class="row-btn" onclick="event.stopPropagation();openReview('${a.id}')" title="Revisar">👁</button>
                         <button class="row-btn" onclick="event.stopPropagation();openForm('${a.id}')" title="Editar">✏️</button>
                         <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Gerenciar">⋮</button>
@@ -485,15 +486,46 @@
             showToast('Ordem atualizada!', 'success');
         }
 
-        // ─── UNLINK MODAL (email required) ───
+        // ─── UNLINK MODAL (smart email detection) ───
         function showUnlinkModal(applicant) {
-            const id = 'unlinkModal';
-            const existing = document.getElementById(id); if (existing) existing.remove();
-            const html = `<div id="${id}" class="modal-overlay">
+            const d = applicant.data || {};
+            // 1) Try to find email from form data
+            let autoEmail = d['contact.usContactEmail'] || d['personal.email'] || d['contact.email'] || d.email || '';
+
+            // 2) If no personal email, try group responsible email
+            if (!autoEmail && applicant.group_code) {
+                const groupMembers = applicants.filter(a => a.group_code === applicant.group_code && a.id !== applicant.id);
+                for (const m of groupMembers) {
+                    const md = m.data || {};
+                    autoEmail = md['contact.usContactEmail'] || md['personal.email'] || md['contact.email'] || md.email || '';
+                    if (autoEmail) break;
+                }
+            }
+
+            // 3) If email found, confirm directly
+            if (autoEmail) {
+                showConfirmModal('Desvincular do Grupo',
+                    `Deseja remover <strong>${applicant.name}</strong> do grupo?<br><small style="color:var(--text-muted)">Será vinculado ao email: <strong>${autoEmail}</strong></small>`,
+                    async () => {
+                        try {
+                            const updatedData = { ...d, email: autoEmail };
+                            await sbFetch(`applicants?id=eq.${applicant.id}`, 'PATCH', { group_code: null, data: updatedData });
+                            applicant.group_code = null; applicant.data = updatedData;
+                            renderTable(); updateBadges();
+                            showToast(`${applicant.name} desvinculado do grupo!`, 'success');
+                        } catch (err) { showToast('Erro: ' + err.message, 'error'); }
+                    });
+                return;
+            }
+
+            // 4) No email found — show input dialog
+            const mid = 'unlinkModal';
+            const existing = document.getElementById(mid); if (existing) existing.remove();
+            const html = `<div id="${mid}" class="modal-overlay">
             <div class="modal-box">
                 <h3 class="modal-title">Desvincular do Grupo</h3>
                 <p class="modal-body">Deseja remover <strong>${applicant.name}</strong> do grupo?<br>
-                <small style="color:var(--text-muted)">Informe o e-mail de vinculação para o solicitante avulso:</small></p>
+                <small style="color:var(--text-muted)">Nenhum e-mail encontrado no formulário. Informe o e-mail de vinculação:</small></p>
                 <input type="email" id="unlinkEmail" class="field-input" placeholder="email@solicitante.com" style="margin:12px 0;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-body);color:var(--text-primary);font-size:13px">
                 <div id="unlinkError" style="color:#ef4444;font-size:12px;margin-bottom:8px;display:none"></div>
                 <div class="modal-actions">
@@ -502,7 +534,7 @@
                 </div>
             </div></div>`;
             document.body.insertAdjacentHTML('beforeend', html);
-            const modalEl = document.getElementById(id);
+            const modalEl = document.getElementById(mid);
             const emailInput = document.getElementById('unlinkEmail');
             const errEl = document.getElementById('unlinkError');
             setTimeout(() => emailInput.focus(), 50);
@@ -514,13 +546,9 @@
                     errEl.textContent = 'Informe um e-mail válido'; errEl.style.display = 'block'; return;
                 }
                 try {
-                    // Update data with new email and remove group_code
-                    const updatedData = { ...(applicant.data || {}), email };
-                    await sbFetch(`applicants?id=eq.${applicant.id}`, 'PATCH', {
-                        group_code: null, data: updatedData
-                    });
-                    applicant.group_code = null;
-                    applicant.data = updatedData;
+                    const updatedData = { ...d, email };
+                    await sbFetch(`applicants?id=eq.${applicant.id}`, 'PATCH', { group_code: null, data: updatedData });
+                    applicant.group_code = null; applicant.data = updatedData;
                     modalEl.remove();
                     renderTable(); updateBadges();
                     showToast(`${applicant.name} desvinculado do grupo!`, 'success');
@@ -581,6 +609,10 @@
         function copyGroupLink(groupCode) {
             const url = location.origin + location.pathname.replace('dashboard.html', '') + AppCore.buildUrl('ds160-form.html', { group: groupCode });
             navigator.clipboard.writeText(url).then(() => showToast('Link do grupo copiado!', 'success')).catch(() => showToast('Erro ao copiar', 'error'));
+        }
+        function copyApplicantLink(id) {
+            const url = location.origin + location.pathname.replace('dashboard.html', '') + buildUrl(id, 'solicitante');
+            navigator.clipboard.writeText(url).then(() => showToast('Link copiado!', 'success')).catch(() => showToast('Erro ao copiar', 'error'));
         }
 
         async function createNew() {
