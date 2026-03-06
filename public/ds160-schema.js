@@ -217,9 +217,9 @@ const DS160_SCHEMA = {
             id: "travelCompanions",
             label: "Acompanhantes de Viagem",
             fields: [
-                { id: "travelingWithOthers", label: "Viaja com outras pessoas?", type: "radio", required: true, ds160: "rblOtherPersonsTravelingWithYou" },
-                { id: "partOfGroup", label: "Faz parte de um grupo?", type: "radio", showWhen: { field: "travelingWithOthers", equals: "Y" }, ds160: "rblGroupTravel" },
-                { id: "groupName", label: "Nome do grupo", type: "text", maxLen: 40, showWhen: { field: "partOfGroup", equals: "Y" }, ds160: "tbxGroupName" },
+                { id: "travelingWithOthers", label: "Viaja com outras pessoas?", type: "radio", required: true, ds160: "rblOtherPersonsTravelingWithYou", hint: "Inclua familiares, amigos ou qualquer pessoa que viajará junto com você." },
+                { id: "partOfGroup", label: "Faz parte de um grupo?", type: "radio", showWhen: { field: "travelingWithOthers", equals: "Y" }, ds160: "rblGroupTravel", hint: "Selecione Sim se estiver viajando como parte de um grupo ou organização." },
+                { id: "groupName", label: "Nome do grupo", type: "text", maxLen: 40, showWhen: { field: "partOfGroup", equals: "Y" }, ds160: "tbxGroupName", hint: "Informe o nome do grupo com o qual você está viajando." },
                 {
                     id: "companions", label: "Acompanhantes", type: "array", maxItems: 5, showWhen: { field: "travelingWithOthers", equals: "Y" }, ds160List: "dlTravelCompanions", fields: [
                         { id: "surname", label: "Sobrenome", type: "text", required: true, maxLen: 33, noSpecial: true, uppercase: true, ds160: "tbxTC_SURNAME" },
@@ -235,7 +235,7 @@ const DS160_SCHEMA = {
             id: "previousUSTravel",
             label: "Viagens Anteriores aos EUA",
             fields: [
-                { id: "hasBeenInUS", label: "Já esteve nos EUA?", type: "radio", required: true, ds160: "rblPREV_US_TRAVEL_IND" },
+                { id: "hasBeenInUS", label: "Já esteve nos EUA?", type: "radio", required: true, ds160: "rblPREV_US_TRAVEL_IND", hint: "Informe se já visitou os Estados Unidos em qualquer momento." },
                 {
                     id: "previousVisits", label: "Visitas anteriores", type: "array", maxItems: 5, showWhen: { field: "hasBeenInUS", equals: "Y" }, ds160List: "dtlPREV_US_VISIT", fields: [
                         { id: "arrivalDate", label: "Data de chegada", type: "date", required: true, ds160day: "ddlPREV_US_VISIT_DTEDay", ds160month: "ddlPREV_US_VISIT_DTEMonth", ds160year: "tbxPREV_US_VISIT_DTEYear" },
@@ -254,20 +254,20 @@ const DS160_SCHEMA = {
                         { id: "state", label: "Estado", type: "select", required: true, ds160: "ddlUS_DRIVER_LICENSE_STATE", optionsRef: "usStates" }
                     ]
                 },
-                { id: "hasUSVisa", label: "Já teve visto americano?", type: "radio", required: true, ds160: "rblPREV_VISA_IND" },
+                { id: "hasUSVisa", label: "Já teve visto americano?", type: "radio", required: true, ds160: "rblPREV_VISA_IND", hint: "Selecione Sim se já obteve qualquer tipo de visto americano anteriormente." },
                 { id: "previousVisaIssueDate", label: "Data de emissão do visto anterior", type: "date", showWhen: { field: "hasUSVisa", equals: "Y" }, ds160day: "ddlPREV_VISA_ISSUED_DTEDay", ds160month: "ddlPREV_VISA_ISSUED_DTEMonth", ds160year: "tbxPREV_VISA_ISSUED_DTEYear" },
-                { id: "previousVisaNumber", label: "Número do visto anterior", type: "text", maxLen: 20, showWhen: { field: "hasUSVisa", equals: "Y" }, ds160: "tbxPREV_VISA_FOIL_NUMBER" },
-                { id: "sameVisaType", label: "Mesmo tipo de visto?", type: "radio", showWhen: { field: "hasUSVisa", equals: "Y" }, ds160: "rblPREV_VISA_SAME_TYPE_IND" },
-                { id: "sameCountry", label: "Mesmo país de emissão?", type: "radio", showWhen: { field: "hasUSVisa", equals: "Y" }, ds160: "rblPREV_VISA_SAME_CNTRY_IND" },
+                { id: "previousVisaNumber", label: "Número do visto anterior", type: "text", maxLen: 20, showWhen: { field: "hasUSVisa", equals: "Y" }, ds160: "tbxPREV_VISA_FOIL_NUMBER", hint: "Número de 8 dígitos em vermelho no visto. Marque 'Não Sei' se não souber." },
+                { id: "sameVisaType", label: "Mesmo tipo de visto?", type: "radio", showWhen: { field: "hasUSVisa", equals: "Y" }, ds160: "rblPREV_VISA_SAME_TYPE_IND", hint: "Está solicitando o mesmo tipo de visto que o anterior?" },
+                { id: "sameCountry", label: "Mesmo país de emissão?", type: "radio", showWhen: { field: "hasUSVisa", equals: "Y" }, ds160: "rblPREV_VISA_SAME_CNTRY_IND", hint: "Está solicitando no mesmo país onde o visto anterior foi emitido?" },
                 { id: "tenPrint", label: "Já forneceu impressões digitais?", type: "radio", showWhen: { field: "hasUSVisa", equals: "Y" }, ds160: "rblPREV_VISA_TEN_PRINT_IND" },
                 { id: "visaLost", label: "Visto perdido ou roubado?", type: "radio", showWhen: { field: "hasUSVisa", equals: "Y" }, ds160: "rblPREV_VISA_LOST_IND" },
                 { id: "lostVisaYear", label: "Ano da perda", type: "text", maxLen: 4, showWhen: { field: "visaLost", equals: "Y" }, ds160: "tbxLOST_VISA_YEAR" },
                 { id: "lostVisaExplanation", label: "Explique a perda", type: "textarea", maxLen: 200, showWhen: { field: "visaLost", equals: "Y" }, ds160: "tbxLOST_VISA_EXPL" },
                 { id: "visaCancelled", label: "Visto já foi cancelado/revogado?", type: "radio", showWhen: { field: "hasUSVisa", equals: "Y" }, ds160: "rblPREV_VISA_CANCELLED_IND" },
                 { id: "cancelledExplanation", label: "Explique o cancelamento", type: "textarea", maxLen: 200, showWhen: { field: "visaCancelled", equals: "Y" }, ds160: "tbxCANCELLED_VISA_EXPL" },
-                { id: "visaRefused", label: "Já teve visto negado?", type: "radio", required: true, ds160: "rblPREV_VISA_REFUSED_IND" },
+                { id: "visaRefused", label: "Já teve visto negado?", type: "radio", required: true, ds160: "rblPREV_VISA_REFUSED_IND", hint: "Inclui recusa de visto, recusa de admissão nos EUA, ou retirada de solicitação no porto de entrada." },
                 { id: "visaRefusedExplanation", label: "Explique a negativa", type: "textarea", maxLen: 200, showWhen: { field: "visaRefused", equals: "Y" }, ds160: "tbxPREV_VISA_REFUSED_EXPL" },
-                { id: "immigrantPetition", label: "Alguém já entrou com petição de imigração?", type: "radio", required: true, ds160: "rblIV_PETITION_IND" },
+                { id: "immigrantPetition", label: "Alguém já entrou com petição de imigração?", type: "radio", required: true, ds160: "rblIV_PETITION_IND", hint: "Alguém já apresentou uma petição de imigrante em seu nome junto ao Serviço de Cidadania e Imigração dos EUA (USCIS)?" },
                 { id: "immigrantPetitionExplanation", label: "Explique a petição", type: "textarea", maxLen: 200, showWhen: { field: "immigrantPetition", equals: "Y" }, ds160: "tbxIV_PETITION_EXPL" }
             ]
         },
@@ -290,17 +290,17 @@ const DS160_SCHEMA = {
                 { id: "mailState", label: "Estado (corresp.)", type: "text", maxLen: 20, showWhen: { field: "mailingAddressSame", equals: "N" }, ds160: "tbxMAILING_ADDR_STATE" },
                 { id: "mailPostalCode", label: "CEP (corresp.)", type: "text", maxLen: 10, showWhen: { field: "mailingAddressSame", equals: "N" }, ds160: "tbxMAILING_ADDR_POSTAL_CD" },
                 { id: "mailCountry", label: "País (corresp.)", type: "select", showWhen: { field: "mailingAddressSame", equals: "N" }, ds160: "ddlMailCountry", optionsRef: "countries" },
-                { id: "phone", label: "Telefone residencial", type: "phone", required: true, ds160: "tbxAPP_HOME_TEL" },
+                { id: "phone", label: "Telefone residencial", type: "phone", required: true, ds160: "tbxAPP_HOME_TEL", hint: "Formato internacional: código do país + DDD + número. Ex: 011-5511999998888" },
                 { id: "mobilePhone", label: "Celular", type: "phone", required: true, ds160: "tbxAPP_MOBILE_TEL" },
                 { id: "businessPhone", label: "Telefone comercial", type: "phone", ds160: "tbxAPP_BUS_TEL" },
-                { id: "additionalPhones", label: "Possui telefones adicionais?", type: "radio", ds160: "rblAddPhone" },
+                { id: "additionalPhones", label: "Possui telefones adicionais?", type: "radio", ds160: "rblAddPhone", hint: "Usou outros números de telefone nos últimos 5 anos?" },
                 {
                     id: "additionalPhoneNumbers", label: "Telefones adicionais", type: "array", maxItems: 4, showWhen: { field: "additionalPhones", equals: "Y" }, ds160List: "dtlAddPhone", fields: [
                         { id: "phone", label: "Telefone", type: "phone", required: true, ds160: "tbxAddPhoneInfo" }
                     ]
                 },
                 { id: "email", label: "Email", type: "email", required: true, maxLen: 50, ds160: "tbxAPP_EMAIL_ADDR" },
-                { id: "additionalEmails", label: "Possui emails adicionais?", type: "radio", ds160: "rblAddEmail" },
+                { id: "additionalEmails", label: "Possui emails adicionais?", type: "radio", ds160: "rblAddEmail", hint: "Usou outros endereços de email nos últimos 5 anos?" },
                 {
                     id: "additionalEmailAddresses", label: "Emails adicionais", type: "array", maxItems: 4, showWhen: { field: "additionalEmails", equals: "Y" }, ds160List: "dtlAddEmail", fields: [
                         { id: "email", label: "Email", type: "email", required: true, maxLen: 50, ds160: "tbxAddEmailInfo" }
@@ -319,7 +319,7 @@ const DS160_SCHEMA = {
                         { id: "handle", label: "Identificador/Usuário", type: "text", required: true, maxLen: 40, ds160: "tbxSocialMediaIdent" }
                     ]
                 },
-                { id: "additionalSocialMedia", label: "Possui outras redes sociais?", type: "radio", ds160: "rblAddSocial" },
+                { id: "additionalSocialMedia", label: "Possui outras redes sociais?", type: "radio", ds160: "rblAddSocial", hint: "Deseja informar presença em outros sites ou aplicativos usados nos últimos 5 anos para criar ou compartilhar conteúdo? Não inclui serviços de mensagens privadas como WhatsApp." },
                 {
                     id: "additionalSocialMediaAccounts", label: "Outras redes", type: "array", maxItems: 4, showWhen: { field: "additionalSocialMedia", equals: "Y" }, ds160List: "dtlAddSocial", fields: [
                         { id: "platform", label: "Plataforma", type: "text", required: true, maxLen: 40, ds160: "tbxAddSocialPlatform" },
@@ -334,11 +334,11 @@ const DS160_SCHEMA = {
             id: "usContact",
             label: "Contato nos EUA",
             fields: [
-                { id: "surname", label: "Sobrenome do Contato", type: "text", maxLen: 33, noSpecial: true, uppercase: true, allowNA: true, ds160: "tbxUS_POC_SURNAME" },
+                { id: "surname", label: "Sobrenome do Contato", type: "text", maxLen: 33, noSpecial: true, uppercase: true, allowNA: true, ds160: "tbxUS_POC_SURNAME", hint: "Pessoa de contato nos EUA. Marque 'Não se Aplica' se não souber." },
                 { id: "givenName", label: "Nome do Contato", type: "text", maxLen: 33, noSpecial: true, uppercase: true, allowNA: true, ds160: "tbxUS_POC_GIVEN_NAME" },
                 { id: "organization", label: "Organização", type: "text", maxLen: 40, allowNA: true, ds160: "tbxUS_POC_ORGANIZATION" },
                 { id: "relationship", label: "Relação com o contato", type: "select", required: true, ds160: "ddlUS_POC_REL_TO_APP", optionsRef: "relationships" },
-                { id: "usContactStreet1", label: "Endereço - Linha 1", type: "text", required: true, maxLen: 40, ds160: "tbxUS_POC_ADDR_LN1" },
+                { id: "usContactStreet1", label: "Endereço - Linha 1", type: "text", required: true, maxLen: 40, ds160: "tbxUS_POC_ADDR_LN1", hint: "Endereço e telefone do ponto de contato nos EUA." },
                 { id: "usContactStreet2", label: "Endereço - Linha 2", type: "text", maxLen: 40, ds160: "tbxUS_POC_ADDR_LN2" },
                 { id: "usContactCity", label: "Cidade", type: "text", required: true, maxLen: 20, ds160: "tbxUS_POC_ADDR_CITY" },
                 { id: "usContactState", label: "Estado", type: "select", required: true, ds160: "ddlUS_POC_ADDR_STATE", optionsRef: "usStates" },
@@ -363,7 +363,7 @@ const DS160_SCHEMA = {
                 { id: "motherDob", label: "Data de Nascimento da Mãe", type: "date", allowUnknown: true, ds160day: "ddlMothersDOBDay", ds160month: "ddlMothersDOBMonth", ds160year: "tbxMothersDOBYear" },
                 { id: "motherInUS", label: "Mãe está nos EUA?", type: "radio", required: true, ds160: "rblMOTHER_LIVE_IN_US_IND" },
                 { id: "motherUSStatus", label: "Status da mãe nos EUA", type: "select", showWhen: { field: "motherInUS", equals: "Y" }, ds160: "ddlMOTHER_US_STATUS", optionsRef: "usStatus" },
-                { id: "immediateRelativesInUS", label: "Tem parentes imediatos nos EUA?", type: "radio", required: true, ds160: "rblUS_IMMED_RELATIVE_IND" },
+                { id: "immediateRelativesInUS", label: "Tem parentes imediatos nos EUA?", type: "radio", required: true, ds160: "rblUS_IMMED_RELATIVE_IND", hint: "Parentes imediatos incluem: cônjuge, noivo(a), filho(a), irmão/irmã. Não inclui pais (já informados acima)." },
                 { id: "otherRelativesInUS", label: "Tem outros parentes nos EUA?", type: "radio", required: true, ds160: "rblUS_OTHER_RELATIVE_IND" },
                 {
                     id: "relatives", label: "Parentes nos EUA", type: "array", maxItems: 5, showWhen: { field: "immediateRelativesInUS", equals: "Y" }, ds160List: "dlUSRelatives", fields: [
@@ -444,10 +444,10 @@ const DS160_SCHEMA = {
             id: "workEducation1",
             label: "Trabalho/Educação - Atual",
             fields: [
-                { id: "occupation", label: "Ocupação/Profissão", type: "select", required: true, ds160: "ddlPresentOccupation", optionsRef: "occupations" },
+                { id: "occupation", label: "Ocupação/Profissão", type: "select", required: true, ds160: "ddlPresentOccupation", optionsRef: "occupations", hint: "Forneça informações sobre seu emprego ou educação atual." },
                 { id: "otherOccupation", label: "Especifique ocupação", type: "text", maxLen: 40, showWhen: { field: "occupation", equals: "N" }, ds160: "tbxOtherOccupation" },
                 { id: "employerName", label: "Nome do Empregador/Escola", type: "text", required: true, maxLen: 40, ds160: "tbxEmpSchName" },
-                { id: "employerStreet1", label: "Endereço - Linha 1", type: "text", required: true, maxLen: 40, ds160: "tbxEmpSchAddr1" },
+                { id: "employerStreet1", label: "Endereço - Linha 1", type: "text", required: true, maxLen: 40, ds160: "tbxEmpSchAddr1", hint: "Endereço do empregador ou escola atual." },
                 { id: "employerStreet2", label: "Endereço - Linha 2", type: "text", maxLen: 40, ds160: "tbxEmpSchAddr2" },
                 { id: "employerCity", label: "Cidade", type: "text", required: true, maxLen: 20, ds160: "tbxEmpSchCity" },
                 { id: "employerState", label: "Estado/Província", type: "text", maxLen: 20, ds160: "tbxWORK_EDUC_ADDR_STATE" },
@@ -504,7 +504,7 @@ const DS160_SCHEMA = {
                 },
                 { id: "clanTribe", label: "Pertence a clã ou tribo?", type: "radio", required: true, ds160: "rblCLAN_TRIBE_IND" },
                 { id: "clanTribeName", label: "Nome do clã/tribo", type: "text", maxLen: 40, showWhen: { field: "clanTribe", equals: "Y" }, ds160: "tbxCLAN_TRIBE_NAME" },
-                { id: "countriesVisited", label: "Visitou outros países nos últimos 5 anos?", type: "radio", required: true, ds160: "rblCOUNTRIES_VISITED_IND" },
+                { id: "countriesVisited", label: "Visitou outros países nos últimos 5 anos?", type: "radio", required: true, ds160: "rblCOUNTRIES_VISITED_IND", hint: "Informe todos os países/regiões que visitou nos últimos 5 anos." },
                 {
                     id: "countriesVisitedList", label: "Países visitados", type: "array", maxItems: 10, showWhen: { field: "countriesVisited", equals: "Y" }, ds160List: "dtlCountriesVisited", fields: [
                         { id: "country", label: "País", type: "select", required: true, ds160: "ddlCOUNTRIES_VISITED", optionsRef: "countries" }
@@ -516,7 +516,7 @@ const DS160_SCHEMA = {
                         { id: "name", label: "Nome da organização", type: "text", required: true, maxLen: 40, ds160: "tbxORGANIZATION_NAME" }
                     ]
                 },
-                { id: "specializedSkills", label: "Possui habilidades especializadas?", type: "radio", required: true, ds160: "rblSPECIALIZED_SKILLS_IND" },
+                { id: "specializedSkills", label: "Possui habilidades especializadas?", type: "radio", required: true, ds160: "rblSPECIALIZED_SKILLS_IND", hint: "Inclui treinamento em armas de fogo, explosivos, energia nuclear/biológica/química, ou experiência militar." },
                 { id: "specializedSkillsExplanation", label: "Descreva", type: "textarea", maxLen: 200, showWhen: { field: "specializedSkills", equals: "Y" }, ds160: "tbxSPECIALIZED_SKILLS_EXPL" },
                 { id: "militaryService", label: "Já serviu nas forças armadas?", type: "radio", required: true, ds160: "rblMILITARY_SERVICE_IND" },
                 {
