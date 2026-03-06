@@ -201,17 +201,10 @@
                     ')&select=id,full_name,data,stage,created_at&order=created_at.desc'
                 );
 
-                if (!rows || rows.length === 0) {
-                    document.getElementById('errorText').textContent = 'Nenhum formulário encontrado para este e-mail.';
-                    errEl.classList.add('show');
-                    btn.disabled = false;
-                    btn.textContent = 'Buscar Formulários';
-                    return;
-                }
-
-                // Save to session and redirect
+                // Save to session and redirect — even with 0 results
+                // meus-formularios.html shows empty state with "Create New" button
                 sessionStorage.setItem('client_email', email);
-                sessionStorage.setItem('client_results', JSON.stringify(rows));
+                sessionStorage.setItem('client_results', JSON.stringify(rows || []));
                 window.location.href = 'meus-formularios.html';
             } catch (err) {
                 document.getElementById('errorText').textContent = 'Erro ao buscar: ' + err.message;
