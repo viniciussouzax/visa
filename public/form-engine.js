@@ -1010,14 +1010,38 @@ class FormEngine {
             const div = document.createElement('div');
             div.className = 'review-section';
             div.innerHTML = `
-                <div class="review-header" onclick="this.nextElementSibling.classList.toggle('open'); this.querySelector('.chevron').classList.toggle('open')">
+                <div class="review-header" onclick="engine._toggleReviewSection(this)">
                     <span>${sec.label} <span style="font-size:11px;color:#64748b;font-weight:400">${progressSec}%</span></span>
                     <span class="chevron">▶</span>
                 </div>
-                <div class="review-body open">${rows}</div>
+                <div class="review-body">${rows}</div>
             `;
             reviewEl.appendChild(div);
         });
+
+        // Auto-open first review section
+        const firstHeader = reviewEl.querySelector('.review-header');
+        if (firstHeader) this._toggleReviewSection(firstHeader);
+    }
+
+    _toggleReviewSection(headerEl) {
+        const body = headerEl.nextElementSibling;
+        const chevron = headerEl.querySelector('.chevron');
+        const isOpen = body.classList.contains('open');
+
+        // Close all other review sections (accordion behavior)
+        const reviewEl = document.getElementById('view-review');
+        if (reviewEl) {
+            reviewEl.querySelectorAll('.review-body.open').forEach(b => b.classList.remove('open'));
+            reviewEl.querySelectorAll('.review-header .chevron.open').forEach(c => c.classList.remove('open'));
+        }
+
+        // Toggle the clicked one (if it was closed, open it)
+        if (!isOpen) {
+            body.classList.add('open');
+            if (chevron) chevron.classList.add('open');
+            headerEl.closest('.review-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     _displayValue(field, val) {
