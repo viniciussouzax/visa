@@ -52,6 +52,8 @@
             <div class="nav-item" data-page="arquivado" onclick="navigateTo('arquivado')">Arquivado <span class="badge"
                     id="badge-arquivado">0</span></div>
             <div class="nav-spacer"></div>
+            <div class="nav-item" id="portalLinkBtn" onclick="copyPortalLink()"
+                title="Copiar link do portal do solicitante" style="display:none">📋 Link Portal</div>
             <div class="nav-item hidden" id="adminLink" onclick="AppCore.goToAdmin()">Admin Master</div>
             <div class="nav-item" onclick="AppCore.navigate('preferencias.html')">Preferências</div>
         </div>
@@ -236,9 +238,22 @@
             if (!_orgParam) { document.getElementById('orgFooter').textContent = 'Admin'; return; }
             try {
                 const data = await sbGet('companies?short_id=eq.' + encodeURIComponent(_orgParam) + '&select=id,name&limit=1');
-                if (data?.[0]) { resolvedCompanyId = data[0].id; resolvedCompanyName = data[0].name; document.getElementById('orgFooter').textContent = resolvedCompanyName; }
+                if (data?.[0]) { resolvedCompanyId = data[0].id; resolvedCompanyName = data[0].name; document.getElementById('orgFooter').textContent = resolvedCompanyName; document.getElementById('portalLinkBtn').style.display = ''; }
                 else { document.getElementById('orgFooter').textContent = 'Não encontrada'; }
             } catch (e) { document.getElementById('orgFooter').textContent = 'Erro'; }
+        }
+
+        function copyPortalLink() {
+            if (!_orgParam) return;
+            const url = location.origin + '/portal.html?org=' + encodeURIComponent(_orgParam);
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = document.getElementById('portalLinkBtn');
+                const orig = btn.textContent;
+                btn.textContent = '✅ Copiado!';
+                setTimeout(() => { btn.textContent = orig; }, 2000);
+            }).catch(() => {
+                prompt('Copie o link:', location.origin + '/portal.html?org=' + encodeURIComponent(_orgParam));
+            });
         }
 
         // ==========================================
