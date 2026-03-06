@@ -646,7 +646,7 @@ class FormEngine {
     // =========================================
     // SECTION NAVIGATION
     // =========================================
-    toggleSection(idx) {
+    toggleSection(idx, doScroll = true) {
         const bodies = document.querySelectorAll('.section-body');
 
         // Allow free navigation — just toggle open/close
@@ -659,8 +659,7 @@ class FormEngine {
             if (chev) chev.classList.toggle('open', i === idx && !isOpen);
         });
 
-        if (!isOpen) {
-            // Scroll to section
+        if (!isOpen && doScroll) {
             const card = document.getElementById('sec-' + this.schema.sections[idx].id);
             if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -1164,13 +1163,52 @@ class FormEngine {
         this._evaluateConditionals(key, newVal);
         this.updateProgress();
 
+        // Find which review section was open before re-render
+        const openSectionLabel = this._getOpenReviewSectionLabel();
+
         // Re-render review
         this.renderReview();
+
+        // Restore open section
+        this._restoreReviewSection(openSectionLabel || secId);
         this._showToast('Campo atualizado', 'success');
     }
 
     cancelEdit() {
+        const openSectionLabel = this._getOpenReviewSectionLabel();
         this.renderReview();
+        if (openSectionLabel) this._restoreReviewSection(openSectionLabel);
+    }
+
+    /** Get the label text of the currently open review section */
+    _getOpenReviewSectionLabel() {
+        const reviewEl = document.getElementById('view-review');
+        if (!reviewEl) return null;
+        const openBody = reviewEl.querySelector('.review-body.open');
+        if (!openBody) return null;
+        const header = openBody.previousElementSibling;
+        return header ? header.textContent.trim() : null;
+    }
+
+    /** Restore a review section by matching its label text */
+    _restoreReviewSection(labelOrSecId) {
+        const reviewEl = document.getElementById('view-review');
+        if (!reviewEl) return;
+        // Close the auto-opened first section
+        reviewEl.querySelectorAll('.review-body.open').forEach(b => b.classList.remove('open'));
+        reviewEl.querySelectorAll('.review-header .chevron.open').forEach(c => c.classList.remove('open'));
+
+        // Find the matching section header
+        const headers = reviewEl.querySelectorAll('.review-header');
+        for (const h of headers) {
+            if (h.textContent.trim() === labelOrSecId || h.textContent.trim().startsWith(labelOrSecId)) {
+                const body = h.nextElementSibling;
+                const chevron = h.querySelector('.chevron');
+                if (body) body.classList.add('open');
+                if (chevron) chevron.classList.add('open');
+                return;
+            }
+        }
     }
 
     // =========================================
@@ -1258,15 +1296,19 @@ class FormEngine {
 
         // Call _evaluateConditionals on the array field key? Actually, standard evaluation might be enough
         this._evaluateConditionals(formKey, newVal);
-        this._rerenderArray(secId, f, key); // Ensure Form View stays in sync
+        this._rerenderArray(secId, f, key);
         this.updateProgress();
+        const openLabel = this._getOpenReviewSectionLabel();
         this.renderReview();
+        this._restoreReviewSection(openLabel || secId);
         this._showToast('Campo atualizado', 'success');
     }
 
     addArrayItemFromReview(secId, fieldId) {
+        const openLabel = this._getOpenReviewSectionLabel();
         this.addArrayEntry(secId, fieldId);
         this.renderReview();
+        this._restoreReviewSection(openLabel || secId);
         this._showToast('Item adicionado', 'success');
     }
 
@@ -1276,8 +1318,10 @@ class FormEngine {
             this._showToast('Mínimo 1 item requerido', 'error');
             return;
         }
+        const openLabel = this._getOpenReviewSectionLabel();
         this.removeArrayEntry(secId, fieldId, arrayIdx);
         this.renderReview();
+        this._restoreReviewSection(openLabel || secId);
         this._showToast('Item removido', 'success');
     }
 
