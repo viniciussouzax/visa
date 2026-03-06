@@ -170,7 +170,7 @@
 
 <body>
     <div class="mf-wrapper">
-        <a href="portal.html" class="back-link">← Portal do Solicitante</a>
+        <a href="#" id="backLink" class="back-link">← Portal do Solicitante</a>
 
         <div class="mf-header">
             <div>
@@ -196,9 +196,15 @@
 
     <script>
         let _email = sessionStorage.getItem('client_email');
+        let _companyId = sessionStorage.getItem('client_company_id');
+        let _orgParam = sessionStorage.getItem('client_org');
+        let _orgName = sessionStorage.getItem('client_org_name');
         let _forms = [];
 
         if (!_email) { window.location.href = 'portal.html'; }
+
+        // Set back link with org param
+        document.getElementById('backLink').href = 'portal.html' + (_orgParam ? '?org=' + _orgParam : '');
 
         function calcProgress(data) {
             if (!data || typeof data !== 'object') return 0;
@@ -222,7 +228,7 @@
         }
 
         async function loadForms() {
-            document.getElementById('userEmail').textContent = _email;
+            document.getElementById('userEmail').textContent = _email + (_orgName ? ' — ' + _orgName : '');
             document.getElementById('loadingState').classList.remove('hidden');
 
             try {
@@ -231,12 +237,12 @@
                     _forms = JSON.parse(cached);
                     sessionStorage.removeItem('client_results');
                 } else {
-                    const rows = await AppCore.sbGet(
-                        'applicants?or=(data->>email.ilike.' + encodeURIComponent(_email) +
+                    let q = 'applicants?or=(data->>email.ilike.' + encodeURIComponent(_email) +
                         ',data->personal1->>email.ilike.' + encodeURIComponent(_email) +
                         ',data->contact->>email.ilike.' + encodeURIComponent(_email) +
-                        ')&select=id,full_name,data,stage,created_at&order=created_at.desc'
-                    );
+                        ')&select=id,full_name,data,stage,created_at&order=created_at.desc';
+                    if (_companyId) q = 'applicants?company_id=eq.' + _companyId + '&' + q.replace('applicants?', '');
+                    const rows = await AppCore.sbGet(q);
                     _forms = rows || [];
                 }
                 renderForms();
@@ -282,11 +288,13 @@
 
         async function createNewForm() {
             try {
-                const result = await AppCore.sbFetch('applicants', 'POST', {
+                const payload = {
                     full_name: 'Novo Solicitante',
                     data: { personal1: { email: _email } },
                     stage: 'coleta', status: 'aguardando_execucao', result: 'indefinido', priority: 'normal'
-                });
+                };
+                if (_companyId) payload.company_id = _companyId;
+                const result = await AppCore.sbFetch('applicants', 'POST', payload);
                 if (result?.[0]) openForm(result[0].id);
             } catch (e) {
                 console.error('[Forms] Create error:', e);

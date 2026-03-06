@@ -155,7 +155,7 @@
     <div class="portal-card">
         <div class="portal-brand"><span>SENDS160</span></div>
         <h1>Portal do Solicitante</h1>
-        <p class="subtitle">Insira seu e-mail para acessar seus formulários DS-160.</p>
+        <p class="subtitle" id="orgLabel">Insira seu e-mail para acessar seus formulários DS-160.</p>
 
         <form id="searchForm" onsubmit="searchByEmail(event)">
             <div class="portal-field">
@@ -175,6 +175,10 @@
         const sbGet = AppCore.sbGet;
         const _params = new URLSearchParams(location.search);
         const _idParam = _params.get('id');
+        const _orgParam = _params.get('org');
+
+        let _companyId = null;
+        let _orgName = '';
 
         // Retrocompatibilidade: ?id= redireciona direto
         if (_idParam) {
@@ -182,12 +186,42 @@
             window.location.href = 'index.html?id=' + _idParam + '&secure_entry=1';
         }
 
+        // Validate org param — mandatory
+        async function initPortal() {
+            if (!_orgParam) {
+                showOrgError();
+                AppCore.hideLoading();
+                return;
+            }
+            try {
+                const rows = await sbGet('companies?short_id=eq.' + encodeURIComponent(_orgParam) + '&select=id,name&limit=1');
+                if (!rows || !rows[0]) {
+                    showOrgError();
+                    AppCore.hideLoading();
+                    return;
+                }
+                _companyId = rows[0].id;
+                _orgName = rows[0].name || _orgParam;
+                document.getElementById('orgLabel').textContent = _orgName + ' — Insira seu e-mail para acessar seus formulários DS-160.';
+            } catch (e) {
+                console.error('[Portal] Org resolve error:', e);
+                showOrgError();
+            }
+            AppCore.hideLoading();
+        }
+
+        function showOrgError() {
+            document.getElementById('searchForm').style.display = 'none';
+            document.getElementById('errorText').textContent = 'Link inválido. Este portal precisa ser acessado através do link fornecido pela sua organização.';
+            document.getElementById('errorMsg').classList.add('show');
+        }
+
         async function searchByEmail(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             const errEl = document.getElementById('errorMsg');
             const email = document.getElementById('emailInput').value.trim().toLowerCase();
-            if (!email) return;
+            if (!email || !_companyId) return;
 
             btn.disabled = true;
             btn.textContent = 'Buscando...';
@@ -195,7 +229,8 @@
 
             try {
                 const rows = await sbGet(
-                    'applicants?or=(data->>email.ilike.' + encodeURIComponent(email) +
+                    'applicants?company_id=eq.' + _companyId +
+                    '&or=(data->>email.ilike.' + encodeURIComponent(email) +
                     ',data->personal1->>email.ilike.' + encodeURIComponent(email) +
                     ',data->contact->>email.ilike.' + encodeURIComponent(email) +
                     ')&select=id,full_name,data,stage,created_at&order=created_at.desc'
@@ -204,6 +239,9 @@
                 // Save to session and redirect — even with 0 results
                 // meus-formularios.html shows empty state with "Create New" button
                 sessionStorage.setItem('client_email', email);
+                sessionStorage.setItem('client_company_id', _companyId);
+                sessionStorage.setItem('client_org', _orgParam);
+                sessionStorage.setItem('client_org_name', _orgName);
                 sessionStorage.setItem('client_results', JSON.stringify(rows || []));
                 window.location.href = 'meus-formularios.html';
             } catch (err) {
@@ -215,7 +253,7 @@
             }
         }
 
-        AppCore.hideLoading();
+        initPortal();
     </script>
 </body>
 
