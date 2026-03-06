@@ -95,6 +95,7 @@
                             <div class="custom-check" id="checkAll" onclick="toggleAll()">✓</div>
                         </th>
                         <th onclick="sortBy('name')">Solicitante</th>
+                        <th>Prioridade</th>
                         <th>Progresso</th>
                         <th onclick="sortBy('status')" id="colInfoHeader">Status</th>
                         <th>Ações</th>
@@ -348,7 +349,8 @@
                 else infoCell = `<span class="info-label">${STAGE_LABELS[a.stage]}</span>`;
                 return `<tr class="${extraClass || ''} ${sel ? 'selected' : ''}" draggable="true" data-id="${a.id}" ondblclick="window.location.href=buildUrl('${a.id}','assessor')" ondragstart="handleDragStart(event,'${a.id}')" ondragover="handleDragOver(event)" ondragleave="event.currentTarget.classList.remove('drag-over','drag-above','drag-below')" ondrop="handleDrop(event,'${a.id}')">
                     <td class="check-col"><div class="custom-check ${sel ? 'checked' : ''}" onclick="event.stopPropagation();toggleSelect('${a.id}')">✓</div></td>
-                    <td onclick="openReview('${a.id}')"><div class="name-col">${nameIcon}<div class="name-info"><div class="name">${a.name} ${priBadge}</div>${!isSubRow && a.passport ? `<div class="passport">${a.passport}</div>` : ''}</div></div></td>
+                    <td onclick="openReview('${a.id}')"><div class="name-col">${nameIcon}<div class="name-info"><div class="name">${a.name}</div>${!isSubRow && a.passport ? `<div class="passport">${a.passport}</div>` : ''}</div></div></td>
+                    <td>${priBadge || '<span class="priority-badge" data-priority="normal">Normal</span>'}</td>
                     <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" style="width:${a.progress}%;background:${pc}"></div></div><span class="progress-label">${a.progress}%</span></div></td>
                     <td>${infoCell}</td>
                     <td><div class="row-actions">
@@ -378,7 +380,8 @@
                     const groupPriBadge = maxPri !== 'normal' ? `<span class="priority-badge" data-priority="${maxPri}">${gpCfg.icon} ${gpCfg.label}</span>` : '';
                     html += `<tr class="group-row" draggable="true" data-group="${a.group_code}" onclick="toggleGroup('${a.group_code}')" ondragstart="handleDragStart(event,'group_${a.group_code}')" ondragover="handleDragOver(event)" ondragleave="event.currentTarget.classList.remove('drag-over','drag-above','drag-below')" ondrop="handleDrop(event,'group_${a.group_code}')">
                         <td class="check-col"></td>
-                        <td><div class="name-col"><span class="group-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></span><div class="name-info"><div class="name">${groupLabel} <span class="group-count">${members.length}</span> ${groupPriBadge}</div><div class="passport">${isOpen ? '▼' : '▶'} ${members.map(m => m.name.split(' ')[0]).join(', ')}</div></div></div></td>
+                        <td><div class="name-col"><span class="group-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></span><div class="name-info"><div class="name">${groupLabel} <span class="group-count">${members.length}</span></div><div class="passport">${isOpen ? '▼' : '▶'} ${members.map(m => m.name.split(' ')[0]).join(', ')}</div></div></div></td>
+                        <td>${groupPriBadge || '<span class="priority-badge" data-priority="normal">Normal</span>'}</td>
                         <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" style="width:${avgProgress}%;background:${pc}"></div></div><span class="progress-label">${avgProgress}%</span></div></td>
                         <td></td>
                         <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();copyGroupLink('${a.group_code}')" title="Copiar link do grupo">🔗</button><button class="row-btn" onclick="event.stopPropagation();showGroupPriorityMenu(event,'${a.group_code}')" title="Prioridade do grupo">⋮</button></div></td></tr>`;
