@@ -828,12 +828,45 @@
             document.querySelector('.sidebar').style.display = 'none';
             document.querySelector('.main').style.display = 'none';
 
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
-                _currentUser = session.user;
-                _sessionToken = session.access_token;
-                if (await checkAdminRole()) { await showAdmin(); return; }
+            // Try 1: URL/session auth token (passed from dashboard via navigate)
+            const urlAuth = AppCore.getAuth();
+            if (urlAuth && urlAuth !== SUPABASE_KEY) {
+                window._sessionToken = urlAuth;
+                try {
+                    // Validate token by making a test request
+                    await sbGet('applicants?select=id&limit=1');
+                    // Try to get user info from supabase session or JWT payload
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session?.user) {
+                        _currentUser = session.user;
+                        _sessionToken = session.access_token;
+                    } else {
+                        // Decode JWT to get user info
+                        try {
+                            const payload = JSON.parse(atob(urlAuth.split('.')[1]));
+                            _currentUser = { id: payload.sub, email: payload.email || payload.sub || '' };
+                        } catch { }
+                    }
+                    if (_currentUser && await checkAdminRole()) { await showAdmin(); AppCore.hideLoading(); return; }
+                } catch (e) {
+                    console.warn('[Admin] URL token invalid:', e.message);
+                    AppCore.clearSession(); window._sessionToken = null;
+                }
             }
+
+            // Try 2: Supabase native session (cookie/localStorage)
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session?.user) {
+                    _currentUser = session.user;
+                    _sessionToken = session.access_token;
+                    if (await checkAdminRole()) { await showAdmin(); AppCore.hideLoading(); return; }
+                }
+            } catch { }
+
+            // No valid session or not admin → show login
+            AppCore.hideLoading();
+            document.getElementById('loginOverlay').style.display = 'flex';
         })();
     </script>
 </body>
