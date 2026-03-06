@@ -530,6 +530,25 @@ textarea.field-input {
     height: 14px;
 }
 
+/* N/A or Unknown active — disabled look */
+.field-row.na-disabled {
+    background: #f1f5f9;
+    border-radius: var(--radius-sm);
+    opacity: .65;
+    transition: all .2s ease;
+}
+
+.field-row.na-disabled .field-input {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.field-row.na-disabled .field-label {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
 .date-grid {
     display: flex;
     gap: 8px;

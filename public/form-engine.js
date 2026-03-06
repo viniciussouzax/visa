@@ -551,6 +551,9 @@ class FormEngine {
         el.classList.remove('error');
         const errEl = document.getElementById('err-' + key);
         if (errEl) errEl.textContent = '';
+        // Visual: mark parent row as disabled
+        const fieldRow = el.closest('.field-row');
+        if (fieldRow) fieldRow.classList.toggle('na-disabled', checked);
         this.updateProgress();
     }
 
@@ -573,6 +576,10 @@ class FormEngine {
             this.data[key] = '';
             this.unknownFields.delete(key);
         }
+        // Visual: mark parent row as disabled
+        const target = el || document.getElementById(key + '.day');
+        const fieldRow = target?.closest('.field-row');
+        if (fieldRow) fieldRow.classList.toggle('na-disabled', checked);
         this.updateProgress();
     }
 
