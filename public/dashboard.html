@@ -624,10 +624,12 @@
             <div class="modal-box" onclick="event.stopPropagation()">
                 <h3 class="modal-title">Novo Solicitante</h3>
                 <label class="modal-label">Nome completo</label>
-                <input type="text" id="createName" class="modal-input" autofocus>
-                <label class="modal-label">Grupo <span class="modal-hint">(opcional — ex: SILVA2026)</span></label>
+                <input type="text" id="createName" class="modal-input" placeholder="Ex: JOAO DA SILVA" autofocus>
+                <label class="modal-label">Grupo <span class="modal-hint">(selecione existente ou crie novo)</span></label>
                 <input type="text" id="createGroup" list="groupList" placeholder="Deixe vazio para individual" class="modal-input">
                 <datalist id="groupList">${datalistOpts}</datalist>
+                <div id="createGroupHint" style="font-size:11px;color:var(--text-muted);margin-top:4px"></div>
+                <div id="createError" style="color:#ef4444;font-size:12px;margin-top:4px;display:none"></div>
                 <div class="modal-actions">
                     <button class="modal-btn" onclick="document.getElementById('${id}').remove()">Cancelar</button>
                     <button class="modal-btn primary" id="createConfirm">Criar</button>
@@ -636,9 +638,27 @@
             document.body.insertAdjacentHTML('beforeend', html);
             const nameInput = document.getElementById('createName');
             const groupInput = document.getElementById('createGroup');
+            const hintEl = document.getElementById('createGroupHint');
+            const errEl = document.getElementById('createError');
             setTimeout(() => nameInput.focus(), 100);
+
+            // Show hint when typing group name
+            groupInput.addEventListener('input', () => {
+                const val = groupInput.value.trim().toUpperCase();
+                errEl.style.display = 'none';
+                if (!val) { hintEl.textContent = ''; return; }
+                if (existingGroups.includes(val)) {
+                    hintEl.textContent = '✅ Grupo existente — será vinculado';
+                    hintEl.style.color = '#22c55e';
+                } else {
+                    hintEl.textContent = '🆕 Novo grupo será criado';
+                    hintEl.style.color = '#3b82f6';
+                }
+            });
+
             const doCreate = async () => {
-                const name = nameInput.value.trim(); if (!name) return;
+                const name = nameInput.value.trim();
+                if (!name) { errEl.textContent = 'Informe o nome'; errEl.style.display = 'block'; return; }
                 const groupCode = groupInput.value.trim().toUpperCase() || null;
                 document.getElementById(id).remove();
                 try {
@@ -700,12 +720,30 @@
         function viewJSON(id) { const a = applicants.find(x => x.id === id); if (a?.data) { navigator.clipboard.writeText(JSON.stringify(a.data, null, 2)); showToast('JSON copiado!', 'success'); } else showToast('Sem dados', 'error'); }
         function bulkExport() { const d = applicants.filter(a => selectedIds.has(a.id)).map(a => a.data || {}); navigator.clipboard.writeText(JSON.stringify(d, null, 2)); showToast('Exportado!', 'success'); }
 
-        // Individual delete with confirmation
+        // Individual delete/archive with protection
         async function deleteApplicant(id, name) {
+            const a = applicants.find(x => x.id === id);
+            const hasFilled = a && a.progress > 0;
+
+            if (hasFilled) {
+                // Cannot delete — offer archive instead
+                showConfirmModal('Arquivar Solicitante',
+                    `<strong>${name}</strong> já preencheu dados no formulário e não pode ser excluído.<br><small style="color:var(--text-muted)">Deseja arquivar em vez de excluir?</small>`,
+                    async () => {
+                        try {
+                            await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { stage: 'arquivado' });
+                            if (a) a.stage = 'arquivado';
+                            renderTable(); renderFilters(); updateBadges();
+                            showToast('Solicitante arquivado.', 'success');
+                        } catch (e) { showToast('Erro: ' + e.message, 'error'); }
+                    });
+                return;
+            }
+
             showConfirmModal('Excluir Solicitante', `Tem certeza que deseja excluir <strong>${name}</strong>?<br><small style="color:var(--text-muted)">Esta ação não pode ser desfeita.</small>`, async () => {
                 try {
                     await sbFetch(`applicants?id=eq.${id}`, 'DELETE');
-                    applicants = applicants.filter(a => a.id !== id);
+                    applicants = applicants.filter(x => x.id !== id);
                     selectedIds.delete(id);
                     renderTable(); renderFilters(); updateBadges();
                     showToast('Solicitante excluído.', 'success');
@@ -766,7 +804,7 @@
 
                 // === GROUP STAGE RULES ===
                 if (field === 'stage' && a && a.group_code) {
-                    const groupMembers = applicants.filter(x => x.group_code === a.group_code);
+                    const groupMembers = applicants.filter(x => x.group_code === a.group_code && x.stage !== 'arquivado');
                     const stageOrder = ['coleta', 'analise', 'producao', 'entrevista', 'concluido', 'arquivado'];
                     const currentIdx = stageOrder.indexOf(a.stage);
                     const targetIdx = stageOrder.indexOf(value);
