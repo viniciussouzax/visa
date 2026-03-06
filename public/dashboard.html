@@ -495,76 +495,29 @@
             showToast('Ordem atualizada!', 'success');
         }
 
-        // ─── UNLINK MODAL (smart email detection) ───
+        // ─── UNLINK MODAL (simplified) ───
         function showUnlinkModal(applicant) {
-            const d = applicant.data || {};
-            // 1) Try to find email from form data
-            let autoEmail = d['contact.usContactEmail'] || d['personal.email'] || d['contact.email'] || d.email || '';
-
-            // 2) If no personal email, try group responsible email
-            if (!autoEmail && applicant.group_code) {
-                const groupMembers = applicants.filter(a => a.group_code === applicant.group_code && a.id !== applicant.id);
-                for (const m of groupMembers) {
-                    const md = m.data || {};
-                    autoEmail = md['contact.usContactEmail'] || md['personal.email'] || md['contact.email'] || md.email || '';
-                    if (autoEmail) break;
-                }
-            }
-
-            // 3) If email found, confirm directly
-            if (autoEmail) {
-                showConfirmModal('Desvincular do Grupo',
-                    `Deseja remover <strong>${applicant.name}</strong> do grupo?<br><small style="color:var(--text-muted)">Será vinculado ao email: <strong>${autoEmail}</strong></small>`,
-                    async () => {
-                        try {
-                            const updatedData = { ...d, email: autoEmail };
-                            await sbFetch(`applicants?id=eq.${applicant.id}`, 'PATCH', { group_code: null, data: updatedData });
-                            applicant.group_code = null; applicant.data = updatedData;
-                            renderTable(); updateBadges();
-                            showToast(`${applicant.name} desvinculado do grupo!`, 'success');
-                        } catch (err) { showToast('Erro: ' + err.message, 'error'); }
-                    });
-                return;
-            }
-
-            // 4) No email found — show input dialog
-            const mid = 'unlinkModal';
-            const existing = document.getElementById(mid); if (existing) existing.remove();
-            const html = `<div id="${mid}" class="modal-overlay">
-            <div class="modal-box">
-                <h3 class="modal-title">Desvincular do Grupo</h3>
-                <p class="modal-body">Deseja remover <strong>${applicant.name}</strong> do grupo?<br>
-                <small style="color:var(--text-muted)">Nenhum e-mail encontrado no formulário. Informe o e-mail de vinculação:</small></p>
-                <input type="email" id="unlinkEmail" class="field-input" placeholder="email@solicitante.com" style="margin:12px 0;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-body);color:var(--text-primary);font-size:13px">
-                <div id="unlinkError" style="color:#ef4444;font-size:12px;margin-bottom:8px;display:none"></div>
-                <div class="modal-actions">
-                    <button class="modal-btn" id="btnCancelUnlink">Cancelar</button>
-                    <button class="modal-btn danger" id="btnConfirmUnlink">Desvincular</button>
-                </div>
-            </div></div>`;
-            document.body.insertAdjacentHTML('beforeend', html);
-            const modalEl = document.getElementById(mid);
-            const emailInput = document.getElementById('unlinkEmail');
-            const errEl = document.getElementById('unlinkError');
-            setTimeout(() => emailInput.focus(), 50);
-            modalEl.addEventListener('click', (e) => { if (e.target === modalEl) modalEl.remove(); });
-            document.getElementById('btnCancelUnlink').addEventListener('click', () => modalEl.remove());
-            document.getElementById('btnConfirmUnlink').addEventListener('click', async () => {
-                const email = emailInput.value.trim();
-                if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    errEl.textContent = 'Informe um e-mail válido'; errEl.style.display = 'block'; return;
-                }
-                try {
-                    const updatedData = { ...d, email };
-                    await sbFetch(`applicants?id=eq.${applicant.id}`, 'PATCH', { group_code: null, data: updatedData });
-                    applicant.group_code = null; applicant.data = updatedData;
-                    modalEl.remove();
-                    renderTable(); updateBadges();
-                    showToast(`${applicant.name} desvinculado do grupo!`, 'success');
-                } catch (err) {
-                    errEl.textContent = 'Erro: ' + err.message; errEl.style.display = 'block';
-                }
-            });
+            showConfirmModal('Desvincular do Grupo',
+                `Deseja remover <strong>${applicant.name}</strong> do grupo <strong>${applicant.group_code}</strong>?`,
+                async () => {
+                    try {
+                        // PATCH group_code to null
+                        const res = await fetch(SUPABASE_URL + '/rest/v1/applicants?id=eq.' + applicant.id, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'apikey': SUPABASE_KEY,
+                                'Authorization': 'Bearer ' + (window._sessionToken || AppCore.getAuth() || SUPABASE_KEY),
+                                'Prefer': 'return=representation'
+                            },
+                            body: JSON.stringify({ group_code: null })
+                        });
+                        if (!res.ok) throw new Error(await res.text());
+                        applicant.group_code = null;
+                        renderTable(); updateBadges();
+                        showToast(`${applicant.name} desvinculado!`, 'success');
+                    } catch (err) { showToast('Erro: ' + err.message, 'error'); }
+                });
         }
 
         // ==========================================
