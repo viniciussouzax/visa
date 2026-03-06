@@ -402,6 +402,7 @@ body.no-sidebar {
     color: var(--text-primary);
     outline: none;
     transition: var(--transition);
+    text-transform: uppercase;
 }
 
 .field-input:focus {
@@ -727,10 +728,22 @@ textarea.field-input {
     opacity: .5;
 }
 
-/* ---- Inline editing (Assessor) ---- */
 input.edit-inline,
-select.edit-inline,
 textarea.edit-inline {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .1);
+    transition: border-color .2s, box-shadow .2s;
+    text-transform: uppercase;
+}
+
+select.edit-inline {
     width: 100%;
     padding: 6px 10px;
     border: 1.5px solid var(--accent);

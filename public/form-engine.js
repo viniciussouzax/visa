@@ -447,8 +447,8 @@ class FormEngine {
         if (el.dataset && el.dataset.noSpecial === 'true') {
             val = val.replace(this.SPECIAL, '');
         }
-        // Uppercase
-        if (el.dataset && el.dataset.uppercase === 'true') {
+        // Uppercase — DS-160 requires all text fields in uppercase
+        if (el.tagName !== 'SELECT' && el.type !== 'hidden') {
             val = val.toUpperCase();
         }
 
@@ -1177,9 +1177,9 @@ class FormEngine {
         const key = secId + '.' + fieldId;
         const f = this._findField(secId, fieldId);
 
-        // Apply transformations
-        if (f && f.uppercase && newVal) newVal = newVal.toUpperCase();
-        if (f && f.noSpecial && newVal) newVal = newVal.replace(this.SPECIAL, '');
+        // Apply transformations — DS-160 requires uppercase for all text fields
+        if (f && typeof newVal === 'string' && newVal && f.type !== 'select') newVal = newVal.toUpperCase();
+        if (f && f.noSpecial && newVal && typeof newVal === 'string') newVal = newVal.replace(this.SPECIAL, '');
 
         this.data[key] = newVal;
 
@@ -1304,8 +1304,9 @@ class FormEngine {
         const f = this._findField(secId, fieldId);
         const subF = f?.fields?.find(sf => sf.id === subId);
 
-        if (subF && subF.uppercase && newVal) newVal = newVal.toUpperCase();
-        if (subF && subF.noSpecial && newVal) newVal = newVal.replace(this.SPECIAL, '');
+        // DS-160 requires uppercase for all text fields
+        if (subF && typeof newVal === 'string' && newVal && subF.type !== 'select') newVal = newVal.toUpperCase();
+        if (subF && subF.noSpecial && newVal && typeof newVal === 'string') newVal = newVal.replace(this.SPECIAL, '');
 
         if (!this.arrayData[key]) this.arrayData[key] = [];
         while (this.arrayData[key].length <= arrayIdx) this.arrayData[key].push({});
