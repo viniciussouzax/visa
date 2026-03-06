@@ -116,13 +116,30 @@
 
         // Must be logged in
         (async function init() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) {
-                window.location.href = 'dashboard.html';
+            // Try Supabase session first
+            let sessionOk = false;
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    window._sessionToken = session.access_token;
+                    AppCore.setSession(session.access_token, null);
+                    sessionOk = true;
+                }
+            } catch { }
+
+            // Fallback: use auth token from URL/sessionStorage
+            if (!sessionOk) {
+                const authToken = AppCore.getAuth();
+                if (authToken && authToken !== SUPABASE_KEY) {
+                    window._sessionToken = authToken;
+                    sessionOk = true;
+                }
+            }
+
+            if (!sessionOk) {
+                window.location.href = AppCore.buildUrl('dashboard.html');
                 return;
             }
-            window._sessionToken = session.access_token;
-            AppCore.setSession(session.access_token, null);
 
             await loadOrgData();
             await loadAssessors();

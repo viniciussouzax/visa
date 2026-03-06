@@ -139,6 +139,13 @@
         let sbFetch = AppCore.sbFetch;
         let sbGet = AppCore.sbGet;
 
+        /** Build form URL: id + tab (assessor/solicitante) with auth/org */
+        function buildUrl(id, tab) {
+            const params = { id };
+            if (tab) params.tab = tab;
+            return AppCore.buildUrl('ds160-form.html', params);
+        }
+
         // ==========================================
         // STATUS MAPPING
         // ==========================================
