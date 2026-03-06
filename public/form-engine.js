@@ -135,7 +135,7 @@ class FormEngine {
 
             const isOpen = idx === 0;
             card.innerHTML = `
-                <div class="section-header" data-sec-idx="${idx}">
+                <div class="section-header" onclick="engine.toggleSection(${idx})">
                     <div class="section-title">
                         <span class="chevron ${isOpen ? 'open' : ''}" id="chev-${idx}">▶</span>
                         <span class="section-num" id="secnum-${idx}">${idx + 1}</span>
@@ -158,16 +158,7 @@ class FormEngine {
 
         this._updateSectionNumbers();
 
-        // Event delegation for section headers (bind ONCE)
-        if (!this._formClickBound) {
-            this._formClickBound = true;
-            formEl.addEventListener('click', e => {
-                const header = e.target.closest('.section-header');
-                if (header && !e.target.closest('.section-body')) {
-                    this.toggleSection(parseInt(header.dataset.secIdx));
-                }
-            });
-        }
+        // No event delegation needed — onclick is on each section-header directly
 
         // Apply defaults to radios
         this.schema.sections.forEach(sec => {
