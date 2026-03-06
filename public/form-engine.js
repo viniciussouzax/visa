@@ -223,27 +223,40 @@ class FormEngine {
 
     _renderInput(key, f) {
         const opts = this._resolveOptions(f);
+        const ph = f.placeholder || this._autoPlaceholder(f);
+        const phAttr = ph ? `placeholder="${ph}"` : '';
+
+        // Detect numeric-only fields (ZIP, year, quantities, salary)
+        const numericIds = ['lengthOfStay', 'monthlySalary', 'lostVisaYear', 'numberOfPrevious',
+            'usAddressZip', 'usContactZip', 'homePostalCode', 'mailPostalCode',
+            'employerPostalCode', 'schoolZip'];
+        const isNumeric = numericIds.includes(f.id);
+        const isZip = ['usAddressZip', 'usContactZip', 'schoolZip'].includes(f.id);
 
         switch (f.type) {
             case 'text':
                 let maskAttr = '';
                 if (f.id === 'ssn') maskAttr = 'data-mask="ssn"';
                 else if (f.id === 'nationalId') maskAttr = 'data-mask="cpf"';
+                else if (isZip) maskAttr = 'data-mask="zip"';
 
-                return `<input type="text" class="field-input" id="${key}" maxlength="${f.maxLen || 100}" 
-                    ${f.noSpecial ? 'data-no-special="true"' : ''} ${f.uppercase ? 'data-uppercase="true"' : ''} ${maskAttr}
+                return `<input type="text" class="field-input" id="${key}" maxlength="${f.maxLen || 100}" ${phAttr}
+                    ${f.noSpecial ? 'data-no-special="true"' : ''} ${f.uppercase ? 'data-uppercase="true"' : ''}
+                    ${isNumeric ? 'data-numeric="true"' : ''} ${maskAttr}
                     oninput="engine.onInput('${key}', this)" onblur="engine.onBlur('${key}', this)">`;
 
             case 'phone':
                 return `<input type="text" class="field-input" id="${key}" maxlength="15" data-mask="phone"
+                    placeholder="(00) 00000-0000"
                     oninput="engine.onInput('${key}', this)" onblur="engine.onBlur('${key}', this)">`;
 
             case 'email':
                 return `<input type="text" class="field-input" id="${key}" maxlength="${f.maxLen || 50}"
+                    placeholder="exemplo@email.com"
                     oninput="engine.onInput('${key}', this)" onblur="engine.onBlur('${key}', this)">`;
 
             case 'textarea':
-                return `<textarea class="field-input" id="${key}" maxlength="${f.maxLen || 200}"
+                return `<textarea class="field-input" id="${key}" maxlength="${f.maxLen || 200}" ${phAttr}
                     oninput="engine.onInput('${key}', this)"></textarea>
                     <div class="field-hint char-count" id="cc-${key}">0/${f.maxLen || 200}</div>`;
 
@@ -276,7 +289,7 @@ class FormEngine {
                 </div>`;
 
             default:
-                return `<input type="text" class="field-input" id="${key}" oninput="engine.onInput('${key}', this)">`;
+                return `<input type="text" class="field-input" id="${key}" ${phAttr} oninput="engine.onInput('${key}', this)">`;
         }
     }
 
@@ -431,6 +444,10 @@ class FormEngine {
     onInput(key, el) {
         let val = el.value || (el.type === 'radio' ? el.value : '');
 
+        // Numeric-only filter
+        if (el.dataset && el.dataset.numeric === 'true' && !el.dataset.mask) {
+            val = val.replace(/\D/g, '');
+        }
         // Filter special chars
         if (el.dataset && el.dataset.noSpecial === 'true') {
             val = val.replace(this.SPECIAL, '');
@@ -465,6 +482,10 @@ class FormEngine {
                     if (m.length > 6) val = val.substring(0, 7) + '.' + m.substring(6);
                     if (m.length > 9) val = val.substring(0, 11) + '-' + m.substring(9);
                 }
+            } else if (maskType === 'zip') {
+                let m = clean.substring(0, 9);
+                val = m;
+                if (m.length > 5) val = m.substring(0, 5) + '-' + m.substring(5);
             }
         }
         el.value = val;
@@ -1322,6 +1343,50 @@ class FormEngine {
     // =========================================
     // HELPERS
     // =========================================
+    _autoPlaceholder(f) {
+        // Generate smart placeholder based on field id/label/type
+        const id = f.id || '';
+        const label = (f.label || '').toLowerCase();
+
+        // Name fields
+        if (id === 'surname' || label.includes('sobrenome')) return 'Ex: SILVA';
+        if (id === 'givenName' || (label.includes('nome') && !label.includes('sobrenome'))) return 'Ex: JOAO';
+
+        // Document fields
+        if (id === 'ssn') return '000-00-0000';
+        if (id === 'nationalId') return '000.000.000-00';
+        if (id === 'number' && label.includes('passaporte')) return 'Ex: XX000000';
+        if (id === 'sevisId') return 'N0000000000';
+        if (id === 'taxId') return 'Número de contribuinte';
+
+        // Address/location
+        if (label.includes('cep') || id.includes('Zip') || id.includes('PostalCode')) return '00000-0000';
+        if (label.includes('cidade')) return 'Ex: São Paulo';
+        if (label.includes('endereço') && label.includes('linha 1')) return 'Rua, número';
+        if (label.includes('endereço') && label.includes('linha 2')) return 'Complemento, bairro';
+
+        // Numeric
+        if (id === 'lengthOfStay') return 'Ex: 30';
+        if (id === 'monthlySalary') return 'Ex: 5000';
+        if (id === 'lostVisaYear') return 'Ex: 2020';
+        if (id === 'numberOfPrevious') return 'Ex: 1';
+
+        // Contact
+        if (f.type === 'email') return 'exemplo@email.com';
+
+        // Textarea descriptions
+        if (f.type === 'textarea') {
+            if (label.includes('funções') || label.includes('duties')) return 'Descreva suas principais atividades...';
+            if (label.includes('explique')) return 'Forneça uma explicação detalhada...';
+            return 'Digite aqui...';
+        }
+
+        // Generic text with maxLen hint
+        if (f.type === 'text' && f.maxLen && f.maxLen <= 20) return `Máx. ${f.maxLen} caracteres`;
+
+        return '';
+    }
+
     _findField(secId, fieldId) {
         const sec = this.schema.sections.find(s => s.id === secId);
         return sec?.fields.find(f => f.id === fieldId);

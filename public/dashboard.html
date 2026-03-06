@@ -293,7 +293,7 @@
             return items;
         }
 
-        function toggleGroup(code) { expandedGroups.has(code) ? expandedGroups.delete(code) : expandedGroups.add(code); renderTable(); }
+        function toggleGroup(code) { if (_wasDragging) return; expandedGroups.has(code) ? expandedGroups.delete(code) : expandedGroups.add(code); renderTable(); }
 
         function renderTable() {
             const allItems = getFiltered();
@@ -382,8 +382,10 @@
         // ==========================================
         let _dragId = null;
         let _dragEl = null;
+        let _wasDragging = false;
         function handleDragStart(e, id) {
             _dragId = id;
+            _wasDragging = true;
             _dragEl = e.currentTarget;
             _dragEl.style.opacity = '0.4';
             e.dataTransfer.effectAllowed = 'move';
@@ -395,6 +397,7 @@
             document.querySelectorAll('.drag-over,.drag-above,.drag-below').forEach(el => {
                 el.classList.remove('drag-over', 'drag-above', 'drag-below');
             });
+            setTimeout(() => { _wasDragging = false; }, 100);
         }
         function handleDragOver(e) {
             e.preventDefault(); e.dataTransfer.dropEffect = 'move';
@@ -405,10 +408,11 @@
             tr.classList.toggle('drag-above', e.clientY < midY);
             tr.classList.toggle('drag-below', e.clientY >= midY);
         }
+        function isGroupId(rawId) { return rawId && rawId.startsWith('group_'); }
+        function getGroupCode(rawId) { return rawId ? rawId.replace('group_', '') : null; }
         function resolveId(rawId) {
-            // Se for group_XXX, resolve para o primeiro membro do grupo
-            if (rawId && rawId.startsWith('group_')) {
-                const gc = rawId.replace('group_', '');
+            if (isGroupId(rawId)) {
+                const gc = getGroupCode(rawId);
                 const member = applicants.find(a => a.group_code === gc);
                 return member ? member.id : null;
             }
@@ -416,15 +420,33 @@
         }
         async function handleDrop(e, targetId) {
             e.preventDefault(); e.currentTarget.classList.remove('drag-over', 'drag-above', 'drag-below');
-            const realDrag = resolveId(_dragId);
-            const realTarget = resolveId(targetId);
-            if (!realDrag || !realTarget || realDrag === realTarget) { _dragId = null; return; }
+            if (!_dragId || _dragId === targetId) { _dragId = null; return; }
+
             const items = getFiltered();
-            const dragIdx = items.findIndex(a => a.id === realDrag);
-            const targetIdx = items.findIndex(a => a.id === realTarget);
-            if (dragIdx < 0 || targetIdx < 0) { _dragId = null; return; }
-            const [moved] = items.splice(dragIdx, 1); items.splice(targetIdx, 0, moved);
-            const updates = items.map((a, i) => ({ id: a.id, sort_order: i + 1 }));
+            let dragMembers = [];
+
+            // Collect dragged items (single or all group members)
+            if (isGroupId(_dragId)) {
+                const gc = getGroupCode(_dragId);
+                dragMembers = items.filter(a => a.group_code === gc);
+            } else {
+                const single = items.find(a => a.id === _dragId);
+                if (single) dragMembers = [single];
+            }
+
+            const realTarget = resolveId(targetId);
+            if (!realTarget || dragMembers.length === 0) { _dragId = null; return; }
+            // Prevent drop onto self
+            if (dragMembers.some(m => m.id === realTarget)) { _dragId = null; return; }
+
+            // Remove dragged members, find new target pos, insert
+            const remaining = items.filter(a => !dragMembers.includes(a));
+            const newTargetIdx = remaining.findIndex(a => a.id === realTarget);
+            if (newTargetIdx < 0) { _dragId = null; return; }
+            remaining.splice(newTargetIdx, 0, ...dragMembers);
+
+            // Update sort_order for all
+            const updates = remaining.map((a, i) => ({ id: a.id, sort_order: i + 1 }));
             updates.forEach(u => { const a = applicants.find(x => x.id === u.id); if (a) a.sort_order = u.sort_order; });
             renderTable();
             for (const u of updates) { try { await sbFetch(`applicants?id=eq.${u.id}`, 'PATCH', { sort_order: u.sort_order }); } catch { } }
