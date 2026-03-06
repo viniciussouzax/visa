@@ -113,8 +113,9 @@
         </div>
 
         <div class="pagination" id="pagination">
+            <button class="pagination-btn" id="paginationPrev" onclick="prevPage()" disabled>← Anterior</button>
             <span id="paginationInfo"></span>
-            <span id="paginationTotal"></span>
+            <button class="pagination-btn" id="paginationNext" onclick="nextPage()">Próximo →</button>
         </div>
     </div>
 
@@ -164,6 +165,8 @@
         let sortField = 'created';
         let sortDir = 'desc';
         let expandedGroups = new Set();
+        let paginationPage = 1;
+        const PAGE_SIZE = 25;
 
         const STATUS_CONFIG = {
             aguardando_execucao: { label: 'Aguardando Execução', class: 'status-pendente' },
@@ -233,7 +236,7 @@
         // NAVIGATION / FILTERS / SORT
         // ==========================================
         function navigateTo(page) {
-            currentPage = page; currentFilter = 'all'; selectedIds.clear(); searchQuery = '';
+            currentPage = page; currentFilter = 'all'; selectedIds.clear(); searchQuery = ''; paginationPage = 1;
             document.getElementById('searchInput').value = '';
             document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
             const pcfg = PAGE_CONFIG[page];
@@ -292,16 +295,26 @@
         function toggleGroup(code) { expandedGroups.has(code) ? expandedGroups.delete(code) : expandedGroups.add(code); renderTable(); }
 
         function renderTable() {
-            const items = getFiltered();
+            const allItems = getFiltered();
             const tbody = document.getElementById('tableBody');
             const empty = document.getElementById('emptyState');
             const loading = document.getElementById('loadingState');
             if (loading) loading.classList.add('hidden');
-            if (!items.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); document.getElementById('pageCount').textContent = ''; document.getElementById('paginationInfo').textContent = ''; document.getElementById('paginationTotal').textContent = ''; return; }
+            if (!allItems.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); document.getElementById('pageCount').textContent = ''; document.getElementById('paginationInfo').textContent = ''; return; }
             empty.classList.add('hidden');
-            document.getElementById('pageCount').textContent = `(${items.length})`;
-            document.getElementById('paginationInfo').textContent = `Mostrando ${items.length}`;
-            document.getElementById('paginationTotal').textContent = `Total: ${getFilteredByPage().length}`;
+
+            // Pagination
+            const totalPages = Math.ceil(allItems.length / PAGE_SIZE);
+            if (paginationPage > totalPages) paginationPage = totalPages;
+            if (paginationPage < 1) paginationPage = 1;
+            const startIdx = (paginationPage - 1) * PAGE_SIZE;
+            const items = allItems.slice(startIdx, startIdx + PAGE_SIZE);
+
+            document.getElementById('pageCount').textContent = `(${allItems.length})`;
+            document.getElementById('paginationInfo').textContent = `${startIdx + 1}–${Math.min(startIdx + PAGE_SIZE, allItems.length)} de ${allItems.length}`;
+            document.getElementById('paginationPrev').disabled = paginationPage <= 1;
+            document.getElementById('paginationNext').disabled = paginationPage >= totalPages;
+            document.getElementById('pagination').classList.toggle('hidden', allItems.length <= PAGE_SIZE);
 
             const groupMap = {}; const solos = [];
             items.forEach(a => { if (a.group_code) { if (!groupMap[a.group_code]) groupMap[a.group_code] = []; groupMap[a.group_code].push(a); } else solos.push(a); });
@@ -323,12 +336,13 @@
                 return `<tr class="${extraClass || ''} ${sel ? 'selected' : ''}" draggable="true" data-id="${a.id}" ondblclick="window.location.href=buildUrl('${a.id}','assessor')" ondragstart="handleDragStart(event,'${a.id}')" ondragover="handleDragOver(event)" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="handleDrop(event,'${a.id}')">
                     <td class="check-col"><div class="custom-check ${sel ? 'checked' : ''}" onclick="event.stopPropagation();toggleSelect('${a.id}')">✓</div></td>
                     <td onclick="openReview('${a.id}')"><div class="name-col"><div class="avatar" data-color="${col}">${ini}</div><div class="name-info"><div class="name">${a.name} ${priBadge}</div><div class="passport">${a.passport || ''}</div></div></div></td>
-                    <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" data-progress="${a.progress}" data-color="${pc}"></div></div><span class="progress-label">${a.progress}%</span></div></td>
+                    <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" style="width:${a.progress}%;background:${pc}"></div></div><span class="progress-label">${a.progress}%</span></div></td>
                     <td>${infoCell}</td>
                     <td><div class="row-actions">
                         <button class="row-btn" onclick="event.stopPropagation();openReview('${a.id}')" title="Revisar">👁</button>
                         <button class="row-btn" onclick="event.stopPropagation();openForm('${a.id}')" title="Editar">✏️</button>
                         <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Gerenciar">⋮</button>
+                        <button class="row-btn row-btn-danger" onclick="event.stopPropagation();deleteApplicant('${a.id}','${a.name.replace(/'/g, '\\&#39;')}')" title="Excluir">🗑️</button>
                     </div></td></tr>`;
             }
 
@@ -347,7 +361,7 @@
                     html += `<tr class="group-row" onclick="toggleGroup('${a.group_code}')">
                         <td class="check-col"></td>
                         <td><div class="name-col"><div class="name-info"><div class="name">${groupLabel} <span class="group-count">${members.length}</span></div><div class="passport">${isOpen ? '▼' : '▶'} ${members.map(m => m.name.split(' ')[0]).join(', ')}</div></div></div></td>
-                        <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" data-progress="${avgProgress}" data-color="${pc}"></div></div><span class="progress-label">${avgProgress}%</span></div></td>
+                        <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" style="width:${avgProgress}%;background:${pc}"></div></div><span class="progress-label">${avgProgress}%</span></div></td>
                         <td></td>
                         <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();copyGroupLink('${a.group_code}')" title="Copiar link do grupo">🔗</button></div></td></tr>`;
                     if (isOpen) members.forEach(m => { html += buildRow(m, 'sub-row'); });
@@ -355,6 +369,9 @@
             });
             tbody.innerHTML = html; updateBulkBar();
         }
+
+        function nextPage() { paginationPage++; renderTable(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        function prevPage() { paginationPage--; renderTable(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
         // ==========================================
         // DRAG AND DROP
@@ -514,6 +531,19 @@
 
         function viewJSON(id) { const a = applicants.find(x => x.id === id); if (a?.data) { navigator.clipboard.writeText(JSON.stringify(a.data, null, 2)); showToast('JSON copiado!', 'success'); } else showToast('Sem dados', 'error'); }
         function bulkExport() { const d = applicants.filter(a => selectedIds.has(a.id)).map(a => a.data || {}); navigator.clipboard.writeText(JSON.stringify(d, null, 2)); showToast('Exportado!', 'success'); }
+
+        // Individual delete with confirmation
+        async function deleteApplicant(id, name) {
+            showConfirmModal('Excluir Solicitante', `Tem certeza que deseja excluir <strong>${name}</strong>?<br><small style="color:var(--text-muted)">Esta ação não pode ser desfeita.</small>`, async () => {
+                try {
+                    await sbFetch(`applicants?id=eq.${id}`, 'DELETE');
+                    applicants = applicants.filter(a => a.id !== id);
+                    selectedIds.delete(id);
+                    renderTable(); renderFilters(); updateBadges();
+                    showToast('Solicitante excluído.', 'success');
+                } catch (e) { showToast('Erro ao excluir: ' + e.message, 'error'); }
+            });
+        }
         async function bulkDelete() {
             showConfirmModal('Excluir Solicitantes', `Tem certeza que deseja excluir ${selectedIds.size} solicitante(s)?`, async () => {
                 let errors = 0;
