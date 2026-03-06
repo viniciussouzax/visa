@@ -158,11 +158,16 @@ class FormEngine {
 
         this._updateSectionNumbers();
 
-        // Event delegation for section headers
-        formEl.addEventListener('click', e => {
-            const header = e.target.closest('.section-header');
-            if (header) this.toggleSection(parseInt(header.dataset.secIdx));
-        });
+        // Event delegation for section headers (bind ONCE)
+        if (!this._formClickBound) {
+            this._formClickBound = true;
+            formEl.addEventListener('click', e => {
+                const header = e.target.closest('.section-header');
+                if (header && !e.target.closest('.section-body')) {
+                    this.toggleSection(parseInt(header.dataset.secIdx));
+                }
+            });
+        }
 
         // Apply defaults to radios
         this.schema.sections.forEach(sec => {
