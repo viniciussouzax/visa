@@ -4161,6 +4161,41 @@ tr.drag-over {
     }
 }
 
+/* ---- Sync status (auto-save indicator) ---- */
+.sync-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+
+.sync-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: background .3s ease;
+}
+
+.sync-status.saving .sync-dot {
+    background: var(--warning);
+    animation: pulse 1s infinite;
+}
+
+.sync-status.saved .sync-dot {
+    background: var(--success);
+}
+
+.sync-status.error .sync-dot {
+    background: var(--danger);
+}
+
+.sync-status.unsaved .sync-dot {
+    background: var(--warning);
+}
+
 /* ---- Hidden utility ---- */
 .hidden {
     display: none !important;

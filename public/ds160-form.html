@@ -122,6 +122,26 @@
         engine.onSave = saveData; // Auto-save on Próximo
 
         // ==========================================
+        // DEBOUNCED AUTO-SAVE (30s after last change)
+        // ==========================================
+        let _autoSaveTimer = null;
+        function scheduleAutoSave() {
+            if (_autoSaveTimer) clearTimeout(_autoSaveTimer);
+            const syncText = document.getElementById('syncText');
+            if (syncText && !syncText.textContent.includes('Salvando')) {
+                syncText.textContent = 'Alterações não salvas';
+                document.getElementById('syncStatus').className = 'sync-status unsaved';
+            }
+            _autoSaveTimer = setTimeout(() => { saveData(); }, 30000);
+        }
+        engine.onChange = scheduleAutoSave;
+
+        // Save on page exit
+        window.addEventListener('beforeunload', () => {
+            if (_autoSaveTimer) { clearTimeout(_autoSaveTimer); saveData(); }
+        });
+
+        // ==========================================
         // LOAD APPLICANT DATA
         // ==========================================
         async function loadApplicantData() {

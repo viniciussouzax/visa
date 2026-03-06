@@ -13,6 +13,7 @@ class FormEngine {
         this.unknownFields = new Set(); // campos marcados "Não sei"
         this.currentSection = 0;
         this.onSave = null; // callback for auto-save
+        this.onChange = null; // callback for change tracking
         this.SPECIAL = /[<>&"'\/\\;:{}[\]|~]/g;
         this.MONTHS = [
             { value: "JAN", label: "Janeiro" }, { value: "FEB", label: "Fevereiro" }, { value: "MAR", label: "Março" },
@@ -491,6 +492,7 @@ class FormEngine {
         el.classList.remove('error');
 
         this.updateProgress();
+        if (this.onChange) this.onChange(key, val);
     }
 
     onBlur(key, el) {
