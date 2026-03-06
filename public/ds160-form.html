@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS-160 — Formulário Schema-Driven</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="app-core.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="no-sidebar">
+
+
+    <div class="header">
+        <button class="btn btn-outline" onclick="goBack()">← Voltar</button>
+        <h1>DS-160</h1>
+        <span class="badge">Schema-Driven</span>
+        <div class="progress-info" id="progressLabel">0/0 campos (0%)</div>
+        <div id="syncStatus" class="sync-status">
+            <span class="sync-dot"></span> <span id="syncText">Aguardando...</span>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showView('form')">Solicitante</div>
+        <div class="tab" onclick="showView('review')">Assessor</div>
+        <div class="tab" onclick="showView('code')">JSON / Playwright</div>
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+
+    <div id="view-group" class="hidden">
+        <div class="group-selector" id="groupContent"></div>
+    </div>
+
+    <div class="container form-wrapper">
+        <div id="view-form"></div>
+        <div id="view-review" class="hidden"></div>
+        <div id="view-code" class="hidden">
+            <div class="code-header">
+                <div class="code-tabs">
+                    <div class="code-tab active" onclick="showCodeTab('json')">JSON</div>
+                    <div class="code-tab" onclick="showCodeTab('playwright')">Playwright</div>
+                </div>
+                <button class="btn btn-outline" onclick="engine.copyToClipboard(currentCodeTab)">Copiar</button>
+            </div>
+            <div class="code-view json-color" id="codeOutput"></div>
+        </div>
+    </div>
+
+    <div id="customModal" class="hidden"></div>
+
+    <div class="btn-bar">
+        <button class="btn btn-outline" onclick="runValidation()">Validar</button>
+        <button class="btn btn-primary" onclick="saveData()">Salvar</button>
+        <button class="btn btn-success" onclick="approveData()">Aprovar</button>
+    </div>
+
+    <!-- Load schema first, then engine -->
+    <script src="ds160-schema.js"></script>
+    <script src="form-engine.js"></script>
+    <script>
+        // ==========================================
+        // SUPABASE CONFIG (via AppCore)
+        // ==========================================
+        const SUPABASE_URL = AppCore.SUPABASE_URL;
+        const SUPABASE_KEY = AppCore.SUPABASE_KEY;
+        const _authToken = AppCore.getAuth();
+        const _orgParam = AppCore.getOrg();
+        const _params = new URLSearchParams(location.search);
+        let _applicantId = _params.get('id');
+        const _tabParam = _params.get('tab');
+        const _secureParam = _params.get('secure_entry');
+        let _groupParam = _params.get('group');
+        let _companyId = null;
+
+        // Detect role: no auth = solicitante (client)
+        let _isAssessor = !!_authToken;
+        if (_tabParam === 'solicitante') _isAssessor = false;
+
+        // Security Gate Block
+        if (!_isAssessor) {
+            document.body.classList.add('role-solicitante');
+
+            if (_secureParam === '1') {
+                const sessionAppId = sessionStorage.getItem('client_app_id');
+                if (sessionAppId) {
+                    _applicantId = sessionAppId;
+                } else {
+                    alert('Sessão expirada ou inválida. Faça login novamente.');
+                    window.location.href = 'portal.html';
+                }
+            } else if (_applicantId) {
+                // Naked URL access -> Force Portal
+                window.location.href = 'portal.html?id=' + _applicantId;
+            }
+        }
+
+        // Resolve org short_id to company_id
+        async function resolveCompanyId() {
+            if (!_orgParam) return;
+            try {
+                const rows = await sbGet('companies?short_id=eq.' + _orgParam + '&select=id&limit=1');
+                if (rows && rows[0]) _companyId = rows[0].id;
+            } catch { }
+        }
+
+        const sbFetch = AppCore.sbFetch;
+        const sbGet = AppCore.sbGet;
+
+        // ==========================================
+        // INIT ENGINE
+        // ==========================================
+        const engine = new FormEngine(DS160_SCHEMA, 'view-form');
+        engine.init();
+        engine.onSave = saveData; // Auto-save on Próximo
+
+        // ==========================================
+        // LOAD APPLICANT DATA
+        // ==========================================
+        async function loadApplicantData() {
+            if (!_applicantId) return;
+            try {
+                const rows = await sbGet('applicants?id=eq.' + _applicantId + '&select=id,full_name,data&limit=1');
+                if (rows && rows[0] && rows[0].data) {
+                    // Populate engine data properly using form engine internal loader
+                    engine.loadData(rows[0].data);
+
+                    // Re-render form with loaded data
+                    engine.renderForm();
+                    engine.updateProgress();
+
+                    // Update title
+                    if (rows[0].full_name) {
+                        document.title = 'DS-160 — ' + rows[0].full_name;
+                    }
+                    console.log('[Form] Dados carregados para:', rows[0].full_name);
+                }
+            } catch (e) {
+                console.error('[Form] Erro ao carregar:', e);
+            }
+        }
+
+        // ==========================================
+        // VIEW SWITCHING
+        // ==========================================
+        function showView(view) {
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.toggle('active',
+                    (view === 'form' && t.textContent.includes('Solicitante')) ||
+                    (view === 'review' && t.textContent.includes('Assessor')) ||
+                    (view === 'code' && t.textContent.includes('Playwright'))
+                );
+            });
+            document.getElementById('view-form').classList.toggle('hidden', view !== 'form');
+            document.getElementById('view-review').classList.toggle('hidden', view !== 'review');
+            document.getElementById('view-code').classList.toggle('hidden', view !== 'code');
+            if (view === 'review') engine.renderReview();
+            if (view === 'code') showCodeTab('json');
+        }
+
+        let currentCodeTab = 'json';
+        function showCodeTab(tab) {
+            currentCodeTab = tab;
+            document.querySelectorAll('.code-tab').forEach(t =>
+                t.classList.toggle('active', t.textContent.toLowerCase().includes(tab))
+            );
+            const output = document.getElementById('codeOutput');
+            if (tab === 'json') {
+                output.className = 'code-view json-color';
+                output.textContent = JSON.stringify(engine.generateJSON(), null, 2);
+            } else {
+                output.className = 'code-view pw-color';
+                output.textContent = engine.generatePlaywrightCode();
+            }
+        }
+        // ==========================================
+        // CUSTOM MODALS (no native dialogs)
+        // ==========================================
+        function showModal(title, bodyHtml, onOk) {
+            const el = document.getElementById('customModal');
+            el.className = 'modal-overlay';
+            el.innerHTML = `<div class="modal-box">
+                <div class="modal-title">${title}</div>
+                <div class="modal-body">${bodyHtml}</div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-primary" id="modalOkBtn">OK</button>
+                </div>
+            </div>`;
+            document.getElementById('modalOkBtn').onclick = () => { el.className = 'hidden'; if (onOk) onOk(); };
+            el.onclick = (e) => { if (e.target === el) el.className = 'hidden'; };
+        }
+
+        function showInputModal(title, label, onSubmit) {
+            const el = document.getElementById('customModal');
+            el.className = 'modal-overlay';
+            el.innerHTML = `<div class="modal-box">
+                <div class="modal-title">${title}</div>
+                <div class="modal-label">${label}</div>
+                <input class="modal-input" id="modalInputField" type="text" placeholder="${label}" autofocus>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-cancel" id="modalCancelBtn">Cancelar</button>
+                    <button class="modal-btn modal-btn-primary" id="modalSubmitBtn">Criar</button>
+                </div>
+            </div>`;
+            const input = document.getElementById('modalInputField');
+            document.getElementById('modalCancelBtn').onclick = () => el.className = 'hidden';
+            document.getElementById('modalSubmitBtn').onclick = () => { el.className = 'hidden'; onSubmit(input.value); };
+            input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { el.className = 'hidden'; onSubmit(input.value); } });
+            el.onclick = (e) => { if (e.target === el) el.className = 'hidden'; };
+            setTimeout(() => input.focus(), 50);
+        }
+
+        function runValidation() {
+            const errors = engine.validateAll();
+            if (errors.length === 0) { engine._showToast('✅ Tudo válido!', 'success'); return; }
+            showErrors();
+        }
+
+        function showErrors() {
+            const errors = engine.validateAll();
+            if (errors.length === 0) { engine._showToast('✅ Tudo válido!', 'success'); return; }
+            const totalMissing = errors.reduce((sum, e) => sum + e.errors.length, 0);
+            const sectionList = errors.map(e => `<div style="margin-bottom:8px"><b>${e.section}</b> — ${e.errors.length} campo(s)</div>`).join('');
+            showModal(`⚠️ ${totalMissing} campo(s) faltando`, `<div style="max-height:300px;overflow-y:auto;font-size:14px">${sectionList}</div>`);
+        }
+
+        // ==========================================
+        // SAVE / APPROVE (Supabase)
+        // ==========================================
+        let _isSaving = false;
+        async function saveData() {
+            if (_isSaving) return;
+            _isSaving = true;
+
+            const syncStatus = document.getElementById('syncStatus');
+            const syncText = document.getElementById('syncText');
+
+            if (syncStatus) {
+                syncStatus.className = 'sync-status saving';
+                syncText.textContent = 'Salvando na nuvem...';
+            }
+
+            const json = engine.generateJSON();
+            // Extract key fields
+            const surname = (json.personal1?.surname || '').toUpperCase();
+            const givenName = (json.personal1?.givenName || '').toUpperCase();
+            const fullName = (surname + ' ' + givenName).trim() || null;
+            const passport = json.passport?.number || null;
+
+            try {
+                if (!_applicantId) {
+                    // Create new applicant
+                    const newRow = {
+                        data: json,
+                        full_name: fullName || 'Novo Solicitante',
+                        pipeline_status: 'filling'
+                    };
+                    if (passport) newRow.passport_number = passport;
+                    if (_companyId) newRow.company_id = _companyId;
+
+                    const result = await sbFetch('applicants', 'POST', newRow);
+                    if (result && result[0]) {
+                        _applicantId = result[0].id;
+                        // Update URL without reload
+                        const newUrl = new URL(location.href);
+                        newUrl.searchParams.set('id', _applicantId);
+                        history.replaceState(null, '', newUrl);
+                        console.log('[Form] Novo applicant criado:', _applicantId);
+                    }
+                } else {
+                    const updatePayload = { data: json, updated_at: new Date().toISOString() };
+                    if (fullName) updatePayload.full_name = fullName;
+                    if (passport) updatePayload.passport_number = passport;
+
+                    // Update pipeline_status if still new
+                    const current = await sbGet('applicants?id=eq.' + _applicantId + '&select=pipeline_status&limit=1');
+                    if (current?.[0]?.pipeline_status === 'new') {
+                        updatePayload.pipeline_status = 'filling';
+                    }
+
+                    await sbFetch('applicants?id=eq.' + _applicantId, 'PATCH', updatePayload);
+                    console.log('[Form] Salvo:', fullName || _applicantId);
+                }
+
+                if (syncStatus) {
+                    syncStatus.className = 'sync-status saved';
+                    syncText.textContent = 'Salvo na nuvem';
+                    setTimeout(() => {
+                        if (syncStatus.classList.contains('saved')) {
+                            syncStatus.className = 'sync-status';
+                            syncText.textContent = 'Atualizado agora';
+                        }
+                    }, 3000);
+                }
+            } catch (e) {
+                console.error('[Form] Save error:', e);
+                if (syncStatus) {
+                    syncStatus.className = 'sync-status error';
+                    syncText.textContent = 'Erro ao salvar';
+                }
+            } finally {
+                _isSaving = false;
+            }
+        }
+
+        async function approveData() {
+            const errors = engine.validateAll();
+            if (errors.length > 0) { showErrors(); return; }
+            await saveData();
+            if (!_applicantId) return;
+            try {
+                await sbFetch('applicants?id=eq.' + _applicantId, 'PATCH', { pipeline_status: 'approved' });
+                engine._showToast('Aprovado e salvo!', 'success');
+            } catch (e) {
+                engine._showToast('Erro ao aprovar: ' + e.message, 'error');
+            }
+        }
+
+        function goBack() {
+            if (_groupParam) {
+                AppCore.navigate('ds160-form.html', { group: _groupParam });
+                return;
+            }
+            AppCore.goToDashboard();
+        }
+
+        function generateGroupCode() {
+            // Generate short readable code: 6 chars alphanumeric
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+            return code;
+        }
+
+        async function addGroupMember() {
+            showInputModal('Adicionar Solicitante', 'Nome completo', async (name) => {
+                if (!name || !name.trim()) return;
+                try {
+                    let groupCode = _groupParam;
+
+                    // Ensure we have company_id
+                    if (!_companyId && _orgParam) await resolveCompanyId();
+                    if (!_companyId) {
+                        engine._showToast('Erro: organização não encontrada.', 'error');
+                        return;
+                    }
+
+                    // Create new applicant in same group
+                    const newRow = {
+                        full_name: name.trim().toUpperCase(),
+                        passport_number: null,
+                        data: {},
+                        pipeline_status: 'filling',
+                        group_code: groupCode,
+                        company_id: _companyId
+                    };
+
+                    const result = await sbFetch('applicants', 'POST', newRow);
+                    if (result?.[0]) {
+                        engine._showToast(name.trim() + ' adicionado ao grupo!', 'success');
+                        // Reload group selector
+                        await showGroupSelector();
+                    }
+                } catch (e) {
+                    console.error('[Form] Add member error:', e);
+                    engine._showToast('Erro ao adicionar: ' + e.message, 'error');
+                }
+            });
+        }
+
+        // ==========================================
+        // GROUP SELECTOR
+        // ==========================================
+        function calcProgressFromData(data) {
+            if (!data || typeof data !== 'object') return 0;
+            let total = 0, filled = 0;
+            Object.values(data).forEach(section => {
+                if (typeof section !== 'object' || Array.isArray(section)) return;
+                Object.values(section).forEach(v => {
+                    total++;
+                    if (v !== null && v !== undefined && v !== '' && v !== 'N/S') filled++;
+                });
+            });
+            return total ? Math.round((filled / total) * 100) : 0;
+        }
+
+        async function showGroupSelector() {
+            // Hide form UI, show group view
+            document.querySelector('.header').style.display = 'none';
+            document.querySelector('.tabs').style.display = 'none';
+            document.querySelector('.progress-bar').style.display = 'none';
+            document.querySelector('.container').style.display = 'none';
+            document.querySelector('.btn-bar').style.display = 'none';
+            document.getElementById('view-group').classList.remove('hidden');
+
+            const container = document.getElementById('groupContent');
+            container.innerHTML = '<p style="color:#64748b">Carregando membros do grupo...</p>';
+
+            try {
+                let groupQuery = 'applicants?group_code=eq.' + encodeURIComponent(_groupParam) + '&select=id,full_name,passport_number,data&order=created_at.asc';
+                if (_companyId) groupQuery += '&company_id=eq.' + _companyId;
+                const members = await sbGet(groupQuery);
+                if (!members || !members.length) {
+                    container.innerHTML = '<p style="color:#64748b">Nenhum formulário encontrado para este grupo.</p>';
+                    return;
+                }
+
+                const orgLabel = _orgParam ? _orgParam.toUpperCase() : '';
+                let html = `<h2>Grupo: ${_groupParam}</h2>`;
+                html += `<p class="group-subtitle">${orgLabel ? orgLabel + ' — ' : ''}Selecione um membro para continuar o preenchimento</p>`;
+
+                members.forEach(m => {
+                    const name = m.full_name || '(Sem nome)';
+                    const ini = name.split(' ').map(w => w[0]).slice(0, 2).join('');
+                    const passport = m.passport_number || '';
+                    const progress = calcProgressFromData(m.data);
+                    const pc = progress >= 100 ? '#22c55e' : progress > 50 ? '#3b82f6' : '#f59e0b';
+                    const btnLabel = progress > 0 ? 'Continuar' : 'Começar';
+
+                    // Build URL for this member
+                    const memberParams = { id: m.id };
+                    if (_groupParam) memberParams.group = _groupParam;
+                    const memberUrl = AppCore.buildUrl('ds160-form.html', memberParams);
+
+                    html += `<div class="group-member" onclick="window.location.href='${memberUrl}'">
+                        <div class="group-member-info">
+                            <div>
+                                <div class="group-member-name">${name}</div>
+                                <div class="group-member-passport">${passport || '—'}</div>
+                            </div>
+                        </div>
+                        <div class="group-member-right">
+                            <div class="group-member-progress">
+                                <div class="track"><div class="bar" style="width:${progress}%;background:${pc}"></div></div>
+                                <span>${progress}%</span>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+
+                // Add member button
+                html += `<div class="group-member" onclick="addGroupMember()" style="border:2px solid #3b82f6;background:#3b82f6;justify-content:center;gap:10px;color:#ffffff;font-weight:600;font-size:14px;cursor:pointer;border-radius:12px">
+                    Adicionar Solicitante
+                </div>`;
+
+                container.innerHTML = html;
+            } catch (e) {
+                console.error('[Group] Erro:', e);
+                container.innerHTML = '<p style="color:#ef4444">Erro ao carregar grupo.</p>';
+            }
+        }
+
+        // ==========================================
+        // STARTUP
+        // ==========================================
+        (async function startup() {
+            await resolveCompanyId();
+
+            // Validate assessor token explicitly
+            if (_isAssessor && _authToken && _authToken !== SUPABASE_KEY) {
+                try {
+                    await AppCore.sbFetch('applicants?select=id&limit=1', 'GET');
+                } catch (e) {
+                    console.warn('[Auth] Invalid token, downgrading to Solicitante view');
+                    _isAssessor = false;
+                    document.body.classList.add('role-solicitante');
+                }
+            }
+
+            // If group param and no specific id, show group selector
+            if (_groupParam && !_applicantId) {
+                await showGroupSelector();
+                AppCore.hideLoading();
+                return;
+            }
+
+            await loadApplicantData();
+            // Open requested tab
+            if (_tabParam === 'assessor') showView('review');
+            else if (_tabParam === 'code') showView('code');
+            else showView('form');
+            // Hide loading screen
+            AppCore.hideLoading();
+        })();
+    </script>
+</body>
+
+</html>

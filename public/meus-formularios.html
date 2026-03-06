@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS-160 — Meus Formulários</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app-core.js"></script>
+    <style>
+        /* Page-specific: no sidebar, centered container */
+        body {
+            background: var(--bg-body);
+            flex-direction: column;
+        }
+
+        .mf-wrapper {
+            max-width: 720px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .mf-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            gap: 16px;
+        }
+
+        .mf-header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -.3px;
+        }
+
+        .mf-header .email-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .mf-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .form-card {
+            padding: 20px 24px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-card);
+        }
+
+        .form-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, .08);
+            transform: translateY(-2px);
+        }
+
+        .form-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .form-card-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .form-card-date {
+            font-size: 12px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .form-card-stage {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 12px;
+            border-radius: var(--radius-pill);
+            background: var(--accent-bg);
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+
+        .form-card-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .form-card-progress .progress-track {
+            flex: 1;
+            height: 6px;
+        }
+
+        .form-card-progress span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 36px;
+            text-align: right;
+        }
+
+        .form-card-action {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .mf-empty {
+            text-align: center;
+            padding: 60px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+        }
+
+        .mf-empty h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .mf-empty p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .mf-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 60px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .back-link {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 16px;
+            transition: var(--transition);
+        }
+
+        .back-link:hover {
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mf-wrapper">
+        <a href="portal.html" class="back-link">← Portal do Solicitante</a>
+
+        <div class="mf-header">
+            <div>
+                <h1>Meus Formulários</h1>
+                <div class="email-label" id="userEmail"></div>
+            </div>
+            <button class="btn-new" onclick="createNewForm()">+ Nova Solicitação</button>
+        </div>
+
+        <div id="formList" class="mf-list"></div>
+
+        <div id="emptyState" class="mf-empty hidden">
+            <h3>Nenhum formulário encontrado</h3>
+            <p>Clique em "Nova Solicitação" para começar seu primeiro formulário DS-160.</p>
+            <button class="btn-new" onclick="createNewForm()">Criar Primeiro Formulário</button>
+        </div>
+
+        <div id="loadingState" class="mf-loading">
+            <div class="spinner"></div>
+            <span>Carregando formulários...</span>
+        </div>
+    </div>
+
+    <script>
+        let _email = sessionStorage.getItem('client_email');
+        let _forms = [];
+
+        if (!_email) { window.location.href = 'portal.html'; }
+
+        function calcProgress(data) {
+            if (!data || typeof data !== 'object') return 0;
+            let total = 0, filled = 0;
+            Object.values(data).forEach(sec => {
+                if (typeof sec !== 'object' || Array.isArray(sec)) return;
+                Object.values(sec).forEach(v => { total++; if (v !== null && v !== undefined && v !== '' && v !== 'N/S') filled++; });
+            });
+            return total ? Math.round((filled / total) * 100) : 0;
+        }
+
+        function formatDate(iso) {
+            if (!iso) return '—';
+            const d = new Date(iso);
+            const m = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+            return `${d.getDate().toString().padStart(2, '0')} ${m[d.getMonth()]} ${d.getFullYear()}`;
+        }
+
+        function getStageLabel(stage) {
+            return { coleta: 'Coleta de Dados', analise: 'Em Análise', producao: 'Preenchimento DS-160', entrevista: 'Preparação Entrevista', concluido: 'Concluído', arquivado: 'Arquivado' }[stage] || stage || 'Em andamento';
+        }
+
+        async function loadForms() {
+            document.getElementById('userEmail').textContent = _email;
+            document.getElementById('loadingState').classList.remove('hidden');
+
+            try {
+                const cached = sessionStorage.getItem('client_results');
+                if (cached) {
+                    _forms = JSON.parse(cached);
+                    sessionStorage.removeItem('client_results');
+                } else {
+                    const rows = await AppCore.sbGet(
+                        'applicants?or=(data->>email.ilike.' + encodeURIComponent(_email) +
+                        ',data->personal1->>email.ilike.' + encodeURIComponent(_email) +
+                        ',data->contact->>email.ilike.' + encodeURIComponent(_email) +
+                        ')&select=id,full_name,data,stage,created_at&order=created_at.desc'
+                    );
+                    _forms = rows || [];
+                }
+                renderForms();
+            } catch (e) {
+                console.error('[Forms] Load error:', e);
+                document.getElementById('formList').innerHTML = '<p class="mf-empty">Erro ao carregar formulários.</p>';
+            } finally {
+                document.getElementById('loadingState').classList.add('hidden');
+                AppCore.hideLoading();
+            }
+        }
+
+        function renderForms() {
+            const container = document.getElementById('formList');
+            const empty = document.getElementById('emptyState');
+            if (!_forms.length) { container.innerHTML = ''; empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+
+            container.innerHTML = _forms.map(form => {
+                const name = form.full_name || 'Formulário sem nome';
+                const progress = calcProgress(form.data);
+                const pc = progress >= 100 ? 'var(--success)' : progress > 50 ? 'var(--accent)' : 'var(--warning)';
+                return `
+                <div class="form-card" onclick="openForm('${form.id}')">
+                    <div class="form-card-header">
+                        <div class="form-card-name">${name}</div>
+                        <div class="form-card-date">${formatDate(form.created_at)}</div>
+                    </div>
+                    <div class="form-card-stage">${getStageLabel(form.stage)}</div>
+                    <div class="form-card-progress">
+                        <div class="progress-track"><div class="progress-bar-mini" style="width:${progress}%;background:${pc}"></div></div>
+                        <span>${progress}%</span>
+                    </div>
+                    <div class="form-card-action">${progress >= 100 ? 'Ver formulário' : 'Continuar preenchimento'} →</div>
+                </div>`;
+            }).join('');
+        }
+
+        function openForm(id) {
+            sessionStorage.setItem('client_app_id', id);
+            window.location.href = 'index.html?id=' + id + '&secure_entry=1';
+        }
+
+        async function createNewForm() {
+            try {
+                const result = await AppCore.sbFetch('applicants', 'POST', {
+                    full_name: 'Novo Solicitante',
+                    data: { personal1: { email: _email } },
+                    stage: 'coleta', status: 'aguardando_execucao', result: 'indefinido', priority: 'normal'
+                });
+                if (result?.[0]) openForm(result[0].id);
+            } catch (e) {
+                console.error('[Forms] Create error:', e);
+                alert('Erro ao criar formulário: ' + e.message);
+            }
+        }
+
+        loadForms();
+    </script>
+</body>
+
+</html>

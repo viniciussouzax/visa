@@ -1,0 +1,347 @@
+{
+    "location": "RCF",
+    "securityAnswer": "MYPASSWORD123",
+    "personal1": {
+        "surname": "SILVA",
+        "givenName": "MARCOS ANTONIO",
+        "fullNameNative": "MARCOS ANTONIO SILVA",
+        "otherNamesUsed": "Y",
+        "otherNames": [
+            {
+                "surname": "SOUZA",
+                "givenName": "MARCOS"
+            },
+            {
+                "surname": "OLIVEIRA",
+                "givenName": "TONY"
+            }
+        ],
+        "telecode": "N",
+        "sex": "M",
+        "maritalStatus": "M",
+        "dob": {
+            "day": "15",
+            "month": "JUN",
+            "year": "1990"
+        },
+        "cityOfBirth": "SAO PAULO",
+        "stateOfBirth": "SP",
+        "countryOfBirth": "BRAZIL"
+    },
+    "personal2": {
+        "nationality": "BRAZIL",
+        "otherNationality": "Y",
+        "otherNationalities": [
+            {
+                "country": "PORTUGAL",
+                "hasPassport": "Y",
+                "passportNumber": "PT123456"
+            },
+            {
+                "country": "ITALY",
+                "hasPassport": "N",
+                "passportNumber": ""
+            }
+        ],
+        "permanentResident": "Y",
+        "permanentResidentCountries": [
+            {
+                "country": "PORTUGAL"
+            }
+        ],
+        "nationalId": "12345678901",
+        "ssn": "DNA",
+        "taxId": "DNA"
+    },
+    "addressPhone": {
+        "homeAddress": {
+            "street1": "RUA DAS FLORES 123",
+            "street2": "APTO 45",
+            "city": "SAO PAULO",
+            "state": "SP",
+            "country": "BRAZIL",
+            "postalCode": "01234567"
+        },
+        "mailingAddressSame": "Y",
+        "phone": "11987654321",
+        "mobilePhone": "DNA",
+        "businessPhone": "DNA",
+        "email": "marcos@email.com",
+        "additionalPhones": "N",
+        "additionalEmails": "N",
+        "socialMedia": [
+            {
+                "platform": "INST",
+                "handle": "@marcossilva"
+            },
+            {
+                "platform": "FCBK",
+                "handle": "marcos.silva.123"
+            }
+        ],
+        "additionalSocialMedia": "N"
+    },
+    "passport": {
+        "type": "R",
+        "number": "BR1234567",
+        "bookNumber": "DNA",
+        "issuingCountry": "BRAZIL",
+        "issuedCity": "SAO PAULO",
+        "issuedState": "SP",
+        "issuedCountry": "BRAZIL",
+        "issuanceDate": {
+            "day": "10",
+            "month": "JAN",
+            "year": "2020"
+        },
+        "expirationDate": {
+            "day": "10",
+            "month": "JAN",
+            "year": "2030"
+        },
+        "lostOrStolen": "Y",
+        "lostPassports": [
+            {
+                "number": "BR7654321",
+                "country": "BRAZIL",
+                "explanation": "Lost during travel to Argentina in 2018"
+            }
+        ]
+    },
+    "travel": {
+        "purposeCategory": "B",
+        "purposeOfTrip": "B1/B2",
+        "purposeSubCategory": "B1/B2",
+        "hasSpecificPlans": "N",
+        "nonSpecificArrival": {
+            "day": "15",
+            "month": "MAR",
+            "year": "2027"
+        },
+        "lengthOfStay": "14",
+        "lengthOfStayUnit": "D",
+        "usAddress": {
+            "street1": "123 MAIN STREET",
+            "street2": "SUITE 100",
+            "city": "ORLANDO",
+            "state": "FL",
+            "zip": "32801"
+        },
+        "whoIsPaying": "SELF"
+    },
+    "travelCompanions": {
+        "travelingWithOthers": "Y",
+        "companions": [
+            {
+                "surname": "SILVA",
+                "givenName": "ANA",
+                "relationship": "S"
+            },
+            {
+                "surname": "SILVA",
+                "givenName": "PEDRO",
+                "relationship": "C"
+            }
+        ],
+        "partOfGroup": "N"
+    },
+    "previousUSTravel": {
+        "hasBeenInUS": "Y",
+        "previousVisits": [
+            {
+                "arrivalDate": {
+                    "day": "01",
+                    "month": "JAN",
+                    "year": "2019"
+                },
+                "lengthOfStay": "10",
+                "lengthOfStayUnit": "D"
+            }
+        ],
+        "hasDriversLicense": "N",
+        "hasUSVisa": "Y",
+        "previousVisa": {
+            "issueDate": {
+                "day": "05",
+                "month": "MAR",
+                "year": "2018"
+            },
+            "number": "123456789",
+            "sameType": "Y",
+            "sameCountry": "Y",
+            "tenPrint": "Y",
+            "lost": "N",
+            "cancelled": "N"
+        },
+        "visaRefused": "N",
+        "immigrantPetition": "N"
+    },
+    "usContact": {
+        "surname": "DNA",
+        "givenName": "DNA",
+        "nameDoNotKnow": true,
+        "organization": "HILTON HOTEL",
+        "orgDoNotKnow": false,
+        "relationship": "O",
+        "address": {
+            "street1": "123 MAIN ST",
+            "street2": "",
+            "city": "ORLANDO",
+            "state": "FL",
+            "zip": "32801"
+        },
+        "phone": "4075551234",
+        "email": "DNA"
+    },
+    "family1": {
+        "father": {
+            "surname": "SILVA",
+            "givenName": "JOSE",
+            "dob": {
+                "day": "20",
+                "month": "MAR",
+                "year": "1960"
+            },
+            "inUS": "N"
+        },
+        "mother": {
+            "surname": "OLIVEIRA",
+            "givenName": "MARIA",
+            "dob": {
+                "day": "15",
+                "month": "DEC",
+                "year": "1962"
+            },
+            "inUS": "N"
+        },
+        "immediateRelativesInUS": "N",
+        "otherRelativesInUS": "N"
+    },
+    "family2": {
+        "surname": "COSTA",
+        "givenName": "JULIANA",
+        "nationality": "BRAZIL",
+        "cityOfBirth": "RIO DE JANEIRO",
+        "countryOfBirth": "BRAZIL",
+        "addressType": "H"
+    },
+    "workEducation1": {
+        "occupation": "BUS",
+        "employer": {
+            "name": "TECH SOLUTIONS LTDA",
+            "street1": "AV PAULISTA 1000",
+            "street2": "ANDAR 10",
+            "city": "SAO PAULO",
+            "state": "SP",
+            "country": "BRAZIL",
+            "postalCode": "01310100",
+            "phone": "1133334444",
+            "duties": "SOFTWARE DEVELOPMENT AND PROJECT MANAGEMENT",
+            "monthlySalary": "15000",
+            "startDate": {
+                "day": "01",
+                "month": "MAR",
+                "year": "2018"
+            }
+        }
+    },
+    "workEducation2": {
+        "hasPreviousEmployment": "Y",
+        "previousEmployment": [
+            {
+                "name": "OLD COMPANY SA",
+                "street1": "RUA AUGUSTA 500",
+                "city": "SAO PAULO",
+                "state": "SP",
+                "country": "BRAZIL",
+                "postalCode": "01305000",
+                "phone": "1144445555",
+                "jobTitle": "JUNIOR DEVELOPER",
+                "supervisor": "CARLOS MENDES",
+                "supervisorGivenName": "CARLOS",
+                "startDate": {
+                    "day": "01",
+                    "month": "FEB",
+                    "year": "2015"
+                },
+                "endDate": {
+                    "day": "28",
+                    "month": "FEB",
+                    "year": "2018"
+                },
+                "duties": "WEB DEVELOPMENT"
+            }
+        ],
+        "hasEducation": "Y",
+        "education": [
+            {
+                "name": "UNIVERSIDADE DE SAO PAULO",
+                "street1": "AV PROF LUCIANO GUALBERTO 380",
+                "city": "SAO PAULO",
+                "state": "SP",
+                "country": "BRAZIL",
+                "postalCode": "05508010",
+                "courseOfStudy": "COMPUTER SCIENCE",
+                "startDate": {
+                    "month": "FEB",
+                    "year": "2010"
+                },
+                "endDate": {
+                    "month": "DEC",
+                    "year": "2014"
+                }
+            }
+        ]
+    },
+    "workEducation3": {
+        "languages": [
+            "PORTUGUESE",
+            "ENGLISH",
+            "SPANISH"
+        ],
+        "clanTribe": "N",
+        "countriesVisited": "Y",
+        "countriesVisitedList": [
+            "ARGENTINA",
+            "CHILE",
+            "URUGUAY"
+        ],
+        "organizationMember": "N",
+        "specializedSkills": "N",
+        "militaryService": "N",
+        "insurgentOrg": "N"
+    },
+    "security": {
+        "disease": "N",
+        "disorder": "N",
+        "drugUser": "N",
+        "arrested": "N",
+        "controlledSubstances": "N",
+        "prostitution": "N",
+        "moneyLaundering": "N",
+        "humanTrafficking": "N",
+        "assistedSevereTrafficking": "N",
+        "humanTraffickingRelated": "N",
+        "illegalActivity": "N",
+        "terroristActivity": "N",
+        "terroristSupport": "N",
+        "terroristOrg": "N",
+        "terroristRel": "N",
+        "genocide": "N",
+        "torture": "N",
+        "exViolence": "N",
+        "childSoldier": "N",
+        "religiousFreedom": "N",
+        "populationControls": "N",
+        "transplant": "N",
+        "removalHearing": "N",
+        "immigrationFraud": "N",
+        "failToAttend": "N",
+        "visaViolation": "N",
+        "deport": "N",
+        "childCustody": "N",
+        "votingViolation": "N",
+        "renounceExp": "N",
+        "attWoReimb": "N"
+    }
+}

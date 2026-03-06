@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS-160 — Portal do Solicitante</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app-core.js"></script>
+    <style>
+        /* Portal-specific: full-page centered, no sidebar */
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .portal-card {
+            padding: 28px 24px;
+            border-radius: var(--radius-lg);
+            width: 380px;
+            max-width: 92vw;
+            border: 1px solid rgba(255, 255, 255, .06);
+            background: rgba(30, 41, 59, .9);
+            backdrop-filter: blur(8px);
+            text-align: center;
+            animation: slideUp .25s ease;
+        }
+
+        .portal-card h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+            letter-spacing: -.3px;
+        }
+
+        .portal-card .subtitle {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .portal-field {
+            margin-bottom: 14px;
+            text-align: left;
+        }
+
+        .portal-field label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: #94a3b8;
+        }
+
+        .portal-field input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: var(--radius);
+            font-size: 13px;
+            outline: none;
+            background: rgba(15, 23, 42, .6);
+            color: #e2e8f0;
+            transition: var(--transition);
+        }
+
+        .portal-field input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, .2);
+        }
+
+        .portal-field input::placeholder {
+            color: #475569;
+        }
+
+        .portal-btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: var(--radius);
+            background: var(--accent);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 4px;
+        }
+
+        .portal-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .portal-btn:disabled {
+            opacity: .7;
+        }
+
+        .portal-error {
+            font-size: 13px;
+            color: #f87171;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .portal-error.show {
+            display: block;
+        }
+
+        .portal-trust {
+            margin-top: 24px;
+            font-size: 11px;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .portal-trust::before {
+            content: '🔒';
+        }
+
+        .portal-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .portal-brand::before {
+            content: '';
+            width: 6px;
+            height: 20px;
+            background: linear-gradient(135deg, var(--accent), #818cf8);
+            border-radius: 3px;
+        }
+
+        .portal-brand span {
+            font-size: 14px;
+            font-weight: 800;
+            color: #64748b;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="portal-card">
+        <div class="portal-brand"><span>SENDS160</span></div>
+        <h1>Portal do Solicitante</h1>
+        <p class="subtitle">Insira seu e-mail para acessar seus formulários DS-160.</p>
+
+        <form id="searchForm" onsubmit="searchByEmail(event)">
+            <div class="portal-field">
+                <label for="emailInput">E-mail</label>
+                <input type="email" id="emailInput" placeholder="seu@email.com" required autocomplete="email">
+            </div>
+            <div id="errorMsg" class="portal-error">
+                <span id="errorText">E-mail não encontrado.</span>
+            </div>
+            <button type="submit" id="submitBtn" class="portal-btn">Buscar Formulários</button>
+        </form>
+
+        <div class="portal-trust">Acesso encriptado Fim-a-Fim</div>
+    </div>
+
+    <script>
+        const sbGet = AppCore.sbGet;
+        const _params = new URLSearchParams(location.search);
+        const _idParam = _params.get('id');
+
+        // Retrocompatibilidade: ?id= redireciona direto
+        if (_idParam) {
+            sessionStorage.setItem('client_app_id', _idParam);
+            window.location.href = 'index.html?id=' + _idParam + '&secure_entry=1';
+        }
+
+        async function searchByEmail(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const errEl = document.getElementById('errorMsg');
+            const email = document.getElementById('emailInput').value.trim().toLowerCase();
+            if (!email) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Buscando...';
+            errEl.classList.remove('show');
+
+            try {
+                const rows = await sbGet(
+                    'applicants?or=(data->>email.ilike.' + encodeURIComponent(email) +
+                    ',data->personal1->>email.ilike.' + encodeURIComponent(email) +
+                    ',data->contact->>email.ilike.' + encodeURIComponent(email) +
+                    ')&select=id,full_name,data,stage,created_at&order=created_at.desc'
+                );
+
+                if (!rows || rows.length === 0) {
+                    document.getElementById('errorText').textContent = 'Nenhum formulário encontrado para este e-mail.';
+                    errEl.classList.add('show');
+                    btn.disabled = false;
+                    btn.textContent = 'Buscar Formulários';
+                    return;
+                }
+
+                // Save to session and redirect
+                sessionStorage.setItem('client_email', email);
+                sessionStorage.setItem('client_results', JSON.stringify(rows));
+                window.location.href = 'meus-formularios.html';
+            } catch (err) {
+                document.getElementById('errorText').textContent = 'Erro ao buscar: ' + err.message;
+                errEl.classList.add('show');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Buscar Formulários';
+            }
+        }
+
+        AppCore.hideLoading();
+    </script>
+</body>
+
+</html>

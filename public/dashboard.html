@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS-160 — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app-core.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- LOGIN OVERLAY -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-card">
+            <h2>SENDS160</h2>
+            <p>Acesse com suas credenciais de assessor</p>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="login-field">
+                    <label>E-mail</label>
+                    <input type="email" id="loginEmail" placeholder="assessor@empresa.com" required
+                        autocomplete="email">
+                </div>
+                <div class="login-field">
+                    <label>Senha</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required
+                        autocomplete="current-password">
+                </div>
+                <button type="submit" class="login-btn" id="loginBtn">Entrar</button>
+                <div class="login-error" id="loginError"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-brand"><strong>SENDS160</strong></div>
+        <div class="sidebar-nav">
+            <div class="nav-item active" data-page="coleta" onclick="navigateTo('coleta')">Coleta <span class="badge"
+                    id="badge-coleta">0</span></div>
+            <div class="nav-item" data-page="analise" onclick="navigateTo('analise')">Análise <span class="badge"
+                    id="badge-analise">0</span></div>
+            <div class="nav-item" data-page="producao" onclick="navigateTo('producao')">DS-160 <span class="badge"
+                    id="badge-producao">0</span></div>
+            <div class="nav-item" data-page="entrevista" onclick="navigateTo('entrevista')">Entrevista <span
+                    class="badge" id="badge-entrevista">0</span></div>
+            <div class="nav-item" data-page="concluido" onclick="navigateTo('concluido')">Concluído <span class="badge"
+                    id="badge-concluido">0</span></div>
+            <div class="nav-item" data-page="arquivado" onclick="navigateTo('arquivado')">Arquivado <span class="badge"
+                    id="badge-arquivado">0</span></div>
+            <div class="nav-spacer"></div>
+            <div class="nav-item hidden" id="adminLink" onclick="AppCore.goToAdmin()">Admin Master</div>
+            <div class="nav-item" onclick="AppCore.navigate('preferencias.html')">Preferências</div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-avatar" id="userAvatar">?</div>
+            <div class="user-info">
+                <div class="user-name" id="userDisplayName">—</div>
+                <div class="user-org" id="orgFooter">—</div>
+            </div>
+            <button class="btn-logout" onclick="handleLogout()" title="Sair">Sair</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+        <div class="page-header">
+            <div class="page-title" id="pageTitle">Em Andamento <span id="pageCount"></span></div>
+            <button class="btn-new" onclick="createNew()">Novo Solicitante</button>
+        </div>
+
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" placeholder="Buscar por nome, passaporte ou ID..." id="searchInput"
+                    oninput="filterList()">
+            </div>
+            <div class="filter-chips" id="filterChips"></div>
+        </div>
+
+        <div class="bulk-bar hidden" id="bulkBar">
+            <strong id="selectedCount">0</strong> selecionado(s)
+            <button class="bulk-btn" onclick="bulkExport()">Exportar</button>
+            <button class="bulk-btn danger" onclick="bulkDelete()">Excluir</button>
+            <button class="bulk-btn" onclick="clearSelection()">✕</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="check-col">
+                            <div class="custom-check" id="checkAll" onclick="toggleAll()">✓</div>
+                        </th>
+                        <th onclick="sortBy('name')">Solicitante</th>
+                        <th>Progresso</th>
+                        <th onclick="sortBy('status')" id="colInfoHeader">Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+            <div id="loadingState" class="loading-overlay">
+                <div class="spinner"></div>
+                <span>Carregando solicitantes...</span>
+            </div>
+            <div class="empty-state hidden" id="emptyState">
+                <h3>Nenhuma solicitação encontrada</h3>
+                <p>Clique em "Novo Solicitante" para começar</p>
+            </div>
+        </div>
+
+        <div class="pagination" id="pagination">
+            <span id="paginationInfo"></span>
+            <span id="paginationTotal"></span>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // THEME
+        // ==========================================
+        function toggleTheme() { }
+        function updateThemeUI() { }
+        (function () { document.documentElement.setAttribute('data-theme', 'light'); localStorage.setItem('ds160-theme', 'light'); })();
+
+        // ==========================================
+        // SUPABASE CONFIG (via AppCore)
+        // ==========================================
+        const SUPABASE_URL = AppCore.SUPABASE_URL;
+        const SUPABASE_KEY = AppCore.SUPABASE_KEY;
+        let _authToken = AppCore.getAuth();
+        let _orgParam = AppCore.getOrg();
+        let resolvedCompanyId = null;
+        let resolvedCompanyName = null;
+        let sbFetch = AppCore.sbFetch;
+        let sbGet = AppCore.sbGet;
+
+        // ==========================================
+        // STATUS MAPPING
+        // ==========================================
+        const AVATARS_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#ef4444', '#06b6d4', '#ec4899', '#6366f1'];
+
+        function calcProgress(data) {
+            if (!data || typeof data !== 'object') return 0;
+            let total = 0, filled = 0;
+            Object.values(data).forEach(sec => {
+                if (typeof sec !== 'object' || Array.isArray(sec)) return;
+                Object.values(sec).forEach(val => { total++; if (val && val !== '' && val !== null) filled++; });
+            });
+            return total > 0 ? Math.round((filled / total) * 100) : 0;
+        }
+
+        // ==========================================
+        // STATE
+        // ==========================================
+        let applicants = [];
+        let currentPage = 'coleta';
+        let currentFilter = 'all';
+        let selectedIds = new Set();
+        let searchQuery = '';
+        let sortField = 'created';
+        let sortDir = 'desc';
+        let expandedGroups = new Set();
+
+        const STATUS_CONFIG = {
+            aguardando_execucao: { label: 'Aguardando Execução', class: 'status-pendente' },
+            em_execucao: { label: 'Em Execução', class: 'status-automacao' },
+            execucao_concluida: { label: 'Execução Concluída', class: 'status-preenchido' },
+            aguardando_correcao: { label: 'Aguardando Correção', class: 'status-erro' },
+            falha_tecnica: { label: 'Falha Técnica', class: 'status-erro' },
+        };
+
+        const PRIORITY_CONFIG = {
+            normal: { label: 'Normal', color: '#64748b' },
+            urgente: { label: 'Urgente', color: '#f59e0b' },
+            emergencia: { label: 'Emergência', color: '#ef4444' },
+        };
+
+        const RESULT_CONFIG = {
+            indefinido: { label: 'Indefinido', color: '#64748b' },
+            aprovado: { label: 'Aprovado', color: '#22c55e' },
+            negado: { label: 'Negado', color: '#ef4444' },
+            cancelado: { label: 'Cancelado', color: '#f59e0b' },
+            encerrado_administrativo: { label: 'Encerrado Adm.', color: '#8b5cf6' },
+        };
+
+        const STAGE_LABELS = {
+            coleta: 'Coleta', analise: 'Análise', producao: 'DS-160',
+            entrevista: 'Entrevista', concluido: 'Concluído', arquivado: 'Arquivado'
+        };
+
+        const PAGE_CONFIG = {
+            coleta: { title: 'Coleta', subtitle: 'Coleta de Dados' },
+            analise: { title: 'Análise', subtitle: 'Revisão e Estratégia' },
+            producao: { title: 'DS-160', subtitle: 'Preenchimento Oficial' },
+            entrevista: { title: 'Entrevista', subtitle: 'Preparação e Agendamento' },
+            concluido: { title: 'Concluído', subtitle: 'Assessoria Finalizada' },
+            arquivado: { title: 'Arquivado', subtitle: 'Processo Encerrado' },
+        };
+
+        // ==========================================
+        // DATA LOADING
+        // ==========================================
+        async function loadApplicants() {
+            try {
+                let q = 'applicants?select=id,full_name,passport_number,data,stage,status,result,priority,sort_order,created_at,company_id,group_code,notes&order=sort_order.asc,created_at.desc';
+                if (resolvedCompanyId) q += '&company_id=eq.' + resolvedCompanyId;
+                const rows = await sbGet(q);
+                if (!rows || !rows.length) { applicants = []; return; }
+                applicants = rows.map(row => ({
+                    id: row.id, name: row.full_name || '(Sem nome)', passport: row.passport_number || '',
+                    stage: row.stage || 'coleta', status: row.status || 'aguardando_execucao',
+                    result: row.result || 'indefinido', priority: row.priority || 'normal',
+                    sort_order: row.sort_order || 0, progress: calcProgress(row.data),
+                    created: row.created_at, data: row.data, group_code: row.group_code || null, notes: row.notes || '',
+                }));
+            } catch (e) { console.error('[Dashboard] Load error:', e); showToast('Erro ao carregar', 'error'); }
+        }
+
+        async function resolveOrg() {
+            if (!_orgParam) { document.getElementById('orgFooter').textContent = 'Admin'; return; }
+            try {
+                const data = await sbGet('companies?short_id=eq.' + encodeURIComponent(_orgParam) + '&select=id,name&limit=1');
+                if (data?.[0]) { resolvedCompanyId = data[0].id; resolvedCompanyName = data[0].name; document.getElementById('orgFooter').textContent = resolvedCompanyName; }
+                else { document.getElementById('orgFooter').textContent = 'Não encontrada'; }
+            } catch (e) { document.getElementById('orgFooter').textContent = 'Erro'; }
+        }
+
+        // ==========================================
+        // NAVIGATION / FILTERS / SORT
+        // ==========================================
+        function navigateTo(page) {
+            currentPage = page; currentFilter = 'all'; selectedIds.clear(); searchQuery = '';
+            document.getElementById('searchInput').value = '';
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+            const pcfg = PAGE_CONFIG[page];
+            document.getElementById('pageTitle').innerHTML = pcfg.title + ' <span class="page-subtitle">' + pcfg.subtitle + '</span> <span id="pageCount"></span>';
+            const hdr = document.getElementById('colInfoHeader');
+            if (hdr) hdr.textContent = page === 'producao' ? 'Status' : (page === 'concluido' || page === 'arquivado') ? 'Resultado' : 'Info';
+            renderFilters(); renderTable(); updateBadges();
+        }
+
+        function renderFilters() {
+            const items = getFilteredByPage();
+            const el = document.getElementById('filterChips');
+            if (currentPage === 'coleta' || currentPage === 'analise' || currentPage === 'entrevista' || currentPage === 'concluido') {
+                el.innerHTML = `<div class="chip active">Todos<span class="chip-count">${items.length}</span></div>`;
+                return;
+            }
+            if (currentPage === 'producao') {
+                let html = `<div class="chip ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">Todos<span class="chip-count">${items.length}</span></div>`;
+                Object.entries(STATUS_CONFIG).forEach(([key, cfg]) => {
+                    const count = items.filter(a => a.status === key).length;
+                    if (count > 0 || currentFilter === key) html += `<div class="chip ${currentFilter === key ? 'active' : ''}" onclick="setFilter('${key}')">${cfg.label}<span class="chip-count">${count}</span></div>`;
+                });
+                el.innerHTML = html; return;
+            }
+            let html = `<div class="chip ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">Todos<span class="chip-count">${items.length}</span></div>`;
+            Object.entries(RESULT_CONFIG).forEach(([key, cfg]) => {
+                const count = items.filter(a => a.result === key).length;
+                if (count > 0 || currentFilter === key) html += `<div class="chip ${currentFilter === key ? 'active' : ''}" onclick="setFilter('${key}')">${cfg.label}<span class="chip-count">${count}</span></div>`;
+            });
+            el.innerHTML = html;
+        }
+
+        function setFilter(f) { currentFilter = f; renderFilters(); renderTable(); }
+        function filterList() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); renderTable(); }
+        function sortBy(field) { if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc'; else { sortField = field; sortDir = 'desc'; } renderTable(); }
+
+        function getFilteredByPage() { return applicants.filter(a => a.stage === currentPage); }
+        function getFiltered() {
+            let items = getFilteredByPage();
+            if (currentFilter !== 'all') {
+                if (currentPage === 'concluido' || currentPage === 'arquivado') items = items.filter(a => a.result === currentFilter);
+                else items = items.filter(a => a.status === currentFilter);
+            }
+            if (searchQuery) items = items.filter(a => a.name.toLowerCase().includes(searchQuery) || a.passport.toLowerCase().includes(searchQuery) || a.id.toString().toLowerCase().includes(searchQuery));
+            items.sort((a, b) => {
+                const sa = a.sort_order || 0, sb2 = b.sort_order || 0;
+                if (sa !== sb2) return sa - sb2;
+                let va = a[sortField], vb = b[sortField];
+                if (sortField === 'name') { va = (va || '').toLowerCase(); vb = (vb || '').toLowerCase(); }
+                if (va < vb) return sortDir === 'asc' ? -1 : 1; if (va > vb) return sortDir === 'asc' ? 1 : -1;
+                return 0;
+            });
+            return items;
+        }
+
+        function toggleGroup(code) { expandedGroups.has(code) ? expandedGroups.delete(code) : expandedGroups.add(code); renderTable(); }
+
+        function renderTable() {
+            const items = getFiltered();
+            const tbody = document.getElementById('tableBody');
+            const empty = document.getElementById('emptyState');
+            const loading = document.getElementById('loadingState');
+            if (loading) loading.classList.add('hidden');
+            if (!items.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); document.getElementById('pageCount').textContent = ''; document.getElementById('paginationInfo').textContent = ''; document.getElementById('paginationTotal').textContent = ''; return; }
+            empty.classList.add('hidden');
+            document.getElementById('pageCount').textContent = `(${items.length})`;
+            document.getElementById('paginationInfo').textContent = `Mostrando ${items.length}`;
+            document.getElementById('paginationTotal').textContent = `Total: ${getFilteredByPage().length}`;
+
+            const groupMap = {}; const solos = [];
+            items.forEach(a => { if (a.group_code) { if (!groupMap[a.group_code]) groupMap[a.group_code] = []; groupMap[a.group_code].push(a); } else solos.push(a); });
+
+            function buildRow(a, extraClass) {
+                const cfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.aguardando_execucao;
+                const pcfg = PRIORITY_CONFIG[a.priority] || PRIORITY_CONFIG.normal;
+                const rcfg = RESULT_CONFIG[a.result] || RESULT_CONFIG.indefinido;
+                const sel = selectedIds.has(a.id);
+                const ini = (a.name || '?').split(' ').map(w => w[0]).slice(0, 2).join('');
+                const ci = typeof a.id === 'string' ? a.id.charCodeAt(0) : 0;
+                const col = AVATARS_COLORS[ci % AVATARS_COLORS.length];
+                const pc = a.progress >= 100 ? '#22c55e' : a.progress > 50 ? '#3b82f6' : '#f59e0b';
+                const priBadge = a.priority !== 'normal' ? `<span class="priority-badge" data-priority="${a.priority}">${pcfg.label}</span>` : '';
+                let infoCell = '';
+                if (currentPage === 'producao') infoCell = `<span class="status-badge ${cfg.class}">${cfg.label}</span>`;
+                else if (currentPage === 'concluido' || currentPage === 'arquivado') infoCell = `<span class="result-badge" data-result="${a.result}">${rcfg.label}</span>`;
+                else infoCell = `<span class="info-label">${STAGE_LABELS[a.stage]}</span>`;
+                return `<tr class="${extraClass || ''} ${sel ? 'selected' : ''}" draggable="true" data-id="${a.id}" ondblclick="window.location.href=buildUrl('${a.id}','assessor')" ondragstart="handleDragStart(event,'${a.id}')" ondragover="handleDragOver(event)" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="handleDrop(event,'${a.id}')">
+                    <td class="check-col"><div class="custom-check ${sel ? 'checked' : ''}" onclick="event.stopPropagation();toggleSelect('${a.id}')">✓</div></td>
+                    <td onclick="openReview('${a.id}')"><div class="name-col"><div class="avatar" data-color="${col}">${ini}</div><div class="name-info"><div class="name">${a.name} ${priBadge}</div><div class="passport">${a.passport || ''}</div></div></div></td>
+                    <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" data-progress="${a.progress}" data-color="${pc}"></div></div><span class="progress-label">${a.progress}%</span></div></td>
+                    <td>${infoCell}</td>
+                    <td><div class="row-actions">
+                        <button class="row-btn" onclick="event.stopPropagation();openReview('${a.id}')" title="Revisar">👁</button>
+                        <button class="row-btn" onclick="event.stopPropagation();openForm('${a.id}')" title="Editar">✏️</button>
+                        <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Gerenciar">⋮</button>
+                    </div></td></tr>`;
+            }
+
+            let html = ''; const rendered = new Set();
+            items.forEach(a => {
+                if (rendered.has(a.id)) return;
+                if (a.group_code && groupMap[a.group_code]) {
+                    const members = groupMap[a.group_code];
+                    if (rendered.has('g_' + a.group_code)) return;
+                    rendered.add('g_' + a.group_code);
+                    members.forEach(m => rendered.add(m.id));
+                    const isOpen = expandedGroups.has(a.group_code);
+                    const avgProgress = Math.round(members.reduce((s, m) => s + m.progress, 0) / members.length);
+                    const pc = avgProgress >= 100 ? '#22c55e' : avgProgress > 50 ? '#3b82f6' : '#f59e0b';
+                    const groupLabel = members.length > 0 ? members[0].name.split(' ').slice(-1)[0] : a.group_code;
+                    html += `<tr class="group-row" onclick="toggleGroup('${a.group_code}')">
+                        <td class="check-col"></td>
+                        <td><div class="name-col"><div class="name-info"><div class="name">${groupLabel} <span class="group-count">${members.length}</span></div><div class="passport">${isOpen ? '▼' : '▶'} ${members.map(m => m.name.split(' ')[0]).join(', ')}</div></div></div></td>
+                        <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" data-progress="${avgProgress}" data-color="${pc}"></div></div><span class="progress-label">${avgProgress}%</span></div></td>
+                        <td></td>
+                        <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();copyGroupLink('${a.group_code}')" title="Copiar link do grupo">🔗</button></div></td></tr>`;
+                    if (isOpen) members.forEach(m => { html += buildRow(m, 'sub-row'); });
+                } else { rendered.add(a.id); html += buildRow(a, ''); }
+            });
+            tbody.innerHTML = html; updateBulkBar();
+        }
+
+        // ==========================================
+        // DRAG AND DROP
+        // ==========================================
+        let _dragId = null;
+        function handleDragStart(e, id) { _dragId = id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); }
+        function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('drag-over'); }
+        async function handleDrop(e, targetId) {
+            e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+            if (!_dragId || _dragId === targetId) return;
+            const items = getFiltered();
+            const dragIdx = items.findIndex(a => a.id === _dragId);
+            const targetIdx = items.findIndex(a => a.id === targetId);
+            if (dragIdx < 0 || targetIdx < 0) return;
+            const [moved] = items.splice(dragIdx, 1); items.splice(targetIdx, 0, moved);
+            const updates = items.map((a, i) => ({ id: a.id, sort_order: i + 1 }));
+            updates.forEach(u => { const a = applicants.find(x => x.id === u.id); if (a) a.sort_order = u.sort_order; });
+            renderTable();
+            for (const u of updates) { try { await sbFetch(`applicants?id=eq.${u.id}`, 'PATCH', { sort_order: u.sort_order }); } catch { } }
+            _dragId = null;
+        }
+
+        // ==========================================
+        // SELECTION
+        // ==========================================
+        function toggleSelect(id) { selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id); renderTable(); }
+        function toggleAll() { const items = getFiltered(); const all = items.every(a => selectedIds.has(a.id)); if (all) selectedIds.clear(); else items.forEach(a => selectedIds.add(a.id)); document.getElementById('checkAll').classList.toggle('checked', !all); renderTable(); }
+        function clearSelection() { selectedIds.clear(); document.getElementById('checkAll').classList.remove('checked'); renderTable(); }
+        function updateBulkBar() { const bar = document.getElementById('bulkBar'); if (selectedIds.size > 0) { bar.classList.remove('hidden'); document.getElementById('selectedCount').textContent = selectedIds.size; } else bar.classList.add('hidden'); }
+
+        // ==========================================
+        // ACTIONS
+        // ==========================================
+        function buildUrl(id, tab) { const params = { id }; if (tab) params.tab = tab; return AppCore.buildUrl('ds160-form.html', params); }
+        function openReview(id) {
+            const a = applicants.find(x => x.id === id);
+            if (!a) return;
+            const cfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.aguardando_execucao;
+            const pcfg = PRIORITY_CONFIG[a.priority] || PRIORITY_CONFIG.normal;
+            const rcfg = RESULT_CONFIG[a.result] || RESULT_CONFIG.indefinido;
+            const dt = formatDate(a.created);
+            const ini = (a.name || '?').split(' ').map(w => w[0]).slice(0, 2).join('');
+            const ci = typeof a.id === 'string' ? a.id.charCodeAt(0) : 0;
+            const col = AVATARS_COLORS[ci % AVATARS_COLORS.length];
+
+            let html = `<div id="detailModal" class="modal-overlay" onclick="this.remove()">
+            <div class="modal-box" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <div class="avatar" data-color="${col}">${ini}</div>
+                    <div><div class="modal-title">${a.name}</div><div class="modal-subtitle">${a.passport || 'Sem passaporte'}</div></div>
+                    <button class="modal-close" onclick="document.getElementById('detailModal').remove()">&times;</button>
+                </div>
+                <div class="detail-row"><span>ID</span><span class="mono">${a.id}</span></div>
+                <div class="detail-row"><span>Etapa</span><span>${STAGE_LABELS[a.stage]}</span></div>
+                <div class="detail-row"><span>Prioridade</span><span>${pcfg.label}</span></div>
+                <div class="detail-row"><span>Resultado</span><span>${rcfg.label}</span></div>
+                <div class="detail-row"><span>Progresso</span><span>${a.progress}%</span></div>
+                ${a.group_code ? `<div class="detail-row"><span>Grupo</span><span>${a.group_code}</span></div>` : ''}
+                <div class="detail-row"><span>Criado em</span><span>${dt}</span></div>
+                ${a.notes ? `<div class="detail-notes">${a.notes}</div>` : ''}
+                <div class="modal-actions">
+                    <button class="modal-btn primary" onclick="document.getElementById('detailModal').remove();window.location.href=buildUrl('${id}','assessor')">Revisar</button>
+                    <button class="modal-btn" onclick="document.getElementById('detailModal').remove();openForm('${id}')">Editar</button>
+                    <button class="modal-btn" onclick="document.getElementById('detailModal').remove();viewJSON('${id}')">JSON</button>
+                </div>
+            </div></div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+        function openForm(id) { window.location.href = buildUrl(id, 'solicitante'); }
+
+        function copyGroupLink(groupCode) {
+            const url = location.origin + location.pathname.replace('dashboard.html', '') + AppCore.buildUrl('ds160-form.html', { group: groupCode });
+            navigator.clipboard.writeText(url).then(() => showToast('Link do grupo copiado!', 'success')).catch(() => showToast('Erro ao copiar', 'error'));
+        }
+
+        async function createNew() {
+            const existingGroups = [...new Set(applicants.filter(a => a.group_code).map(a => a.group_code))];
+            const datalistOpts = existingGroups.map(g => `<option value="${g}">`).join('');
+            const id = 'createModal';
+            const existing = document.getElementById(id); if (existing) existing.remove();
+            let html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()">
+            <div class="modal-box" onclick="event.stopPropagation()">
+                <h3 class="modal-title">Novo Solicitante</h3>
+                <label class="modal-label">Nome completo</label>
+                <input type="text" id="createName" class="modal-input" autofocus>
+                <label class="modal-label">Grupo <span class="modal-hint">(opcional — ex: SILVA2026)</span></label>
+                <input type="text" id="createGroup" list="groupList" placeholder="Deixe vazio para individual" class="modal-input">
+                <datalist id="groupList">${datalistOpts}</datalist>
+                <div class="modal-actions">
+                    <button class="modal-btn" onclick="document.getElementById('${id}').remove()">Cancelar</button>
+                    <button class="modal-btn primary" id="createConfirm">Criar</button>
+                </div>
+            </div></div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+            const nameInput = document.getElementById('createName');
+            const groupInput = document.getElementById('createGroup');
+            setTimeout(() => nameInput.focus(), 100);
+            const doCreate = async () => {
+                const name = nameInput.value.trim(); if (!name) return;
+                const groupCode = groupInput.value.trim().toUpperCase() || null;
+                document.getElementById(id).remove();
+                try {
+                    const p = { full_name: name.toUpperCase(), passport_number: null, data: {}, stage: 'coleta', status: 'aguardando_execucao', result: 'indefinido', priority: 'normal' };
+                    if (resolvedCompanyId) p.company_id = resolvedCompanyId;
+                    if (groupCode) p.group_code = groupCode;
+                    const r = await sbFetch('applicants', 'POST', p);
+                    if (r?.[0]) { showToast('Criado: ' + r[0].full_name + (groupCode ? ' (Grupo: ' + groupCode + ')' : ''), 'success'); await loadApplicants(); navigateTo(currentPage); }
+                } catch (e) { showToast('Erro: ' + e.message, 'error'); }
+            };
+            nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); groupInput.focus(); } });
+            groupInput.addEventListener('keydown', e => { if (e.key === 'Enter') doCreate(); });
+            document.getElementById('createConfirm').addEventListener('click', doCreate);
+        }
+
+        function showInputModal(title, label, onConfirm) {
+            const id = 'inputModal';
+            const existing = document.getElementById(id); if (existing) existing.remove();
+            let html = `<div id="${id}" class="modal-overlay">
+            <div class="modal-box">
+                <h3 class="modal-title">${title}</h3>
+                <label class="modal-label">${label}</label>
+                <input type="text" id="inputModalValue" class="modal-input" autofocus>
+                <div class="modal-actions">
+                    <button class="modal-btn" id="btnCancelInput">Cancelar</button>
+                    <button class="modal-btn primary" id="btnOkInput">Confirmar</button>
+                </div>
+            </div></div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+            const modalEl = document.getElementById(id);
+            const input = document.getElementById('inputModalValue');
+            setTimeout(() => input.focus(), 100);
+            const triggerConfirm = () => { const val = input.value.trim(); modalEl.remove(); if (val && onConfirm) onConfirm(val); };
+            modalEl.addEventListener('click', (e) => { if (e.target === modalEl) modalEl.remove(); });
+            document.getElementById('btnCancelInput').addEventListener('click', () => modalEl.remove());
+            document.getElementById('btnOkInput').addEventListener('click', triggerConfirm);
+            input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); triggerConfirm(); } });
+        }
+
+        function showConfirmModal(title, message, onConfirm) {
+            const id = 'confirmModal';
+            const existing = document.getElementById(id); if (existing) existing.remove();
+            let html = `<div id="${id}" class="modal-overlay">
+            <div class="modal-box">
+                <h3 class="modal-title">${title}</h3>
+                <p class="modal-body">${message}</p>
+                <div class="modal-actions">
+                    <button class="modal-btn" id="btnCancelConfirm">Cancelar</button>
+                    <button class="modal-btn danger" id="btnOkConfirm">Confirmar</button>
+                </div>
+            </div></div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+            const modalEl = document.getElementById(id);
+            modalEl.addEventListener('click', (e) => { if (e.target === modalEl) modalEl.remove(); });
+            document.getElementById('btnCancelConfirm').addEventListener('click', () => modalEl.remove());
+            document.getElementById('btnOkConfirm').addEventListener('click', async () => { modalEl.remove(); if (onConfirm) await onConfirm(); });
+        }
+
+        function viewJSON(id) { const a = applicants.find(x => x.id === id); if (a?.data) { navigator.clipboard.writeText(JSON.stringify(a.data, null, 2)); showToast('JSON copiado!', 'success'); } else showToast('Sem dados', 'error'); }
+        function bulkExport() { const d = applicants.filter(a => selectedIds.has(a.id)).map(a => a.data || {}); navigator.clipboard.writeText(JSON.stringify(d, null, 2)); showToast('Exportado!', 'success'); }
+        async function bulkDelete() {
+            showConfirmModal('Excluir Solicitantes', `Tem certeza que deseja excluir ${selectedIds.size} solicitante(s)?`, async () => {
+                let errors = 0;
+                for (const id of selectedIds) { try { await sbFetch(`applicants?id=eq.${id}`, 'DELETE'); } catch (e) { errors++; } }
+                await loadApplicants(); clearSelection(); navigateTo(currentPage);
+                if (errors > 0) showToast(`Erro ao excluir ${errors} iten(s)`, 'error');
+                else showToast('Excluído(s) com sucesso!', 'success');
+            });
+        }
+
+        // ==========================================
+        // MANAGE MENU
+        // ==========================================
+        let _manageMenuId = null;
+        function showManageMenu(evt, id) {
+            evt.stopPropagation(); _manageMenuId = id;
+            const a = applicants.find(x => x.id === id); if (!a) return;
+            const existing = document.getElementById('managePopup'); if (existing) existing.remove();
+            const stages = ['coleta', 'analise', 'producao', 'entrevista', 'concluido', 'arquivado'];
+            const priorities = ['normal', 'urgente', 'emergencia'];
+            const results = Object.keys(RESULT_CONFIG);
+
+            let html = `<div id="managePopup" class="modal-overlay" onclick="closeManageMenu()">
+            <div class="modal-box modal-manage" onclick="event.stopPropagation()">
+                <div class="modal-header"><h3 class="modal-title">Gerenciar Solicitante</h3><button class="modal-close" onclick="closeManageMenu()">&times;</button></div>
+                <div class="modal-subtitle">${a.name}</div>
+                <div class="manage-section-label">Etapa</div>
+                <div class="manage-btn-group">${stages.map(s => `<button class="manage-btn ${a.stage === s ? 'active' : ''}" onclick="updateField('${id}','stage','${s}')">${STAGE_LABELS[s]}</button>`).join('')}</div>
+                <div class="manage-section-label">Prioridade</div>
+                <div class="manage-btn-group">${priorities.map(p => { const pc = PRIORITY_CONFIG[p]; return `<button class="manage-btn ${a.priority === p ? 'active' : ''}" data-color="${pc.color}" onclick="updateField('${id}','priority','${p}')">${pc.label}</button>`; }).join('')}</div>
+                <div class="manage-section-label">Resultado</div>
+                <div class="manage-btn-group">${results.map(r => { const rc = RESULT_CONFIG[r]; return `<button class="manage-btn ${a.result === r ? 'active' : ''}" data-color="${rc.color}" onclick="updateField('${id}','result','${r}')">${rc.label}</button>`; }).join('')}</div>`;
+
+            if (a.stage === 'producao') {
+                html += `<div class="manage-section-label">Status (Robô)</div>
+                <div class="manage-btn-group column">${Object.entries(STATUS_CONFIG).map(([k, v]) => `<button class="manage-btn ${a.status === k ? 'active' : ''}" onclick="updateField('${id}','status','${k}')">${v.label}</button>`).join('')}</div>`;
+            }
+
+            html += `<div class="manage-section-label">Anotações internas</div>
+                <textarea id="notesField" class="manage-textarea" placeholder="Observações sobre este solicitante...">${a.notes || ''}</textarea>
+                <button class="modal-btn primary" onclick="saveNotes('${id}')">Salvar anotações</button>
+            </div></div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function closeManageMenu() { const p = document.getElementById('managePopup'); if (p) p.remove(); }
+
+        async function updateField(id, field, value) {
+            try {
+                const patch = { [field]: value };
+                const a = applicants.find(x => x.id === id);
+                if (field === 'stage' && a && a.group_code) {
+                    const groupMembers = applicants.filter(x => x.group_code === a.group_code && x.id !== id);
+                    const allSameStage = groupMembers.every(m => m.stage === a.stage);
+                    if (!allSameStage) { showToast('Grupo: todos precisam estar na mesma etapa.', 'error'); return; }
+                    for (const m of groupMembers) { await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', { stage: value }); m.stage = value; }
+                }
+                if (field === 'status' && a) {
+                    if (a.stage === 'producao' && value === 'aguardando_correcao') patch.stage = 'analise';
+                    if (a.stage === 'producao' && value === 'execucao_concluida') patch.stage = 'entrevista';
+                }
+                await sbFetch(`applicants?id=eq.${id}`, 'PATCH', patch);
+                const origStage = a?.stage;
+                if (a) Object.assign(a, patch);
+                const autoMsg = patch.stage && patch.stage !== origStage ? ` → ${STAGE_LABELS[patch.stage]}` : '';
+                showToast('Atualizado!' + autoMsg, 'success');
+                closeManageMenu(); renderTable(); renderFilters(); updateBadges();
+            } catch (e) { showToast('Erro: ' + e.message, 'error'); }
+        }
+
+        async function saveNotes(id) {
+            try {
+                const notes = document.getElementById('notesField')?.value || '';
+                await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { notes });
+                const a = applicants.find(x => x.id === id);
+                if (a) a.notes = notes;
+                showToast('Anotações salvas!', 'success');
+            } catch (e) { showToast('Erro: ' + e.message, 'error'); }
+        }
+
+        // ==========================================
+        // BADGES + HELPERS
+        // ==========================================
+        function updateBadges() { Object.keys(PAGE_CONFIG).forEach(p => { const c = applicants.filter(a => a.stage === p).length; const el = document.getElementById('badge-' + p); if (el) el.textContent = c; }); }
+
+        function formatDate(iso) {
+            if (!iso) return '—';
+            const d = new Date(iso);
+            const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+            return `${d.getDate().toString().padStart(2, '0')} ${months[d.getMonth()]}, ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        }
+
+        function showToast(msg, type) {
+            let t = document.getElementById('dashboard-toast');
+            if (!t) { t = document.createElement('div'); t.id = 'dashboard-toast'; t.className = 'app-toast'; document.body.appendChild(t); }
+            t.className = 'app-toast ' + (type === 'error' ? 'toast-error' : 'toast-success') + ' show';
+            t.textContent = msg;
+            setTimeout(() => { t.classList.remove('show'); }, 2500);
+        }
+
+        // ==========================================
+        // SUPABASE AUTH CLIENT
+        // ==========================================
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let _currentUser = null;
+
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) { _currentUser = session.user; window._sessionToken = session.access_token; AppCore.setSession(session.access_token, null); return true; }
+            return false;
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const errEl = document.getElementById('loginError');
+            btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Entrando...';
+            errEl.classList.remove('show');
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                errEl.textContent = error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos' : error.message;
+                errEl.classList.add('show'); btn.disabled = false; btn.innerHTML = 'Entrar'; return;
+            }
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) { _currentUser = session.user; window._sessionToken = session.access_token; AppCore.setSession(session.access_token, null); }
+            await showDashboard();
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut(); _currentUser = null; window._sessionToken = null; AppCore.clearSession();
+            const overlay = document.getElementById('loginOverlay');
+            overlay.style.display = 'flex'; overlay.classList.remove('fade-out');
+            document.querySelector('.sidebar').style.display = 'none'; document.querySelector('.main').style.display = 'none';
+        }
+
+        async function showDashboard() {
+            _authToken = AppCore.getAuth(); _orgParam = AppCore.getOrg();
+            AppCore.hideLoading();
+            const overlay = document.getElementById('loginOverlay');
+            overlay.classList.add('fade-out'); setTimeout(() => overlay.style.display = 'none', 300);
+            document.querySelector('.sidebar').style.display = 'flex'; document.querySelector('.main').style.display = 'block';
+            await resolveOrg(); await loadApplicants();
+            if (_currentUser?.email) {
+                document.getElementById('userDisplayName').textContent = _currentUser.email.split('@')[0];
+                document.getElementById('userAvatar').textContent = _currentUser.email.substring(0, 2).toUpperCase();
+            }
+            navigateTo('coleta');
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session?.user?.id) {
+                    const bearer = session.access_token || SUPABASE_KEY;
+                    const res = await fetch(SUPABASE_URL + '/rest/v1/members?user_id=eq.' + session.user.id + '&role=eq.admin&limit=1', { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + bearer } });
+                    const m = await res.json();
+                    if (m && m.length > 0) document.getElementById('adminLink')?.classList.remove('hidden');
+                }
+            } catch { }
+        }
+
+        // ==========================================
+        // INIT
+        // ==========================================
+        (async function init() {
+            updateThemeUI(document.documentElement.getAttribute('data-theme') || 'dark');
+            document.querySelector('.sidebar').style.display = 'none'; document.querySelector('.main').style.display = 'none';
+            if (_authToken && _authToken !== SUPABASE_KEY) {
+                window._sessionToken = _authToken;
+                try {
+                    await AppCore.sbFetch('applicants?select=id&limit=1', 'GET');
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session?.user) _currentUser = session.user;
+                    else { try { const payload = JSON.parse(atob(_authToken.split('.')[1])); _currentUser = { email: payload.email || payload.sub || '' }; } catch { } }
+                    await showDashboard(); return;
+                } catch (err) { AppCore.clearSession(); window._sessionToken = null; _authToken = null; }
+            }
+            const isAuth = await checkAuth();
+            if (isAuth) { await showDashboard(); return; }
+            AppCore.hideLoading();
+            const loginOv = document.getElementById('loginOverlay');
+            if (loginOv) loginOv.style.display = 'flex';
+        })();
+    </script>
+</body>
+
+</html>
