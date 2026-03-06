@@ -29,17 +29,17 @@ const DS160_SCHEMA = {
             id: "personal1",
             label: "Informações Pessoais 1",
             fields: [
-                { id: "surname", label: "Sobrenome", type: "text", required: true, maxLen: 33, noSpecial: true, uppercase: true, ds160: "tbxAPP_SURNAME" },
-                { id: "givenName", label: "Nome", type: "text", required: true, maxLen: 33, noSpecial: true, uppercase: true, ds160: "tbxAPP_GIVEN_NAME" },
-                { id: "fullNameNative", label: "Nome completo no alfabeto nativo", type: "text", required: true, maxLen: 100, allowNA: true, ds160: "tbxAPP_FULL_NAME_NATIVE" },
-                { id: "otherNamesUsed", label: "Já usou outros nomes?", type: "radio", required: true, ds160: "rblOtherNames" },
+                { id: "surname", label: "Sobrenome", type: "text", required: true, maxLen: 33, noSpecial: true, uppercase: true, ds160: "tbxAPP_SURNAME", hint: "Insira todos os sobrenomes conforme consta no passaporte." },
+                { id: "givenName", label: "Nome", type: "text", required: true, maxLen: 33, noSpecial: true, uppercase: true, ds160: "tbxAPP_GIVEN_NAME", hint: "Se o passaporte não tiver nome, insira \"FNU\"." },
+                { id: "fullNameNative", label: "Nome completo no alfabeto nativo", type: "text", required: true, maxLen: 100, allowNA: true, ds160: "tbxAPP_FULL_NAME_NATIVE", hint: "Escreva seu nome completo no alfabeto do seu país." },
+                { id: "otherNamesUsed", label: "Já usou outros nomes?", type: "radio", required: true, ds160: "rblOtherNames", hint: "Inclui nome de solteiro(a), nome religioso, profissional, apelido ou qualquer outro nome pelo qual você é ou foi conhecido(a)." },
                 {
                     id: "otherNames", label: "Outros nomes", type: "array", maxItems: 5, showWhen: { field: "otherNamesUsed", equals: "Y" }, ds160List: "DListAlias", fields: [
                         { id: "surname", label: "Sobrenome", type: "text", required: true, maxLen: 33, noSpecial: true, uppercase: true, ds160: "tbxSURNAME" },
                         { id: "givenName", label: "Nome", type: "text", required: true, maxLen: 33, noSpecial: true, uppercase: true, ds160: "tbxGIVEN_NAME" }
                     ]
                 },
-                { id: "telecode", label: "Possui telecode?", type: "radio", required: true, ds160: "rblTelecodeQuestion" },
+                { id: "telecode", label: "Possui telecode?", type: "radio", required: true, ds160: "rblTelecodeQuestion", hint: "Telecodes são códigos numéricos de 4 dígitos que representam caracteres em nomes com alfabeto não-romano. Se não souber, selecione Não." },
                 { id: "telecodeSurname", label: "Telecode do Sobrenome", type: "text", maxLen: 20, showWhen: { field: "telecode", equals: "Y" }, ds160: "tbxAPP_TelecodeSURNAME" },
                 { id: "telecodeGivenName", label: "Telecode do Nome", type: "text", maxLen: 20, showWhen: { field: "telecode", equals: "Y" }, ds160: "tbxAPP_TelecodeGIVEN_NAME" },
                 {
@@ -60,10 +60,10 @@ const DS160_SCHEMA = {
                     ]
                 },
                 { id: "otherMaritalStatusText", label: "Especifique estado civil", type: "text", maxLen: 40, showWhen: { field: "maritalStatus", equals: "O" }, ds160: "tbxOtherMaritalStatus" },
-                { id: "dob", label: "Data de Nascimento", type: "date", required: true, notFuture: true, ds160day: "ddlDOBDay", ds160month: "ddlDOBMonth", ds160year: "tbxDOBYear" },
+                { id: "dob", label: "Data de Nascimento", type: "date", required: true, notFuture: true, ds160day: "ddlDOBDay", ds160month: "ddlDOBMonth", ds160year: "tbxDOBYear", hint: "Formato: DD-MMM-AAAA. Se dia ou mês desconhecido, insira conforme consta no passaporte." },
                 { id: "cityOfBirth", label: "Cidade de Nascimento", type: "text", required: true, maxLen: 20, noSpecial: true, ds160: "tbxAPP_POB_CITY" },
                 { id: "stateOfBirth", label: "Estado/Província de Nascimento", type: "text", maxLen: 20, noSpecial: true, allowNA: true, ds160: "tbxAPP_POB_ST_PROVINCE" },
-                { id: "countryOfBirth", label: "País de Nascimento", type: "select", required: true, ds160: "ddlAPP_POB_CNTRY", optionsRef: "countries" }
+                { id: "countryOfBirth", label: "País de Nascimento", type: "select", required: true, ds160: "ddlAPP_POB_CNTRY", optionsRef: "countries", hint: "Selecione o nome atualmente usado para o local onde você nasceu." }
             ]
         },
 
@@ -73,7 +73,7 @@ const DS160_SCHEMA = {
             label: "Informações Pessoais 2",
             fields: [
                 { id: "nationality", label: "Nacionalidade", type: "select", required: true, ds160: "ddlAPP_NATL", optionsRef: "countries" },
-                { id: "otherNationality", label: "Possui outra nacionalidade?", type: "radio", required: true, ds160: "rblAPP_OTH_NATL_IND" },
+                { id: "otherNationality", label: "Possui outra nacionalidade?", type: "radio", required: true, ds160: "rblAPP_OTH_NATL_IND", hint: "Informe todas as nacionalidades que possui atualmente e todas que já possuiu, independente de ter renunciado formalmente ou não." },
                 {
                     id: "otherNationalities", label: "Outras nacionalidades", type: "array", maxItems: 5, showWhen: { field: "otherNationality", equals: "Y" }, ds160List: "dtlOTHER_NATL", fields: [
                         { id: "country", label: "País", type: "select", required: true, ds160: "ddlOTHER_NATL", optionsRef: "countries" },
@@ -81,15 +81,15 @@ const DS160_SCHEMA = {
                         { id: "passportNumber", label: "Número do passaporte", type: "text", maxLen: 20, showWhen: { field: "hasPassport", equals: "Y" }, ds160: "tbxOTHER_PPT_NUM" }
                     ]
                 },
-                { id: "permanentResident", label: "É residente permanente de outro país?", type: "radio", required: true, ds160: "rblPermResOtherCntryInd" },
+                { id: "permanentResident", label: "É residente permanente de outro país?", type: "radio", required: true, ds160: "rblPermResOtherCntryInd", hint: "Residente permanente é qualquer pessoa que recebeu de um país permissão legal para viver e trabalhar sem limitação de tempo naquele país." },
                 {
                     id: "permanentResidentCountries", label: "Países de residência permanente", type: "array", maxItems: 5, showWhen: { field: "permanentResident", equals: "Y" }, ds160List: "dtlOthPermResCntry", fields: [
                         { id: "country", label: "País", type: "select", required: true, ds160: "ddlOthPermResCntry", optionsRef: "countries" }
                     ]
                 },
-                { id: "nationalId", label: "Identidade Nacional / CPF", type: "text", required: true, maxLen: 20, allowNA: true, ds160: "tbxAPP_NATIONAL_ID" },
-                { id: "ssn", label: "Número do Seguro Social (SSN) dos EUA", type: "text", maxLen: 11, allowNA: true, ds160: "tbxAPP_SSN" },
-                { id: "taxId", label: "Número de Contribuinte dos EUA", type: "text", maxLen: 20, allowNA: true, ds160: "tbxAPP_TAX_ID" }
+                { id: "nationalId", label: "Identidade Nacional / CPF", type: "text", required: true, maxLen: 20, allowNA: true, ds160: "tbxAPP_NATIONAL_ID", hint: "Número único fornecido pelo seu governo (ex: CPF para brasileiros). Marque 'Não se Aplica' se não possuir." },
+                { id: "ssn", label: "Número do Seguro Social (SSN) dos EUA", type: "text", maxLen: 11, allowNA: true, ds160: "tbxAPP_SSN", hint: "Apenas se já possuiu ou possui SSN americano." },
+                { id: "taxId", label: "Número de Contribuinte dos EUA", type: "text", maxLen: 20, allowNA: true, ds160: "tbxAPP_TAX_ID", hint: "Apenas se já possuiu ou possui número de contribuinte (ITIN/EIN) nos EUA." }
             ]
         },
 
@@ -106,15 +106,15 @@ const DS160_SCHEMA = {
                     ]
                 },
                 { id: "typeExplanation", label: "Explique outro tipo", type: "text", maxLen: 40, showWhen: { field: "type", equals: "OT" }, ds160: "tbxPptOtherExpl" },
-                { id: "number", label: "Número do Passaporte", type: "text", required: true, maxLen: 20, ds160: "tbxPPT_NUM" },
-                { id: "bookNumber", label: "Número do Livro do Passaporte", type: "text", maxLen: 20, allowNA: true, ds160: "tbxPPT_BOOK_NUM" },
+                { id: "number", label: "Número do Passaporte", type: "text", required: true, maxLen: 20, ds160: "tbxPPT_NUM", hint: "Insira exatamente como consta no passaporte, incluindo letras e números." },
+                { id: "bookNumber", label: "Número do Livro do Passaporte", type: "text", maxLen: 20, allowNA: true, ds160: "tbxPPT_BOOK_NUM", hint: "O número do livro pode estar impresso na contracapa do passaporte. Marque 'Não se Aplica' se não houver." },
                 { id: "issuingCountry", label: "País de Emissão", type: "select", required: true, ds160: "ddlPPT_ISSUED_CNTRY", optionsRef: "countries" },
                 { id: "issuedCity", label: "Cidade de Emissão", type: "text", required: true, maxLen: 20, noSpecial: true, ds160: "tbxPPT_ISSUED_IN_CITY" },
                 { id: "issuedState", label: "Estado/Província de Emissão", type: "text", maxLen: 20, noSpecial: true, ds160: "tbxPPT_ISSUED_IN_STATE" },
                 { id: "issuedCountry", label: "País onde foi emitido", type: "select", required: true, ds160: "ddlPPT_ISSUED_IN_CNTRY", optionsRef: "countries" },
-                { id: "issuanceDate", label: "Data de Emissão", type: "date", required: true, ds160day: "ddlPPT_ISSUED_DTEDay", ds160month: "ddlPPT_ISSUED_DTEMonth", ds160year: "tbxPPT_ISSUEDYear" },
-                { id: "expirationDate", label: "Data de Expiração", type: "date", required: true, allowNA: true, ds160day: "ddlPPT_EXPIRE_DTEDay", ds160month: "ddlPPT_EXPIRE_DTEMonth", ds160year: "tbxPPT_EXPIREYear" },
-                { id: "lostOrStolen", label: "Já perdeu passaporte ou teve roubado?", type: "radio", required: true, ds160: "rblLOST_PPT_IND" },
+                { id: "issuanceDate", label: "Data de Emissão", type: "date", required: true, ds160day: "ddlPPT_ISSUED_DTEDay", ds160month: "ddlPPT_ISSUED_DTEMonth", ds160year: "tbxPPT_ISSUEDYear", hint: "Data em que o passaporte foi emitido." },
+                { id: "expirationDate", label: "Data de Expiração", type: "date", required: true, allowNA: true, ds160day: "ddlPPT_EXPIRE_DTEDay", ds160month: "ddlPPT_EXPIRE_DTEMonth", ds160year: "tbxPPT_EXPIREYear", hint: "Marque 'Não se Aplica' se o passaporte não tiver data de expiração." },
+                { id: "lostOrStolen", label: "Já perdeu passaporte ou teve roubado?", type: "radio", required: true, ds160: "rblLOST_PPT_IND", hint: "Inclui todos os passaportes anteriores, não apenas o atual." },
                 {
                     id: "lostPassports", label: "Passaportes perdidos/roubados", type: "array", maxItems: 5, showWhen: { field: "lostOrStolen", equals: "Y" }, ds160List: "dtlLostPPT", fields: [
                         { id: "number", label: "Número", type: "text", required: true, maxLen: 20, ds160: "tbxLOST_PPT_NUM" },
@@ -164,7 +164,7 @@ const DS160_SCHEMA = {
                         { value: "C1/D", label: "C1/D - Tripulante" }
                     ]
                 },
-                { id: "hasSpecificPlans", label: "Possui planos específicos de viagem?", type: "radio", required: true, ds160: "rblSpecificTravel" },
+                { id: "hasSpecificPlans", label: "Possui planos específicos de viagem?", type: "radio", required: true, ds160: "rblSpecificTravel", hint: "Se já tem datas, voos e locais definidos, selecione Sim. Caso contrário, selecione Não e informe uma estimativa." },
                 // Specific plans fields
                 { id: "arrivalDate", label: "Data de Chegada", type: "date", showWhen: { field: "hasSpecificPlans", equals: "Y" }, ds160day: "ddlARRIVAL_US_DTEDay", ds160month: "ddlARRIVAL_US_DTEMonth", ds160year: "tbxARRIVAL_US_DTEYear" },
                 { id: "arrivalFlight", label: "Voo de Chegada", type: "text", maxLen: 20, showWhen: { field: "hasSpecificPlans", equals: "Y" }, ds160: "tbxArriveFlight" },
@@ -194,7 +194,7 @@ const DS160_SCHEMA = {
                 { id: "usAddressZip", label: "CEP nos EUA", type: "text", required: true, maxLen: 10, ds160: "tbZIPCode" },
                 // Payer
                 {
-                    id: "whoIsPaying", label: "Quem paga a viagem?", type: "select", required: true, ds160: "ddlWhoIsPaying", options: [
+                    id: "whoIsPaying", label: "Quem paga a viagem?", type: "select", required: true, ds160: "ddlWhoIsPaying", hint: "Selecione quem irá custear os gastos da viagem aos EUA.", options: [
                         { value: "SELF", label: "O próprio solicitante" },
                         { value: "OTH", label: "Outra pessoa" },
                         { value: "COM", label: "Empresa/Organização" },

@@ -205,9 +205,11 @@ class FormEngine {
         }
 
         const hasNARow = naHtml ? 'na-row' : '';
+        const hintHtml = f.hint ? `<div class="field-hint">${f.hint}</div>` : '';
 
         return `<div class="field-row ${condClass}" ${condAttrs}>
             <div class="field-label">${reqMark} ${f.label}</div>
+            ${hintHtml}
             <div class="${hasNARow}">
                 ${input}
                 ${naHtml}
