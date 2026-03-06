@@ -915,7 +915,7 @@ class FormEngine {
     // =========================================
     // REVIEW RENDERING (Assessor)
     // =========================================
-    renderReview() {
+    renderReview(autoOpen = true) {
         const reviewEl = document.getElementById('view-review');
         if (!reviewEl) return;
         reviewEl.innerHTML = '';
@@ -1039,12 +1039,14 @@ class FormEngine {
             reviewEl.appendChild(div);
         });
 
-        // Auto-open first review section
-        const firstHeader = reviewEl.querySelector('.review-header');
-        if (firstHeader) this._toggleReviewSection(firstHeader);
+        // Auto-open first review section only on initial render
+        if (autoOpen) {
+            const firstHeader = reviewEl.querySelector('.review-header');
+            if (firstHeader) this._toggleReviewSection(firstHeader);
+        }
     }
 
-    _toggleReviewSection(headerEl) {
+    _toggleReviewSection(headerEl, doScroll = true) {
         const body = headerEl.nextElementSibling;
         const chevron = headerEl.querySelector('.chevron');
         const isOpen = body.classList.contains('open');
@@ -1060,7 +1062,7 @@ class FormEngine {
         if (!isOpen) {
             body.classList.add('open');
             if (chevron) chevron.classList.add('open');
-            headerEl.closest('.review-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (doScroll) headerEl.closest('.review-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
 
@@ -1164,50 +1166,44 @@ class FormEngine {
         this.updateProgress();
 
         // Find which review section was open before re-render
-        const openSectionLabel = this._getOpenReviewSectionLabel();
+        const openIdx = this._getOpenReviewSectionIndex();
 
-        // Re-render review
-        this.renderReview();
+        // Re-render review WITHOUT auto-opening first section
+        this.renderReview(false);
 
-        // Restore open section
-        this._restoreReviewSection(openSectionLabel || secId);
+        // Restore open section by index (no scroll)
+        this._restoreReviewSectionByIndex(openIdx);
+
+        // Trigger onChange for auto-save/sync with BD
+        if (this.onChange) this.onChange(key, newVal);
         this._showToast('Campo atualizado', 'success');
     }
 
     cancelEdit() {
-        const openSectionLabel = this._getOpenReviewSectionLabel();
-        this.renderReview();
-        if (openSectionLabel) this._restoreReviewSection(openSectionLabel);
+        const openIdx = this._getOpenReviewSectionIndex();
+        this.renderReview(false);
+        this._restoreReviewSectionByIndex(openIdx);
     }
 
-    /** Get the label text of the currently open review section */
-    _getOpenReviewSectionLabel() {
+    /** Get the index of the currently open review section */
+    _getOpenReviewSectionIndex() {
         const reviewEl = document.getElementById('view-review');
-        if (!reviewEl) return null;
-        const openBody = reviewEl.querySelector('.review-body.open');
-        if (!openBody) return null;
-        const header = openBody.previousElementSibling;
-        return header ? header.textContent.trim() : null;
+        if (!reviewEl) return 0;
+        const bodies = reviewEl.querySelectorAll('.review-body');
+        for (let i = 0; i < bodies.length; i++) {
+            if (bodies[i].classList.contains('open')) return i;
+        }
+        return 0;
     }
 
-    /** Restore a review section by matching its label text */
-    _restoreReviewSection(labelOrSecId) {
+    /** Restore a review section by its index (no scroll) */
+    _restoreReviewSectionByIndex(idx) {
         const reviewEl = document.getElementById('view-review');
         if (!reviewEl) return;
-        // Close the auto-opened first section
-        reviewEl.querySelectorAll('.review-body.open').forEach(b => b.classList.remove('open'));
-        reviewEl.querySelectorAll('.review-header .chevron.open').forEach(c => c.classList.remove('open'));
-
-        // Find the matching section header
-        const headers = reviewEl.querySelectorAll('.review-header');
-        for (const h of headers) {
-            if (h.textContent.trim() === labelOrSecId || h.textContent.trim().startsWith(labelOrSecId)) {
-                const body = h.nextElementSibling;
-                const chevron = h.querySelector('.chevron');
-                if (body) body.classList.add('open');
-                if (chevron) chevron.classList.add('open');
-                return;
-            }
+        const sections = reviewEl.querySelectorAll('.review-section');
+        if (idx >= 0 && idx < sections.length) {
+            const header = sections[idx].querySelector('.review-header');
+            if (header) this._toggleReviewSection(header, false);
         }
     }
 
@@ -1298,17 +1294,19 @@ class FormEngine {
         this._evaluateConditionals(formKey, newVal);
         this._rerenderArray(secId, f, key);
         this.updateProgress();
-        const openLabel = this._getOpenReviewSectionLabel();
-        this.renderReview();
-        this._restoreReviewSection(openLabel || secId);
+        const openIdx = this._getOpenReviewSectionIndex();
+        this.renderReview(false);
+        this._restoreReviewSectionByIndex(openIdx);
+        if (this.onChange) this.onChange(formKey, newVal);
         this._showToast('Campo atualizado', 'success');
     }
 
     addArrayItemFromReview(secId, fieldId) {
-        const openLabel = this._getOpenReviewSectionLabel();
+        const openIdx = this._getOpenReviewSectionIndex();
         this.addArrayEntry(secId, fieldId);
-        this.renderReview();
-        this._restoreReviewSection(openLabel || secId);
+        this.renderReview(false);
+        this._restoreReviewSectionByIndex(openIdx);
+        if (this.onChange) this.onChange(secId + '.' + fieldId, '');
         this._showToast('Item adicionado', 'success');
     }
 
@@ -1318,10 +1316,11 @@ class FormEngine {
             this._showToast('Mínimo 1 item requerido', 'error');
             return;
         }
-        const openLabel = this._getOpenReviewSectionLabel();
+        const openIdx = this._getOpenReviewSectionIndex();
         this.removeArrayEntry(secId, fieldId, arrayIdx);
-        this.renderReview();
-        this._restoreReviewSection(openLabel || secId);
+        this.renderReview(false);
+        this._restoreReviewSectionByIndex(openIdx);
+        if (this.onChange) this.onChange(key, '');
         this._showToast('Item removido', 'success');
     }
 
