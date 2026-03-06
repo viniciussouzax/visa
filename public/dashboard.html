@@ -368,7 +368,7 @@
                         <td><div class="name-col"><span class="group-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></span><div class="name-info"><div class="name">${groupLabel} <span class="group-count">${members.length}</span> ${groupPriBadge}</div><div class="passport">${isOpen ? '▼' : '▶'} ${members.map(m => m.name.split(' ')[0]).join(', ')}</div></div></div></td>
                         <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" style="width:${avgProgress}%;background:${pc}"></div></div><span class="progress-label">${avgProgress}%</span></div></td>
                         <td></td>
-                        <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();copyGroupLink('${a.group_code}')" title="Copiar link do grupo">🔗</button></div></td></tr>`;
+                        <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();copyGroupLink('${a.group_code}')" title="Copiar link do grupo">🔗</button><button class="row-btn" onclick="event.stopPropagation();showGroupPriorityMenu(event,'${a.group_code}')" title="Prioridade do grupo">⋮</button></div></td></tr>`;
                     if (isOpen) members.forEach(m => { html += buildRow(m, 'sub-row'); });
                 } else { rendered.add(a.id); html += buildRow(a, ''); }
             });
@@ -835,6 +835,43 @@
         }
 
         function closeManageMenu() { const p = document.getElementById('managePopup'); if (p) p.remove(); }
+
+        // ─── GROUP PRIORITY MENU ───
+        function showGroupPriorityMenu(evt, groupCode) {
+            evt.stopPropagation();
+            const existing = document.getElementById('groupPriorityMenu'); if (existing) existing.remove();
+            const members = applicants.filter(a => a.group_code === groupCode);
+            const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
+            const currentPri = members.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
+            const priorities = ['normal', 'prioridade', 'urgente', 'emergencia'];
+            const groupLabel = members.length > 0 ? members[0].name.split(' ').slice(-1)[0] : groupCode;
+
+            const html = `<div id="groupPriorityMenu" class="modal-overlay" onclick="document.getElementById('groupPriorityMenu').remove()">
+            <div class="modal-box" onclick="event.stopPropagation()" style="max-width:320px">
+                <h3 class="modal-title">Prioridade do Grupo</h3>
+                <div class="modal-subtitle">📁 ${groupLabel} (${members.length} membros)</div>
+                <div class="manage-btn-group" style="margin:12px 0">${priorities.map(p => {
+                const pc = PRIORITY_CONFIG[p];
+                return `<button class="manage-btn ${currentPri === p ? 'active' : ''}" data-color="${pc.color}" onclick="setGroupPriority('${groupCode}','${p}')">${pc.icon} ${pc.label}</button>`;
+            }).join('')}</div>
+                <button class="modal-btn" onclick="document.getElementById('groupPriorityMenu').remove()">Fechar</button>
+            </div></div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        async function setGroupPriority(groupCode, priority) {
+            const members = applicants.filter(a => a.group_code === groupCode);
+            try {
+                for (const m of members) {
+                    await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', { priority });
+                    m.priority = priority;
+                }
+                const menu = document.getElementById('groupPriorityMenu'); if (menu) menu.remove();
+                renderTable(); updateBadges();
+                const pcfg = PRIORITY_CONFIG[priority];
+                showToast(`Grupo atualizado: ${pcfg.icon} ${pcfg.label}`, 'success');
+            } catch (e) { showToast('Erro: ' + e.message, 'error'); }
+        }
 
         async function updateField(id, field, value) {
             try {
