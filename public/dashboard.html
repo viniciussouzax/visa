@@ -427,29 +427,31 @@
             const targetIsGroup = isGroupId(targetId);
             const targetApplicant = !targetIsGroup ? applicants.find(a => a.id === targetId) : null;
 
-            // ─── CASE 1: Solo applicant dropped onto a group → LINK ───
-            if (dragApplicant && !dragApplicant.group_code && targetIsGroup) {
-                const gc = getGroupCode(targetId);
-                const groupMembers = applicants.filter(a => a.group_code === gc);
-                if (groupMembers.length === 0) { _dragId = null; return; }
-                showConfirmModal('Vincular ao Grupo',
-                    `Deseja vincular <strong>${dragApplicant.name}</strong> ao grupo <strong>${groupMembers[0].name.split(' ').slice(-1)[0]}</strong>?`,
-                    async () => {
-                        try {
-                            await sbFetch(`applicants?id=eq.${dragApplicant.id}`, 'PATCH', { group_code: gc });
-                            dragApplicant.group_code = gc;
-                            renderTable(); updateBadges();
-                            showToast('Vinculado ao grupo!', 'success');
-                        } catch (err) { showToast('Erro: ' + err.message, 'error'); }
-                    });
-                _dragId = null; return;
+            // ─── CASE 1: Solo dropped onto a SUB-ROW inside an OPEN group → LINK ───
+            if (dragApplicant && !dragApplicant.group_code && targetApplicant && targetApplicant.group_code) {
+                const gc = targetApplicant.group_code;
+                // Only if group is expanded (open)
+                if (!expandedGroups.has(gc)) { /* group closed, treat as normal reorder */ }
+                else {
+                    const groupMembers = applicants.filter(a => a.group_code === gc);
+                    showConfirmModal('Vincular ao Grupo',
+                        `Deseja vincular <strong>${dragApplicant.name}</strong> ao grupo <strong>${gc}</strong>?`,
+                        async () => {
+                            try {
+                                await sbFetch(`applicants?id=eq.${dragApplicant.id}`, 'PATCH', { group_code: gc });
+                                dragApplicant.group_code = gc;
+                                renderTable(); updateBadges();
+                                showToast('Vinculado ao grupo!', 'success');
+                            } catch (err) { showToast('Erro: ' + err.message, 'error'); }
+                        });
+                    _dragId = null; return;
+                }
             }
 
             // ─── CASE 2: Group member dropped onto solo area → UNLINK ───
             if (dragApplicant && dragApplicant.group_code && targetApplicant && !targetApplicant.group_code) {
                 const gc = dragApplicant.group_code;
                 const groupMembers = applicants.filter(a => a.group_code === gc);
-                // Don't allow unlinking the last member (group needs 2+)
                 if (groupMembers.length <= 1) {
                     showToast('Não é possível desvincular o único membro do grupo.', 'error');
                     _dragId = null; return;
@@ -788,11 +790,48 @@
                 <div class="manage-btn-group column">${Object.entries(STATUS_CONFIG).map(([k, v]) => `<button class="manage-btn ${a.status === k ? 'active' : ''}" onclick="updateField('${id}','status','${k}')">${v.label}</button>`).join('')}</div>`;
             }
 
+            html += `<div class="manage-section-label">Grupo</div>`;
+            const existingGroups = [...new Set(applicants.filter(x => x.group_code && x.id !== id).map(x => x.group_code))];
+            if (a.group_code) {
+                html += `<div class="manage-btn-group"><span style="font-size:12px;color:var(--text-muted);margin-right:8px">📁 ${a.group_code}</span>
+                    <button class="manage-btn" style="color:#ef4444" onclick="unlinkFromGroup('${id}')">Desvincular</button></div>`;
+            } else {
+                if (existingGroups.length > 0) {
+                    html += `<div class="manage-btn-group column"><select id="groupSelect" class="modal-input" style="font-size:12px;padding:6px">
+                        <option value="">— Selecione um grupo —</option>
+                        ${existingGroups.map(g => `<option value="${g}">${g}</option>`).join('')}
+                    </select>
+                    <button class="manage-btn" onclick="linkToSelectedGroup('${id}')">Vincular ao grupo</button></div>`;
+                } else {
+                    html += `<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Nenhum grupo disponível</div>`;
+                }
+            }
+
             html += `<div class="manage-section-label">Anotações internas</div>
                 <textarea id="notesField" class="manage-textarea" placeholder="Observações sobre este solicitante...">${a.notes || ''}</textarea>
                 <button class="modal-btn primary" onclick="saveNotes('${id}')">Salvar anotações</button>
             </div></div>`;
             document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        async function linkToSelectedGroup(id) {
+            const select = document.getElementById('groupSelect');
+            const gc = select?.value;
+            if (!gc) { showToast('Selecione um grupo', 'error'); return; }
+            try {
+                await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { group_code: gc });
+                const a = applicants.find(x => x.id === id);
+                if (a) a.group_code = gc;
+                closeManageMenu(); renderTable(); updateBadges();
+                showToast(`Vinculado ao grupo ${gc}!`, 'success');
+            } catch (e) { showToast('Erro: ' + e.message, 'error'); }
+        }
+
+        function unlinkFromGroup(id) {
+            const a = applicants.find(x => x.id === id);
+            if (!a) return;
+            closeManageMenu();
+            showUnlinkModal(a);
         }
 
         function closeManageMenu() { const p = document.getElementById('managePopup'); if (p) p.remove(); }
