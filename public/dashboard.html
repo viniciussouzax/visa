@@ -320,7 +320,6 @@
 
         const PRIORITY_CONFIG = {
             normal: { label: 'Normal', color: '#64748b', icon: '' },
-            prioridade: { label: 'Prioridade', color: '#3b82f6', icon: '🔵' },
             urgente: { label: 'Urgente', color: '#f59e0b', icon: '🟡' },
             emergencia: { label: 'Emergência', color: '#ef4444', icon: '🔴' },
         };
@@ -467,7 +466,7 @@
 
         function getFilteredByPage() { return applicants.filter(a => a.stage === currentPage); }
         function getFiltered() {
-            const PRIORITY_ORDER = { emergencia: 0, urgente: 1, prioridade: 2, normal: 3 };
+            const PRIORITY_ORDER = { emergencia: 0, urgente: 1, normal: 2 };
             let items = getFilteredByPage();
             if (currentFilter !== 'all') {
                 if (currentPage === 'status' || currentPage === 'arquivado') items = items.filter(a => a.result === currentFilter);
@@ -557,7 +556,7 @@
                     const avgProgress = Math.round(members.reduce((s, m) => s + m.progress, 0) / members.length);
                     const pc = avgProgress >= 100 ? '#22c55e' : avgProgress > 50 ? '#3b82f6' : '#f59e0b';
                     const groupLabel = getGroupLabel(a.group_id);
-                    const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
+                    const priOrder = { emergencia: 3, urgente: 2, normal: 0 };
                     const maxPri = members.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
                     const gpCfg = PRIORITY_CONFIG[maxPri] || PRIORITY_CONFIG.normal;
                     const groupPriBadge = maxPri !== 'normal' ? `<span class="priority-badge" data-priority="${maxPri}">${gpCfg.icon} ${gpCfg.label}</span>` : '';
@@ -636,7 +635,7 @@
                         `Deseja vincular <strong>${dragApplicant.name}</strong> ao grupo <strong>${getGroupLabel(gid)}</strong>?`,
                         async () => {
                             try {
-                                const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
+                                const priOrder = { emergencia: 3, urgente: 2, normal: 0 };
                                 const groupPri = groupMembers.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
                                 await sbFetch(`applicants?id=eq.${dragApplicant.id}`, 'PATCH', { group_id: gid, priority: groupPri });
                                 dragApplicant.group_id = gid;
@@ -869,7 +868,7 @@
                 document.getElementById(id).remove();
                 try {
                     const members = applicants.filter(a => a.group_id === groupId);
-                    const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
+                    const priOrder = { emergencia: 3, urgente: 2, normal: 0 };
                     const groupPri = members.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
                     const p = { full_name: name.toUpperCase(), passport_number: null, data: {}, stage: 'triagem', status: 'aguardando_execucao', result: 'indefinido', priority: groupPri, group_id: groupId };
                     if (resolvedCompanyId) p.company_id = resolvedCompanyId;
@@ -980,7 +979,7 @@
             const a = applicants.find(x => x.id === id); if (!a) return;
             const existing = document.getElementById('managePopup'); if (existing) existing.remove();
             const stages = ['triagem', 'analise', 'ds160', 'taxas', 'agendamento', 'entrevista', 'status', 'arquivado'];
-            const priorities = ['normal', 'prioridade', 'urgente', 'emergencia'];
+            const priorities = ['normal', 'urgente', 'emergencia'];
             const results = Object.keys(RESULT_CONFIG);
 
             let html = `<div id="managePopup" class="modal-overlay" onclick="closeManageMenu()">
@@ -1027,7 +1026,7 @@
             const gid = select?.value || null;
             if (!gid) { showToast('Selecione um grupo', 'error'); return; }
             try {
-                const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
+                const priOrder = { emergencia: 3, urgente: 2, normal: 0 };
                 const groupMembers = applicants.filter(x => x.group_id === gid);
                 const groupPri = groupMembers.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
                 await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { group_id: gid, priority: groupPri });
@@ -1052,9 +1051,9 @@
             evt.stopPropagation();
             const existing = document.getElementById('groupPriorityMenu'); if (existing) existing.remove();
             const members = applicants.filter(a => a.group_id === groupId);
-            const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
+            const priOrder = { emergencia: 3, urgente: 2, normal: 0 };
             const currentPri = members.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
-            const priorities = ['normal', 'prioridade', 'urgente', 'emergencia'];
+            const priorities = ['normal', 'urgente', 'emergencia'];
             const label = getGroupLabel(groupId);
 
             const html = `<div id="groupPriorityMenu" class="modal-overlay" onclick="document.getElementById('groupPriorityMenu').remove()">
