@@ -417,7 +417,7 @@
             // Toggle admin panel vs normal content
             const adminPanel = document.getElementById('adminPanel');
             const admSubNav = document.getElementById('admSubNav');
-            const normalEls = document.querySelectorAll('.main > .page-header, .main > .toolbar, .main > .data-table-wrapper, .main > .pagination');
+            const normalEls = document.querySelectorAll('.main > .page-header, .main > .toolbar, .main > .table-container, .main > .pagination');
             if (page === 'admin') {
                 normalEls.forEach(el => el.style.display = 'none');
                 if (adminPanel) { adminPanel.style.display = 'block'; admInitPanel(); }
