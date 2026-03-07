@@ -9,6 +9,180 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app-core.js"></script>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Force light theme for admin */
+        .admin-page {
+            background: #f0f2f5;
+            color: #1e293b;
+        }
+
+        .admin-page .main {
+            background: #f0f2f5 !important;
+            color: #1e293b;
+        }
+
+        .admin-page .page-header h1 {
+            color: #1e293b;
+        }
+
+        .admin-page .page-header .page-subtitle {
+            color: #64748b;
+        }
+
+        .admin-page table {
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+        }
+
+        .admin-page th {
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            padding: 10px 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .admin-page td {
+            color: #1e293b;
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13px;
+        }
+
+        .admin-page tr:last-child td {
+            border-bottom: none;
+        }
+
+        .admin-page .btn {
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .admin-page .btn:hover {
+            background: #f1f5f9;
+        }
+
+        .admin-page .btn-primary {
+            background: #3b82f6;
+            color: #fff;
+            border-color: #3b82f6;
+        }
+
+        .admin-page .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .admin-page .btn-danger {
+            background: #ef4444;
+            color: #fff;
+            border-color: #ef4444;
+        }
+
+        .admin-page .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .admin-page .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .admin-page .badge-active {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .admin-page .badge-inactive {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .admin-page .modal-box {
+            background: #fff;
+            color: #1e293b;
+        }
+
+        .admin-page .modal-box input,
+        .admin-page .modal-box select,
+        .admin-page .modal-box textarea {
+            background: #f8fafc;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .admin-page .modal-box label {
+            color: #475569;
+        }
+
+        .admin-page h2,
+        .admin-page h3 {
+            color: #1e293b;
+        }
+
+        .admin-page p {
+            color: #475569;
+        }
+
+        .admin-page .section-header {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .admin-page .section-header h2 {
+            color: #1e293b;
+        }
+
+        .admin-page .form-group label {
+            color: #475569;
+        }
+
+        .admin-page .form-group input,
+        .admin-page .form-group select {
+            background: #f8fafc;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px 12px;
+        }
+
+        .admin-page .login-overlay {
+            background: rgba(0, 0, 0, .5);
+        }
+
+        .admin-page .login-card {
+            background: #fff;
+            color: #1e293b;
+        }
+
+        .admin-page .login-card h2 {
+            color: #1e293b;
+        }
+
+        .admin-page .login-card p {
+            color: #475569;
+        }
+
+        .admin-page .login-card input {
+            background: #f8fafc;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
 </head>
 
 <body class="admin-page">
