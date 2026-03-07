@@ -280,7 +280,7 @@
                     const newRow = {
                         data: json,
                         full_name: fullName || 'Novo Solicitante',
-                        pipeline_status: 'filling'
+                        stage: 'triagem', status: 'aguardando_execucao', result: 'indefinido', priority: 'normal'
                     };
                     if (passport) newRow.passport_number = passport;
                     if (_companyId) newRow.company_id = _companyId;
@@ -298,12 +298,6 @@
                     const updatePayload = { data: json, updated_at: new Date().toISOString() };
                     if (fullName) updatePayload.full_name = fullName;
                     if (passport) updatePayload.passport_number = passport;
-
-                    // Update pipeline_status if still new
-                    const current = await sbGet('applicants?id=eq.' + _applicantId + '&select=pipeline_status&limit=1');
-                    if (current?.[0]?.pipeline_status === 'new') {
-                        updatePayload.pipeline_status = 'filling';
-                    }
 
                     await sbFetch('applicants?id=eq.' + _applicantId, 'PATCH', updatePayload);
                     console.log('[Form] Salvo:', fullName || _applicantId);
@@ -377,8 +371,8 @@
                         full_name: name.trim().toUpperCase(),
                         passport_number: null,
                         data: {},
-                        pipeline_status: 'filling',
-                        group_code: groupCode,
+                        stage: 'triagem', status: 'aguardando_execucao', result: 'indefinido', priority: 'normal',
+                        group_id: groupCode,
                         company_id: _companyId
                     };
 
@@ -424,7 +418,7 @@
             container.innerHTML = '<p style="color:#64748b">Carregando membros do grupo...</p>';
 
             try {
-                let groupQuery = 'applicants?group_code=eq.' + encodeURIComponent(_groupParam) + '&select=id,full_name,passport_number,data&order=created_at.asc';
+                let groupQuery = 'applicants?group_id=eq.' + encodeURIComponent(_groupParam) + '&select=id,full_name,passport_number,data&order=created_at.asc';
                 if (_companyId) groupQuery += '&company_id=eq.' + _companyId;
                 const members = await sbGet(groupQuery);
                 if (!members || !members.length) {

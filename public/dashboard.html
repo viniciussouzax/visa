@@ -472,7 +472,7 @@
                 if (currentPage === 'status' || currentPage === 'arquivado') items = items.filter(a => a.result === currentFilter);
                 else items = items.filter(a => a.status === currentFilter);
             }
-            if (searchQuery) items = items.filter(a => a.name.toLowerCase().includes(searchQuery) || a.passport.toLowerCase().includes(searchQuery) || a.id.toString().toLowerCase().includes(searchQuery));
+            if (searchQuery) items = items.filter(a => a.name.toLowerCase().includes(searchQuery) || a.passport.toLowerCase().includes(searchQuery) || a.id.toString().toLowerCase().includes(searchQuery) || (a.email || '').toLowerCase().includes(searchQuery) || (a.group_id || '').toLowerCase().includes(searchQuery));
             items.sort((a, b) => {
                 // 1) Priority order (emergencia first, normal last)
                 const pa = PRIORITY_ORDER[a.priority] ?? 3, pb = PRIORITY_ORDER[b.priority] ?? 3;

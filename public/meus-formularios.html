@@ -587,7 +587,8 @@
                     _forms = JSON.parse(cached);
                     sessionStorage.removeItem('client_results');
                 } else {
-                    let q = 'applicants?or=(data->>email.ilike.' + encodeURIComponent(_email) +
+                    let q = 'applicants?or=(email.ilike.' + encodeURIComponent(_email) +
+                        ',data->>email.ilike.' + encodeURIComponent(_email) +
                         ',data->personal1->>email.ilike.' + encodeURIComponent(_email) +
                         ',data->contact->>email.ilike.' + encodeURIComponent(_email) +
                         ')&select=id,full_name,data,stage,created_at&order=created_at.desc';

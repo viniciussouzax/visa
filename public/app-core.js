@@ -1,6 +1,6 @@
 /**
  * app-core.js — Módulo centralizado de config, auth, CRUD, navegação e UI
- * Usado por: dashboard.html, ds160-form.html, admin.html
+ * Usado por: dashboard.html, ds160-form.html, portal.html, meus-formularios.html
  */
 (function () {
     'use strict';
@@ -130,9 +130,6 @@
         navigate('ds160-form.html', params);
     }
 
-    function goToAdmin() {
-        navigate('admin.html');
-    }
 
     // ==========================================
     // LOADING SCREEN
@@ -201,7 +198,6 @@
         navigate,
         goToDashboard,
         goToForm,
-        goToAdmin,
 
         // UI
         showLoading,

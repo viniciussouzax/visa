@@ -231,7 +231,8 @@
             try {
                 const rows = await sbGet(
                     'applicants?company_id=eq.' + _companyId +
-                    '&or=(data->>email.ilike.' + encodeURIComponent(email) +
+                    '&or=(email.ilike.' + encodeURIComponent(email) +
+                    ',data->>email.ilike.' + encodeURIComponent(email) +
                     ',data->personal1->>email.ilike.' + encodeURIComponent(email) +
                     ',data->contact->>email.ilike.' + encodeURIComponent(email) +
                     ')&select=id,full_name,data,stage,created_at&order=created_at.desc'
