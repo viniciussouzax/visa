@@ -58,7 +58,8 @@
             <div class="nav-spacer"></div>
             <div class="nav-item" id="portalLinkBtn" onclick="copyPortalLink()"
                 title="Copiar link do portal do solicitante" style="display:none">📋 Link Portal</div>
-            <div class="nav-item hidden" id="adminLink" onclick="AppCore.goToAdmin()">Admin Master</div>
+            <div class="nav-item hidden" id="adminLink" data-page="admin" onclick="navigateTo('admin')">🛡️ Admin Master
+            </div>
             <div class="nav-item" onclick="AppCore.navigate('preferencias.html')">Preferências</div>
         </div>
         <div class="sidebar-footer">
@@ -73,6 +74,134 @@
 
     <!-- MAIN CONTENT -->
     <div class="main">
+        <!-- ADMIN PANEL (hidden by default, shown for admin/master) -->
+        <div id="adminPanel" style="display:none">
+            <!-- Admin: Org List -->
+            <div id="adm-view-list">
+                <div class="page-header">
+                    <h1 class="page-title">Organizações <span class="page-subtitle" id="admOrgCount"></span></h1>
+                    <button class="btn-new" onclick="admOpenOrgModal()">Nova Organização</button>
+                </div>
+                <div id="admOrgGrid" style="margin-top:12px"></div>
+            </div>
+            <!-- Admin: Org Detail -->
+            <div id="adm-view-detail" style="display:none">
+                <div class="page-header">
+                    <div style="display:flex;align-items:center;gap:12px"><button class="btn-new"
+                            onclick="admShowOrgList()"
+                            style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border)">←
+                            Voltar</button>
+                        <h1 class="page-title" id="admDetailOrgName">—</h1>
+                    </div>
+                    <div style="display:flex;gap:8px"><button class="btn-new"
+                            onclick="admOpenOrgModal(_admSelectedOrg?.id)"
+                            style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border)">Editar</button><button
+                            class="btn-new" id="admToggleActiveBtn" onclick="admToggleActive()"
+                            style="background:#ef4444"></button><button class="btn-new" id="admDeleteOrgBtn"
+                            onclick="admDeleteOrg(_admSelectedOrg?.id)"
+                            style="background:#ef4444;display:none">Excluir</button></div>
+                </div>
+                <div id="admOrgInfoCards"
+                    style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">
+                </div>
+                <div
+                    style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px">
+                    <div
+                        style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:4px">
+                        URL do Portal</div>
+                    <div style="display:flex;gap:8px;align-items:center"><span id="admFormUrlDisplay"
+                            style="font-size:13px;color:var(--text-secondary);flex:1;word-break:break-all">—</span><button
+                            class="btn-new" onclick="admCopyFormUrl()"
+                            style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);font-size:12px">📋
+                            Copiar</button></div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                    <h2 style="font-size:15px;font-weight:600">Assessores</h2><button class="btn-new"
+                        onclick="admOpenUserModal()" style="font-size:12px">Adicionar Assessor</button>
+                </div>
+                <div style="overflow-x:auto">
+                    <table class="data-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Perfil</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admOrgUsersTable"></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Admin: CapMonster -->
+            <div id="adm-view-capmonster" style="display:none">
+                <div class="page-header">
+                    <h1 class="page-title">CapMonster API</h1>
+                </div>
+                <div style="max-width:460px;margin-top:12px">
+                    <div class="form-group" style="margin-bottom:12px"><label
+                            style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;display:block;margin-bottom:4px">API
+                            Key</label><input type="text" id="admCapmonsterKey" class="modal-input"
+                            placeholder="Sua API Key..." style="font-family:monospace"></div><button class="btn-new"
+                        onclick="admSaveCapmonster()">Salvar</button>
+                </div>
+            </div>
+            <!-- Admin: Logs -->
+            <div id="adm-view-logs" style="display:none">
+                <div class="page-header">
+                    <h1 class="page-title">Erros <span class="page-subtitle" id="admLogsCount"></span></h1><button
+                        class="btn-new" onclick="admArchiveAllLogs()" style="background:#ef4444">Arquivar Todos</button>
+                </div>
+                <div style="overflow-x:auto;margin-top:12px">
+                    <table class="data-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Causa</th>
+                                <th>Página / Campo</th>
+                                <th>Mensagem</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admLogsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Admin: Settings -->
+            <div id="adm-view-settings" style="display:none">
+                <div class="page-header">
+                    <h1 class="page-title">Configurações</h1>
+                </div>
+                <div style="max-width:460px;margin-top:12px">
+                    <div class="form-group" style="margin-bottom:12px"><label
+                            style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;display:block;margin-bottom:4px">Pergunta
+                            de Segurança</label><select id="admSecurityQuestion" class="modal-input">
+                            <option value="0">0 — What is your mother's maiden name?</option>
+                            <option value="1">1 — What is your father's middle name?</option>
+                            <option value="2">2 — In what city were you born?</option>
+                            <option value="3">3 — What high school did you attend?</option>
+                            <option value="4">4 — What city were your parents married?</option>
+                        </select></div>
+                    <div class="form-group" style="margin-bottom:12px"><label
+                            style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;display:block;margin-bottom:4px">Resposta
+                            Padrão</label><input type="text" id="admSecurityAnswer" class="modal-input"
+                            placeholder="Resposta..."></div>
+                    <button class="btn-new" onclick="admSaveSettings()">Salvar Configurações</button>
+                </div>
+            </div>
+            <!-- Admin sub-nav tabs -->
+            <div id="admSubNav"
+                style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:99px;padding:4px;box-shadow:var(--shadow-lg);z-index:50">
+                <button class="chip active" id="admTab-orgs" onclick="admShowSection('orgs')"
+                    style="font-size:12px">Organizações</button>
+                <button class="chip" id="admTab-capmonster" onclick="admShowSection('capmonster')"
+                    style="font-size:12px">CapMonster</button>
+                <button class="chip" id="admTab-logs" onclick="admShowSection('logs')" style="font-size:12px">Erros
+                    <span id="admLogsBadge"
+                        style="display:none;margin-left:4px;background:#ef4444;color:#fff;padding:0 5px;border-radius:99px;font-size:10px">0</span></button>
+                <button class="chip" id="admTab-settings" onclick="admShowSection('settings')"
+                    style="font-size:12px">Configurações</button>
+            </div>
+        </div>
         <div class="page-header">
             <div class="page-title" id="pageTitle">Em Andamento <span id="pageCount"></span></div>
             <button class="btn-new" onclick="createNew()">Novo Solicitante</button>
@@ -285,6 +414,21 @@
         // NAVIGATION / FILTERS / SORT
         // ==========================================
         function navigateTo(page) {
+            // Toggle admin panel vs normal content
+            const adminPanel = document.getElementById('adminPanel');
+            const admSubNav = document.getElementById('admSubNav');
+            const normalEls = document.querySelectorAll('.main > .page-header, .main > .toolbar, .main > .data-table-wrapper, .main > .pagination');
+            if (page === 'admin') {
+                normalEls.forEach(el => el.style.display = 'none');
+                if (adminPanel) { adminPanel.style.display = 'block'; admInitPanel(); }
+                if (admSubNav) admSubNav.style.display = 'flex';
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === 'admin'));
+                return;
+            }
+            // Hide admin panel, show normal
+            if (adminPanel) adminPanel.style.display = 'none';
+            if (admSubNav) admSubNav.style.display = 'none';
+            normalEls.forEach(el => el.style.display = '');
             currentPage = page; currentFilter = 'all'; selectedIds.clear(); searchQuery = ''; paginationPage = 1;
             document.getElementById('searchInput').value = '';
             document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
@@ -1091,6 +1235,174 @@
                 }
             } catch { }
         }
+
+        // ==========================================
+        // ADMIN MASTER (integrated)
+        // ==========================================
+        let _admOrgs = []; let _admSelectedOrg = null; let _admEmailMap = {};
+
+        function admGenShortId() { return Math.random().toString(36).substring(2, 7); }
+        function admFmtDate(d) { return d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'; }
+
+        async function admFetchEmails() {
+            try {
+                const res = await fetch(SUPABASE_URL + '/functions/v1/list-users', { headers: { 'Authorization': 'Bearer ' + (window._sessionToken || SUPABASE_KEY), 'apikey': SUPABASE_KEY } });
+                if (res.ok) { const data = await res.json(); data.forEach(u => _admEmailMap[u.id] = u.email); }
+            } catch { }
+        }
+
+        async function admLoadOrgs() {
+            _admOrgs = await sbGet('companies?select=*&order=created_at.asc') || [];
+            const members = await sbGet('members?select=company_id') || [];
+            const counts = {}; members.forEach(m => counts[m.company_id] = (counts[m.company_id] || 0) + 1);
+            _admOrgs.forEach(o => o._memberCount = counts[o.id] || 0);
+            admRenderOrgGrid();
+        }
+
+        function admRenderOrgGrid() {
+            document.getElementById('admOrgCount').textContent = `(${_admOrgs.length})`;
+            const grid = document.getElementById('admOrgGrid');
+            if (_admOrgs.length === 0) { grid.innerHTML = '<p style="color:var(--text-muted)">Nenhuma organização cadastrada.</p>'; return; }
+            let h = '<table class="data-table" style="width:100%"><thead><tr><th>Organização</th><th>Short ID</th><th>CNPJ</th><th style="text-align:center">Assessores</th><th style="text-align:center">Status</th><th>Criada</th></tr></thead><tbody>';
+            _admOrgs.forEach(o => {
+                const sc = o.active ? '#22c55e' : '#ef4444', sl = o.active ? 'Ativa' : 'Inativa';
+                h += `<tr onclick="admOpenOrgDetail('${o.id}')" style="cursor:pointer"><td style="font-weight:600">${o.name}</td><td style="color:var(--text-muted);font-family:monospace;font-size:12px">${o.short_id || '—'}</td><td style="color:var(--text-muted)">${o.cnpj || '—'}</td><td style="text-align:center">${o._memberCount}</td><td style="text-align:center"><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${sc}18;color:${sc}">${sl}</span></td><td style="color:var(--text-muted);font-size:12px">${admFmtDate(o.created_at)}</td></tr>`;
+            });
+            h += '</tbody></table>'; grid.innerHTML = h;
+        }
+
+        function admGetFormUrl() {
+            if (!_admSelectedOrg) return '';
+            return location.origin + location.pathname.replace('dashboard.html', 'portal.html') + '?org=' + (_admSelectedOrg.short_id || '');
+        }
+        function admCopyFormUrl() { navigator.clipboard.writeText(admGetFormUrl()).then(() => showToast('URL copiada!', 'success')).catch(() => showToast('Erro', 'error')); }
+
+        async function admOpenOrgDetail(orgId) {
+            _admSelectedOrg = _admOrgs.find(o => o.id === orgId); if (!_admSelectedOrg) return;
+            document.getElementById('adm-view-list').style.display = 'none';
+            document.getElementById('adm-view-detail').style.display = 'block';
+            document.getElementById('admDetailOrgName').textContent = _admSelectedOrg.name;
+            const tb = document.getElementById('admToggleActiveBtn');
+            tb.textContent = _admSelectedOrg.active ? 'Desativar' : 'Ativar';
+            tb.style.background = _admSelectedOrg.active ? '#ef4444' : '#22c55e';
+            document.getElementById('admOrgInfoCards').innerHTML = `
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Nome</div><div style="font-size:14px;font-weight:600;margin-top:4px">${_admSelectedOrg.name}</div></div>
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Short ID</div><div style="font-size:14px;font-family:monospace;margin-top:4px">${_admSelectedOrg.short_id || '—'}</div></div>
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">CNPJ</div><div style="font-size:14px;margin-top:4px">${_admSelectedOrg.cnpj || '—'}</div></div>
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Status</div><div style="margin-top:4px"><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${_admSelectedOrg.active ? '#dcfce7' : '#fee2e2'};color:${_admSelectedOrg.active ? '#16a34a' : '#dc2626'}">${_admSelectedOrg.active ? 'Ativa' : 'Inativa'}</span></div></div>`;
+            document.getElementById('admFormUrlDisplay').textContent = admGetFormUrl();
+            await admLoadOrgUsers(orgId);
+        }
+
+        async function admLoadOrgUsers(orgId) {
+            const members = await sbGet(`members_view?company_id=eq.${orgId}&select=user_id,role,email,full_name`) || [];
+            const delBtn = document.getElementById('admDeleteOrgBtn');
+            if (delBtn) delBtn.style.display = members.length === 0 ? 'inline-flex' : 'none';
+            const tbody = document.getElementById('admOrgUsersTable');
+            if (members.length === 0) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px">Nenhum assessor vinculado</td></tr>'; return; }
+            tbody.innerHTML = members.map(m => `<tr><td><strong>${m.email || m.user_id.substring(0, 12) + '...'}</strong>${m.full_name ? '<br><span style="font-size:12px;color:var(--text-muted)">' + m.full_name + '</span>' : ''}</td><td><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${m.role === 'admin' ? '#dbeafe' : '#f1f5f9'};color:${m.role === 'admin' ? '#2563eb' : '#64748b'}">${m.role}</span></td><td><button class="btn-new" onclick="event.stopPropagation();admRemoveMember('${m.user_id}','${orgId}')" style="background:#ef4444;font-size:11px;padding:4px 10px">Remover</button></td></tr>`).join('');
+        }
+
+        function admShowOrgList() { _admSelectedOrg = null; document.getElementById('adm-view-detail').style.display = 'none'; document.getElementById('adm-view-list').style.display = 'block'; }
+
+        function admShowSection(section) {
+            ['adm-view-list', 'adm-view-detail', 'adm-view-capmonster', 'adm-view-logs', 'adm-view-settings'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+            ['admTab-orgs', 'admTab-capmonster', 'admTab-logs', 'admTab-settings'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
+            if (section === 'orgs') { document.getElementById('adm-view-list').style.display = 'block'; document.getElementById('admTab-orgs').classList.add('active'); }
+            else if (section === 'capmonster') { document.getElementById('adm-view-capmonster').style.display = 'block'; document.getElementById('admTab-capmonster').classList.add('active'); admLoadCapmonster(); }
+            else if (section === 'logs') { document.getElementById('adm-view-logs').style.display = 'block'; document.getElementById('admTab-logs').classList.add('active'); admLoadLogs(); }
+            else if (section === 'settings') { document.getElementById('adm-view-settings').style.display = 'block'; document.getElementById('admTab-settings').classList.add('active'); admLoadSettings(); }
+        }
+
+        // CapMonster
+        async function admLoadCapmonster() { try { const d = await sbGet('settings?key_name=eq.capmonster_key&select=key_value&limit=1'); if (d?.[0]) document.getElementById('admCapmonsterKey').value = d[0].key_value || ''; } catch { } }
+        async function admSaveCapmonster() { const v = document.getElementById('admCapmonsterKey').value.trim(); try { await sbFetch('settings?key_name=eq.capmonster_key', 'PATCH', { key_value: v }); showToast('API Key salva!', 'success'); } catch { try { await sbFetch('settings', 'POST', { key_name: 'capmonster_key', key_value: v, description: 'CapMonster API Key' }); showToast('API Key salva!', 'success'); } catch (e2) { showToast('Erro: ' + e2.message, 'error'); } } }
+
+        // Logs
+        const admCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Internet', timeout: 'Timeout', field_error: 'Campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha', validation_error: 'Validação DS-160', postback_stuck: 'Postback', page_stuck: 'Página travada', unknown: 'Desconhecido' };
+        async function admLoadLogs() {
+            try {
+                const logs = await sbGet('error_logs?archived=eq.false&order=created_at.desc&limit=50') || [];
+                const ce = document.getElementById('admLogsCount'); if (ce) ce.textContent = `(${logs.length})`;
+                const be = document.getElementById('admLogsBadge'); if (be) { be.textContent = logs.length; be.style.display = logs.length > 0 ? 'inline' : 'none'; }
+                const tb = document.getElementById('admLogsTable');
+                if (logs.length === 0) { tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px">Nenhum erro ativo 🎉</td></tr>'; return; }
+                tb.innerHTML = logs.map(l => { const lb = admCauseLabels[l.error_cause] || l.error_cause || '—'; const ds = new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); return `<tr><td><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:#fee2e2;color:#dc2626">${lb}</span></td><td>${l.page_name || '—'}${l.field_name ? ' <span style="color:var(--accent);font-family:monospace;font-size:12px">' + l.field_name + '</span>' : ''}</td><td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(l.error_message || '').replace(/"/g, '&quot;')}">${l.error_message || '—'}</td><td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${ds}</td><td><button class="btn-new" onclick="admArchiveLog('${l.id}')" style="background:#ef4444;font-size:11px;padding:4px 8px">Arquivar</button></td></tr>`; }).join('');
+            } catch (e) { document.getElementById('admLogsTable').innerHTML = '<tr><td colspan="5" style="color:#ef4444">' + e.message + '</td></tr>'; }
+        }
+        async function admArchiveLog(id) { await sbFetch('error_logs?id=eq.' + id, 'PATCH', { archived: true }); showToast('Erro arquivado', 'success'); admLoadLogs(); }
+        async function admArchiveAllLogs() { if (!confirm('Arquivar todos os erros?')) return; await sbFetch('error_logs?archived=eq.false', 'PATCH', { archived: true }); showToast('Todos arquivados', 'success'); admLoadLogs(); }
+
+        // Settings
+        async function admLoadSettings() { try { const d = await sbGet('settings?key_name=in.(security_question,security_answer)&select=key_name,key_value'); (d || []).forEach(s => { if (s.key_name === 'security_question') { const el = document.getElementById('admSecurityQuestion'); if (el) el.value = s.key_value || '0'; } if (s.key_name === 'security_answer') { const el = document.getElementById('admSecurityAnswer'); if (el) el.value = s.key_value || ''; } }); } catch { } }
+        async function admSaveSettings() { const q = document.getElementById('admSecurityQuestion').value, a = document.getElementById('admSecurityAnswer').value.trim(); try { await sbFetch('settings?key_name=eq.security_question', 'PATCH', { key_value: q }); await sbFetch('settings?key_name=eq.security_answer', 'PATCH', { key_value: a }); showToast('Configurações salvas!', 'success'); } catch (e) { showToast('Erro: ' + e.message, 'error'); } }
+
+        // Org CRUD
+        function admOpenOrgModal(editId = null) {
+            const id = 'admOrgModal'; const ex = document.getElementById(id); if (ex) ex.remove();
+            const org = editId ? _admOrgs.find(o => o.id === editId) : null;
+            const html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()"><div class="modal-box" onclick="event.stopPropagation()"><h3 class="modal-title">${editId ? 'Editar' : 'Nova'} Organização</h3>
+                <label class="modal-label">Nome</label><input type="text" id="admOrgName" class="modal-input" value="${org?.name || ''}" placeholder="Ex: Empresa ABC">
+                <label class="modal-label">Short ID</label><input type="text" id="admOrgShortId" class="modal-input" value="${org?.short_id || admGenShortId()}" maxlength="10">
+                <label class="modal-label">CNPJ (opcional)</label><input type="text" id="admOrgCnpj" class="modal-input" value="${org?.cnpj || ''}" placeholder="00.000.000/0001-00">
+                <div class="modal-actions" style="margin-top:14px"><button class="modal-btn" onclick="document.getElementById('${id}').remove()">Cancelar</button><button class="modal-btn primary" onclick="admSaveOrg('${editId || ''}')">Salvar</button></div>
+            </div></div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        async function admSaveOrg(editId) {
+            const name = document.getElementById('admOrgName').value.trim(), short_id = document.getElementById('admOrgShortId').value.trim(), cnpj = document.getElementById('admOrgCnpj').value.trim();
+            if (!name) { showToast('Nome é obrigatório', 'error'); return; }
+            try {
+                if (editId) { await sbFetch(`companies?id=eq.${editId}`, 'PATCH', { name, short_id, cnpj }); showToast('Organização atualizada', 'success'); }
+                else { await sbFetch('companies', 'POST', { name, short_id: short_id || admGenShortId(), cnpj, active: true }); showToast('Organização criada', 'success'); }
+                const m = document.getElementById('admOrgModal'); if (m) m.remove();
+                await admLoadOrgs(); if (_admSelectedOrg && editId) await admOpenOrgDetail(editId);
+            } catch (e) { showToast('Erro: ' + e.message, 'error'); }
+        }
+
+        async function admToggleActive() {
+            if (!_admSelectedOrg) return;
+            try { await sbFetch(`companies?id=eq.${_admSelectedOrg.id}`, 'PATCH', { active: !_admSelectedOrg.active }); showToast(_admSelectedOrg.active ? 'Desativada' : 'Ativada', 'success'); await admLoadOrgs(); await admOpenOrgDetail(_admSelectedOrg.id); } catch (e) { showToast('Erro: ' + e.message, 'error'); }
+        }
+
+        async function admDeleteOrg(orgId) {
+            const m = await sbGet('members?company_id=eq.' + orgId + '&select=user_id'); if (m && m.length > 0) { showToast('Existem ' + m.length + ' assessor(es) vinculado(s)', 'error'); return; }
+            if (!confirm('Excluir organização?')) return; await sbFetch('companies?id=eq.' + orgId, 'DELETE', null); showToast('Excluída!', 'success'); await admLoadOrgs(); admShowOrgList();
+        }
+
+        // User CRUD
+        function admOpenUserModal() {
+            const id = 'admUserModal'; const ex = document.getElementById(id); if (ex) ex.remove();
+            const html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()"><div class="modal-box" onclick="event.stopPropagation()"><h3 class="modal-title">Adicionar Assessor</h3>
+                <label class="modal-label">E-mail</label><input type="email" id="admUserEmail" class="modal-input" placeholder="assessor@empresa.com">
+                <label class="modal-label">Senha</label><input type="password" id="admUserPassword" class="modal-input" placeholder="Mínimo 6 caracteres">
+                <label class="modal-label">Perfil</label><select id="admUserRole" class="modal-input"><option value="assessor">Assessor</option><option value="admin">Administrador</option></select>
+                <div class="modal-actions" style="margin-top:14px"><button class="modal-btn" onclick="document.getElementById('${id}').remove()">Cancelar</button><button class="modal-btn primary" id="admUserSaveBtn" onclick="admCreateUser()">Criar</button></div>
+            </div></div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        async function admCreateUser() {
+            const email = document.getElementById('admUserEmail').value.trim(), pw = document.getElementById('admUserPassword').value, role = document.getElementById('admUserRole').value;
+            if (!email || !pw) { showToast('Preencha todos os campos', 'error'); return; }
+            if (pw.length < 6) { showToast('Senha: mínimo 6 caracteres', 'error'); return; }
+            const btn = document.getElementById('admUserSaveBtn'); btn.disabled = true; btn.textContent = 'Criando...';
+            try {
+                const tok = window._sessionToken || SUPABASE_KEY;
+                const res = await fetch(SUPABASE_URL + '/functions/v1/create-user', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok, 'apikey': SUPABASE_KEY }, body: JSON.stringify({ email, password: pw, company_id: _admSelectedOrg.id, role }) });
+                const data = await res.json(); if (!res.ok || data.error) throw new Error(data.error || 'Erro ao criar');
+                showToast(`Assessor ${email} criado`, 'success'); const m = document.getElementById('admUserModal'); if (m) m.remove();
+                await admLoadOrgs(); await admLoadOrgUsers(_admSelectedOrg.id);
+            } catch (e) { showToast('Erro: ' + e.message, 'error'); } finally { btn.disabled = false; btn.textContent = 'Criar'; }
+        }
+
+        async function admRemoveMember(userId, companyId) {
+            if (!confirm('Remover assessor?')) return;
+            try { await sbFetch(`members?user_id=eq.${userId}&company_id=eq.${companyId}`, 'DELETE'); showToast('Removido', 'success'); await admLoadOrgs(); await admLoadOrgUsers(companyId); } catch (e) { showToast('Erro: ' + e.message, 'error'); }
+        }
+
+        async function admInitPanel() { await admFetchEmails(); await admLoadOrgs(); try { const d = await sbGet('error_logs?archived=eq.false&select=id&limit=100'); const be = document.getElementById('admLogsBadge'); if (be && d && d.length > 0) { be.textContent = d.length; be.style.display = 'inline'; } } catch { } }
 
         // ==========================================
         // INIT
