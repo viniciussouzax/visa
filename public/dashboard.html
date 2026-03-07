@@ -416,7 +416,7 @@
                         <td>${groupPriBadge || '<span class="priority-badge" data-priority="normal">Normal</span>'}</td>
                         <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" style="width:${avgProgress}%;background:${pc}"></div></div><span class="progress-label">${avgProgress}%</span></div></td>
                         <td></td>
-                        <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();addMemberToGroup(${a.group_id})" title="Adicionar membro">➕</button><button class="row-btn" onclick="event.stopPropagation();copyGroupLink(${a.group_id})" title="Copiar link do grupo">🔗</button><button class="row-btn" onclick="event.stopPropagation();showGroupPriorityMenu(event,${a.group_id})" title="Prioridade do grupo">⋮</button></div></td></tr>`;
+                        <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();addMemberToGroup('${a.group_id}')" title="Adicionar membro">➕</button><button class="row-btn" onclick="event.stopPropagation();copyGroupLink('${a.group_id}')" title="Copiar link do grupo">🔗</button><button class="row-btn" onclick="event.stopPropagation();showGroupPriorityMenu(event,'${a.group_id}')" title="Prioridade do grupo">⋮</button></div></td></tr>`;
                     if (isOpen) members.forEach(m => { html += buildRow(m, 'sub-row'); });
                 } else { rendered.add(a.id); html += buildRow(a, ''); }
             });
@@ -458,7 +458,7 @@
             tr.classList.toggle('drag-below', e.clientY >= midY);
         }
         function isGroupDragId(rawId) { return rawId && String(rawId).startsWith('group_'); }
-        function getGroupIdFromDrag(rawId) { return rawId ? parseInt(String(rawId).replace('group_', ''), 10) : null; }
+        function getGroupIdFromDrag(rawId) { return rawId ? String(rawId).replace('group_', '') : null; }
         function resolveId(rawId) {
             if (isGroupDragId(rawId)) {
                 const gid = getGroupIdFromDrag(rawId);
@@ -664,7 +664,7 @@
                         else throw new Error('Erro ao criar grupo');
                     } catch (e) { errEl.textContent = 'Erro: ' + e.message; errEl.style.display = 'block'; return; }
                 } else if (groupSel.value) {
-                    groupId = parseInt(groupSel.value, 10);
+                    groupId = groupSel.value;
                 }
                 document.getElementById(id).remove();
                 try {
@@ -859,7 +859,7 @@
 
         async function linkToSelectedGroup(id) {
             const select = document.getElementById('groupSelect');
-            const gid = select?.value ? parseInt(select.value, 10) : null;
+            const gid = select?.value || null;
             if (!gid) { showToast('Selecione um grupo', 'error'); return; }
             try {
                 const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
@@ -898,7 +898,7 @@
                 <div class="modal-subtitle">📁 ${label} (${members.length} membros)</div>
                 <div class="manage-btn-group" style="margin:12px 0">${priorities.map(p => {
                 const pc = PRIORITY_CONFIG[p];
-                return `<button class="manage-btn ${currentPri === p ? 'active' : ''}" data-color="${pc.color}" onclick="setGroupPriority(${groupId},'${p}')">${pc.icon} ${pc.label}</button>`;
+                return `<button class="manage-btn ${currentPri === p ? 'active' : ''}" data-color="${pc.color}" onclick="setGroupPriority('${groupId}','${p}')">${pc.icon} ${pc.label}</button>`;
             }).join('')}</div>
                 <button class="modal-btn" onclick="document.getElementById('groupPriorityMenu').remove()">Fechar</button>
             </div></div>`;
