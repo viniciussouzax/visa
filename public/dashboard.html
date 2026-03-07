@@ -218,9 +218,26 @@
         // ==========================================
         // DATA LOADING
         // ==========================================
+        let _groups = []; // cached groups list
+        async function loadGroups() {
+            try {
+                let q = 'groups?select=id,nickname,email,company_id&order=id.asc';
+                if (resolvedCompanyId) q += '&company_id=eq.' + resolvedCompanyId;
+                _groups = (await sbGet(q)) || [];
+            } catch (e) { _groups = []; }
+        }
+        function getGroupLabel(groupId) {
+            const g = _groups.find(x => x.id === groupId);
+            return g ? `Grupo #${g.id} ${g.nickname}` : `Grupo #${groupId}`;
+        }
+        function getGroupNickname(groupId) {
+            const g = _groups.find(x => x.id === groupId);
+            return g ? g.nickname : `#${groupId}`;
+        }
         async function loadApplicants() {
             try {
-                let q = 'applicants?select=id,full_name,passport_number,data,stage,status,result,priority,sort_order,created_at,company_id,group_code,notes&order=sort_order.asc,created_at.desc';
+                await loadGroups();
+                let q = 'applicants?select=id,full_name,passport_number,data,stage,status,result,priority,sort_order,created_at,company_id,group_id,notes&order=sort_order.asc,created_at.desc';
                 if (resolvedCompanyId) q += '&company_id=eq.' + resolvedCompanyId;
                 const rows = await sbGet(q);
                 if (!rows || !rows.length) { applicants = []; return; }
@@ -229,7 +246,7 @@
                     stage: row.stage || 'coleta', status: row.status || 'aguardando_execucao',
                     result: row.result || 'indefinido', priority: row.priority || 'normal',
                     sort_order: row.sort_order || 0, progress: calcProgress(row.data),
-                    created: row.created_at, data: row.data, group_code: row.group_code || null, notes: row.notes || '',
+                    created: row.created_at, data: row.data, group_id: row.group_id || null, notes: row.notes || '',
                 }));
             } catch (e) { console.error('[Dashboard] Load error:', e); showToast('Erro ao carregar', 'error'); }
         }
@@ -347,7 +364,7 @@
             document.getElementById('pagination').classList.toggle('hidden', allItems.length <= PAGE_SIZE);
 
             const groupMap = {}; const solos = [];
-            items.forEach(a => { if (a.group_code) { if (!groupMap[a.group_code]) groupMap[a.group_code] = []; groupMap[a.group_code].push(a); } else solos.push(a); });
+            items.forEach(a => { if (a.group_id) { if (!groupMap[a.group_id]) groupMap[a.group_id] = []; groupMap[a.group_id].push(a); } else solos.push(a); });
 
             function buildRow(a, extraClass) {
                 const cfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.aguardando_execucao;
@@ -380,26 +397,26 @@
             let html = ''; const rendered = new Set();
             items.forEach(a => {
                 if (rendered.has(a.id)) return;
-                if (a.group_code && groupMap[a.group_code]) {
-                    const members = groupMap[a.group_code];
-                    if (rendered.has('g_' + a.group_code)) return;
-                    rendered.add('g_' + a.group_code);
+                if (a.group_id && groupMap[a.group_id]) {
+                    const members = groupMap[a.group_id];
+                    if (rendered.has('g_' + a.group_id)) return;
+                    rendered.add('g_' + a.group_id);
                     members.forEach(m => rendered.add(m.id));
-                    const isOpen = expandedGroups.has(a.group_code);
+                    const isOpen = expandedGroups.has(String(a.group_id));
                     const avgProgress = Math.round(members.reduce((s, m) => s + m.progress, 0) / members.length);
                     const pc = avgProgress >= 100 ? '#22c55e' : avgProgress > 50 ? '#3b82f6' : '#f59e0b';
-                    const groupLabel = members.length > 0 ? members[0].name.split(' ').slice(-1)[0] : a.group_code;
+                    const groupLabel = getGroupLabel(a.group_id);
                     const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
                     const maxPri = members.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
                     const gpCfg = PRIORITY_CONFIG[maxPri] || PRIORITY_CONFIG.normal;
                     const groupPriBadge = maxPri !== 'normal' ? `<span class="priority-badge" data-priority="${maxPri}">${gpCfg.icon} ${gpCfg.label}</span>` : '';
-                    html += `<tr class="group-row" draggable="true" data-group="${a.group_code}" onclick="toggleGroup('${a.group_code}')" ondragstart="handleDragStart(event,'group_${a.group_code}')" ondragover="handleDragOver(event)" ondragleave="event.currentTarget.classList.remove('drag-over','drag-above','drag-below')" ondrop="handleDrop(event,'group_${a.group_code}')">
+                    html += `<tr class="group-row" draggable="true" data-group="${a.group_id}" onclick="toggleGroup('${a.group_id}')" ondragstart="handleDragStart(event,'group_${a.group_id}')" ondragover="handleDragOver(event)" ondragleave="event.currentTarget.classList.remove('drag-over','drag-above','drag-below')" ondrop="handleDrop(event,'group_${a.group_id}')">
                         <td class="check-col"></td>
                         <td><div class="name-col"><span class="group-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></span><div class="name-info"><div class="name">${groupLabel} <span class="group-count">${members.length}</span></div><div class="passport">${isOpen ? '▼' : '▶'} ${members.map(m => m.name.split(' ')[0]).join(', ')}</div></div></div></td>
                         <td>${groupPriBadge || '<span class="priority-badge" data-priority="normal">Normal</span>'}</td>
                         <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" style="width:${avgProgress}%;background:${pc}"></div></div><span class="progress-label">${avgProgress}%</span></div></td>
                         <td></td>
-                        <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();copyGroupLink('${a.group_code}')" title="Copiar link do grupo">🔗</button><button class="row-btn" onclick="event.stopPropagation();showGroupPriorityMenu(event,'${a.group_code}')" title="Prioridade do grupo">⋮</button></div></td></tr>`;
+                        <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();addMemberToGroup(${a.group_id})" title="Adicionar membro">➕</button><button class="row-btn" onclick="event.stopPropagation();copyGroupLink(${a.group_id})" title="Copiar link do grupo">🔗</button><button class="row-btn" onclick="event.stopPropagation();showGroupPriorityMenu(event,${a.group_id})" title="Prioridade do grupo">⋮</button></div></td></tr>`;
                     if (isOpen) members.forEach(m => { html += buildRow(m, 'sub-row'); });
                 } else { rendered.add(a.id); html += buildRow(a, ''); }
             });
@@ -440,12 +457,12 @@
             tr.classList.toggle('drag-above', e.clientY < midY);
             tr.classList.toggle('drag-below', e.clientY >= midY);
         }
-        function isGroupId(rawId) { return rawId && rawId.startsWith('group_'); }
-        function getGroupCode(rawId) { return rawId ? rawId.replace('group_', '') : null; }
+        function isGroupDragId(rawId) { return rawId && String(rawId).startsWith('group_'); }
+        function getGroupIdFromDrag(rawId) { return rawId ? parseInt(String(rawId).replace('group_', ''), 10) : null; }
         function resolveId(rawId) {
-            if (isGroupId(rawId)) {
-                const gc = getGroupCode(rawId);
-                const member = applicants.find(a => a.group_code === gc);
+            if (isGroupDragId(rawId)) {
+                const gid = getGroupIdFromDrag(rawId);
+                const member = applicants.find(a => a.group_id === gid);
                 return member ? member.id : null;
             }
             return rawId;
@@ -454,26 +471,24 @@
             e.preventDefault(); e.currentTarget.classList.remove('drag-over', 'drag-above', 'drag-below');
             if (!_dragId || _dragId === targetId) { _dragId = null; return; }
 
-            const dragApplicant = !isGroupId(_dragId) ? applicants.find(a => a.id === _dragId) : null;
-            const targetIsGroup = isGroupId(targetId);
+            const dragApplicant = !isGroupDragId(_dragId) ? applicants.find(a => a.id === _dragId) : null;
+            const targetIsGroup = isGroupDragId(targetId);
             const targetApplicant = !targetIsGroup ? applicants.find(a => a.id === targetId) : null;
 
             // ─── CASE 1: Solo dropped onto a SUB-ROW inside an OPEN group → LINK ───
-            if (dragApplicant && !dragApplicant.group_code && targetApplicant && targetApplicant.group_code) {
-                const gc = targetApplicant.group_code;
-                // Only if group is expanded (open)
-                if (!expandedGroups.has(gc)) { /* group closed, treat as normal reorder */ }
+            if (dragApplicant && !dragApplicant.group_id && targetApplicant && targetApplicant.group_id) {
+                const gid = targetApplicant.group_id;
+                if (!expandedGroups.has(String(gid))) { /* group closed, treat as normal reorder */ }
                 else {
-                    const groupMembers = applicants.filter(a => a.group_code === gc);
+                    const groupMembers = applicants.filter(a => a.group_id === gid);
                     showConfirmModal('Vincular ao Grupo',
-                        `Deseja vincular <strong>${dragApplicant.name}</strong> ao grupo <strong>${gc}</strong>?`,
+                        `Deseja vincular <strong>${dragApplicant.name}</strong> ao grupo <strong>${getGroupLabel(gid)}</strong>?`,
                         async () => {
                             try {
-                                // Inherit group priority
                                 const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
                                 const groupPri = groupMembers.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
-                                await sbFetch(`applicants?id=eq.${dragApplicant.id}`, 'PATCH', { group_code: gc, priority: groupPri });
-                                dragApplicant.group_code = gc;
+                                await sbFetch(`applicants?id=eq.${dragApplicant.id}`, 'PATCH', { group_id: gid, priority: groupPri });
+                                dragApplicant.group_id = gid;
                                 dragApplicant.priority = groupPri;
                                 renderTable(); updateBadges();
                                 showToast('Vinculado ao grupo!', 'success');
@@ -484,9 +499,9 @@
             }
 
             // ─── CASE 2: Group member dropped onto solo area → UNLINK ───
-            if (dragApplicant && dragApplicant.group_code && targetApplicant && !targetApplicant.group_code) {
-                const gc = dragApplicant.group_code;
-                const groupMembers = applicants.filter(a => a.group_code === gc);
+            if (dragApplicant && dragApplicant.group_id && targetApplicant && !targetApplicant.group_id) {
+                const gid = dragApplicant.group_id;
+                const groupMembers = applicants.filter(a => a.group_id === gid);
                 if (groupMembers.length <= 1) {
                     showToast('Não é possível desvincular o único membro do grupo.', 'error');
                     _dragId = null; return;
@@ -498,9 +513,9 @@
             // ─── CASE 3: Normal reorder ───
             const items = getFiltered();
             let dragMembers = [];
-            if (isGroupId(_dragId)) {
-                const gc = getGroupCode(_dragId);
-                dragMembers = items.filter(a => a.group_code === gc);
+            if (isGroupDragId(_dragId)) {
+                const gid = getGroupIdFromDrag(_dragId);
+                dragMembers = items.filter(a => a.group_id === gid);
             } else {
                 const single = items.find(a => a.id === _dragId);
                 if (single) dragMembers = [single];
@@ -526,22 +541,11 @@
         // ─── UNLINK MODAL (simplified) ───
         function showUnlinkModal(applicant) {
             showConfirmModal('Desvincular do Grupo',
-                `Deseja remover <strong>${applicant.name}</strong> do grupo <strong>${applicant.group_code}</strong>?`,
+                `Deseja remover <strong>${applicant.name}</strong> do grupo <strong>${getGroupLabel(applicant.group_id)}</strong>?`,
                 async () => {
                     try {
-                        // PATCH group_code to null
-                        const res = await fetch(SUPABASE_URL + '/rest/v1/applicants?id=eq.' + applicant.id, {
-                            method: 'PATCH',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'apikey': SUPABASE_KEY,
-                                'Authorization': 'Bearer ' + (window._sessionToken || AppCore.getAuth() || SUPABASE_KEY),
-                                'Prefer': 'return=representation'
-                            },
-                            body: JSON.stringify({ group_code: null })
-                        });
-                        if (!res.ok) throw new Error(await res.text());
-                        applicant.group_code = null;
+                        await sbFetch(`applicants?id=eq.${applicant.id}`, 'PATCH', { group_id: null });
+                        applicant.group_id = null;
                         renderTable(); updateBadges();
                         showToast(`${applicant.name} desvinculado!`, 'success');
                     } catch (err) { showToast('Erro: ' + err.message, 'error'); }
@@ -583,7 +587,7 @@
                 <div class="detail-row"><span>Prioridade</span><span>${pcfg.label}</span></div>
                 <div class="detail-row"><span>Resultado</span><span>${rcfg.label}</span></div>
                 <div class="detail-row"><span>Progresso</span><span>${a.progress}%</span></div>
-                ${a.group_code ? `<div class="detail-row"><span>Grupo</span><span>${a.group_code}</span></div>` : ''}
+                ${a.group_id ? `<div class="detail-row"><span>Grupo</span><span>${getGroupLabel(a.group_id)}</span></div>` : ''}
                 <div class="detail-row"><span>Criado em</span><span>${dt}</span></div>
                 ${a.notes ? `<div class="detail-notes">${a.notes}</div>` : ''}
                 <div class="modal-actions">
@@ -596,8 +600,8 @@
         }
         function openForm(id) { window.location.href = buildUrl(id, 'solicitante'); }
 
-        function copyGroupLink(groupCode) {
-            const url = location.origin + location.pathname.replace('dashboard.html', '') + AppCore.buildUrl('ds160-form.html', { group: groupCode });
+        function copyGroupLink(groupId) {
+            const url = location.origin + location.pathname.replace('dashboard.html', '') + AppCore.buildUrl('ds160-form.html', { group: groupId });
             navigator.clipboard.writeText(url).then(() => showToast('Link do grupo copiado!', 'success')).catch(() => showToast('Erro ao copiar', 'error'));
         }
         function copyApplicantLink(id) {
@@ -606,19 +610,26 @@
         }
 
         async function createNew() {
-            const existingGroups = [...new Set(applicants.filter(a => a.group_code).map(a => a.group_code))];
-            const datalistOpts = existingGroups.map(g => `<option value="${g}">`).join('');
             const id = 'createModal';
             const existing = document.getElementById(id); if (existing) existing.remove();
+            const groupOpts = _groups.map(g => `<option value="${g.id}">Grupo #${g.id} ${g.nickname}</option>`).join('');
             let html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()">
             <div class="modal-box" onclick="event.stopPropagation()">
                 <h3 class="modal-title">Novo Solicitante</h3>
                 <label class="modal-label">Nome completo</label>
                 <input type="text" id="createName" class="modal-input" placeholder="Ex: JOAO DA SILVA" autofocus>
-                <label class="modal-label">Grupo <span class="modal-hint">(selecione existente ou crie novo)</span></label>
-                <input type="text" id="createGroup" list="groupList" placeholder="Deixe vazio para individual" class="modal-input">
-                <datalist id="groupList">${datalistOpts}</datalist>
-                <div id="createGroupHint" style="font-size:11px;color:var(--text-muted);margin-top:4px"></div>
+                <label class="modal-label">Grupo <span class="modal-hint">(vincule ou crie novo)</span></label>
+                <select id="createGroupSelect" class="modal-input" style="margin-bottom:8px">
+                    <option value="">— Individual (sem grupo) —</option>
+                    ${groupOpts}
+                    <option value="__new__">➕ Criar novo grupo</option>
+                </select>
+                <div id="newGroupFields" style="display:none;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-body);margin-bottom:8px">
+                    <label class="modal-label">Apelido do grupo</label>
+                    <input type="text" id="createGroupNickname" class="modal-input" placeholder="Ex: Familia Silva">
+                    <label class="modal-label">E-mail do solicitante principal</label>
+                    <input type="email" id="createGroupEmail" class="modal-input" placeholder="Ex: joao@email.com">
+                </div>
                 <div id="createError" style="color:#ef4444;font-size:12px;margin-top:4px;display:none"></div>
                 <div class="modal-actions">
                     <button class="modal-btn" onclick="document.getElementById('${id}').remove()">Cancelar</button>
@@ -627,41 +638,86 @@
             </div></div>`;
             document.body.insertAdjacentHTML('beforeend', html);
             const nameInput = document.getElementById('createName');
-            const groupInput = document.getElementById('createGroup');
-            const hintEl = document.getElementById('createGroupHint');
+            const groupSel = document.getElementById('createGroupSelect');
+            const newGrpDiv = document.getElementById('newGroupFields');
             const errEl = document.getElementById('createError');
             setTimeout(() => nameInput.focus(), 100);
 
-            // Show hint when typing group name
-            groupInput.addEventListener('input', () => {
-                const val = groupInput.value.trim().toUpperCase();
-                errEl.style.display = 'none';
-                if (!val) { hintEl.textContent = ''; return; }
-                if (existingGroups.includes(val)) {
-                    hintEl.textContent = '✅ Grupo existente — será vinculado';
-                    hintEl.style.color = '#22c55e';
-                } else {
-                    hintEl.textContent = '🆕 Novo grupo será criado';
-                    hintEl.style.color = '#3b82f6';
-                }
+            groupSel.addEventListener('change', () => {
+                newGrpDiv.style.display = groupSel.value === '__new__' ? 'block' : 'none';
             });
 
             const doCreate = async () => {
                 const name = nameInput.value.trim();
                 if (!name) { errEl.textContent = 'Informe o nome'; errEl.style.display = 'block'; return; }
-                const groupCode = groupInput.value.trim().toUpperCase() || null;
+                let groupId = null;
+                if (groupSel.value === '__new__') {
+                    const nickname = document.getElementById('createGroupNickname').value.trim();
+                    const email = document.getElementById('createGroupEmail').value.trim();
+                    if (!nickname) { errEl.textContent = 'Informe o apelido do grupo'; errEl.style.display = 'block'; return; }
+                    if (!email) { errEl.textContent = 'E-mail do solicitante principal é obrigatório'; errEl.style.display = 'block'; return; }
+                    try {
+                        const gData = { nickname: nickname.toUpperCase(), email: email.toLowerCase() };
+                        if (resolvedCompanyId) gData.company_id = resolvedCompanyId;
+                        const gRes = await sbFetch('groups', 'POST', gData);
+                        if (gRes?.[0]) { groupId = gRes[0].id; _groups.push(gRes[0]); }
+                        else throw new Error('Erro ao criar grupo');
+                    } catch (e) { errEl.textContent = 'Erro: ' + e.message; errEl.style.display = 'block'; return; }
+                } else if (groupSel.value) {
+                    groupId = parseInt(groupSel.value, 10);
+                }
                 document.getElementById(id).remove();
                 try {
                     const p = { full_name: name.toUpperCase(), passport_number: null, data: {}, stage: 'coleta', status: 'aguardando_execucao', result: 'indefinido', priority: 'normal' };
                     if (resolvedCompanyId) p.company_id = resolvedCompanyId;
-                    if (groupCode) p.group_code = groupCode;
+                    if (groupId) p.group_id = groupId;
                     const r = await sbFetch('applicants', 'POST', p);
-                    if (r?.[0]) { showToast('Criado: ' + r[0].full_name + (groupCode ? ' (Grupo: ' + groupCode + ')' : ''), 'success'); await loadApplicants(); navigateTo(currentPage); }
+                    if (r?.[0]) { showToast('Criado: ' + r[0].full_name + (groupId ? ' (' + getGroupLabel(groupId) + ')' : ''), 'success'); await loadApplicants(); navigateTo(currentPage); }
                 } catch (e) { showToast('Erro: ' + e.message, 'error'); }
             };
-            nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); groupInput.focus(); } });
-            groupInput.addEventListener('keydown', e => { if (e.key === 'Enter') doCreate(); });
+            nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doCreate(); } });
             document.getElementById('createConfirm').addEventListener('click', doCreate);
+        }
+
+        // ─── ADD MEMBER TO GROUP (quick) ───
+        async function addMemberToGroup(groupId) {
+            const id = 'addMemberModal';
+            const existing = document.getElementById(id); if (existing) existing.remove();
+            const label = getGroupLabel(groupId);
+            let html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()">
+            <div class="modal-box" onclick="event.stopPropagation()">
+                <h3 class="modal-title">Adicionar ao ${label}</h3>
+                <label class="modal-label">Nome completo</label>
+                <input type="text" id="addMemberName" class="modal-input" placeholder="Ex: MARIA DA SILVA" autofocus>
+                <div id="addMemberError" style="color:#ef4444;font-size:12px;margin-top:4px;display:none"></div>
+                <div class="modal-actions">
+                    <button class="modal-btn" onclick="document.getElementById('${id}').remove()">Cancelar</button>
+                    <button class="modal-btn primary" id="addMemberConfirm">Adicionar</button>
+                </div>
+            </div></div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+            setTimeout(() => document.getElementById('addMemberName').focus(), 100);
+
+            const doAdd = async () => {
+                const name = document.getElementById('addMemberName').value.trim();
+                if (!name) { document.getElementById('addMemberError').textContent = 'Informe o nome'; document.getElementById('addMemberError').style.display = 'block'; return; }
+                document.getElementById(id).remove();
+                try {
+                    const members = applicants.filter(a => a.group_id === groupId);
+                    const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
+                    const groupPri = members.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
+                    const p = { full_name: name.toUpperCase(), passport_number: null, data: {}, stage: 'coleta', status: 'aguardando_execucao', result: 'indefinido', priority: groupPri, group_id: groupId };
+                    if (resolvedCompanyId) p.company_id = resolvedCompanyId;
+                    const r = await sbFetch('applicants', 'POST', p);
+                    if (r?.[0]) {
+                        expandedGroups.add(String(groupId));
+                        showToast('Adicionado: ' + r[0].full_name, 'success');
+                        await loadApplicants(); renderTable(); updateBadges();
+                    }
+                } catch (e) { showToast('Erro: ' + e.message, 'error'); }
+            };
+            document.getElementById('addMemberName').addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); });
+            document.getElementById('addMemberConfirm').addEventListener('click', doAdd);
         }
 
         function showInputModal(title, label, onConfirm) {
@@ -779,15 +835,14 @@
             }
 
             html += `<div class="manage-section-label">Grupo</div>`;
-            const existingGroups = [...new Set(applicants.filter(x => x.group_code && x.id !== id).map(x => x.group_code))];
-            if (a.group_code) {
-                html += `<div class="manage-btn-group"><span style="font-size:12px;color:var(--text-muted);margin-right:8px">📁 ${a.group_code}</span>
+            if (a.group_id) {
+                html += `<div class="manage-btn-group"><span style="font-size:12px;color:var(--text-muted);margin-right:8px">📁 ${getGroupLabel(a.group_id)}</span>
                     <button class="manage-btn" style="color:#ef4444" onclick="unlinkFromGroup('${id}')">Desvincular</button></div>`;
             } else {
-                if (existingGroups.length > 0) {
+                if (_groups.length > 0) {
                     html += `<div class="manage-btn-group column"><select id="groupSelect" class="modal-input" style="font-size:12px;padding:6px">
                         <option value="">— Selecione um grupo —</option>
-                        ${existingGroups.map(g => `<option value="${g}">${g}</option>`).join('')}
+                        ${_groups.map(g => `<option value="${g.id}">Grupo #${g.id} ${g.nickname}</option>`).join('')}
                     </select>
                     <button class="manage-btn" onclick="linkToSelectedGroup('${id}')">Vincular ao grupo</button></div>`;
                 } else {
@@ -804,18 +859,17 @@
 
         async function linkToSelectedGroup(id) {
             const select = document.getElementById('groupSelect');
-            const gc = select?.value;
-            if (!gc) { showToast('Selecione um grupo', 'error'); return; }
+            const gid = select?.value ? parseInt(select.value, 10) : null;
+            if (!gid) { showToast('Selecione um grupo', 'error'); return; }
             try {
-                // Inherit group priority
                 const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
-                const groupMembers = applicants.filter(x => x.group_code === gc);
+                const groupMembers = applicants.filter(x => x.group_id === gid);
                 const groupPri = groupMembers.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
-                await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { group_code: gc, priority: groupPri });
+                await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { group_id: gid, priority: groupPri });
                 const a = applicants.find(x => x.id === id);
-                if (a) { a.group_code = gc; a.priority = groupPri; }
+                if (a) { a.group_id = gid; a.priority = groupPri; }
                 closeManageMenu(); renderTable(); updateBadges();
-                showToast(`Vinculado ao grupo ${gc}!`, 'success');
+                showToast(`Vinculado ao ${getGroupLabel(gid)}!`, 'success');
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
         }
 
@@ -829,30 +883,30 @@
         function closeManageMenu() { const p = document.getElementById('managePopup'); if (p) p.remove(); }
 
         // ─── GROUP PRIORITY MENU ───
-        function showGroupPriorityMenu(evt, groupCode) {
+        function showGroupPriorityMenu(evt, groupId) {
             evt.stopPropagation();
             const existing = document.getElementById('groupPriorityMenu'); if (existing) existing.remove();
-            const members = applicants.filter(a => a.group_code === groupCode);
+            const members = applicants.filter(a => a.group_id === groupId);
             const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
             const currentPri = members.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
             const priorities = ['normal', 'prioridade', 'urgente', 'emergencia'];
-            const groupLabel = members.length > 0 ? members[0].name.split(' ').slice(-1)[0] : groupCode;
+            const label = getGroupLabel(groupId);
 
             const html = `<div id="groupPriorityMenu" class="modal-overlay" onclick="document.getElementById('groupPriorityMenu').remove()">
             <div class="modal-box" onclick="event.stopPropagation()" style="max-width:320px">
                 <h3 class="modal-title">Prioridade do Grupo</h3>
-                <div class="modal-subtitle">📁 ${groupLabel} (${members.length} membros)</div>
+                <div class="modal-subtitle">📁 ${label} (${members.length} membros)</div>
                 <div class="manage-btn-group" style="margin:12px 0">${priorities.map(p => {
                 const pc = PRIORITY_CONFIG[p];
-                return `<button class="manage-btn ${currentPri === p ? 'active' : ''}" data-color="${pc.color}" onclick="setGroupPriority('${groupCode}','${p}')">${pc.icon} ${pc.label}</button>`;
+                return `<button class="manage-btn ${currentPri === p ? 'active' : ''}" data-color="${pc.color}" onclick="setGroupPriority(${groupId},'${p}')">${pc.icon} ${pc.label}</button>`;
             }).join('')}</div>
                 <button class="modal-btn" onclick="document.getElementById('groupPriorityMenu').remove()">Fechar</button>
             </div></div>`;
             document.body.insertAdjacentHTML('beforeend', html);
         }
 
-        async function setGroupPriority(groupCode, priority) {
-            const members = applicants.filter(a => a.group_code === groupCode);
+        async function setGroupPriority(groupId, priority) {
+            const members = applicants.filter(a => a.group_id === groupId);
             try {
                 for (const m of members) {
                     await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', { priority });
@@ -871,8 +925,8 @@
                 const a = applicants.find(x => x.id === id);
 
                 // === GROUP STAGE RULES ===
-                if (field === 'stage' && a && a.group_code) {
-                    const groupMembers = applicants.filter(x => x.group_code === a.group_code && x.stage !== 'arquivado');
+                if (field === 'stage' && a && a.group_id) {
+                    const groupMembers = applicants.filter(x => x.group_id === a.group_id && x.stage !== 'arquivado');
                     const stageOrder = ['coleta', 'analise', 'producao', 'entrevista', 'concluido', 'arquivado'];
                     const currentIdx = stageOrder.indexOf(a.stage);
                     const targetIdx = stageOrder.indexOf(value);
