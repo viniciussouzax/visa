@@ -5387,10 +5387,11 @@
                     withStatus.forEach(a => {
                         const isPending = a.appStatus === 'pending';
                         const role = a.primary_applicant_id ? 'Dependente' : 'Solicitante principal';
-                        const pStatus = a.pipeline_status || 'new';
-                        const isLocked = ['approved', 'doing', 'done'].includes(pStatus);
-                        const statusLabels = { new: 'Novo', approved: 'Aprovado', doing: 'Em processamento', done: 'Concluído' };
-                        const statusColors = { new: '#3b82f6', approved: '#22c55e', doing: '#f59e0b', done: '#6b7280' };
+                        const pStatus = a.stage || 'triagem';
+                        const aStatus = a.status || 'aguardando_execucao';
+                        const isLocked = aStatus === 'aprovado' || pStatus === 'arquivado';
+                        const statusLabels = { triagem: 'Triagem', analise: 'Análise', ds160: 'DS-160', taxas: 'Taxas', agendamento: 'Agendamento', entrevista: 'Entrevista', status: 'Status', arquivado: 'Arquivado' };
+                        const statusColors = { triagem: '#3b82f6', analise: '#f59e0b', ds160: '#4f46e5', taxas: '#db2777', agendamento: '#0d9488', entrevista: '#7c3aed', status: '#22c55e', arquivado: '#6b7280' };
                         const item = document.createElement('div');
                         item.className = 'gate-result-item';
                         if (isLocked) item.style.opacity = '0.7';

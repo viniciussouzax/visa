@@ -330,7 +330,7 @@
             await saveData();
             if (!_applicantId) return;
             try {
-                await sbFetch('applicants?id=eq.' + _applicantId, 'PATCH', { pipeline_status: 'approved' });
+                await sbFetch('applicants?id=eq.' + _applicantId, 'PATCH', { status: 'aprovado' });
                 engine._showToast('Aprovado e salvo!', 'success');
             } catch (e) {
                 engine._showToast('Erro ao aprovar: ' + e.message, 'error');
