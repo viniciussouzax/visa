@@ -237,7 +237,7 @@
         async function loadApplicants() {
             try {
                 await loadGroups();
-                let q = 'applicants?select=id,full_name,passport_number,data,stage,status,result,priority,sort_order,created_at,company_id,group_id,notes&order=sort_order.asc,created_at.desc';
+                let q = 'applicants?select=id,full_name,passport_number,data,stage,status,result,priority,sort_order,created_at,company_id,group_id,notes,email&order=sort_order.asc,created_at.desc';
                 if (resolvedCompanyId) q += '&company_id=eq.' + resolvedCompanyId;
                 const rows = await sbGet(q);
                 if (!rows || !rows.length) { applicants = []; return; }
@@ -246,7 +246,7 @@
                     stage: row.stage || 'coleta', status: row.status || 'aguardando_execucao',
                     result: row.result || 'indefinido', priority: row.priority || 'normal',
                     sort_order: row.sort_order || 0, progress: calcProgress(row.data),
-                    created: row.created_at, data: row.data, group_id: row.group_id || null, notes: row.notes || '',
+                    created: row.created_at, data: row.data, group_id: row.group_id || null, notes: row.notes || '', email: row.email || '',
                 }));
             } catch (e) { console.error('[Dashboard] Load error:', e); showToast('Erro ao carregar', 'error'); }
         }
@@ -381,7 +381,7 @@
                 else infoCell = `<span class="info-label">${STAGE_LABELS[a.stage]}</span>`;
                 return `<tr class="${extraClass || ''} ${sel ? 'selected' : ''}" draggable="true" data-id="${a.id}" ondblclick="window.location.href=buildUrl('${a.id}','assessor')" ondragstart="handleDragStart(event,'${a.id}')" ondragover="handleDragOver(event)" ondragleave="event.currentTarget.classList.remove('drag-over','drag-above','drag-below')" ondrop="handleDrop(event,'${a.id}')">
                     <td class="check-col"><div class="custom-check ${sel ? 'checked' : ''}" onclick="event.stopPropagation();toggleSelect('${a.id}')">✓</div></td>
-                    <td onclick="openReview('${a.id}')"><div class="name-col">${nameIcon}<div class="name-info"><div class="name">${a.name}</div>${!isSubRow && a.passport ? `<div class="passport">${a.passport}</div>` : ''}</div></div></td>
+                    <td onclick="openReview('${a.id}')"><div class="name-col">${nameIcon}<div class="name-info"><div class="name">${a.name}</div><div class="passport">${!isSubRow && a.email ? a.email : (a.passport || '')}</div></div></div></td>
                     <td>${priBadge || '<span class="priority-badge" data-priority="normal">Normal</span>'}</td>
                     <td><div class="progress-mini"><div class="progress-track"><div class="progress-bar-mini" style="width:${a.progress}%;background:${pc}"></div></div><span class="progress-label">${a.progress}%</span></div></td>
                     <td>${infoCell}</td>
@@ -587,6 +587,7 @@
                 <div class="detail-row"><span>Prioridade</span><span>${pcfg.label}</span></div>
                 <div class="detail-row"><span>Resultado</span><span>${rcfg.label}</span></div>
                 <div class="detail-row"><span>Progresso</span><span>${a.progress}%</span></div>
+                ${a.email ? `<div class="detail-row"><span>E-mail</span><span>${a.email}</span></div>` : ''}
                 ${a.group_id ? `<div class="detail-row"><span>Grupo</span><span>${getGroupLabel(a.group_id)}</span></div>` : ''}
                 <div class="detail-row"><span>Criado em</span><span>${dt}</span></div>
                 ${a.notes ? `<div class="detail-notes">${a.notes}</div>` : ''}
@@ -618,6 +619,10 @@
                 <h3 class="modal-title">Novo Solicitante</h3>
                 <label class="modal-label">Nome completo</label>
                 <input type="text" id="createName" class="modal-input" placeholder="Ex: JOAO DA SILVA" autofocus>
+                <div id="individualEmailField">
+                    <label class="modal-label">E-mail do solicitante <span class="modal-hint">(acesso ao portal)</span></label>
+                    <input type="email" id="createEmail" class="modal-input" placeholder="Ex: joao@email.com">
+                </div>
                 <label class="modal-label">Grupo <span class="modal-hint">(vincule ou crie novo)</span></label>
                 <select id="createGroupSelect" class="modal-input" style="margin-bottom:8px">
                     <option value="">— Individual (sem grupo) —</option>
@@ -640,17 +645,21 @@
             const nameInput = document.getElementById('createName');
             const groupSel = document.getElementById('createGroupSelect');
             const newGrpDiv = document.getElementById('newGroupFields');
+            const emailField = document.getElementById('individualEmailField');
             const errEl = document.getElementById('createError');
             setTimeout(() => nameInput.focus(), 100);
 
             groupSel.addEventListener('change', () => {
-                newGrpDiv.style.display = groupSel.value === '__new__' ? 'block' : 'none';
+                const v = groupSel.value;
+                newGrpDiv.style.display = v === '__new__' ? 'block' : 'none';
+                emailField.style.display = (!v) ? 'block' : 'none'; // show only for individual
             });
 
             const doCreate = async () => {
                 const name = nameInput.value.trim();
                 if (!name) { errEl.textContent = 'Informe o nome'; errEl.style.display = 'block'; return; }
                 let groupId = null;
+                let applicantEmail = null;
                 if (groupSel.value === '__new__') {
                     const nickname = document.getElementById('createGroupNickname').value.trim();
                     const email = document.getElementById('createGroupEmail').value.trim();
@@ -665,12 +674,17 @@
                     } catch (e) { errEl.textContent = 'Erro: ' + e.message; errEl.style.display = 'block'; return; }
                 } else if (groupSel.value) {
                     groupId = groupSel.value;
+                } else {
+                    // Individual — email obrigatório
+                    applicantEmail = document.getElementById('createEmail').value.trim();
+                    if (!applicantEmail) { errEl.textContent = 'E-mail é obrigatório para solicitante individual'; errEl.style.display = 'block'; return; }
                 }
                 document.getElementById(id).remove();
                 try {
                     const p = { full_name: name.toUpperCase(), passport_number: null, data: {}, stage: 'coleta', status: 'aguardando_execucao', result: 'indefinido', priority: 'normal' };
                     if (resolvedCompanyId) p.company_id = resolvedCompanyId;
                     if (groupId) p.group_id = groupId;
+                    if (applicantEmail) p.email = applicantEmail.toLowerCase();
                     const r = await sbFetch('applicants', 'POST', p);
                     if (r?.[0]) { showToast('Criado: ' + r[0].full_name + (groupId ? ' (' + getGroupLabel(groupId) + ')' : ''), 'success'); await loadApplicants(); navigateTo(currentPage); }
                 } catch (e) { showToast('Erro: ' + e.message, 'error'); }
