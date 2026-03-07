@@ -523,7 +523,7 @@
 
         function generateFormLink() {
             const baseUrl = location.origin + location.pathname.replace('preferencias.html', '');
-            const link = baseUrl + 'portal.html';
+            const link = baseUrl + 'portal.html' + (_orgParam ? '?org=' + encodeURIComponent(_orgParam) : '');
             document.getElementById('formLink').value = link;
         }
 

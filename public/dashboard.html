@@ -269,7 +269,8 @@
 
         function copyPortalLink() {
             if (!_orgParam) return;
-            const url = location.origin + '/portal.html?org=' + encodeURIComponent(_orgParam);
+            const base = location.origin + location.pathname.replace('dashboard.html', '');
+            const url = base + 'portal.html?org=' + encodeURIComponent(_orgParam);
             navigator.clipboard.writeText(url).then(() => {
                 const btn = document.getElementById('portalLinkBtn');
                 const orig = btn.textContent;
