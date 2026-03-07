@@ -39,16 +39,20 @@
     <div class="sidebar">
         <div class="sidebar-brand"><strong>SENDS160</strong></div>
         <div class="sidebar-nav">
-            <div class="nav-item active" data-page="coleta" onclick="navigateTo('coleta')">Coleta <span class="badge"
-                    id="badge-coleta">0</span></div>
+            <div class="nav-item active" data-page="triagem" onclick="navigateTo('triagem')">Triagem <span class="badge"
+                    id="badge-triagem">0</span></div>
             <div class="nav-item" data-page="analise" onclick="navigateTo('analise')">Análise <span class="badge"
                     id="badge-analise">0</span></div>
-            <div class="nav-item" data-page="producao" onclick="navigateTo('producao')">DS-160 <span class="badge"
-                    id="badge-producao">0</span></div>
+            <div class="nav-item" data-page="ds160" onclick="navigateTo('ds160')">DS-160 <span class="badge"
+                    id="badge-ds160">0</span></div>
+            <div class="nav-item" data-page="taxas" onclick="navigateTo('taxas')">Taxas <span class="badge"
+                    id="badge-taxas">0</span></div>
+            <div class="nav-item" data-page="agendamento" onclick="navigateTo('agendamento')">Agendamento <span
+                    class="badge" id="badge-agendamento">0</span></div>
             <div class="nav-item" data-page="entrevista" onclick="navigateTo('entrevista')">Entrevista <span
                     class="badge" id="badge-entrevista">0</span></div>
-            <div class="nav-item" data-page="concluido" onclick="navigateTo('concluido')">Concluído <span class="badge"
-                    id="badge-concluido">0</span></div>
+            <div class="nav-item" data-page="status" onclick="navigateTo('status')">Status <span class="badge"
+                    id="badge-status">0</span></div>
             <div class="nav-item" data-page="arquivado" onclick="navigateTo('arquivado')">Arquivado <span class="badge"
                     id="badge-arquivado">0</span></div>
             <div class="nav-spacer"></div>
@@ -168,7 +172,7 @@
         // STATE
         // ==========================================
         let applicants = [];
-        let currentPage = 'coleta';
+        let currentPage = 'triagem';
         let currentFilter = 'all';
         let selectedIds = new Set();
         let searchQuery = '';
@@ -202,16 +206,19 @@
         };
 
         const STAGE_LABELS = {
-            coleta: 'Coleta', analise: 'Análise', producao: 'DS-160',
-            entrevista: 'Entrevista', concluido: 'Concluído', arquivado: 'Arquivado'
+            triagem: 'Triagem', analise: 'Análise', ds160: 'DS-160',
+            taxas: 'Taxas', agendamento: 'Agendamento',
+            entrevista: 'Entrevista', status: 'Status', arquivado: 'Arquivado'
         };
 
         const PAGE_CONFIG = {
-            coleta: { title: 'Coleta', subtitle: 'Coleta de Dados' },
+            triagem: { title: 'Triagem', subtitle: 'Triagem Inicial' },
             analise: { title: 'Análise', subtitle: 'Revisão e Estratégia' },
-            producao: { title: 'DS-160', subtitle: 'Preenchimento Oficial' },
-            entrevista: { title: 'Entrevista', subtitle: 'Preparação e Agendamento' },
-            concluido: { title: 'Concluído', subtitle: 'Assessoria Finalizada' },
+            ds160: { title: 'DS-160', subtitle: 'Preenchimento Oficial' },
+            taxas: { title: 'Taxas', subtitle: 'Pagamento de Taxas' },
+            agendamento: { title: 'Agendamento', subtitle: 'Agendar Entrevista' },
+            entrevista: { title: 'Entrevista', subtitle: 'Preparação e Entrevista' },
+            status: { title: 'Status', subtitle: 'Resultado do Processo' },
             arquivado: { title: 'Arquivado', subtitle: 'Processo Encerrado' },
         };
 
@@ -243,7 +250,7 @@
                 if (!rows || !rows.length) { applicants = []; return; }
                 applicants = rows.map(row => ({
                     id: row.id, name: row.full_name || '(Sem nome)', passport: row.passport_number || '',
-                    stage: row.stage || 'coleta', status: row.status || 'aguardando_execucao',
+                    stage: row.stage || 'triagem', status: row.status || 'aguardando_execucao',
                     result: row.result || 'indefinido', priority: row.priority || 'normal',
                     sort_order: row.sort_order || 0, progress: calcProgress(row.data),
                     created: row.created_at, data: row.data, group_id: row.group_id || null, notes: row.notes || '', email: row.email || '',
@@ -283,18 +290,18 @@
             const pcfg = PAGE_CONFIG[page];
             document.getElementById('pageTitle').innerHTML = pcfg.title + ' <span class="page-subtitle">' + pcfg.subtitle + '</span> <span id="pageCount"></span>';
             const hdr = document.getElementById('colInfoHeader');
-            if (hdr) hdr.textContent = page === 'producao' ? 'Status' : (page === 'concluido' || page === 'arquivado') ? 'Resultado' : 'Info';
+            if (hdr) hdr.textContent = page === 'ds160' ? 'Status' : (page === 'status' || page === 'arquivado') ? 'Resultado' : 'Info';
             renderFilters(); renderTable(); updateBadges();
         }
 
         function renderFilters() {
             const items = getFilteredByPage();
             const el = document.getElementById('filterChips');
-            if (currentPage === 'coleta' || currentPage === 'analise' || currentPage === 'entrevista' || currentPage === 'concluido') {
+            if (currentPage === 'triagem' || currentPage === 'analise' || currentPage === 'entrevista' || currentPage === 'status') {
                 el.innerHTML = `<div class="chip active">Todos<span class="chip-count">${items.length}</span></div>`;
                 return;
             }
-            if (currentPage === 'producao') {
+            if (currentPage === 'ds160') {
                 let html = `<div class="chip ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">Todos<span class="chip-count">${items.length}</span></div>`;
                 Object.entries(STATUS_CONFIG).forEach(([key, cfg]) => {
                     const count = items.filter(a => a.status === key).length;
@@ -319,7 +326,7 @@
             const PRIORITY_ORDER = { emergencia: 0, urgente: 1, prioridade: 2, normal: 3 };
             let items = getFilteredByPage();
             if (currentFilter !== 'all') {
-                if (currentPage === 'concluido' || currentPage === 'arquivado') items = items.filter(a => a.result === currentFilter);
+                if (currentPage === 'status' || currentPage === 'arquivado') items = items.filter(a => a.result === currentFilter);
                 else items = items.filter(a => a.status === currentFilter);
             }
             if (searchQuery) items = items.filter(a => a.name.toLowerCase().includes(searchQuery) || a.passport.toLowerCase().includes(searchQuery) || a.id.toString().toLowerCase().includes(searchQuery));
@@ -376,8 +383,8 @@
                 const isSubRow = (extraClass || '').includes('sub-row');
                 const nameIcon = isSubRow ? '<span class="applicant-icon" style="margin-left:28px">👤</span>' : '<span class="applicant-icon">👤</span>';
                 let infoCell = '';
-                if (currentPage === 'producao') infoCell = `<span class="status-badge ${cfg.class}">${cfg.label}</span>`;
-                else if (currentPage === 'concluido' || currentPage === 'arquivado') infoCell = `<span class="result-badge" data-result="${a.result}">${rcfg.label}</span>`;
+                if (currentPage === 'ds160') infoCell = `<span class="status-badge ${cfg.class}">${cfg.label}</span>`;
+                else if (currentPage === 'status' || currentPage === 'arquivado') infoCell = `<span class="result-badge" data-result="${a.result}">${rcfg.label}</span>`;
                 else infoCell = `<span class="info-label">${STAGE_LABELS[a.stage]}</span>`;
                 return `<tr class="${extraClass || ''} ${sel ? 'selected' : ''}" draggable="true" data-id="${a.id}" ondblclick="window.location.href=buildUrl('${a.id}','assessor')" ondragstart="handleDragStart(event,'${a.id}')" ondragover="handleDragOver(event)" ondragleave="event.currentTarget.classList.remove('drag-over','drag-above','drag-below')" ondrop="handleDrop(event,'${a.id}')">
                     <td class="check-col"><div class="custom-check ${sel ? 'checked' : ''}" onclick="event.stopPropagation();toggleSelect('${a.id}')">✓</div></td>
@@ -681,7 +688,7 @@
                 }
                 document.getElementById(id).remove();
                 try {
-                    const p = { full_name: name.toUpperCase(), passport_number: null, data: {}, stage: 'coleta', status: 'aguardando_execucao', result: 'indefinido', priority: 'normal' };
+                    const p = { full_name: name.toUpperCase(), passport_number: null, data: {}, stage: 'triagem', status: 'aguardando_execucao', result: 'indefinido', priority: 'normal' };
                     if (resolvedCompanyId) p.company_id = resolvedCompanyId;
                     if (groupId) p.group_id = groupId;
                     if (applicantEmail) p.email = applicantEmail.toLowerCase();
@@ -720,7 +727,7 @@
                     const members = applicants.filter(a => a.group_id === groupId);
                     const priOrder = { emergencia: 3, urgente: 2, prioridade: 1, normal: 0 };
                     const groupPri = members.reduce((best, m) => (priOrder[m.priority] || 0) > (priOrder[best] || 0) ? m.priority : best, 'normal');
-                    const p = { full_name: name.toUpperCase(), passport_number: null, data: {}, stage: 'coleta', status: 'aguardando_execucao', result: 'indefinido', priority: groupPri, group_id: groupId };
+                    const p = { full_name: name.toUpperCase(), passport_number: null, data: {}, stage: 'triagem', status: 'aguardando_execucao', result: 'indefinido', priority: groupPri, group_id: groupId };
                     if (resolvedCompanyId) p.company_id = resolvedCompanyId;
                     const r = await sbFetch('applicants', 'POST', p);
                     if (r?.[0]) {
@@ -828,7 +835,7 @@
             evt.stopPropagation(); _manageMenuId = id;
             const a = applicants.find(x => x.id === id); if (!a) return;
             const existing = document.getElementById('managePopup'); if (existing) existing.remove();
-            const stages = ['coleta', 'analise', 'producao', 'entrevista', 'concluido', 'arquivado'];
+            const stages = ['triagem', 'analise', 'ds160', 'taxas', 'agendamento', 'entrevista', 'status', 'arquivado'];
             const priorities = ['normal', 'prioridade', 'urgente', 'emergencia'];
             const results = Object.keys(RESULT_CONFIG);
 
@@ -843,7 +850,7 @@
                 <div class="manage-section-label">Resultado</div>
                 <div class="manage-btn-group">${results.map(r => { const rc = RESULT_CONFIG[r]; return `<button class="manage-btn ${a.result === r ? 'active' : ''}" data-color="${rc.color}" onclick="updateField('${id}','result','${r}')">${rc.label}</button>`; }).join('')}</div>`;
 
-            if (a.stage === 'producao') {
+            if (a.stage === 'ds160') {
                 html += `<div class="manage-section-label">Status (Robô)</div>
                 <div class="manage-btn-group column">${Object.entries(STATUS_CONFIG).map(([k, v]) => `<button class="manage-btn ${a.status === k ? 'active' : ''}" onclick="updateField('${id}','status','${k}')">${v.label}</button>`).join('')}</div>`;
             }
@@ -941,21 +948,20 @@
                 // === GROUP STAGE RULES ===
                 if (field === 'stage' && a && a.group_id) {
                     const groupMembers = applicants.filter(x => x.group_id === a.group_id && x.stage !== 'arquivado');
-                    const stageOrder = ['coleta', 'analise', 'producao', 'entrevista', 'concluido', 'arquivado'];
+                    const stageOrder = ['triagem', 'analise', 'ds160', 'taxas', 'agendamento', 'entrevista', 'status', 'arquivado'];
                     const currentIdx = stageOrder.indexOf(a.stage);
                     const targetIdx = stageOrder.indexOf(value);
                     const isAdvancing = targetIdx > currentIdx;
 
                     if (isAdvancing) {
-                        // Check all members are at same stage
                         const allSameStage = groupMembers.every(m => m.stage === a.stage);
                         if (!allSameStage) {
                             showToast('Grupo: todos precisam estar na mesma etapa para avançar.', 'error');
                             return;
                         }
 
-                        // Coleta → Análise: todos precisam ter 100% preenchido
-                        if (a.stage === 'coleta' && value === 'analise') {
+                        // Triagem → Análise: todos precisam ter 100% preenchido
+                        if (a.stage === 'triagem' && value === 'analise') {
                             const incomplete = groupMembers.filter(m => m.progress < 100);
                             if (incomplete.length > 0) {
                                 showToast(`Formulários incompletos: ${incomplete.map(m => m.name).join(', ')}`, 'error');
@@ -963,8 +969,8 @@
                             }
                         }
 
-                        // Análise → Produção (DS-160): todos precisam estar aprovados
-                        if (a.stage === 'analise' && value === 'producao') {
+                        // Análise → DS-160: todos precisam estar aprovados
+                        if (a.stage === 'analise' && value === 'ds160') {
                             const notApproved = groupMembers.filter(m => m.status !== 'aprovado' && m.status !== 'revisado');
                             if (notApproved.length > 0) {
                                 showToast(`Ainda não revisados/aprovados: ${notApproved.map(m => m.name).join(', ')}`, 'error');
@@ -983,8 +989,8 @@
                 }
 
                 if (field === 'status' && a) {
-                    if (a.stage === 'producao' && value === 'aguardando_correcao') patch.stage = 'analise';
-                    if (a.stage === 'producao' && value === 'execucao_concluida') patch.stage = 'entrevista';
+                    if (a.stage === 'ds160' && value === 'aguardando_correcao') patch.stage = 'analise';
+                    if (a.stage === 'ds160' && value === 'execucao_concluida') patch.stage = 'taxas';
                 }
                 await sbFetch(`applicants?id=eq.${id}`, 'PATCH', patch);
                 const origStage = a?.stage;
@@ -1073,7 +1079,7 @@
                 document.getElementById('userDisplayName').textContent = _currentUser.email.split('@')[0];
                 document.getElementById('userAvatar').textContent = _currentUser.email.substring(0, 2).toUpperCase();
             }
-            navigateTo('coleta');
+            navigateTo('triagem');
             try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session?.user?.id) {
