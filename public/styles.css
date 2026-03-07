@@ -1110,7 +1110,7 @@ select.edit-inline {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8edf5 50%, #f0f4ff 100%);
 }
 
 .login-overlay.fade-out {
@@ -1120,12 +1120,12 @@ select.edit-inline {
 
 .login-card {
     padding: 32px;
-    border-radius: var(--radius-lg);
+    border-radius: 12px;
     width: 380px;
     max-width: 90vw;
-    border: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(30, 41, 59, .9);
-    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    background: #fff;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .08);
 }
 
 .login-card h2 {
@@ -1133,14 +1133,14 @@ select.edit-inline {
     font-size: 22px;
     font-weight: 800;
     margin-bottom: 4px;
-    color: #fff;
+    color: var(--text-primary);
     letter-spacing: -.5px;
 }
 
 .login-card p {
     text-align: center;
     font-size: 12px;
-    color: #64748b;
+    color: var(--text-muted);
     margin-bottom: 24px;
 }
 
@@ -1155,28 +1155,28 @@ select.edit-inline {
     margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: .8px;
-    color: #94a3b8;
+    color: var(--text-secondary);
 }
 
 .login-field input {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid rgba(255, 255, 255, .1);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     font-size: 13px;
     outline: none;
-    background: rgba(15, 23, 42, .6);
-    color: #e2e8f0;
+    background: var(--bg-input);
+    color: var(--text-primary);
     transition: var(--transition);
 }
 
 .login-field input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, .2);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
 }
 
 .login-field input::placeholder {
-    color: #475569;
+    color: var(--text-muted);
 }
 
 .login-btn {
@@ -1195,7 +1195,7 @@ select.edit-inline {
 
 .login-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(59, 130, 246, .4);
+    box-shadow: 0 6px 24px rgba(59, 130, 246, .3);
 }
 
 .login-btn:disabled {
@@ -1205,7 +1205,7 @@ select.edit-inline {
 
 .login-error {
     font-size: 13px;
-    color: #f87171;
+    color: var(--danger);
     text-align: center;
     margin-top: 12px;
     display: none;
@@ -4105,7 +4105,7 @@ tr.drag-over {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8edf5 50%, #f0f4ff 100%);
     transition: opacity .3s ease;
 }
 
@@ -4115,18 +4115,18 @@ tr.drag-over {
 }
 
 .login-card {
-    background: rgba(30, 41, 59, .7);
-    border: 1px solid rgba(255, 255, 255, .06);
+    background: #fff;
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 40px 36px;
     width: 100%;
     max-width: 380px;
-    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .08);
     text-align: center;
 }
 
 .login-card h2 {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 22px;
     font-weight: 800;
     letter-spacing: 2px;
@@ -4134,7 +4134,7 @@ tr.drag-over {
 }
 
 .login-card p {
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 13px;
     margin-bottom: 28px;
 }
@@ -4148,7 +4148,7 @@ tr.drag-over {
     display: block;
     font-size: 11px;
     font-weight: 700;
-    color: #94a3b8;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: .5px;
     margin-bottom: 6px;
@@ -4157,10 +4157,10 @@ tr.drag-over {
 .login-field input {
     width: 100%;
     padding: 10px 14px;
-    border: 1px solid rgba(255, 255, 255, .08);
+    border: 1px solid var(--border);
     border-radius: 6px;
-    background: rgba(15, 23, 42, .5);
-    color: #fff;
+    background: var(--bg-input);
+    color: var(--text-primary);
     font-size: 14px;
     outline: none;
     transition: var(--transition);
@@ -4172,7 +4172,7 @@ tr.drag-over {
 }
 
 .login-field input::placeholder {
-    color: #475569;
+    color: var(--text-muted);
 }
 
 .login-btn {
