@@ -1,0 +1,57 @@
+name: Run DS-160 Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      tasks:
+        description: 'Número de tasks (perfis) a processar'
+        required: true
+        default: '39'
+        type: string
+      parallelism:
+        description: 'Quantas tasks rodam em paralelo'
+        required: true
+        default: '10'
+        type: string
+
+env:
+  GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: us-central1
+
+jobs:
+  execute-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Execute DS-160 Worker Jobs
+        run: |
+          echo "🚀 Executando ds160-worker: ${{ inputs.tasks }} tasks, ${{ inputs.parallelism }} paralelas"
+          gcloud run jobs execute ds160-worker \
+            --region=${{ env.GCP_REGION }} \
+            --tasks=${{ inputs.tasks }} \
+            --parallelism=${{ inputs.parallelism }} \
+            --wait \
+            --format="table(metadata.name, status.conditions[0].type, status.conditions[0].status)"
+          echo "✅ Execução concluída"
+
+      - name: Show execution logs
+        if: always()
+        run: |
+          echo "📋 Últimas execuções:"
+          gcloud run jobs executions list \
+            --job=ds160-worker \
+            --region=${{ env.GCP_REGION }} \
+            --limit=3 \
+            --format="table(name, status.conditions[0].type, createTime)"
