@@ -45,8 +45,6 @@ jobs:
   # ────────────────────────────────────────────
   ds160-worker:
     runs-on: ubuntu-latest
-    # Only run if automation files changed
-    if: contains(toJSON(github.event.commits.*.modified), 'automation/') || contains(toJSON(github.event.commits.*.added), 'automation/')
     steps:
       - uses: actions/checkout@v4
 
@@ -86,7 +84,6 @@ jobs:
   # ────────────────────────────────────────────
   ais-worker:
     runs-on: ubuntu-latest
-    if: contains(toJSON(github.event.commits.*.modified), 'automation/') || contains(toJSON(github.event.commits.*.added), 'automation/')
     steps:
       - uses: actions/checkout@v4
 
