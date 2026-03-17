@@ -96,14 +96,23 @@ async function main() {
     runner.running = true;
 
     // Load company_id
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-        const { data: member } = await supabase
-            .from('members')
-            .select('company_id')
-            .eq('user_id', user.id)
-            .single();
-        if (member) runner.companyId = member.company_id;
+    let companyId = process.env.COMPANY_ID || null;
+    
+    if (!companyId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data: member } = await supabase
+                .from('members')
+                .select('company_id')
+                .eq('user_id', user.id)
+                .single();
+            if (member) companyId = member.company_id;
+        }
+    }
+    
+    if (companyId) {
+        runner.companyId = companyId;
+        console.log(`🏢 Company: ${companyId}`);
     }
 
     // Run ONE cycle of the loop

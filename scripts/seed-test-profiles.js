@@ -36,14 +36,16 @@ const { createClient } = require('@supabase/supabase-js');
 const { PROFILES } = require('./test-profiles');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
     console.error('❌ SUPABASE_URL e SUPABASE_KEY são obrigatórios');
     process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false }
+});
 
 // ── Parse args ──
 const args = process.argv.slice(2);
@@ -75,34 +77,38 @@ async function main() {
         process.exit(0);
     }
 
-    // ── Auth ──
-    const workerEmail = process.env.WORKER_EMAIL;
-    const workerPassword = process.env.WORKER_PASSWORD;
-    if (workerEmail && workerPassword) {
-        const { error } = await supabase.auth.signInWithPassword({
-            email: workerEmail, password: workerPassword,
-        });
-        if (error) {
-            console.warn(`⚠️ Auth failed: ${error.message}`);
-        } else {
-            console.log(`🔐 Autenticado: ${workerEmail}`);
-        }
-    }
-
     // ── Get company_id ──
-    let companyId = null;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-        const { data: member } = await supabase
-            .from('members')
-            .select('company_id')
-            .eq('user_id', user.id)
-            .single();
-        if (member) companyId = member.company_id;
+    let companyId = process.env.COMPANY_ID || null;
+
+    if (!companyId) {
+        // Try auth with email/password
+        const workerEmail = process.env.WORKER_EMAIL;
+        const workerPassword = process.env.WORKER_PASSWORD;
+        if (workerEmail && workerPassword) {
+            const { error } = await supabase.auth.signInWithPassword({
+                email: workerEmail, password: workerPassword,
+            });
+            if (error) {
+                console.warn(`⚠️ Auth failed: ${error.message}`);
+            } else {
+                console.log(`🔐 Autenticado: ${workerEmail}`);
+            }
+        }
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data: member } = await supabase
+                .from('members')
+                .select('company_id')
+                .eq('user_id', user.id)
+                .single();
+            if (member) companyId = member.company_id;
+        }
     }
 
     if (!companyId) {
         console.error('❌ Não foi possível determinar company_id');
+        console.error('   Defina COMPANY_ID no .env ou verifique WORKER_EMAIL/PASSWORD');
         process.exit(1);
     }
     console.log(`🏢 Company: ${companyId}\n`);

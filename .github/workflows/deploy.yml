@@ -77,7 +77,7 @@ jobs:
             --memory=2Gi \
             --cpu=1 \
             --parallelism=1 \
-            --set-env-vars="SUPABASE_URL=${{ secrets.SUPABASE_URL }},SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}"
+            --set-env-vars="SUPABASE_URL=${{ secrets.SUPABASE_URL }},SUPABASE_KEY=${{ secrets.SUPABASE_KEY }},WORKER_EMAIL=${{ secrets.WORKER_EMAIL }},WORKER_PASSWORD=${{ secrets.WORKER_PASSWORD }},COMPANY_ID=${{ secrets.COMPANY_ID }}"
 
   # ────────────────────────────────────────────
   # AIS WORKER → Cloud Run Job
