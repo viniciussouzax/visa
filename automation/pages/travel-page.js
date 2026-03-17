@@ -4,6 +4,16 @@
 const { waitForPostback, waitForPageReady } = require('../helpers/postback');
 const { fillSelect } = require('../helpers/fill-field');
 
+// DS-160 date selects use values '1'-'12' for months and '1'-'31' for days (NO leading zeros)
+const MONTH_MAP = { JAN: '1', FEB: '2', MAR: '3', APR: '4', MAY: '5', JUN: '6', JUL: '7', AUG: '8', SEP: '9', OCT: '10', NOV: '11', DEC: '12' };
+const stripZero = (v) => {
+    if (!v) return '';
+    const s = String(v).trim().toUpperCase();
+    if (MONTH_MAP[s]) return MONTH_MAP[s]; // Convert month name → number
+    const n = parseInt(s, 10);
+    return isNaN(n) ? s : String(n);
+};
+
 /**
  * Preenche a página Travel de forma otimizada.
  * Em vez de um loop genérico de 4 fases com rescan a cada postback,
@@ -30,8 +40,10 @@ async function fillTravelPage(page, fieldMap, profile) {
     }
 
     // 1b. OtherPurpose / Visa SubCategory (POSTBACK)
-    if (profile.purposeSubCategory) {
-        await setSelectIfNeeded(page, 'ddlOtherPurpose', profile.purposeSubCategory, true);
+    // purposeSubCategory is the direct DS-160 value; purposeOfTrip (e.g. "B1/B2") is fallback
+    const otherPurposeVal = profile.purposeSubCategory || (profile.purposeOfTrip || '').replace(/\//g, '-');
+    if (otherPurposeVal) {
+        await setSelectIfNeeded(page, 'ddlOtherPurpose', otherPurposeVal, true);
     }
 
     // 1c. SpecificTravel (POSTBACK) — Yes/No
@@ -51,31 +63,31 @@ async function fillTravelPage(page, fieldMap, profile) {
     const selectBatch = [];
 
     if (hasSpecific && t.arrivalDate) {
-        // Caminho A: Planos Específicos
-        selectBatch.push({ suffix: 'ddlARRIVAL_US_DTEDay', value: String(t.arrivalDate.day) });
-        selectBatch.push({ suffix: 'ddlARRIVAL_US_DTEMonth', value: t.arrivalDate.month });
+        // Caminho A: Planos Específicos — strip leading zeros for DS-160 selects
+        selectBatch.push({ suffix: 'ddlARRIVAL_US_DTEDay', value: stripZero(t.arrivalDate.day) });
+        selectBatch.push({ suffix: 'ddlARRIVAL_US_DTEMonth', value: stripZero(t.arrivalDate.month) });
         textBatch.push({ suffix: 'tbxARRIVAL_US_DTEYear', value: t.arrivalDate.year });
 
         if (t.arrivalFlight) textBatch.push({ suffix: 'tbxArriveFlight', value: t.arrivalFlight });
         if (t.arrivalCity) textBatch.push({ suffix: 'tbxArriveCity', value: t.arrivalCity });
 
         if (t.departureDate) {
-            selectBatch.push({ suffix: 'ddlDEPARTURE_US_DTEDay', value: String(t.departureDate.day) });
-            selectBatch.push({ suffix: 'ddlDEPARTURE_US_DTEMonth', value: t.departureDate.month });
+            selectBatch.push({ suffix: 'ddlDEPARTURE_US_DTEDay', value: stripZero(t.departureDate.day) });
+            selectBatch.push({ suffix: 'ddlDEPARTURE_US_DTEMonth', value: stripZero(t.departureDate.month) });
             textBatch.push({ suffix: 'tbxDEPARTURE_US_DTEYear', value: t.departureDate.year });
         }
         if (t.departureFlight) textBatch.push({ suffix: 'tbxDepartFlight', value: t.departureFlight });
         if (t.departureCity) textBatch.push({ suffix: 'tbxDepartCity', value: t.departureCity });
 
         // First travel location
-        const locs = profile.specificLocations || [];
+        const locs = (profile.specificLocations || []).map(l => typeof l === 'object' ? (l.location || l.name || '') : String(l));
         if (locs.length > 0) {
             textBatch.push({ suffix: 'tbxSPECTRAVEL_LOCATION', value: locs[0] });
         }
     } else if (t.arrivalDate) {
-        // Caminho B: Sem Planos Específicos
-        selectBatch.push({ suffix: 'ddlTRAVEL_DTEDay', value: String(t.arrivalDate.day) });
-        selectBatch.push({ suffix: 'ddlTRAVEL_DTEMonth', value: t.arrivalDate.month });
+        // Caminho B: Sem Planos Específicos — strip leading zeros for DS-160 selects
+        selectBatch.push({ suffix: 'ddlTRAVEL_DTEDay', value: stripZero(t.arrivalDate.day) });
+        selectBatch.push({ suffix: 'ddlTRAVEL_DTEMonth', value: stripZero(t.arrivalDate.month) });
         textBatch.push({ suffix: 'tbxTRAVEL_DTEYear', value: t.arrivalDate.year });
 
         if (t.lengthOfStay?.value) textBatch.push({ suffix: 'tbxTRAVEL_LOS', value: String(t.lengthOfStay.value) });
@@ -266,16 +278,29 @@ async function fillTravelPage(page, fieldMap, profile) {
     // FASE 5: Add Another para travel locations (se Specific = Yes)
     // ================================================================
     if (hasSpecific) {
-        const locs = profile.specificLocations || [];
-        for (let i = 1; i < locs.length; i++) {
-            const addBtn = page.locator("[id$='InsertButtonTravelLoc']").first();
-            if (await addBtn.isVisible({ timeout: 300 }).catch(() => false)) {
-                await addBtn.click();
-                const newCtl = `ctl${String(i).padStart(2, '0')}`;
-                await page.waitForSelector(`[id*='dtlTravelLoc'][id*='${newCtl}']`, { timeout: 2000 }).catch(() => { });
-                const loc = page.locator(`[id$='dtlTravelLoc_${newCtl}_tbxSPECTRAVEL_LOCATION']`).first();
-                if (await loc.isVisible({ timeout: 300 }).catch(() => false)) {
-                    await loc.fill(locs[i]);
+        const locs2 = (profile.specificLocations || []).map(l => typeof l === 'object' ? (l.location || l.name || '') : String(l));
+        for (let i = 1; i < locs2.length; i++) {
+            const newCtl = `ctl${String(i).padStart(2, '0')}`;
+            const locSelector = `[id$='dtlTravelLoc_${newCtl}_tbxSPECTRAVEL_LOCATION']`;
+            
+            // Check if field already exists (from previous attempt/retry)
+            const alreadyExists = await page.locator(locSelector).first().isVisible({ timeout: 300 }).catch(() => false);
+            
+            if (!alreadyExists) {
+                // Only click Add Another if the field doesn't exist yet
+                const addBtn = page.locator("[id$='InsertButtonTravelLoc']").first();
+                if (await addBtn.isVisible({ timeout: 300 }).catch(() => false)) {
+                    await addBtn.click();
+                    await page.waitForSelector(`[id*='dtlTravelLoc'][id*='${newCtl}']`, { timeout: 2000 }).catch(() => { });
+                }
+            }
+            
+            // Fill the field (whether newly created or already existing but empty)
+            const loc = page.locator(locSelector).first();
+            if (await loc.isVisible({ timeout: 300 }).catch(() => false)) {
+                const curVal = await loc.inputValue().catch(() => '');
+                if (!curVal || curVal.trim() === '' || curVal === '[object Object]') {
+                    await loc.fill(locs2[i]);
                 }
             }
         }

@@ -79,11 +79,47 @@ async function fillSelect(page, fieldId, value, type = 'select') {
         return false;
     }
 
-    // Padrão: tenta por valor, depois por label
-    try { await loc.selectOption(value); return true; }
+    // Padrão: tenta por valor, depois por label, depois auto-conversão (pad/month)
+    const MONTH_ABBREV = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const MONTH_SET = new Set(MONTH_ABBREV);
+    const strVal = String(value).trim();
+
+    try { await loc.selectOption(strVal); return true; }
     catch {
-        try { await loc.selectOption({ label: value }); return true; }
-        catch { return false; }
+        try { await loc.selectOption({ label: strVal }); return true; }
+        catch {
+            // Auto-pad numeric day: "5" → "05" (DS-160 Day selects use "01"-"31")
+            const num = parseInt(strVal, 10);
+            if (!isNaN(num) && num >= 1 && num <= 31) {
+                const padded = String(num).padStart(2, '0');
+                if (padded !== strVal) {
+                    try { await loc.selectOption(padded); return true; }
+                    catch { /* fall through */ }
+                }
+            }
+            // Auto-convert numeric month (1-12, 01-12) to DS-160 abbreviation (JAN-DEC)
+            if (!isNaN(num) && num >= 1 && num <= 12) {
+                const abbrev = MONTH_ABBREV[num - 1];
+                try { await loc.selectOption(abbrev); return true; }
+                catch { /* fall through */ }
+            }
+            // Auto-convert abbreviation to numeric (fallback)
+            const upper = strVal.toUpperCase();
+            if (MONTH_SET.has(upper)) {
+                const idx = MONTH_ABBREV.indexOf(upper) + 1;
+                try { await loc.selectOption(String(idx)); return true; }
+                catch {
+                    try { await loc.selectOption(String(idx).padStart(2, '0')); return true; }
+                    catch { /* fall through */ }
+                }
+            }
+            // Log diagnóstico quando todos os attempts falham
+            try {
+                const opts = await loc.evaluate(sel => Array.from(sel.options).slice(0, 8).map(o => `${o.value}="${o.text}"`).join(', '));
+                console.warn(`[Fill] ❌ SELECT FALHOU: ${fieldId} — valor="${strVal}". Options: ${opts}`);
+            } catch { console.warn(`[Fill] ❌ SELECT FALHOU: ${fieldId} — valor="${strVal}"`); }
+            return false;
+        }
     }
 }
 

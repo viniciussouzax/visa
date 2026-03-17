@@ -43,12 +43,55 @@ async function fillPage(page, fieldMap, options = {}) {
     let pass = 0, needsRescan = true;
     const postbackLog = [];
     const addAnotherClicked = new Set();
+    const postbackSelectsFilled = new Set();
 
     while (needsRescan && pass < maxPasses) {
-        const result = await _fillPass(page, fieldMap, pass, addAnotherClicked);
+        const result = await _fillPass(page, fieldMap, pass, addAnotherClicked, postbackSelectsFilled);
         needsRescan = result.needsRescan;
         if (result.postbackField) postbackLog.push(result.postbackField);
         pass++;
+    }
+
+    // ======================== CLEANUP: Remove empty DataList entries ========================
+    // DS-160 auto-creates empty rows; find empty inputs inside DataLists and click their Remove
+    const removedCount = await page.evaluate(() => {
+        let removed = 0;
+        // Find all visible text inputs that are empty and inside a DataList (id contains "dtl" or "DList")
+        const allInputs = document.querySelectorAll('input[type="text"]');
+        for (const inp of allInputs) {
+            if (inp.offsetParent === null || inp.disabled) continue;
+            if (inp.value && inp.value.trim() !== '') continue;
+            // Check if this input is inside a repeating list entry
+            if (!inp.id || !(inp.id.includes('dtl') || inp.id.includes('DList'))) continue;
+            // Walk up to find the Remove/Delete link in the same container
+            let container = inp.parentElement;
+            for (let i = 0; i < 15 && container; i++) {
+                const removeLink = container.querySelector('a[id*="DeleteButton"], a[id*="RemoveButton"]');
+                if (removeLink) {
+                    removeLink.click();
+                    removed++;
+                    break;
+                }
+                // Also look for plain text "Remove" links
+                const allLinks = container.querySelectorAll('a');
+                let foundRemove = false;
+                for (const a of allLinks) {
+                    if (a.textContent.trim() === 'Remove' || a.textContent.trim() === 'Delete') {
+                        a.click();
+                        removed++;
+                        foundRemove = true;
+                        break;
+                    }
+                }
+                if (foundRemove) break;
+                container = container.parentElement;
+            }
+        }
+        return removed;
+    }).catch(() => 0);
+    if (removedCount > 0) {
+        console.log(`[Page] 🧹 Removed ${removedCount} empty DataList entries`);
+        await waitForPostback(page);
     }
 
     const elapsed = ((Date.now() - pageStart) / 1000).toFixed(1);
@@ -80,13 +123,13 @@ async function verifyPage(page) {
 
 // ==================== INTERNAL: Single Fill Pass ====================
 
-async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
+async function _fillPass(page, fieldMap, passNum, addAnotherClicked, postbackSelectsFilled) {
     // Scroll rápido para forçar rendering (sem sleep excessivo)
     await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight);
         window.scrollTo(0, 0);
     }).catch(() => { });
-    await sleep(100); // 100ms ao invés de 400ms
+    await sleep(300 + Math.random() * 200); // 300-500ms — simular scroll humano
 
     const fields = await discoverFields(page);
     const visible = fields.filter(f => f.visible && f.id);
@@ -98,23 +141,36 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
     const matchIndex = buildFieldIndex(fieldMap, visible);
 
     // ======================== PHASE 1: Postback Clicks ========================
+    // DEBUG: count candidates at each filter step
+    let p1_total = 0, p1_matched = 0, p1_click = 0, p1_postback = 0, p1_unchecked = 0;
     for (const field of visible) {
         if (!field.id) continue;
         if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
+        p1_total++;
         const match = matchIndex.get(field.id);
         if (!match || match.type !== 'click') continue;
+        p1_matched++;
         if (!isPostbackClick(field.id, field.type)) continue;
+        p1_postback++;
         if (field.checked) continue;
+        p1_unchecked++;
 
         const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
         try {
             if (!await loc.isVisible({ timeout: 300 }).catch(() => false)) continue;
+            await sleep(200 + Math.random() * 300); // micro-delay humano antes de clicar
             await loc.click();
             filled++;
             postbackNeeded = true;
             postbackField = field.id;
+            console.log(`[Page] Phase1 ✅ Clicked postback: ${field.id.split('_').pop()}`);
             break; // 1 postback por vez
         } catch (e) { console.warn(`[Page] Phase1 error: ${field.id}`, e.message); }
+    }
+    console.log(`[Page] Phase1 debug: ${p1_total} visible, ${p1_matched} click-matched, ${p1_postback} postback, ${p1_unchecked} unchecked${postbackNeeded ? ' → POSTBACK!' : ' → no postback'}`);
+    // Wait for postback to complete after Phase 1 click
+    if (postbackNeeded) {
+        await waitForPostback(page);
     }
 
     // ======================== PHASE 2: Postback Selects ========================
@@ -125,13 +181,16 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
             const match = matchIndex.get(field.id);
             if (!match) continue;
             if (!isSelectEmpty(field.value)) continue;
+            if (postbackSelectsFilled.has(field.id)) continue; // prevent infinite loop
 
             try {
+                await sleep(150 + Math.random() * 250); // micro-delay humano antes de selecionar
                 const ok = await fillSelect(page, field.id, match.value, match.type);
                 if (ok) {
                     filled++;
                     postbackNeeded = true;
                     postbackField = field.id;
+                    postbackSelectsFilled.add(field.id);
                     break;
                 }
             } catch (e) { console.warn(`[Page] Phase2 error: ${field.id}`, e.message); }
@@ -149,13 +208,20 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
     const addAnotherEntries = fieldMap.filter(m => m.addAnother);
     if (addAnotherEntries.length > 0) {
         const pendingByList = {};
+        // Group entries by list:idx — only need AddAnother if NO field for this ctl exists
+        const checkedCtls = new Set();
         for (const entry of addAnotherEntries) {
             const listName = entry.addAnother.list;
-            const trackKey = `${listName}:${entry.addAnother.idx}`;
+            const idx = entry.addAnother.idx;
+            const trackKey = `${listName}:${idx}`;
             if (addAnotherClicked.has(trackKey)) continue;
-            const fieldExists = visible.some(f => f.id && entry.pattern.test(f.id));
-            if (!fieldExists) {
-                if (!pendingByList[listName] || entry.addAnother.idx < pendingByList[listName].addAnother.idx) {
+            if (checkedCtls.has(trackKey)) continue;
+            checkedCtls.add(trackKey);
+            // Check if ANY field with this ctl index exists in DOM for this list
+            const ctlStr = `_ctl${String(idx).padStart(2, '0')}_`;
+            const ctlExists = visible.some(f => f.id && f.id.includes(listName) && f.id.includes(ctlStr));
+            if (!ctlExists) {
+                if (!pendingByList[listName] || idx < pendingByList[listName].addAnother.idx) {
                     pendingByList[listName] = entry;
                 }
             }
@@ -199,6 +265,7 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
                 case 'select-label':
                 case 'select-search':
                     if (!isSelectEmpty(field.value)) continue;
+                    await sleep(80 + Math.random() * 120); // micro-delay entre campos
                     if (await fillSelect(page, field.id, match.value, match.type)) filled++;
                     break;
                 case 'click':
@@ -246,13 +313,14 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked) {
 
         // Campos normais: batch evaluate (rápido)
         if (normalBatch.length > 0) {
+            await sleep(300 + Math.random() * 300); // pausa humana entre batches
             const batchFilled = await fillTextBatch(page, normalBatch);
             filled += batchFilled;
         }
     }
 
-    console.log(`[Page] Pass ${passNum} — ${filled}/${visible.length} preenchidos`);
-    return { needsRescan: false, postbackField: null };
+    console.log(`[Page] Pass ${passNum} — ${filled}/${visible.length} preenchidos${postbackNeeded ? ` (postback: ${postbackField?.split('_').pop()})` : ''}`);
+    return { needsRescan: postbackNeeded, postbackField };
 }
 
 module.exports = { fillPage, verifyPage };

@@ -90,28 +90,62 @@ async function clickAddAnother(page, listName, targetIdx) {
     }
 
     // Strategy 3: "Add Another" genérico via JavaScript (bypass total)
+    // Cobre 3 sub-fallbacks para encontrar o botão, incluindo links .addone
+    // cujo __doPostBack referencia o listName (ex: dtlLANGUAGES)
     if (!clicked) {
         try {
-            // Use evaluate to click via JS directly — bypasses ALL overlays
             const clickedViaJS = await page.evaluate((ln) => {
-                const links = document.querySelectorAll(`a[id*="${ln}"][id*="InsertButton"]`);
-                if (links.length > 0) {
-                    links[links.length - 1].click();
-                    return true;
+                // 3a: InsertButton com listName no ID
+                const insertBtns = document.querySelectorAll(`a[id*="${ln}"][id*="InsertButton"]`);
+                if (insertBtns.length > 0) {
+                    insertBtns[insertBtns.length - 1].click();
+                    return '3a-InsertButton';
                 }
-                // Fallback: any "Add Another" link
-                const allAddLinks = document.querySelectorAll('a');
-                for (const a of allAddLinks) {
-                    if (a.textContent.trim() === 'Add Another' && a.id.includes(ln)) {
+
+                // 3b: Link "Add Another" com listName no ID (ex: DListAlias)
+                const allLinks = document.querySelectorAll('a');
+                for (const a of allLinks) {
+                    const txt = a.textContent.trim();
+                    if (txt === 'Add Another' && a.id && a.id.includes(ln)) {
                         a.click();
-                        return true;
+                        return '3b-idMatch';
                     }
                 }
-                return false;
-            }, listName).catch(() => false);
+
+                // 3c: Link "Add Another" / .addone cujo href/onclick contém listName via __doPostBack
+                // Necessário para dtlLANGUAGES, dtlCountriesVisited, etc. cujo botão Add Another
+                // NÃO tem o listName no ID, mas o __doPostBack referencia o DataList
+                for (const a of allLinks) {
+                    const txt = a.textContent.trim();
+                    const href = a.getAttribute('href') || '';
+                    const onclick = a.getAttribute('onclick') || '';
+                    const isAddAnother = txt === 'Add Another' || a.classList.contains('addone');
+                    const refsDataList = href.includes(ln) || onclick.includes(ln);
+                    if (isAddAnother && refsDataList) {
+                        a.click();
+                        return '3c-doPostBack';
+                    }
+                }
+
+                // 3d: Link .addone próximo (DOM parent) do container do listName
+                const dataListEl = document.querySelector(`[id*="${ln}"]`);
+                if (dataListEl) {
+                    let parent = dataListEl.parentElement;
+                    for (let i = 0; i < 10 && parent; i++) {
+                        const addLink = parent.querySelector('a.addone, a[id*="InsertButton"]');
+                        if (addLink) {
+                            addLink.click();
+                            return '3d-proximity';
+                        }
+                        parent = parent.parentElement;
+                    }
+                }
+
+                return null;
+            }, listName).catch(() => null);
 
             if (clickedViaJS) {
-                console.log(`[AddAnother] ✅ JS click bypass para "${listName}"`);
+                console.log(`[AddAnother] ✅ JS click bypass (${clickedViaJS}) para "${listName}"`);
                 await waitForPostback(page);
                 clicked = true;
             }

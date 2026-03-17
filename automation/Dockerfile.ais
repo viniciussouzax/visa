@@ -1,0 +1,24 @@
+# ============================================================
+# AIS Worker — Cloud Run Job
+# Image: Playwright + Node.js for AIS automation
+# ============================================================
+FROM mcr.microsoft.com/playwright:v1.50.0-noble
+
+WORKDIR /app
+
+# Install dependencies first (cache layer)
+COPY package.json package-lock.json* ./
+RUN npm ci --production --ignore-scripts
+
+# Install Playwright browsers (Chromium only)
+RUN npx playwright install chromium --with-deps
+
+# Copy application code
+COPY automation/ ./automation/
+
+# Environment
+ENV HEADLESS=true
+ENV NODE_ENV=production
+
+# Entrypoint: process AIS lifecycle phases, then exit
+CMD ["node", "automation/ais-entry.js"]

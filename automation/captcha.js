@@ -99,7 +99,6 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 /**
  * Solve captcha directly from base64 string (no file needed).
- * Used by network interception to avoid screenshot overhead.
  */
 async function solveCaptchaBase64(imageBase64, mode, keys) {
     if (mode === 'capmonster') {
@@ -109,4 +108,53 @@ async function solveCaptchaBase64(imageBase64, mode, keys) {
     }
 }
 
-module.exports = { solveCaptcha, solveCaptchaBase64 };
+/**
+ * Solve hCaptcha via CapMonster HCaptchaTaskProxyless.
+ * Returns the token to inject into h-captcha-response.
+ * @param {string} websiteUrl - Page URL where hCaptcha is rendered
+ * @param {string} siteKey - hCaptcha site key (from data-sitekey attribute)
+ * @param {string} capmonsterKey - CapMonster API key
+ * @returns {Promise<string>} hCaptcha response token
+ */
+async function solveHCaptcha(websiteUrl, siteKey, capmonsterKey) {
+    if (!capmonsterKey) throw new Error('CapMonster API key não configurada');
+
+    console.log(`[Captcha] 🔐 Solving hCaptcha (sitekey: ${siteKey.substring(0, 12)}...)`);
+
+    const createRes = await fetch('https://api.capmonster.cloud/createTask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            clientKey: capmonsterKey,
+            task: {
+                type: 'HCaptchaTaskProxyless',
+                websiteURL: websiteUrl,
+                websiteKey: siteKey,
+            }
+        })
+    });
+    const createData = await createRes.json();
+    if (createData.errorId) throw new Error('CapMonster hCaptcha: ' + (createData.errorCode || 'unknown'));
+
+    const taskId = createData.taskId;
+    console.log(`[Captcha] ⏳ Task ID: ${taskId} — aguardando solução...`);
+
+    // Poll for result (max 120s — hCaptcha pode demorar mais)
+    for (let i = 0; i < 40; i++) {
+        await sleep(3000);
+        const res = await fetch('https://api.capmonster.cloud/getTaskResult', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clientKey: capmonsterKey, taskId })
+        });
+        const result = await res.json();
+        if (result.status === 'ready') {
+            console.log(`[Captcha] ✅ hCaptcha resolvido! (${(i + 1) * 3}s)`);
+            return result.solution.gRecaptchaResponse;
+        }
+        if (result.errorId) throw new Error('CapMonster hCaptcha poll: ' + result.errorCode);
+    }
+    throw new Error('CapMonster hCaptcha timeout (120s)');
+}
+
+module.exports = { solveCaptcha, solveCaptchaBase64, solveHCaptcha };

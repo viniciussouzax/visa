@@ -1,4 +1,4 @@
-// DS-160 Filler — extracted from the working Playwright test
+// DS-160 Filler ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â extracted from the working Playwright test
 // Uses Playwright's OWN Chromium (not user's Chrome)
 const { chromium } = require('playwright');
 const path = require('path');
@@ -6,7 +6,7 @@ const fs = require('fs');
 const { solveCaptcha, solveCaptchaBase64 } = require('./captcha');
 
 // ====================================================================
-// MODULES — modular architecture (helpers + generic page filler)
+// MODULES ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â modular architecture (helpers + generic page filler)
 // ====================================================================
 const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = require('./field-map');
 const { fillPage, verifyPage } = require('./pages/generic-page');
@@ -26,7 +26,7 @@ const TMP = path.join(__dirname, '..', 'tmp');
  * @param {object} config - From automation_config table
  * @param {string} captchaMode - 'capmonster' | 'ai_vision'
  * @param {function} onPage - Callback(pageName) for status updates
- * @param {function} [onPageFilled] - Callback(pageStats) for fill_logs — called after each page is filled
+ * @param {function} [onPageFilled] - Callback(pageStats) for fill_logs ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â called after each page is filled
  * @param {object} [existingBrowser] - Reuse this browser instead of creating new
  * @param {object} [existingPage] - Reuse this page instead of creating new
  * @returns {{ success: boolean, applicationId?: string, error?: string, browser, activePage }}
@@ -64,10 +64,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
     if (!profile.email) missingFields.push('addressPhone.email');
 
     if (missingFields.length > 0) {
-        console.warn(`[Filler] ⚠️ DADOS FALTANTES (${missingFields.length}): ${missingFields.join(', ')}`);
+        console.warn(`[Filler] ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â DADOS FALTANTES (${missingFields.length}): ${missingFields.join(', ')}`);
         return {
             success: false,
-            error: `Dados faltantes no formulário: ${missingFields.join(', ')}`,
+            error: `Dados faltantes no formulÃƒÆ’Ã‚Â¡rio: ${missingFields.join(', ')}`,
             cause: 'missing_data',
             missingFields
         };
@@ -86,18 +86,18 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 if (contexts.length > 0 && existingPage && !existingPage.isClosed()) {
                     // Reuse existing page
                     page = existingPage;
-                    console.log('[Filler] Reutilizando browser e página existentes');
+                    console.log('[Filler] Reutilizando browser e pÃƒÆ’Ã‚Â¡gina existentes');
                 } else {
-                    // Browser alive but page gone — create new page
+                    // Browser alive but page gone ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â create new page
                     const ctx = contexts[0] || await browser.newContext({ viewport: { width: 1280, height: 900 } });
                     page = await ctx.newPage();
                     page.setDefaultTimeout(15000);
                     page.setDefaultNavigationTimeout(30000);
                     page.on('dialog', async d => d.accept().catch(() => { }));
-                    console.log('[Filler] Reutilizando browser, nova página');
+                    console.log('[Filler] Reutilizando browser, nova pÃƒÆ’Ã‚Â¡gina');
                 }
             } catch {
-                // Browser crashed — create new one
+                // Browser crashed ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â create new one
                 existingBrowser = null;
                 browser = null;
             }
@@ -124,10 +124,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
         // Block unnecessary resources (analytics, tracking) for faster page loads
         await page.route('**/{google-analytics.com,googletagmanager.com,ssl.google-analytics.com,eum.state.gov}/**', route => route.abort());
-        await page.route('**/*.{woff,woff2,ttf,otf}', route => route.abort()); // Block fonts (not needed for form filling)
+        // Font blocking removed ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â minimal perf gain but risks affecting captcha rendering
 
         // =============================================================
-        // SMART SESSION DETECTION — decide best action
+        // SMART SESSION DETECTION ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â decide best action
         // =============================================================
         let skipToFilling = false;  // Skip Landing/Captcha/Security, go straight to fill loop
         let useRetrieve = false;    // Use "Retrieve Application" instead of "Start New"
@@ -135,11 +135,11 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
         if (existingPage && page === existingPage) {
             const currentUrl = page.url();
             const currentPageName = identifyPage(currentUrl);
-            console.log(`[Filler] 🔍 Sessão existente detectada — URL: ${currentUrl}, Página: ${currentPageName}`);
+            console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â SessÃƒÆ’Ã‚Â£o existente detectada ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â URL: ${currentUrl}, PÃƒÆ’Ã‚Â¡gina: ${currentPageName}`);
 
-            // Scenario A: Already at Review/Confirmation → mark as done immediately
+            // Scenario A: Already at Review/Confirmation ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ mark as done immediately
             if (currentPageName === 'Review' || currentPageName === 'Confirmation') {
-                console.log(`[Filler] ✅ Sessão já está no ${currentPageName} — marcando como concluído`);
+                console.log(`[Filler] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ SessÃƒÆ’Ã‚Â£o jÃƒÆ’Ã‚Â¡ estÃƒÆ’Ã‚Â¡ no ${currentPageName} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â marcando como concluÃƒÆ’Ã‚Â­do`);
                 // Try to capture application_id from page
                 const headerAppId = await page.locator("span[id$='_lblAppID'], span[id$='_lblBarcode']").first().innerText().catch(() => '');
                 const appMatch = headerAppId.match(/[A-Z]{2}[A-Z0-9]{8,}/);
@@ -147,20 +147,20 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 return { success: true, applicationId: application.application_id || null, browser, activePage: page };
             }
 
-            // Scenario B: Active form page → continue from where we left off
+            // Scenario B: Active form page ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ continue from where we left off
             const isTimedOut = currentUrl.includes('TimedOut') || currentUrl.includes('SessionTimedOut');
             const isOnLanding = currentUrl.includes('Default.aspx');
             let sessionExpired = isTimedOut;
 
             // If on SessionTimedOut page, click OK to dismiss and go back to Landing
             if (isTimedOut) {
-                console.log('[Filler] ⏰ Session timeout detectado — clicando OK para voltar ao Landing');
+                console.log('[Filler] ÃƒÂ¢Ã‚ÂÃ‚Â° Session timeout detectado ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â clicando OK para voltar ao Landing');
                 const okBtn = page.getByRole('button', { name: 'OK' });
                 if (await okBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
                     await okBtn.click();
                     await page.waitForLoadState('domcontentloaded').catch(() => { });
                     await waitForPageReady(page);
-                    console.log('[Filler] ✅ OK clicado, redirecionado para:', page.url());
+                    console.log('[Filler] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ OK clicado, redirecionado para:', page.url());
                 }
             }
 
@@ -171,23 +171,23 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             }
 
             if (!sessionExpired && !isOnLanding && currentPageName !== 'Unknown' && currentPageName !== 'Landing') {
-                console.log(`[Filler] ♻️ Sessão ativa na página: ${currentPageName} — continuando preenchimento`);
+                console.log(`[Filler] ÃƒÂ¢Ã¢â€žÂ¢Ã‚Â»ÃƒÂ¯Ã‚Â¸Ã‚Â SessÃƒÆ’Ã‚Â£o ativa na pÃƒÆ’Ã‚Â¡gina: ${currentPageName} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â continuando preenchimento`);
                 skipToFilling = true;
                 await waitForPageReady(page);
             }
-            // Scenario C: Session expired/Landing BUT we have an application_id → use Retrieve
+            // Scenario C: Session expired/Landing BUT we have an application_id ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ use Retrieve
             else if (application.application_id) {
-                console.log(`[Filler] 🔄 Sessão expirada mas app_id existe (${application.application_id}) — usando Retrieve Application`);
+                console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Å¾ SessÃƒÆ’Ã‚Â£o expirada mas app_id existe (${application.application_id}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â usando Retrieve Application`);
                 useRetrieve = true;
             }
-            // Scenario D: No app_id → start fresh
+            // Scenario D: No app_id ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ start fresh
             else {
-                console.log(`[Filler] 🆕 Sem app_id — iniciando nova aplicação`);
+                console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â¢ Sem app_id ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â iniciando nova aplicaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o`);
             }
         }
-        // No existing page but we have an app_id → also use Retrieve
+        // No existing page but we have an app_id ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ also use Retrieve
         else if (application.application_id) {
-            console.log(`[Filler] 🔄 Novo browser mas app_id existe (${application.application_id}) — usando Retrieve Application`);
+            console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Å¾ Novo browser mas app_id existe (${application.application_id}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â usando Retrieve Application`);
             useRetrieve = true;
         }
 
@@ -200,31 +200,31 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
         if (!skipToFilling) {
             // ============================================================
             // STEP 1: Landing page
-            // Flow: 1) Location → 2) Wait loading → 3) Modal check → 4) Captcha → 5) Click Start/Retrieve
+            // Flow: 1) Location ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 2) Wait loading ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 3) Modal check ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 4) Captcha ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 5) Click Start/Retrieve
             // ============================================================
             onPage('Landing');
             const location = profile.location;
 
-            // ── 1) SELECT LOCATION ──
+            // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 1) SELECT LOCATION ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
             const locSelect = page.locator("select[id$='_ddlLocation']");
             if (await locSelect.isVisible().catch(() => false)) {
                 await locSelect.selectOption(location);
                 console.log(`[Landing] 1/5 Location selected: ${location}`);
             }
 
-            // ── 2) WAIT FOR LOADING (postback after location change) ──
+            // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 2) WAIT FOR LOADING (postback after location change) ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
             await waitForPostback(page);
             await waitForPageReady(page);
             console.log('[Landing] 2/5 Page loaded after location select');
 
-            // ── 3) CHECK & CLOSE MODAL (if present) ──
+            // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 3) CHECK & CLOSE MODAL (if present) ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
             // Some locations (e.g. RCF/Recife) show "Additional Location Information" modal.
             // MUST click Close (triggering postback) to keep ASP.NET session state consistent.
             // DOM-only hide causes "Session expired" because server state becomes stale.
             let modalDismissed = false;
             try {
                 await page.waitForSelector('.modalBackground', { state: 'visible', timeout: 5000 });
-                console.log('[Landing] 3/5 Modal detected — clicking Close (postback)...');
+                console.log('[Landing] 3/5 Modal detected ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â clicking Close (postback)...');
                 const closeBtn = page.locator('[id*="lnkClose"]').first();
                 if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
                     await closeBtn.click();
@@ -233,13 +233,13 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 await page.waitForSelector('.modalBackground', { state: 'hidden', timeout: 10000 }).catch(() => { });
                 await waitForPageReady(page);
                 modalDismissed = true;
-                console.log('[Landing] 3/5 Modal closed via postback — page stable, new captcha ready');
+                console.log('[Landing] 3/5 Modal closed via postback ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â page stable, new captcha ready');
             } catch {
-                // No modal appeared within timeout — that's fine
-                console.log('[Landing] 3/5 No modal — skipping');
+                // No modal appeared within timeout ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â that's fine
+                console.log('[Landing] 3/5 No modal ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â skipping');
             }
 
-            // ── 4) SOLVE CAPTCHA ──
+            // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 4) SOLVE CAPTCHA ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
             // At this point page is fully stable, no modal, captcha image is ready
             let landingPassed = false;
             for (let attempt = 1; attempt <= 3; attempt++) {
@@ -263,10 +263,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 } catch (e) {
                     console.warn(`[Landing] 4/5 Captcha attempt ${attempt} failed:`, e.message);
                     if (attempt < 3) { await sleep(1000); continue; }
-                    return { success: false, error: 'Captcha não resolvido após 3 tentativas', cause: 'captcha_failed', browser, activePage: page };
+                    return { success: false, error: 'Captcha nÃƒÆ’Ã‚Â£o resolvido apÃƒÆ’Ã‚Â³s 3 tentativas', cause: 'captcha_failed', browser, activePage: page };
                 }
 
-                // ── 4.5) PRE-CLICK: dismiss any modal that reappeared ──
+                // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 4.5) PRE-CLICK: dismiss any modal that reappeared ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
                 // Safety net: hide modal via DOM if it showed up during captcha solve
                 const preclickDismissed = await page.evaluate(() => {
                     const bg = document.querySelector('.modalBackground');
@@ -282,7 +282,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     console.log('[Landing] 4.5 Modal hidden via DOM before click');
                 }
 
-                // ── 5) CLICK START or RETRIEVE ──
+                // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 5) CLICK START or RETRIEVE ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
                 if (useRetrieve) {
                     console.log(`[Landing] 5/5 Retrieve Application: ${application.application_id}`);
 
@@ -316,14 +316,14 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     const stillOnLanding = currentUrl.includes('Default.aspx');
 
                     if (hasError || stillOnLanding) {
-                        console.warn(`[Landing] 5/5 Retrieve failed (attempt ${attempt}) — captcha wrong or invalid app_id`);
+                        console.warn(`[Landing] 5/5 Retrieve failed (attempt ${attempt}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â captcha wrong or invalid app_id`);
                         if (attempt < 3) { await sleep(1000); continue; }
-                        console.log('[Landing] Retrieve falhou 3x — tentando Start New como fallback');
+                        console.log('[Landing] Retrieve falhou 3x ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tentando Start New como fallback');
                         useRetrieve = false;
                         continue;
                     }
 
-                    console.log(`[Landing] 5/5 ✅ Retrieve successful`);
+                    console.log(`[Landing] 5/5 ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Retrieve successful`);
                     landingPassed = true;
                     break;
                 } else {
@@ -350,12 +350,12 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     const stillOnLanding = currentUrl.includes('Default.aspx') || (!currentUrl.includes('SecureQuestion') && !currentUrl.includes('ConfirmApplicationID') && !currentUrl.includes('complete_'));
 
                     if (hasError || stillOnLanding) {
-                        console.warn(`[Landing] 5/5 Captcha wrong (attempt ${attempt}) — page didn't advance`);
+                        console.warn(`[Landing] 5/5 Captcha wrong (attempt ${attempt}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â page didn't advance`);
                         if (attempt < 3) await sleep(1000);
                         continue;
                     }
 
-                    console.log(`[Landing] 5/5 ✅ Start successful`);
+                    console.log(`[Landing] 5/5 ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Start successful`);
                     landingPassed = true;
                     break;
                 }
@@ -387,7 +387,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     const secAnswer = config.security_answer || profile.securityAnswer || '';
                     await page.locator("input[id$='_txtAnswer']").fill(secAnswer);
                 } else {
-                    console.log('[Filler] Security question already set (disabled) — skipping');
+                    console.log('[Filler] Security question already set (disabled) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â skipping');
                     // Still fill answer if input is enabled
                     const answerInput = page.locator("input[id$='_txtAnswer']");
                     const answerDisabled = await answerInput.evaluate(el => el.disabled).catch(() => true);
@@ -470,17 +470,17 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             onPage(pageName);
             visited.push(pageName);
 
-            // Capture application_id — the ID format is AA00XXXXXX (2 letters + 8+ alphanumeric)
-            // e.g. AA00FCUFGX — contains LETTERS after the initial prefix, NOT just digits!
+            // Capture application_id ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the ID format is AA00XXXXXX (2 letters + 8+ alphanumeric)
+            // e.g. AA00FCUFGX ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â contains LETTERS after the initial prefix, NOT just digits!
             if (!application.application_id) {
-                // Strategy 0: #content-main — the Application ID is visible on EVERY DS-160 page
+                // Strategy 0: #content-main ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the Application ID is visible on EVERY DS-160 page
                 try {
                     const contentMain = page.locator('#content-main');
                     const mainText = await contentMain.innerText({ timeout: 2000 }).catch(() => '');
                     const contentMatch = mainText.match(/\b([A-Z]{2}[A-Z0-9]{8,})\b/);
                     if (contentMatch) {
                         application.application_id = contentMatch[1];
-                        console.log(`[Filler] 🆔 Application ID (from #content-main): ${contentMatch[1]}`);
+                        console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â Application ID (from #content-main): ${contentMatch[1]}`);
                         if (typeof onAppId === 'function') onAppId(contentMatch[1]);
                     }
                 } catch { }
@@ -506,7 +506,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                                 const match = text.match(/[A-Z]{2}[A-Z0-9]{8,}/);
                                 if (match) {
                                     application.application_id = match[0];
-                                    console.log(`[Filler] 🆔 Application ID (from header "${sel}"): ${match[0]}`);
+                                    console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â Application ID (from header "${sel}"): ${match[0]}`);
                                     if (typeof onAppId === 'function') onAppId(match[0]);
                                     break;
                                 }
@@ -521,7 +521,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         || url.match(/\/([A-Z]{2}[A-Z0-9]{8,})\//);
                     if (urlAppIdMatch) {
                         application.application_id = urlAppIdMatch[1];
-                        console.log(`[Filler] 🆔 Application ID (from URL): ${urlAppIdMatch[1]}`);
+                        console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â Application ID (from URL): ${urlAppIdMatch[1]}`);
                         if (typeof onAppId === 'function') onAppId(urlAppIdMatch[1]);
                     }
                 }
@@ -537,7 +537,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         });
                         if (bodyText) {
                             application.application_id = bodyText;
-                            console.log(`[Filler] 🆔 Application ID (from page text): ${bodyText}`);
+                            console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â Application ID (from page text): ${bodyText}`);
                             if (typeof onAppId === 'function') onAppId(bodyText);
                         }
                     } catch { }
@@ -545,10 +545,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             }
 
             // ====== RECOVERY PAGE: Retrieve a DS-160 Application ======
-            // Phase 1: App ID + Captcha → click Retrieve
-            // Phase 2: App ID (disabled) + Surname (5 letters) + Year of Birth + Security Answer → click Retrieve
+            // Phase 1: App ID + Captcha ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ click Retrieve
+            // Phase 2: App ID (disabled) + Surname (5 letters) + Year of Birth + Security Answer ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ click Retrieve
             if (pageName === 'Recovery') {
-                console.log(`[Filler] 🔄 Recovery.aspx detectada — recuperando aplicação`);
+                console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Å¾ Recovery.aspx detectada ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â recuperando aplicaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o`);
                 onPage('Recovery');
 
                 let recoveryDone = false;
@@ -569,7 +569,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         // ====== PHASE 2: Security Questions ======
                         console.log(`[Filler] Recovery FASE 2: Security Questions (tentativa ${rAttempt})`);
 
-                        // Surname — first 5 letters, uppercase
+                        // Surname ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â first 5 letters, uppercase
                         const surname5 = (profile.surname || '').substring(0, 5).toUpperCase();
                         await surnameField.fill(surname5);
                         console.log(`[Filler] Recovery: Surname preenchido: ${surname5}`);
@@ -633,7 +633,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         await retrieveBtn.click();
                         console.log('[Filler] Recovery: clicou Retrieve Application');
                     } else {
-                        console.warn('[Filler] Recovery: botão Retrieve não encontrado');
+                        console.warn('[Filler] Recovery: botÃƒÆ’Ã‚Â£o Retrieve nÃƒÆ’Ã‚Â£o encontrado');
                     }
 
                     await sleep(3000);
@@ -641,7 +641,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
                     const newUrl = page.url();
                     if (!newUrl.includes('Recovery.aspx')) {
-                        console.log(`[Filler] ✅ Recovery bem-sucedido — navegou para: ${newUrl}`);
+                        console.log(`[Filler] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Recovery bem-sucedido ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â navegou para: ${newUrl}`);
                         recoveryDone = true;
                         break;
                     }
@@ -652,43 +652,43 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         console.warn(`[Filler] Recovery erro: ${errorText.substring(0, 100)}`);
                     }
 
-                    console.warn(`[Filler] Recovery tentativa ${rAttempt} falhou — ainda em Recovery.aspx`);
+                    console.warn(`[Filler] Recovery tentativa ${rAttempt} falhou ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ainda em Recovery.aspx`);
                 }
 
                 if (!recoveryDone) {
-                    throw new Error('Recovery.aspx: falhou 5x ao tentar recuperar aplicação');
+                    throw new Error('Recovery.aspx: falhou 5x ao tentar recuperar aplicaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o');
                 }
                 continue; // Re-enter loop to identify the new page
             }
 
-            // Detectar páginas desconhecidas e tentar recovery
+            // Detectar pÃƒÆ’Ã‚Â¡ginas desconhecidas e tentar recovery
             if (pageName === 'Unknown') {
-                console.warn(`[Filler] ⚠️ Página desconhecida: ${url}`);
+                console.warn(`[Filler] ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â PÃƒÆ’Ã‚Â¡gina desconhecida: ${url}`);
 
-                // Verificar se é timeout/session expired
+                // Verificar se ÃƒÆ’Ã‚Â© timeout/session expired
                 const pageText = await page.locator('body').innerText().catch(() => '');
                 const isTimeout = /timeout|session.*expired|timed out|idle/i.test(pageText);
                 const isWarning = /warning|continue.*application|recover/i.test(pageText);
 
                 if (isTimeout) {
-                    console.warn('[Filler] ⏰ Session timeout detectado na página — clicando OK');
+                    console.warn('[Filler] ÃƒÂ¢Ã‚ÂÃ‚Â° Session timeout detectado na pÃƒÆ’Ã‚Â¡gina ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â clicando OK');
                     // Try to click OK button to dismiss timeout dialog
                     const okBtn = page.getByRole('button', { name: 'OK' });
                     if (await okBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
                         await okBtn.click();
                         await page.waitForLoadState('domcontentloaded').catch(() => { });
                         await waitForPageReady(page);
-                        console.log('[Filler] ✅ OK clicado, redirecionado para:', page.url());
+                        console.log('[Filler] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ OK clicado, redirecionado para:', page.url());
                         continue; // Re-enter loop to handle the new page (Landing)
                     }
                     // If no OK button found, throw
-                    console.error('[Filler] 🔴 Session expirada sem botão OK');
+                    console.error('[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â´ Session expirada sem botÃƒÆ’Ã‚Â£o OK');
                     throw new Error('Session expired: ' + url);
                 }
 
                 if (isWarning) {
-                    console.warn('[Filler] ⚠️ Página de warning — tentando continuar');
-                    // Tentar clicar em botões de continuação/recovery
+                    console.warn('[Filler] ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â PÃƒÆ’Ã‚Â¡gina de warning ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tentando continuar');
+                    // Tentar clicar em botÃƒÆ’Ã‚Âµes de continuaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o/recovery
                     const recoveryBtns = [
                         "input[value*='Continue']",
                         "input[value*='OK']",
@@ -711,8 +711,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     if (recovered) continue;
                 }
 
-                // Se chegou aqui, página desconhecida sem recovery
-                console.error(`[Filler] 🔴 Página desconhecida sem recovery: ${url}`);
+                // Se chegou aqui, pÃƒÆ’Ã‚Â¡gina desconhecida sem recovery
+                console.error(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â´ PÃƒÆ’Ã‚Â¡gina desconhecida sem recovery: ${url}`);
                 throw new Error(`Unknown page: ${url}`);
             }
 
@@ -748,7 +748,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         const id = await r.getAttribute('id').catch(() => '');
                         if (id) yesIds.push(id.replace(/_0$/, ''));
                     }
-                    console.warn(`[Filler] ⚠️ SECURITY: ${answeredYes} respostas YES: ${yesIds.join(', ')}`);
+                    console.warn(`[Filler] ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â SECURITY: ${answeredYes} respostas YES: ${yesIds.join(', ')}`);
                 }
                 console.log(`[Filler] Security: ${answeredYes} Yes, ${answeredNo} No (${totalRadioGroups} perguntas)`);
                 // Report security page stats via callback
@@ -762,18 +762,18 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             // ====== FILL PAGE (modular) + VERIFY + NEXT ======
             let fillResult = null;
             for (let attempt = 1; attempt <= 3; attempt++) {
-                // Travel page: handler especializado (elimina esperas desnecessárias)
+                // Travel page: handler especializado (elimina esperas desnecessÃƒÆ’Ã‚Â¡rias)
                 if (pageName === 'Travel') {
                     fillResult = await fillTravelPage(page, fieldMap, profile);
                 } else {
-                    // Fill using generic-page module (4 phases: postback → Add Another → non-postback → text)
+                    // Fill using generic-page module (4 phases: postback ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Add Another ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ non-postback ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ text)
                     fillResult = await fillPage(page, fieldMap);
                 }
 
-                // VERIFICAÇÃO OBRIGATÓRIA antes de Next
+                // VERIFICAÃƒÆ’Ã¢â‚¬Â¡ÃƒÆ’Ã†â€™O OBRIGATÃƒÆ’Ã¢â‚¬Å“RIA antes de Next
                 const verification = await verifyPage(page);
                 if (!verification.ok && attempt < 3) {
-                    console.warn(`[Filler] Verificação falhou (tentativa ${attempt}): ${verification.empty.length} vazios — re-preenchendo`);
+                    console.warn(`[Filler] VerificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o falhou (tentativa ${attempt}): ${verification.empty.length} vazios ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â re-preenchendo`);
                     continue;
                 }
 
@@ -868,7 +868,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
         return { success: false, error: e.message, stack: e.stack, field, page: currentPage, cause, validationErrors, browser, activePage: page };
     }
-    // NOTE: browser is NOT closed here — caller (queue.js) decides when to close
+    // NOTE: browser is NOT closed here ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â caller (queue.js) decides when to close
 }
 
 // ====================================================================
@@ -943,7 +943,7 @@ async function waitForPostback(page) {
 async function waitForPageReady(page, timeout = 2000) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
-        // Evaluate ÚNICO: scroll + count + postback check
+        // Evaluate ÃƒÆ’Ã…Â¡NICO: scroll + count + postback check
         const { count, inPB } = await page.evaluate(() => {
             window.scrollTo(0, document.body.scrollHeight);
             window.scrollTo(0, 0);
@@ -968,499 +968,8 @@ async function waitForUrlChange(page, urlBefore, timeout = 4000) {
     await waitForPageReady(page);
 }
 
-async function fillPageCompletely(page, fieldMap) {
-    await waitForPageReady(page);
-    const pageStart = Date.now();
-    let pass = 0, needsRescan = true;
-    const postbackLog = [];
-    const addAnotherClicked = new Set(); // Track "list:idx" to prevent infinite Add Another
-    while (needsRescan && pass < 10) {
-        const result = await autoFillPass(page, fieldMap, pass, addAnotherClicked);
-        needsRescan = result.needsRescan;
-        if (result.postbackField) {
-            postbackLog.push(result.postbackField);
-        }
-        pass++;
-    }
-    const elapsed = ((Date.now() - pageStart) / 1000).toFixed(1);
-    if (postbackLog.length > 0) {
-        console.log(`[Filler] Postback triggers nesta página: ${postbackLog.join(' → ')}`);
-    }
-    // Detect empty fields that should have been filled — helps diagnose validation errors
-    const emptyFields = await page.evaluate(() => {
-        const empty = [];
-        document.querySelectorAll("select, input[type='text'], textarea").forEach(el => {
-            if (el.offsetParent !== null && !el.value && !el.disabled && el.id
-                && !/HelpButton|btnWarning|btnRecover|btnCancel|btnClient|btnNextPage/.test(el.id)) {
-                empty.push(el.id.split('_').pop());
-            }
-        });
-        return empty;
-    }).catch(() => []);
-    if (emptyFields.length > 0) {
-        console.warn(`[Filler] ⚠️ ${emptyFields.length} campos vazios após preenchimento: ${emptyFields.slice(0, 8).join(', ')}`);
-    }
-    console.log(`[Filler] Página preenchida em ${pass} pass(es) [${elapsed}s]${emptyFields.length > 0 ? ` — ${emptyFields.length} vazios` : ''}`);
-    return { passes: pass, postbackLog, elapsed: parseFloat(elapsed), emptyFields };
-}
-
-async function autoFillPass(page, fieldMap, passNum = 0, addAnotherClicked = new Set()) {
-    // Scroll rápido para forçar rendering
-    await page.evaluate(() => {
-        window.scrollTo(0, document.body.scrollHeight);
-        window.scrollTo(0, 0);
-    }).catch(() => { });
-    await sleep(50);
-    const fields = await discoverFields(page);
-    const visible = fields.filter(f => f.visible && f.id);
-    let postbackNeeded = false, filled = 0;
-    let postbackField = null;
-    const unmatched = [];
-    const fieldsBeforeCount = visible.length;
-
-    // PRIORITY ORDER: postback triggers first, then non-postback, then text last
-    // This prevents filling text fields that get hidden/reset by postbacks
-
-    // Phase 1: Clicks/radios that trigger postback (e.g. SpecificTravel, WhoIsPaying, LostPPT)
-    for (const field of visible) {
-        if (!field.id) continue;
-        if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
-        if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
-        const match = fieldMap.find(m => m.pattern.test(field.id));
-        if (!match) continue;
-        if (match.type !== 'click') continue;
-        if (!isPostbackClick(field.id, field.type)) continue;
-        if (field.checked) continue;
-
-        const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
-        try {
-            const isVis = await loc.isVisible({ timeout: 300 }).catch(() => false);
-            if (!isVis) continue;
-            await loc.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-            await loc.click();
-            filled++;
-            postbackNeeded = true;
-            postbackField = field.id;
-            break; // One postback at a time
-        } catch (e) { console.warn(`[Filler] Phase1 click error: ${field.id}`, e.message); }
-    }
-
-    // Phase 2: Selects with postback (e.g. WhoIsPaying dropdown, ddlLocation)
-    if (!postbackNeeded) {
-        for (const field of visible) {
-            if (!field.id || field.tag !== 'select') continue;
-            if (!isPostbackSelect(field.id)) continue;
-            const match = fieldMap.find(m => m.pattern.test(field.id));
-            if (!match) continue;
-            if (!isSelectEmpty(field.value)) continue;
-
-            const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
-            try {
-                const isVis = await loc.isVisible({ timeout: 300 }).catch(() => false);
-                if (!isVis) continue;
-                await loc.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-                if (match.type === 'select-label') {
-                    try { await loc.selectOption({ label: match.value }); }
-                    catch {
-                        // Fallback: fuzzy match by option text
-                        const opts = await loc.evaluate(sel => Array.from(sel.options).map(o => ({ v: o.value, t: o.text })));
-                        let found = opts.find(o => o.t.trim().toUpperCase() === match.value.trim().toUpperCase());
-                        if (!found) found = opts.find(o => o.t.toUpperCase().includes(match.value.trim().toUpperCase()));
-                        if (found) {
-                            await loc.selectOption(found.v);
-                            console.warn(`[Filler] ⚠️ SELECT FUZZY: ${field.id} — "${match.value}" → "${found.t}"`);
-                        } else {
-                            console.warn(`[Filler] ❌ SELECT SEM MATCH: ${field.id} — valor "${match.value}" não encontrado. Opções: ${opts.slice(0, 5).map(o => o.t).join(', ')}...`);
-                            continue;
-                        }
-                    }
-                } else if (match.type === 'select-search') {
-                    const allOpts = await loc.evaluate(sel =>
-                        Array.from(sel.options).map(o => ({ v: o.value, t: o.text }))
-                    );
-                    // Exact match first, then partial
-                    let found = allOpts.find(o => o.t.toUpperCase() === match.value.toUpperCase());
-                    if (!found) found = allOpts.find(o => o.t.toUpperCase().includes(match.value.toUpperCase()));
-                    if (!found) found = allOpts.find(o => o.v?.toUpperCase() === match.value.toUpperCase());
-                    if (!found) found = allOpts.find(o => o.v?.toUpperCase().includes(match.value.toUpperCase()));
-                    if (found) {
-                        await loc.selectOption(found.v);
-                    } else {
-                        console.warn(`[Filler] ❌ SELECT-SEARCH SEM MATCH: ${field.id} — valor "${match.value}" não encontrado. Opções: ${allOpts.slice(0, 5).map(o => o.t).join(', ')}...`);
-                        continue;
-                    }
-                } else {
-                    try { await loc.selectOption(match.value); }
-                    catch { try { await loc.selectOption({ label: match.value }); } catch { continue; } }
-                }
-                filled++;
-                postbackNeeded = true;
-                postbackField = field.id;
-                break;
-            } catch (e) { console.warn(`[Filler] Phase2 select error: ${field.id}`, e.message); }
-        }
-    }
-
-    // If postback needed, stop here and rescan after postback
-    if (postbackNeeded) {
-        if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} campos sem match:`, unmatched.slice(0, 10).join(', '));
-        console.log(`[Filler] Pass ${passNum} — ${filled}/${visible.length} preenchidos, ⏳ postback: ${postbackField}`);
-
-        await waitForPostback(page);
-        const fieldsAfter = await discoverFields(page);
-        const visibleAfter = fieldsAfter.filter(f => f.visible && f.id).length;
-        const delta = visibleAfter - fieldsBeforeCount;
-        if (delta !== 0) console.log(`[Filler] Postback ${postbackField}: ${delta > 0 ? '+' : ''}${delta} campos`);
-
-        // Wait-and-Verify: se postback não gerou campos novos, aguarda estabilização rápida
-        if (delta === 0) {
-            await waitForPageReady(page, 800);
-            const recheck = await discoverFields(page);
-            const recheckCount = recheck.filter(f => f.visible && f.id).length;
-            const delta2 = recheckCount - fieldsBeforeCount;
-            if (delta2 !== 0) {
-                console.log(`[Filler] Postback tardio ${postbackField}: +${delta2} campos após espera extra`);
-            } else {
-                console.log(`[Filler] Postback ${postbackField}: sem novos campos (postback de opções)`);
-            }
-        }
-
-        return { needsRescan: true, postbackField };
-    }
-
-    // Phase 2.5: "Add Another" — DS-160 DataList multi-entry mechanism
-    // Based on real DS-160 behavior (3 tested patterns):
-    // - Other Names: Fill ctl00 → "Add Another" link → Fill ctl01 → InsertButton ctl01 → Fill ctl02
-    // - Other Nationalities: Fill ctl00 → "Add Another" link → Fill ctl01 → InsertButton ctl01 → Fill ctl02
-    // - Permanent Resident: Fill ctl00 → InsertButton ctl00 → Fill ctl01 → InsertButton ctl01 → Fill ctl02
-    // SAFETY: max 5 Add Another per list, tracked by addAnotherClicked Set
-    const addAnotherEntries = fieldMap.filter(m => m.addAnother);
-    if (addAnotherEntries.length > 0) {
-        // Group by list name, process lowest pending index first
-        const pendingByList = {};
-        for (const entry of addAnotherEntries) {
-            const listName = entry.addAnother.list;
-            const trackKey = `${listName}:${entry.addAnother.idx}`;
-            if (addAnotherClicked.has(trackKey)) continue;
-            const fieldExists = visible.some(f => f.id && entry.pattern.test(f.id));
-            if (!fieldExists) {
-                if (!pendingByList[listName] || entry.addAnother.idx < pendingByList[listName].addAnother.idx) {
-                    pendingByList[listName] = entry;
-                }
-            }
-        }
-
-        for (const [listName, entry] of Object.entries(pendingByList)) {
-            const trackKey = `${listName}:${entry.addAnother.idx}`;
-
-            const listClickCount = [...addAnotherClicked].filter(k => k.startsWith(listName + ':')).length;
-            if (listClickCount >= 5) {
-                console.warn(`[Filler] ⚠️ Limite de Add Another atingido para "${listName}" (max 5)`);
-                addAnotherClicked.add(trackKey);
-                continue;
-            }
-
-            // Check if the PREVIOUS entry's fields are filled (guard against clicking InsertButton on empty entries)
-            // For idx=1, check ctl00; for idx=2, check ctl01; etc.
-            const prevIdx = entry.addAnother.idx - 1;
-            const prevCtl = `_ctl${String(prevIdx).padStart(2, '0')}_`;
-            const prevFieldsFilled = visible.some(f => f.id && f.id.includes(listName) && f.id.includes(prevCtl) &&
-                ((f.tag === 'select' && !isSelectEmpty(f.value)) || (f.tag === 'input' && f.value && f.value.trim())));
-
-            if (!prevFieldsFilled) {
-                // Previous entry fields are empty — they need to be filled first by Phase 3/4
-                // Don't click Add Another or InsertButton yet
-                continue;
-            }
-
-            console.log(`[Filler] 📋 Add Another necessário para "${listName}" (entry idx ${entry.addAnother.idx})`);
-
-            let clicked = false;
-
-            // Strategy 1: Find "Add Another" link by text near the DataList
-            try {
-                const addLinks = await page.locator(`a:has-text("Add Another")`).all().catch(() => []);
-                for (const link of addLinks) {
-                    const vis = await link.isVisible({ timeout: 500 }).catch(() => false);
-                    if (!vis) continue;
-                    const nearList = await link.evaluate((el, ln) => {
-                        let parent = el.parentElement;
-                        for (let i = 0; i < 10 && parent; i++) {
-                            if (parent.querySelector(`[id*="${ln}"]`)) return true;
-                            parent = parent.parentElement;
-                        }
-                        return false;
-                    }, listName).catch(() => false);
-
-                    if (nearList) {
-                        await link.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-                        await link.click();
-                        console.log(`[Filler] ✅ Clicou "Add Another" link para "${listName}" (por texto)`);
-                        await waitForPostback(page);
-                        clicked = true;
-                        break;
-                    }
-                }
-            } catch (e) {
-                console.warn(`[Filler] ⚠️ Add Another link search falhou:`, e.message);
-            }
-
-            // Strategy 2: InsertButton within the DataList
-            // Permanent Resident uses InsertButton directly (no "Add Another" link)
-            // Other lists use InsertButton for ctl01+ entries
-            if (!clicked) {
-                try {
-                    const insertBtns = await page.locator(`[id*="${listName}"][id*="InsertButton"]`).all().catch(() => []);
-                    // Click the LAST visible InsertButton (the one for the most recent entry)
-                    for (let i = insertBtns.length - 1; i >= 0; i--) {
-                        const btn = insertBtns[i];
-                        const vis = await btn.isVisible({ timeout: 500 }).catch(() => false);
-                        if (vis) {
-                            await btn.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-                            await btn.click();
-                            const btnId = await btn.getAttribute('id').catch(() => '');
-                            console.log(`[Filler] ✅ Clicou InsertButton para "${listName}" (${btnId})`);
-                            await waitForPostback(page);
-                            clicked = true;
-                            break;
-                        }
-                    }
-                } catch (e) {
-                    console.warn(`[Filler] ⚠️ InsertButton search falhou:`, e.message);
-                }
-            }
-
-            // Strategy 3: Generic "Add Another" link (last resort)
-            if (!clicked) {
-                try {
-                    const genericAdd = page.getByRole('link', { name: 'Add Another' }).first();
-                    if (await genericAdd.isVisible({ timeout: 500 }).catch(() => false)) {
-                        await genericAdd.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-                        await genericAdd.click();
-                        console.log(`[Filler] ✅ Clicou "Add Another" genérico para "${listName}"`);
-                        await waitForPostback(page);
-                        clicked = true;
-                    }
-                } catch (e) {
-                    console.warn(`[Filler] ⚠️ Generic Add Another falhou:`, e.message);
-                }
-            }
-
-            addAnotherClicked.add(trackKey);
-
-            if (!clicked) {
-                console.error(`[Filler] ❌ Add Another/InsertButton não encontrado para "${listName}" — pulando`);
-                continue;
-            }
-
-            // Wait for the target field to appear using Playwright's native waitForSelector
-            // Much faster and more reliable than polling loop (16×500ms + discoverFields)
-            try {
-                const targetIdx = entry.addAnother.idx;
-                const targetCtl = `_ctl${String(targetIdx).padStart(2, '0')}_`;
-                const targetSelector = `[id*="${listName}"][id*="${targetCtl}"]`;
-
-                try {
-                    await page.waitForSelector(targetSelector, { state: 'visible', timeout: 4000 });
-                    console.log(`[Filler] ✅ Novo entry (${targetCtl}) detectado para "${listName}"`);
-                } catch {
-                    // Retry: re-clica o último InsertButton/Add Another e tenta novamente
-                    console.warn(`[Filler] ⚠️ Timeout esperando ${targetSelector} — retry`);
-
-                    // Tenta re-clicar InsertButton
-                    const retryBtn = page.locator(`[id*="${listName}"][id*="InsertButton"]`).last();
-                    if (await retryBtn.isVisible({ timeout: 500 }).catch(() => false)) {
-                        await retryBtn.click();
-                    } else {
-                        // Fallback: re-clica Add Another link genérico
-                        const retryLink = page.getByRole('link', { name: 'Add Another' }).first();
-                        if (await retryLink.isVisible({ timeout: 500 }).catch(() => false)) {
-                            await retryLink.click();
-                        }
-                    }
-                    await waitForPostback(page);
-
-                    // Segunda tentativa de esperar o campo
-                    await page.waitForSelector(targetSelector, { state: 'visible', timeout: 4000 })
-                        .then(() => console.log(`[Filler] ✅ Retry bem-sucedido: ${targetCtl} para "${listName}"`))
-                        .catch(() => console.error(`[Filler] ❌ Add Another falhou após retry: ${targetSelector}`));
-                }
-            } catch (e) { console.warn(`[Filler] Add Another wait error: ${listName}`, e.message); }
-
-            return { needsRescan: true, postbackField: `AddAnother:${listName}` };
-        }
-    }
-
-
-
-    // Phase 3: Non-postback selects, clicks, checkboxes
-    for (const field of visible) {
-        if (!field.id) continue;
-        if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
-        if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
-        const match = fieldMap.find(m => m.pattern.test(field.id));
-        if (!match) { unmatched.push(field.id + '(' + field.type + ')'); continue; }
-        if (match.type === 'text') continue; // Done in Phase 4
-        if (match.type === 'click' && field.checked) continue;
-        if ((match.type === 'select' || match.type === 'select-label' || match.type === 'select-search') && !isSelectEmpty(field.value)) continue;
-        if (match.type === 'checkbox-check' && field.checked) continue;
-
-        const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
-        try {
-            const isVis = await loc.isVisible({ timeout: 300 }).catch(() => false);
-            if (!isVis) continue;
-            await loc.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-
-            switch (match.type) {
-                case 'select':
-                    try { await loc.selectOption(match.value); }
-                    catch { try { await loc.selectOption({ label: match.value }); } catch { await loc.selectOption({ index: 1 }).catch(() => { }); } }
-                    filled++;
-                    break;
-                case 'select-label':
-                    try { await loc.selectOption({ label: match.value }); }
-                    catch {
-                        const opts = await loc.evaluate(sel => Array.from(sel.options).map(o => ({ v: o.value, t: o.text })));
-                        let found = opts.find(o => o.t.trim().toUpperCase() === match.value.trim().toUpperCase());
-                        if (!found) found = opts.find(o => o.t.toUpperCase().includes(match.value.trim().toUpperCase()));
-                        if (found) {
-                            await loc.selectOption(found.v);
-                            console.warn(`[Filler] ⚠️ SELECT-LABEL FUZZY: ${field.id} — "${match.value}" → "${found.t}"`);
-                        } else {
-                            console.warn(`[Filler] ❌ SELECT-LABEL SEM MATCH: ${field.id} — valor "${match.value}" não encontrado`);
-                        }
-                    }
-                    filled++;
-                    break;
-                case 'select-search': {
-                    const allOpts = await loc.evaluate(sel =>
-                        Array.from(sel.options).map(o => ({ v: o.value, t: o.text }))
-                    );
-                    // Exact match first, then partial — prevents BAHAMAS→BANGLADESH
-                    let found = allOpts.find(o => o.t.toUpperCase() === match.value.toUpperCase());
-                    if (!found) found = allOpts.find(o => o.t.toUpperCase().includes(match.value.toUpperCase()));
-                    if (!found) found = allOpts.find(o => o.v?.toUpperCase() === match.value.toUpperCase());
-                    if (!found) found = allOpts.find(o => o.v?.toUpperCase().includes(match.value.toUpperCase()));
-                    if (!found) found = allOpts.find(o => o.v && o.v !== '' && o.v !== '-1' && !o.t.toUpperCase().includes('SELECT'));
-                    if (found) { await loc.selectOption(found.v); filled++; }
-                    break;
-                }
-                case 'click':
-                    await loc.click();
-                    filled++;
-                    break;
-                case 'checkbox-check':
-                    await loc.check();
-                    filled++;
-                    break;
-                case 'radio': {
-                    // Radio: field.id is the radio's name pattern from field-map
-                    // DS-160 radios: id$='_0' = Yes, id$='_1' = No
-                    // match.value = 'Y' → click Yes (_0), 'N' or anything else → click No (_1)
-                    const suffix = match.value === 'Y' ? '_0' : '_1';
-                    // Find the actual radio by appending suffix to the matched field's base name
-                    const baseId = field.id.replace(/_(0|1)$/, '');
-                    const targetId = baseId + suffix;
-                    const radioLoc = page.locator(`#${targetId.replace(/\$/g, '\\$')}`);
-                    const radioVis = await radioLoc.isVisible({ timeout: 300 }).catch(() => false);
-                    if (radioVis) {
-                        const alreadyChecked = await radioLoc.isChecked().catch(() => false);
-                        if (!alreadyChecked) {
-                            await radioLoc.click();
-                        }
-                        filled++;
-                    }
-                    break;
-                }
-            }
-        } catch (e) { console.warn(`[Filler] Phase3 error: ${field.id}`, e.message); }
-    }
-
-    // Phase 4: Fill text fields — hybrid approach
-    // Critical fields (address, phone, etc.) use locator.fill() for ASP.NET validator support
-    // Normal fields use batch evaluate for performance
-    const textBatch = [];
-    for (const field of visible) {
-        if (!field.id) continue;
-        if (field.type === 'submit' || field.type === 'image' || field.type === 'button') continue;
-        if (/HelpButton|btnWarning|btnRecover|btnOkWarning|btnCancel|btnClient|btnReviewPage|btnNextPage|btnModalHolder/.test(field.id)) continue;
-        const match = fieldMap.find(m => m.pattern.test(field.id));
-        if (!match) continue;
-        if (match.type === 'text' && (!field.value || field.value.trim() === '') && match.value != null) {
-            textBatch.push({ id: field.id, value: String(match.value).trim() });
-        }
-    }
-
-    if (textBatch.length > 0) {
-        // Separate critical fields that need Playwright native fill (dispara blur/validators ASP.NET)
-        const CRITICAL = /Address|Street|City|Phone|Payer|Employer|Salary|Income|Occupation/i;
-        const criticalBatch = textBatch.filter(f => CRITICAL.test(f.id));
-        const normalBatch = textBatch.filter(f => !CRITICAL.test(f.id));
-
-        // Critical fields: Playwright locator.fill() — triggers blur, change, validators
-        for (const { id, value } of criticalBatch) {
-            try {
-                const loc = page.locator(`#${id.replace(/\$/g, '\\$')}`);
-                const isVis = await loc.isVisible({ timeout: 300 }).catch(() => false);
-                if (isVis) {
-                    await loc.fill(value);
-                    filled++;
-                }
-            } catch (e) { console.warn(`[Filler] Phase4 critical fill error: ${id}`, e.message); }
-        }
-        if (criticalBatch.length > 0) {
-            console.log(`[Filler] Phase4 critical: ${criticalBatch.length} campos via locator.fill()`);
-        }
-
-        // Normal fields: batch evaluate (fast, single round-trip)
-        if (normalBatch.length > 0) {
-            const batchFilled = await page.evaluate((batch) => {
-                let count = 0;
-                batch.forEach(({ id, value }) => {
-                    const el = document.getElementById(id);
-                    if (el && (!el.value || el.value.trim() === '')) {
-                        try {
-                            const proto = el.tagName === 'TEXTAREA'
-                                ? window.HTMLTextAreaElement.prototype
-                                : window.HTMLInputElement.prototype;
-                            const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
-                            if (setter) setter.call(el, value);
-                            else el.value = value;
-                        } catch { el.value = value; }
-                        el.dispatchEvent(new Event('input', { bubbles: true }));
-                        el.dispatchEvent(new Event('change', { bubbles: true }));
-                        count++;
-                    }
-                });
-                return count;
-            }, normalBatch);
-            filled += batchFilled;
-            console.log(`[Filler] Phase4 batch: ${batchFilled} campos via evaluate()`);
-        }
-    }
-
-    if (unmatched.length > 0) console.warn(`[Filler] Pass ${passNum} — ${unmatched.length} sem match:`, unmatched.slice(0, 10).join(', '));
-    console.log(`[Filler] Pass ${passNum} — ${filled}/${visible.length} preenchidos`);
-    return { needsRescan: false, postbackField: null };
-}
-
-async function discoverFields(page) {
-    return page.evaluate(() => {
-        const fields = [];
-        document.querySelectorAll('select').forEach(sel => {
-            if (sel.id.includes('ddlLanguage')) return;
-            fields.push({ tag: 'select', id: sel.id, visible: sel.offsetParent !== null, value: sel.value, optCount: sel.options.length });
-        });
-        document.querySelectorAll('input').forEach(inp => {
-            if (inp.type === 'hidden') return;
-            fields.push({ tag: 'input', id: inp.id, type: inp.type, visible: inp.offsetParent !== null || inp.type === 'radio' || inp.type === 'checkbox', value: inp.value, checked: inp.checked });
-        });
-        document.querySelectorAll('textarea').forEach(ta => {
-            fields.push({ tag: 'textarea', id: ta.id, visible: ta.offsetParent !== null, value: ta.value });
-        });
-        return fields;
-    });
-}
+// fillPage + verifyPage -> imported from pages/generic-page.js
+// fillPageCompletely + autoFillPass + discoverFields -> REMOVIDOS (codigo legado, substituido por generic-page.js)
 
 async function clickNextAndWait(page) {
     const urlBefore = page.url();
@@ -1471,7 +980,7 @@ async function clickNextAndWait(page) {
     try {
         const modalBg = page.locator('div[id*="modalBackground"], div.modalBackground').first();
         if (await modalBg.isVisible({ timeout: 500 }).catch(() => false)) {
-            console.log('[Filler] 🔔 Modal detectado — tentando fechar...');
+            console.log('[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Â Modal detectado ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tentando fechar...');
 
             // Try clicking OK/Continue/Yes buttons inside modal panels
             const modalBtns = [
@@ -1495,7 +1004,7 @@ async function clickNextAndWait(page) {
                 try {
                     if (await btn.isVisible({ timeout: 500 }).catch(() => false)) {
                         await btn.click({ force: true });
-                        console.log(`[Filler] ✅ Modal fechado via: ${sel}`);
+                        console.log(`[Filler] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Modal fechado via: ${sel}`);
                         await sleep(500);
                         await waitForPostback(page);
                         dismissed = true;
@@ -1506,7 +1015,7 @@ async function clickNextAndWait(page) {
 
             // Fallback: remove modal overlay via JavaScript
             if (!dismissed) {
-                console.log('[Filler] ⚡ Removendo modal overlay via JS');
+                console.log('[Filler] ÃƒÂ¢Ã…Â¡Ã‚Â¡ Removendo modal overlay via JS');
                 await page.evaluate(() => {
                     document.querySelectorAll('div[id*="modalBackground"], div.modalBackground').forEach(el => {
                         el.style.display = 'none';
@@ -1547,7 +1056,7 @@ async function clickNextAndWait(page) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ====================================================================
-// NORMALIZE — convert Supabase applicant.data to field-map profile format
+// NORMALIZE ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â convert Supabase applicant.data to field-map profile format
 // Handles both camelCase (JS form) and snake_case (DB) keys
 // ====================================================================
 function normalizeProfile(data) {
@@ -1656,7 +1165,7 @@ function normalizeProfile(data) {
             return countries[0]?.country;
         })(),
         nationalId: g(p2, 'nationalId', 'national_id'),
-        usSsn: p2.ssn && p2.ssn !== 'N/A' && p2.ssn !== 'DNA' ? p2.ssn.replace(/-/g, '') : null,
+        usSsn: p2.ssn && typeof p2.ssn === 'string' && p2.ssn !== 'N/A' && p2.ssn !== 'DNA' ? p2.ssn.replace(/-/g, '') : null,
         usTaxpayerId: p2.taxId && p2.taxId !== 'N/A' && p2.taxId !== 'DNA' ? p2.taxId : null,
 
         // === TRAVEL ===
@@ -1690,8 +1199,14 @@ function normalizeProfile(data) {
             },
             usAddress: (() => {
                 const ua = trav.usAddress || trav.us_address || {};
-                if (!ua.street1 && !ua.city && !ua.state) return null; // Missing — will be caught by validation
-                return { street1: ua.street1 || '', street2: ua.street2 || '', city: ua.city || '', state: ua.state || '', zip: ua.zip || ua.postalCode || '' };
+                // Support flat fields (usAddressStreet1, etc.) from clone form
+                const street1 = ua.street1 || trav.usAddressStreet1 || trav.us_address_street1 || '';
+                const street2 = ua.street2 || trav.usAddressStreet2 || trav.us_address_street2 || '';
+                const city = ua.city || trav.usAddressCity || trav.us_address_city || '';
+                const state = ua.state || trav.usAddressState || trav.us_address_state || '';
+                const zip = ua.zip || ua.postalCode || trav.usAddressZip || trav.us_address_zip || '';
+                if (!street1 && !city && !state) return null;
+                return { street1, street2, city, state, zip };
             })()
         },
         // Specific locations array for dtlTravelLoc addAnother support
@@ -1700,6 +1215,9 @@ function normalizeProfile(data) {
             if (Array.isArray(locs) && locs.length) return locs;
             const single = trav.specificLocation || trav.specific_location;
             if (single) return [single];
+            // Fallback: use arrivalCity as specific location when plans are specific
+            const city = trav.arrivalCity || trav.arrival_city;
+            if (city) return [city];
             return [];
         })(),
         payingForTrip: (() => {
@@ -1710,30 +1228,42 @@ function normalizeProfile(data) {
             return PAYER_MAP[raw.toUpperCase()] || raw;
         })(),
         payer: (() => {
-            const p = trav.payer;
-            if (!p) return null;
-            // Choose correct address source based on payer type
+            const p = trav.payer || {};
+            // Support flat fields from clone form (payerSurname, payerPersonStreet1, etc.)
+            const hasFlatPayer = !!(trav.payerSurname || trav.payerGivenName || trav.payerPhone);
+            const hasNestedPayer = !!(p.surname || p.givenName || p.phone || p.companyName);
+            if (!hasFlatPayer && !hasNestedPayer) return null;
+
             const payerType = (() => {
                 const raw = trav.whoIsPaying || trav.who_is_paying || null;
                 if (!raw) return null;
                 const PAYER_MAP = { 'OTH': 'O', 'SELF': 'S', 'COM': 'C', 'COMPANY': 'C', 'EMP': 'P', 'EMPLOYER': 'P', 'USE': 'U', 'USP': 'U' };
                 return PAYER_MAP[raw.toUpperCase()] || raw;
             })();
-            const addr = ['C', 'P', 'U'].includes(payerType) ? (p.companyAddress || p.address || {}) : (p.address || {});
-            // Treat placeholder/invalid values as null (triggers N/A checkbox in field-map)
+
             const INVALID = ['DNA', 'N/A', 'N-A', 'NA', 'XXX', 'NONE', 'N/D', ''];
             const cleanVal = (v) => (v && !INVALID.includes(String(v).trim().toUpperCase())) ? v : null;
-            return {
-                ...p,
-                email: cleanVal(p.email),
-                // phone: keep original — DS-160 requires payer phone (no N/A checkbox)
-                street1: p.street1 || addr.street1 || '',
-                street2: p.street2 || addr.street2 || '',
-                city: p.city || addr.city || '',
-                state: p.state || addr.state || '',
-                postalCode: p.postalCode || addr.postalCode || '',
-                country: p.country || addr.country || '',
-            };
+
+            // Build payer from flat or nested fields
+            const surname = p.surname || trav.payerSurname || trav.payer_surname || '';
+            const givenName = p.givenName || trav.payerGivenName || trav.payer_given_name || '';
+            const phone = p.phone || trav.payerPhone || trav.payer_phone || '';
+            const email = cleanVal(p.email || trav.payerEmail || trav.payer_email);
+            const relationship = p.relationship || trav.payerRelationship || trav.payer_relationship || '';
+            const sameAddress = p.sameAddress || trav.payerSameAddress || trav.payer_same_address;
+            const companyName = p.companyName || trav.payerCompanyName || '';
+            const companyRelation = p.companyRelation || trav.payerCompanyRelation || '';
+
+            // Address: from nested or flat payer fields
+            const addr = ['C', 'P', 'U'].includes(payerType) ? (p.companyAddress || p.address || {}) : (p.address || {});
+            const street1 = p.street1 || addr.street1 || trav.payerPersonStreet1 || trav.payer_person_street1 || '';
+            const street2 = p.street2 || addr.street2 || trav.payerPersonStreet2 || trav.payer_person_street2 || '';
+            const city = p.city || addr.city || trav.payerPersonCity || trav.payer_person_city || '';
+            const state = p.state || addr.state || trav.payerPersonState || trav.payer_person_state || '';
+            const postalCode = p.postalCode || addr.postalCode || trav.payerPersonPostalCode || trav.payer_person_postal_code || '';
+            const country = p.country || addr.country || trav.payerPersonCountry || trav.payer_person_country || '';
+
+            return { surname, givenName, phone, email, relationship, sameAddress, companyName, companyRelation, companyPhone: p.companyPhone, street1, street2, city, state, postalCode, country };
         })(),
 
         // === TRAVEL COMPANIONS ===
@@ -1841,9 +1371,35 @@ function normalizeProfile(data) {
         vwpDenialExplanation: prev.vwpDenialExplanation || prev.vwp_denial_explanation || '',
 
         // === ADDRESS & PHONE ===
-        homeAddress: addr.homeAddress || addr.home_address || {},
+        homeAddress: (() => {
+            const ha = addr.homeAddress || addr.home_address || {};
+            // Support flat fields from clone form (homeStreet1, homeCity, etc.)
+            return {
+                street1: ha.street1 || addr.homeStreet1 || addr.home_street1 || '',
+                street2: ha.street2 || addr.homeStreet2 || addr.home_street2 || '',
+                city: ha.city || addr.homeCity || addr.home_city || '',
+                state: ha.state || addr.homeState || addr.home_state || '',
+                postalCode: ha.postalCode || addr.homePostalCode || addr.home_postal_code || '',
+                country: ha.country || addr.homeCountry || addr.home_country || '',
+            };
+        })(),
         mailingAddressSame: addr.mailingAddressSame === 'Y' || addr.mailingAddressSame === true || addr.mailing_address_same === 'Y' || addr.mailing_address_same === true,
-        mailingAddress: addr.mailingAddress || addr.mailing_address || null,
+        mailingAddress: (() => {
+            if (addr.mailingAddressSame === 'Y' || addr.mailingAddressSame === true) return null;
+            const ma = addr.mailingAddress || addr.mailing_address || {};
+            // Support flat fields from clone form
+            const street1 = ma.street1 || addr.mailStreet1 || addr.mail_street1 || '';
+            const city = ma.city || addr.mailCity || addr.mail_city || '';
+            if (!street1 && !city) return null;
+            return {
+                street1,
+                street2: ma.street2 || addr.mailStreet2 || addr.mail_street2 || '',
+                city,
+                state: ma.state || addr.mailState || addr.mail_state || '',
+                postalCode: ma.postalCode || addr.mailPostalCode || addr.mail_postal_code || '',
+                country: ma.country || addr.mailCountry || addr.mail_country || '',
+            };
+        })(),
         phone: g(addr, 'phone', 'phone'),
         mobilePhone: na(addr.mobilePhone || addr.mobile_phone) || null,
         businessPhone: na(addr.businessPhone || addr.business_phone) || null,
@@ -1882,10 +1438,10 @@ function normalizeProfile(data) {
                 _original: sm.platform,
                 platform: PLATFORM_MAP[(sm.platform || '').toUpperCase()] || sm.platform,
             }));
-            // Plataformas sem código DS-160 → movidas para additionalSocialMedia
+            // Plataformas sem cÃƒÆ’Ã‚Â³digo DS-160 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ movidas para additionalSocialMedia
             const unsupported = mapped.filter(sm => !VALID_CODES.has((sm.platform || '').toUpperCase()));
             if (unsupported.length > 0) {
-                unsupported.forEach(sm => console.log(`[Normalize] ↗️ "${sm._original}" → additionalSocialMedia (não tem código DS-160)`));
+                unsupported.forEach(sm => console.log(`[Normalize] ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â€ÃƒÂ¯Ã‚Â¸Ã‚Â "${sm._original}" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ additionalSocialMedia (nÃƒÆ’Ã‚Â£o tem cÃƒÆ’Ã‚Â³digo DS-160)`));
                 // Auto-inject into additionalSocialMedia (merged below)
                 addr._overflowSocialMedia = unsupported.map(sm => ({
                     platform: sm._original || sm.platform,
@@ -2106,7 +1662,7 @@ function normalizeProfile(data) {
         })(),
 
         // === META ===
-        location: data.location || null,
+        location: (typeof data.location === 'object' && data.location !== null) ? (data.location.location || data.location.value || Object.values(data.location)[0]) : (data.location || null),
         securityAnswer: data.securityAnswer || data.security_answer || null
     };
 }

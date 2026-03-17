@@ -77,6 +77,13 @@ const CATALOG = [
         autoRetry: false
     },
     {
+        pattern: /is invalid|cannot be|not allowed|invalid.*character/i,
+        cause: 'invalid_field_value',
+        severity: 'data',
+        action: 'Valor de campo rejeitado pelo DS-160 — corrigir dados do solicitante',
+        autoRetry: false
+    },
+    {
         pattern: /missing.*data|dados.*faltantes|campo faltante/i,
         cause: 'missing_data',
         severity: 'data',
