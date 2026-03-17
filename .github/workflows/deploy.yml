@@ -1,16 +1,32 @@
-name: Deploy to GitHub Pages
+# ============================================================
+# CI/CD — Auto-deploy on git push to main
+# Front → GitHub Pages | Automation → Cloud Run Jobs
+# ============================================================
+name: Deploy
+
 on:
   push:
     branches: [main]
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
 concurrency:
   group: pages
   cancel-in-progress: false
+
+env:
+  GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: us-central1
+  AR_REPO: ds160-workers
+
 jobs:
-  deploy:
+  # ────────────────────────────────────────────
+  # FRONTEND → GitHub Pages
+  # ────────────────────────────────────────────
+  frontend:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -23,3 +39,84 @@ jobs:
           path: public
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # ────────────────────────────────────────────
+  # DS-160 WORKER → Cloud Run Job
+  # ────────────────────────────────────────────
+  ds160-worker:
+    runs-on: ubuntu-latest
+    # Only run if automation files changed
+    if: contains(toJSON(github.event.commits.*.modified), 'automation/') || contains(toJSON(github.event.commits.*.added), 'automation/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Auth GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      - name: Build & Push DS-160 Worker
+        run: |
+          IMAGE=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.AR_REPO }}/ds160-worker:${{ github.sha }}
+          docker build -f automation/Dockerfile.ds160 -t $IMAGE .
+          docker push $IMAGE
+
+      - name: Deploy Cloud Run Job
+        run: |
+          IMAGE=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.AR_REPO }}/ds160-worker:${{ github.sha }}
+          gcloud run jobs deploy ds160-worker \
+            --image=$IMAGE \
+            --region=${{ env.GCP_REGION }} \
+            --task-timeout=600s \
+            --max-retries=2 \
+            --memory=2Gi \
+            --cpu=1 \
+            --parallelism=1 \
+            --set-env-vars="SUPABASE_URL=${{ secrets.SUPABASE_URL }},SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}"
+
+  # ────────────────────────────────────────────
+  # AIS WORKER → Cloud Run Job
+  # ────────────────────────────────────────────
+  ais-worker:
+    runs-on: ubuntu-latest
+    if: contains(toJSON(github.event.commits.*.modified), 'automation/') || contains(toJSON(github.event.commits.*.added), 'automation/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Auth GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      - name: Build & Push AIS Worker
+        run: |
+          IMAGE=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.AR_REPO }}/ais-worker:${{ github.sha }}
+          docker build -f automation/Dockerfile.ais -t $IMAGE .
+          docker push $IMAGE
+
+      - name: Deploy Cloud Run Job
+        run: |
+          IMAGE=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.AR_REPO }}/ais-worker:${{ github.sha }}
+          gcloud run jobs deploy ais-worker \
+            --image=$IMAGE \
+            --region=${{ env.GCP_REGION }} \
+            --task-timeout=900s \
+            --max-retries=1 \
+            --memory=2Gi \
+            --cpu=1 \
+            --parallelism=1 \
+            --set-env-vars="SUPABASE_URL=${{ secrets.SUPABASE_URL }},SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}"

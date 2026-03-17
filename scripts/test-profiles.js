@@ -261,7 +261,7 @@ const PROFILES = {
                     { country: "PORTUGAL" },
                     { country: "SPAIN" }
                 ],
-                ssn: "123-45-6789",
+                ssn: { p1: "123", p2: "45", p3: "6789" },
                 taxId: "987654321"
             }
         })
@@ -756,6 +756,747 @@ const PROFILES = {
             }
         })
     },
+
+    // ============================================================
+    // PERFIS DA MATRIZ (test_profiles_matrix.md)
+    // Cobrem variações críticas: estado civil, visto, idade, localidade
+    // ============================================================
+
+    // ── M01 — "TUDO SIM" (Cobertura Máxima) ──
+    'matrix-all-yes': {
+        description: 'MATRIX P01: Todos radios Y, arrays com 3 itens, máxima expansão de campos',
+        branches: [
+            'ALL_RADIOS=Y', 'arrays=3items', 'maritalStatus=M→family2',
+            'hasSpecificPlans=Y', 'whoIsPaying=OTH→payerSameAddr=N',
+            'travelingWithOthers=Y→individuals', 'hasBeenInUS=Y→3visits',
+            'hasDriversLicense=Y', 'hasUSVisa=Y→lost+cancelled',
+            'visaRefused=Y', 'immigrantPetition=Y',
+            'mailingAddressSame=N', 'additionalPhones=Y', 'additionalEmails=Y',
+            'additionalSocialMedia=Y', 'lostOrStolen=Y',
+            'fatherInUS=Y', 'motherInUS=Y', 'immediateRelativesInUS=Y→3',
+            'hasPreviousEmployment=Y→3', 'hasEducation=Y→3',
+            'clanTribe=Y', 'countriesVisited=Y→3', 'organizationMember=Y→3',
+            'specializedSkills=Y', 'militaryService=Y→3', 'insurgentOrg=Y'
+        ],
+        data: merge(BASE, {
+            location: "SPL",
+            personal1: {
+                surname: "ALLYESSILVA", givenName: "MAXIMUS",
+                fullNameNative: "MAXIMUS ALLYESSILVA",
+                otherNamesUsed: "Y",
+                otherNames: [
+                    { surname: "SOUZA", givenName: "MAX" },
+                    { surname: "COSTA", givenName: "MAXIMUS" },
+                    { surname: "LIMA", givenName: "MAXIMO" }
+                ],
+                telecode: "Y", telecodeSurname: "1234", telecodeGivenName: "5678",
+                sex: "M", maritalStatus: "M",
+                dob: { day: "15", month: "JUN", year: "1994" },
+                cityOfBirth: "SAO PAULO", stateOfBirth: "SP", countryOfBirth: "BRAZIL"
+            },
+            personal2: {
+                nationality: "BRAZIL",
+                otherNationality: "Y",
+                otherNationalities: [
+                    { country: "PORTUGAL", hasPassport: "Y", passportNumber: "PT111222" },
+                    { country: "ITALY", hasPassport: "Y", passportNumber: "IT333444" },
+                    { country: "SPAIN", hasPassport: "N", passportNumber: "" }
+                ],
+                permanentResident: "Y",
+                permanentResidentCountries: [
+                    { country: "PORTUGAL" },
+                    { country: "JAPAN" },
+                    { country: "CANADA" }
+                ],
+                nationalId: "12345678901",
+                ssn: { p1: "111", p2: "22", p3: "3333" },
+                taxId: "999888777"
+            },
+            addressPhone: {
+                homeAddress: {
+                    street1: "RUA COMPLETA 500", street2: "BLOCO A APTO 101",
+                    city: "SAO PAULO", state: "SP", country: "BRAZIL", postalCode: "01001000"
+                },
+                mailingAddressSame: "N",
+                mailingAddress: {
+                    street1: "CAIXA POSTAL 789", street2: "",
+                    city: "SAO PAULO", state: "SP", country: "BRAZIL", postalCode: "01002000"
+                },
+                phone: "11999001122",
+                mobilePhone: "11988776655",
+                businessPhone: "1133221100",
+                email: "allyes@test.com",
+                additionalPhones: "Y",
+                additionalPhoneNumbers: ["11977665544", "11966554433", "11955443322"],
+                additionalEmails: "Y",
+                additionalEmailAddresses: ["alt1@test.com", "alt2@test.com", "alt3@test.com"],
+                socialMedia: [
+                    { platform: "INST", handle: "@allyesmax" },
+                    { platform: "FCBK", handle: "max.allyes" },
+                    { platform: "TWTR", handle: "@maxallyes" }
+                ],
+                additionalSocialMedia: "Y",
+                additionalSocialMediaAccounts: [
+                    { platform: "LNKD", handle: "maximus-allyes" },
+                    { platform: "YUBO", handle: "maxallyes" },
+                    { platform: "TELEGRAM", handle: "@max_t" }
+                ]
+            },
+            passport: {
+                type: "R", number: "BR5555555", bookNumber: "BK999111",
+                issuingCountry: "BRAZIL", issuedCity: "SAO PAULO", issuedState: "SP",
+                issuedCountry: "BRAZIL",
+                issuanceDate: { day: "01", month: "JAN", year: "2022" },
+                expirationDate: { day: "01", month: "JAN", year: "2032" },
+                lostOrStolen: "Y",
+                lostPassports: [
+                    { number: "BR1111111", country: "BRAZIL", explanation: "LOST IN TRANSIT" },
+                    { number: "BR2222222", country: "BRAZIL", explanation: "STOLEN FROM HOTEL" },
+                    { numberUnknown: true, country: "BRAZIL", explanation: "DAMAGED AND REPLACED" }
+                ]
+            },
+            travel: {
+                purposeCategory: "B", purposeOfTrip: "B1/B2", purposeSubCategory: "B1/B2",
+                hasSpecificPlans: "Y",
+                specificLocations: ["HILTON ORLANDO", "MARRIOTT MIAMI", "SHERATON NEW YORK"],
+                arrivalDate: { day: "10", month: "JUN", year: "2027" },
+                departureDate: { day: "30", month: "JUN", year: "2027" },
+                arrivalFlight: "LA8001", arrivalCity: "MIAMI",
+                departureFlight: "LA8002", departureCity: "NEW YORK",
+                lengthOfStay: "20", lengthOfStayUnit: "D",
+                usAddress: { street1: "200 PARK AVE", street2: "FLOOR 5", city: "NEW YORK", state: "NY", zip: "10001" },
+                whoIsPaying: "OTH",
+                payer: {
+                    surname: "SPONSOR", givenName: "RICH",
+                    phone: "2125559999", email: "rich@sponsor.com",
+                    relationship: "F", sameAddress: "N",
+                    address: {
+                        street1: "500 FIFTH AVE", street2: "SUITE 100",
+                        city: "NEW YORK", state: "NY", country: "UNITED STATES OF AMERICA", postalCode: "10001"
+                    }
+                }
+            },
+            travelCompanions: {
+                travelingWithOthers: "Y",
+                companions: [
+                    { surname: "COMP1", givenName: "ALICE", relationship: "S" },
+                    { surname: "COMP2", givenName: "BOB", relationship: "C" },
+                    { surname: "COMP3", givenName: "CAROL", relationship: "R" }
+                ],
+                partOfGroup: "N"
+            },
+            previousUSTravel: {
+                hasBeenInUS: "Y",
+                previousVisits: [
+                    { arrivalDate: { day: "01", month: "JAN", year: "2018" }, lengthOfStay: "15", lengthOfStayUnit: "D" },
+                    { arrivalDate: { day: "10", month: "JUL", year: "2020" }, lengthOfStay: "1", lengthOfStayUnit: "M" },
+                    { arrivalDate: { day: "05", month: "DEC", year: "2023" }, lengthOfStay: "10", lengthOfStayUnit: "D" }
+                ],
+                hasDriversLicense: "Y",
+                driversLicenses: [
+                    { number: "D11111111", state: "FL" },
+                    { number: "D22222222", state: "NY" },
+                    { number: "D33333333", state: "CA" }
+                ],
+                hasUSVisa: "Y",
+                previousVisa: {
+                    issueDate: { day: "10", month: "MAR", year: "2017" },
+                    number: "V12345678",
+                    sameType: "Y", sameCountry: "Y", tenPrint: "Y",
+                    lost: "Y", lostYear: "2019", lostExplanation: "PASSPORT STOLEN WITH VISA INSIDE",
+                    cancelled: "Y", cancelledExplanation: "CANCELLED WHEN PASSPORT WAS REPLACED"
+                },
+                visaRefused: "Y",
+                visaRefusedExplanation: "214B REFUSAL IN 2016 AT SAO PAULO CONSULATE",
+                immigrantPetition: "Y",
+                immigrantPetitionExplanation: "EB2 PETITION FILED BY EMPLOYER IN 2020"
+            },
+            usContact: {
+                surname: "CONTACTFULL", givenName: "JOHN", nameDoNotKnow: false,
+                organization: "ABC GLOBAL INC", orgDoNotKnow: false,
+                relationship: "F",
+                address: { street1: "100 MAIN ST", city: "MIAMI", state: "FL", zip: "33101" },
+                phone: "3055551234", email: "john@abcglobal.com"
+            },
+            family1: {
+                father: {
+                    surname: "ALLYESSILVA", givenName: "JOSE",
+                    dob: { day: "20", month: "MAR", year: "1965" },
+                    inUS: "Y", usStatus: "C"
+                },
+                mother: {
+                    surname: "ALLYESOLIVEIRA", givenName: "MARIA",
+                    dob: { day: "15", month: "DEC", year: "1968" },
+                    inUS: "Y", usStatus: "L"
+                },
+                immediateRelativesInUS: "Y",
+                relatives: [
+                    { surname: "ALLYESSILVA", givenName: "PEDRO", type: "S", status: "C" },
+                    { surname: "ALLYESSILVA", givenName: "ANA", type: "P", status: "S" },
+                    { surname: "ALLYESCOSTA", givenName: "LUCAS", type: "C", status: "L" }
+                ],
+                otherRelativesInUS: "N"
+            },
+            family2: {
+                surname: "ALLYESCOSTA", givenName: "JULIANA",
+                dob: { day: "01", month: "FEB", year: "1996" },
+                nationality: "BRAZIL", cityOfBirth: "RIO DE JANEIRO",
+                countryOfBirth: "BRAZIL", addressType: "H"
+            },
+            workEducation1: {
+                occupation: "BUS",
+                employer: {
+                    name: "MEGA TECH SA", street1: "AV BRASIL 2000", street2: "ANDAR 15",
+                    city: "SAO PAULO", state: "SP", country: "BRAZIL",
+                    postalCode: "04538000", phone: "1130001234",
+                    duties: "SOFTWARE ENGINEERING AND ARCHITECTURE",
+                    monthlySalary: "25000", jobTitle: "TECH LEAD",
+                    supervisorSurname: "BOSS", supervisorGivenName: "MEGA",
+                    startDate: { day: "01", month: "JAN", year: "2020" }
+                }
+            },
+            workEducation2: {
+                hasPreviousEmployment: "Y",
+                previousEmployment: [
+                    {
+                        name: "OLD TECH", street1: "RUA OLD 100", city: "SAO PAULO",
+                        state: "SP", country: "BRAZIL", postalCode: "01234567",
+                        phone: "1144441111", jobTitle: "SENIOR DEV",
+                        supervisor: "MANAGER", supervisorGivenName: "OLD",
+                        startDate: { day: "01", month: "MAR", year: "2017" },
+                        endDate: { day: "31", month: "DEC", year: "2019" },
+                        duties: "BACKEND DEVELOPMENT"
+                    },
+                    {
+                        name: "MID CORP", street1: "AV MID 200", city: "CAMPINAS",
+                        state: "SP", country: "BRAZIL", postalCode: "13000000",
+                        phone: "1955552222", jobTitle: "DEV",
+                        supervisor: "LEAD",
+                        startDate: { day: "01", month: "JAN", year: "2015" },
+                        endDate: { day: "28", month: "FEB", year: "2017" },
+                        duties: "FULL STACK DEVELOPMENT"
+                    },
+                    {
+                        name: "FIRST JOB LTDA", street1: "RUA FIRST 50", city: "SAO PAULO",
+                        state: "SP", country: "BRAZIL", postalCode: "02000000",
+                        phone: "1133335555", jobTitle: "INTERN",
+                        supervisor: "N/A",
+                        startDate: { day: "01", month: "JUN", year: "2013" },
+                        endDate: { day: "31", month: "DEC", year: "2014" },
+                        duties: "INTERNSHIP"
+                    }
+                ],
+                hasEducation: "Y",
+                education: [
+                    {
+                        name: "UNIVERSIDADE DE SAO PAULO", street1: "AV PROF LUCIANO 380",
+                        city: "SAO PAULO", state: "SP", country: "BRAZIL", postalCode: "05508010",
+                        courseOfStudy: "COMPUTER SCIENCE",
+                        startDate: { month: "FEB", year: "2010" }, endDate: { month: "DEC", year: "2014" }
+                    },
+                    {
+                        name: "MIT ONLINE", street1: "77 MASSACHUSETTS AVE",
+                        city: "CAMBRIDGE", state: "MA", country: "UNITED STATES OF AMERICA", postalCode: "02139",
+                        courseOfStudy: "ARTIFICIAL INTELLIGENCE",
+                        startDate: { month: "JAN", year: "2019" }, endDate: { month: "DEC", year: "2019" }
+                    },
+                    {
+                        name: "SENAC SP", street1: "AV PAULISTA 500",
+                        city: "SAO PAULO", state: "SP", country: "BRAZIL", postalCode: "01310100",
+                        courseOfStudy: "PROJECT MANAGEMENT",
+                        startDate: { month: "MAR", year: "2016" }, endDate: { month: "NOV", year: "2016" }
+                    }
+                ]
+            },
+            workEducation3: {
+                languages: ["PORTUGUESE", "ENGLISH", "SPANISH"],
+                clanTribe: "Y", clanTribeName: "TUPI GUARANI",
+                countriesVisited: "Y",
+                countriesVisitedList: ["ARGENTINA", "JAPAN", "GERMANY"],
+                organizationMember: "Y",
+                organizations: ["IEEE MEMBER", "ACM MEMBER", "ROTARY CLUB SP"],
+                specializedSkills: "Y",
+                specializedSkillsExplanation: "ADVANCED CRYPTOGRAPHY AND NUCLEAR PHYSICS RESEARCH",
+                militaryService: "Y",
+                military: [
+                    {
+                        country: "BRAZIL", branch: "ARMY", rank: "SERGEANT",
+                        specialty: "COMMUNICATIONS",
+                        startDate: { day: "01", month: "JAN", year: "2012" },
+                        endDate: { day: "31", month: "DEC", year: "2012" }
+                    },
+                    {
+                        country: "BRAZIL", branch: "NAVY", rank: "CORPORAL",
+                        specialty: "LOGISTICS",
+                        startDate: { day: "01", month: "FEB", year: "2013" },
+                        endDate: { day: "30", month: "JUN", year: "2013" }
+                    },
+                    {
+                        country: "BRAZIL", branch: "AIR FORCE", rank: "PRIVATE",
+                        specialty: "RADAR OPERATION",
+                        startDate: { day: "01", month: "JUL", year: "2013" },
+                        endDate: { day: "31", month: "DEC", year: "2013" }
+                    }
+                ],
+                insurgentOrg: "Y",
+                insurgentOrgExplanation: "MEMBER OF STUDENT POLITICAL ORGANIZATION"
+            },
+            security: {
+                disease: "N", disorder: "N", drugUser: "N",
+                arrested: "N", controlledSubstances: "N", prostitution: "N",
+                moneyLaundering: "N", humanTrafficking: "N",
+                assistedSevereTrafficking: "N", humanTraffickingRelated: "N",
+                illegalActivity: "N", terroristActivity: "N",
+                terroristSupport: "N", terroristOrg: "N", terroristRel: "N",
+                genocide: "N", torture: "N", exViolence: "N",
+                childSoldier: "N", religiousFreedom: "N",
+                populationControls: "N", transplant: "N",
+                removalHearing: "N", immigrationFraud: "N",
+                failToAttend: "N", visaViolation: "N", deport: "N",
+                childCustody: "N", votingViolation: "N",
+                renounceExp: "N", attWoReimb: "N"
+            }
+        })
+    },
+
+    // ── M03 — "DNA MÁXIMO" (Máximo Do Not Apply) ──
+    'matrix-max-dna': {
+        description: 'MATRIX P03: Máximo de campos DNA/checkbox — fullNameNative, stateOfBirth, SSN, taxId, bookNumber, mobilePhone, businessPhone, usContactEmail',
+        branches: [
+            'fullNameNative=DNA→checkbox', 'stateOfBirth=DNA→checkbox',
+            'ssn=DNA→checkbox', 'taxId=DNA→checkbox', 'bookNumber=DNA→checkbox',
+            'mobilePhone=DNA→checkbox', 'businessPhone=DNA→checkbox',
+            'usContactEmail=DNA→checkbox'
+        ],
+        data: merge(BASE, {
+            location: "RCF",
+            personal1: {
+                surname: "TESTDNA", givenName: "MARCOS",
+                fullNameNative: "DNA",
+                sex: "M", maritalStatus: "S",
+                dob: { day: "10", month: "AUG", year: "1979" },
+                cityOfBirth: "RECIFE", stateOfBirth: "DNA", countryOfBirth: "BRAZIL"
+            },
+            personal2: {
+                nationality: "BRAZIL", otherNationality: "N",
+                permanentResident: "N",
+                nationalId: "98765432100", ssn: "DNA", taxId: "DNA"
+            },
+            passport: {
+                type: "R", number: "BR7654321", bookNumber: "DNA",
+                issuingCountry: "BRAZIL", issuedCity: "RECIFE", issuedState: "PE",
+                issuedCountry: "BRAZIL",
+                issuanceDate: { day: "05", month: "MAR", year: "2021" },
+                expirationDate: { day: "05", month: "MAR", year: "2031" },
+                lostOrStolen: "N"
+            },
+            addressPhone: {
+                homeAddress: {
+                    street1: "RUA DNA 100", city: "RECIFE",
+                    state: "PE", country: "BRAZIL", postalCode: "50000000"
+                },
+                mailingAddressSame: "Y",
+                phone: "81987654321",
+                mobilePhone: "DNA", businessPhone: "DNA",
+                email: "dna@test.com",
+                additionalPhones: "N", additionalEmails: "N",
+                socialMedia: [{ platform: "NONE", handle: "" }],
+                additionalSocialMedia: "N"
+            },
+            usContact: {
+                surname: "DNA", givenName: "DNA", nameDoNotKnow: true,
+                organization: "HOTEL DNA", orgDoNotKnow: false,
+                relationship: "O",
+                address: { street1: "100 HOTEL ST", city: "ORLANDO", state: "FL", zip: "32801" },
+                phone: "4075551111", email: "DNA"
+            },
+            travel: {
+                purposeCategory: "B", purposeOfTrip: "B1/B2", purposeSubCategory: "B1/B2",
+                hasSpecificPlans: "N",
+                nonSpecificArrival: { day: "01", month: "SEP", year: "2027" },
+                lengthOfStay: "7", lengthOfStayUnit: "D",
+                usAddress: { street1: "100 HOTEL ST", city: "ORLANDO", state: "FL", zip: "32801" },
+                whoIsPaying: "SELF"
+            }
+        })
+    },
+
+    // ── M06 — UNIÃO ESTÁVEL (C) ──
+    'matrix-civil-union': {
+        description: 'MATRIX P06: União Estável (C) → ativa family2, sexo F',
+        branches: ['maritalStatus=C→Family2Active', 'sex=F'],
+        data: merge(BASE, {
+            personal1: {
+                surname: "TESTUNIAO", givenName: "PATRICIA",
+                fullNameNative: "PATRICIA TESTUNIAO",
+                sex: "F", maritalStatus: "C",
+                dob: { day: "22", month: "APR", year: "1992" },
+                cityOfBirth: "BELO HORIZONTE", stateOfBirth: "MG", countryOfBirth: "BRAZIL"
+            },
+            family2: {
+                surname: "FERREIRA", givenName: "RODRIGO",
+                dob: { day: "10", month: "JUL", year: "1990" },
+                nationality: "BRAZIL", cityOfBirth: "BELO HORIZONTE",
+                countryOfBirth: "BRAZIL", addressType: "H"
+            }
+        })
+    },
+
+    // ── M09 — SEPARADO LEGALMENTE (L) ──
+    'matrix-legally-separated': {
+        description: 'MATRIX P09: Separado Legalmente (L) → ativa family2, sexo F',
+        branches: ['maritalStatus=L→Family2Active'],
+        data: merge(BASE, {
+            personal1: {
+                surname: "TESTSEPARADA", givenName: "CAMILA",
+                fullNameNative: "CAMILA TESTSEPARADA",
+                sex: "F", maritalStatus: "L",
+                dob: { day: "08", month: "NOV", year: "1985" },
+                cityOfBirth: "CURITIBA", stateOfBirth: "PR", countryOfBirth: "BRAZIL"
+            },
+            family2: {
+                surname: "SANTOS", givenName: "MARCOS",
+                dob: { day: "15", month: "JAN", year: "1983" },
+                nationality: "BRAZIL", cityOfBirth: "CURITIBA",
+                countryOfBirth: "BRAZIL", addressType: "O",
+                address: {
+                    street1: "RUA SEPARACAO 200", street2: "",
+                    city: "CURITIBA", state: "PR", postalCode: "80000000", country: "BRAZIL"
+                }
+            }
+        })
+    },
+
+    // ── M11 — VISTO F1 (ESTUDANTE) ──
+    'matrix-visa-f1': {
+        description: 'MATRIX P11: Visto F1 (Estudante), 20 anos, solteiro, ocupação Student',
+        branches: ['purposeCategory=F→F1', 'occupation=ST→studentFields'],
+        data: merge(BASE, {
+            location: "SPL",
+            personal1: {
+                surname: "TESTSTUDENT", givenName: "LUCAS",
+                fullNameNative: "LUCAS TESTSTUDENT",
+                sex: "M", maritalStatus: "S",
+                dob: { day: "05", month: "MAR", year: "2006" },
+                cityOfBirth: "SAO PAULO", stateOfBirth: "SP", countryOfBirth: "BRAZIL"
+            },
+            travel: {
+                purposeCategory: "F", purposeOfTrip: "F1", purposeSubCategory: "F1",
+                hasSpecificPlans: "N",
+                nonSpecificArrival: { day: "15", month: "AUG", year: "2027" },
+                lengthOfStay: "48", lengthOfStayUnit: "M",
+                usAddress: { street1: "100 UNIVERSITY AVE", city: "BOSTON", state: "MA", zip: "02115" },
+                whoIsPaying: "OTH",
+                payer: {
+                    surname: "TESTSTUDENT", givenName: "JOSE",
+                    phone: "11999112233", email: "pai@test.com",
+                    relationship: "P", sameAddress: "Y"
+                }
+            },
+            workEducation1: {
+                occupation: "ST",
+                employer: {
+                    name: "COLEGIO ELITE", street1: "AV ESTUDANTE 500",
+                    city: "SAO PAULO", state: "SP", country: "BRAZIL",
+                    postalCode: "01234567", phone: "1133339999",
+                    courseOfStudy: "HIGH SCHOOL",
+                    startDate: { day: "01", month: "FEB", year: "2021" }
+                }
+            }
+        })
+    },
+
+    // ── M12 — VISTO F2 (DEPENDENTE DE F1) ──
+    'matrix-visa-f2': {
+        description: 'MATRIX P12: Visto F2 (Dependente de estudante F1), casado',
+        branches: ['purposeCategory=F→F2', 'maritalStatus=M→family2'],
+        data: merge(BASE, {
+            location: "BRA",
+            personal1: {
+                surname: "TESTDEPF2", givenName: "MARIANA",
+                fullNameNative: "MARIANA TESTDEPF2",
+                sex: "F", maritalStatus: "M",
+                dob: { day: "20", month: "SEP", year: "1995" },
+                cityOfBirth: "BRASILIA", stateOfBirth: "DF", countryOfBirth: "BRAZIL"
+            },
+            family2: {
+                surname: "TESTDEPF2", givenName: "CARLOS",
+                dob: { day: "10", month: "MAR", year: "1993" },
+                nationality: "BRAZIL", cityOfBirth: "BRASILIA",
+                countryOfBirth: "BRAZIL", addressType: "H"
+            },
+            travel: {
+                purposeCategory: "F", purposeOfTrip: "F2", purposeSubCategory: "F2",
+                hasSpecificPlans: "N",
+                nonSpecificArrival: { day: "15", month: "AUG", year: "2027" },
+                lengthOfStay: "48", lengthOfStayUnit: "M",
+                usAddress: { street1: "200 CAMPUS DR", city: "CAMBRIDGE", state: "MA", zip: "02139" },
+                whoIsPaying: "SELF"
+            },
+            workEducation1: { occupation: "H" }
+        })
+    },
+
+    // ── M13 — VISTO J1 (INTERCÂMBIO) ──
+    'matrix-visa-j1': {
+        description: 'MATRIX P13: Visto J1 (Intercâmbio), 22 anos, solteiro',
+        branches: ['purposeCategory=J→J1', 'occupation=ST'],
+        data: merge(BASE, {
+            location: "SPL",
+            personal1: {
+                surname: "TESTEXCHANGE", givenName: "RAFAEL",
+                fullNameNative: "RAFAEL TESTEXCHANGE",
+                sex: "M", maritalStatus: "S",
+                dob: { day: "12", month: "FEB", year: "2004" },
+                cityOfBirth: "PORTO ALEGRE", stateOfBirth: "RS", countryOfBirth: "BRAZIL"
+            },
+            travel: {
+                purposeCategory: "J", purposeOfTrip: "J1", purposeSubCategory: "J1",
+                hasSpecificPlans: "N",
+                nonSpecificArrival: { day: "01", month: "JUN", year: "2027" },
+                lengthOfStay: "12", lengthOfStayUnit: "M",
+                usAddress: { street1: "300 EXCHANGE BLVD", city: "CHICAGO", state: "IL", zip: "60601" },
+                whoIsPaying: "OTH",
+                payer: {
+                    surname: "TESTEXCHANGE", givenName: "MARIA",
+                    phone: "51998765432", email: "mae@test.com",
+                    relationship: "P", sameAddress: "Y"
+                }
+            },
+            workEducation1: {
+                occupation: "ST",
+                employer: {
+                    name: "UNIVERSIDADE FEDERAL RS", street1: "AV PAULO GAMA 110",
+                    city: "PORTO ALEGRE", state: "RS", country: "BRAZIL",
+                    postalCode: "90040060", phone: "5133085000",
+                    courseOfStudy: "INTERNATIONAL RELATIONS",
+                    startDate: { day: "01", month: "MAR", year: "2022" }
+                }
+            }
+        })
+    },
+
+    // ── M14 — VISTO O1 (HABILIDADE EXTRAORDINÁRIA) ──
+    'matrix-visa-o1': {
+        description: 'MATRIX P14: Visto O1 (Habilidade Extraordinária), empregado especializado, membro de organizações',
+        branches: ['purposeCategory=O→O1', 'occupation=BUS', 'organizationMember=Y'],
+        data: merge(BASE, {
+            location: "SPL",
+            personal1: {
+                surname: "TESTGENIUS", givenName: "ROBERTO",
+                fullNameNative: "ROBERTO TESTGENIUS",
+                sex: "M", maritalStatus: "S",
+                dob: { day: "25", month: "OCT", year: "1988" },
+                cityOfBirth: "SAO PAULO", stateOfBirth: "SP", countryOfBirth: "BRAZIL"
+            },
+            travel: {
+                purposeCategory: "O", purposeOfTrip: "O1", purposeSubCategory: "O1",
+                hasSpecificPlans: "Y",
+                specificLocations: ["GOOGLE HQ MOUNTAIN VIEW", "STANFORD UNIVERSITY"],
+                arrivalDate: { day: "01", month: "MAR", year: "2027" },
+                departureDate: { day: "01", month: "MAR", year: "2030" },
+                arrivalFlight: "LA8080", arrivalCity: "SAN FRANCISCO",
+                departureFlight: "", departureCity: "",
+                lengthOfStay: "36", lengthOfStayUnit: "M",
+                usAddress: { street1: "1600 AMPHITHEATRE PKWY", city: "MOUNTAIN VIEW", state: "CA", zip: "94043" },
+                whoIsPaying: "COM",
+                payer: {
+                    companyName: "GOOGLE LLC", phone: "6505551234",
+                    companyRelation: "EMPLOYER",
+                    address: {
+                        street1: "1600 AMPHITHEATRE PKWY", city: "MOUNTAIN VIEW",
+                        state: "CA", country: "UNITED STATES OF AMERICA", postalCode: "94043"
+                    }
+                }
+            },
+            workEducation1: {
+                occupation: "BUS",
+                employer: {
+                    name: "TECH GENIUS SA", street1: "AV FARIA LIMA 3000", street2: "ANDAR 20",
+                    city: "SAO PAULO", state: "SP", country: "BRAZIL",
+                    postalCode: "04538000", phone: "1130009999",
+                    duties: "ARTIFICIAL INTELLIGENCE RESEARCH",
+                    monthlySalary: "50000", jobTitle: "CHIEF AI OFFICER",
+                    supervisorSurname: "DIRECTOR", supervisorGivenName: "TECH",
+                    startDate: { day: "01", month: "JAN", year: "2018" }
+                }
+            },
+            workEducation3: {
+                languages: ["PORTUGUESE", "ENGLISH", "JAPANESE"],
+                clanTribe: "N",
+                countriesVisited: "Y",
+                countriesVisitedList: ["UNITED STATES OF AMERICA", "JAPAN", "GERMANY", "UNITED KINGDOM"],
+                organizationMember: "Y",
+                organizations: ["IEEE FELLOW", "ACM DISTINGUISHED MEMBER", "BRAZILIAN AI SOCIETY"],
+                specializedSkills: "Y",
+                specializedSkillsExplanation: "PUBLISHED 50+ PAPERS IN MACHINE LEARNING AND NLP",
+                militaryService: "N", insurgentOrg: "N"
+            }
+        })
+    },
+
+    // ── M15 — PORTO ALEGRE (PTA) — exige foto ──
+    'matrix-location-pta': {
+        description: 'MATRIX P15: Localidade Porto Alegre (PTA) — exige upload de foto, sexo F, solteira, planos Y',
+        branches: ['location=PTA→photoAlert', 'hasSpecificPlans=Y', 'sex=F'],
+        data: merge(BASE, {
+            location: "PTA",
+            personal1: {
+                surname: "TESTPTA", givenName: "FERNANDA",
+                fullNameNative: "FERNANDA TESTPTA",
+                sex: "F", maritalStatus: "S",
+                dob: { day: "18", month: "JUL", year: "1997" },
+                cityOfBirth: "PORTO ALEGRE", stateOfBirth: "RS", countryOfBirth: "BRAZIL"
+            },
+            travel: {
+                purposeCategory: "B", purposeOfTrip: "B1/B2", purposeSubCategory: "B1/B2",
+                hasSpecificPlans: "Y",
+                specificLocations: ["DISNEY WORLD ORLANDO"],
+                arrivalDate: { day: "20", month: "DEC", year: "2027" },
+                departureDate: { day: "05", month: "JAN", year: "2028" },
+                arrivalFlight: "G31234", arrivalCity: "ORLANDO",
+                departureFlight: "G35678", departureCity: "ORLANDO",
+                lengthOfStay: "16", lengthOfStayUnit: "D",
+                usAddress: { street1: "1 DISNEY WAY", city: "ORLANDO", state: "FL", zip: "32830" },
+                whoIsPaying: "SELF"
+            }
+        })
+    },
+
+    // ── M16 — RECIFE (RCF) + CASADO — exige foto ──
+    'matrix-location-rcf-married': {
+        description: 'MATRIX P16: Localidade Recife (RCF) — exige foto, casado (M), sexo M',
+        branches: ['location=RCF→photoAlert', 'maritalStatus=M→family2'],
+        data: merge(BASE, {
+            location: "RCF",
+            personal1: {
+                surname: "TESTRCF", givenName: "THIAGO",
+                fullNameNative: "THIAGO TESTRCF",
+                sex: "M", maritalStatus: "M",
+                dob: { day: "03", month: "MAY", year: "1991" },
+                cityOfBirth: "RECIFE", stateOfBirth: "PE", countryOfBirth: "BRAZIL"
+            },
+            family2: {
+                surname: "TESTRCF", givenName: "AMANDA",
+                dob: { day: "22", month: "SEP", year: "1993" },
+                nationality: "BRAZIL", cityOfBirth: "RECIFE",
+                countryOfBirth: "BRAZIL", addressType: "H"
+            }
+        })
+    },
+
+    // ── M17 — MENOR DE 14 ANOS ──
+    'matrix-minor-under14': {
+        description: 'MATRIX P17: Menor de 14 anos (DOB≈2015 → ~11 anos), pagador=pais, ocupação N',
+        branches: ['age<14→skipWorkSections?', 'whoIsPaying=OTH→parents', 'occupation=N'],
+        data: merge(BASE, {
+            personal1: {
+                surname: "TESTMINOR", givenName: "GABRIEL",
+                fullNameNative: "GABRIEL TESTMINOR",
+                sex: "M", maritalStatus: "S",
+                dob: { day: "20", month: "AUG", year: "2015" },
+                cityOfBirth: "SAO PAULO", stateOfBirth: "SP", countryOfBirth: "BRAZIL"
+            },
+            travel: {
+                purposeCategory: "B", purposeOfTrip: "B1/B2", purposeSubCategory: "B1/B2",
+                hasSpecificPlans: "N",
+                nonSpecificArrival: { day: "01", month: "JUL", year: "2027" },
+                lengthOfStay: "14", lengthOfStayUnit: "D",
+                usAddress: { street1: "123 FAMILY ST", city: "ORLANDO", state: "FL", zip: "32801" },
+                whoIsPaying: "OTH",
+                payer: {
+                    surname: "TESTMINOR", givenName: "JOSE",
+                    phone: "11999887766", email: "pai@test.com",
+                    relationship: "P", sameAddress: "Y"
+                }
+            },
+            workEducation1: { occupation: "N" }
+        })
+    },
+
+    // ── M18 — JOVEM 15 ANOS (ESTUDANTE) ──
+    'matrix-young-15': {
+        description: 'MATRIX P18: Jovem de 15 anos (DOB≈2011), sexo F, solteira, estudante',
+        branches: ['age=15→studentOccupation', 'sex=F'],
+        data: merge(BASE, {
+            personal1: {
+                surname: "TESTYOUNG", givenName: "ISABELA",
+                fullNameNative: "ISABELA TESTYOUNG",
+                sex: "F", maritalStatus: "S",
+                dob: { day: "10", month: "MAR", year: "2011" },
+                cityOfBirth: "CAMPINAS", stateOfBirth: "SP", countryOfBirth: "BRAZIL"
+            },
+            travel: {
+                purposeCategory: "B", purposeOfTrip: "B1/B2", purposeSubCategory: "B1/B2",
+                hasSpecificPlans: "N",
+                nonSpecificArrival: { day: "15", month: "JUL", year: "2027" },
+                lengthOfStay: "21", lengthOfStayUnit: "D",
+                usAddress: { street1: "456 FAMILY DR", city: "MIAMI", state: "FL", zip: "33101" },
+                whoIsPaying: "OTH",
+                payer: {
+                    surname: "TESTYOUNG", givenName: "MARIA",
+                    phone: "19998877665", email: "mae@test.com",
+                    relationship: "P", sameAddress: "Y"
+                }
+            },
+            workEducation1: {
+                occupation: "ST",
+                employer: {
+                    name: "COLEGIO CAMPINAS", street1: "RUA ESCOLA 100",
+                    city: "CAMPINAS", state: "SP", country: "BRAZIL",
+                    postalCode: "13010000", phone: "1935551234",
+                    courseOfStudy: "ENSINO MEDIO",
+                    startDate: { day: "01", month: "FEB", year: "2024" }
+                }
+            }
+        })
+    },
+
+    // ── M08 — DIVORCIADO COM 3 EX-CÔNJUGES (ajuste da matrix) ──
+    'matrix-divorced-3ex': {
+        description: 'MATRIX P08: Divorciado com 3 ex-cônjuges (array de 3 items), SPL',
+        branches: ['maritalStatus=D→PrevSpousePage', 'prevSpouse.spouses.length=3→AddAnother×2'],
+        data: merge(BASE, {
+            location: "SPL",
+            personal1: {
+                surname: "TESTDIVORCED3", givenName: "MARCELO",
+                fullNameNative: "MARCELO TESTDIVORCED3",
+                sex: "M", maritalStatus: "D",
+                dob: { day: "05", month: "JAN", year: "1980" },
+                cityOfBirth: "SAO PAULO", stateOfBirth: "SP", countryOfBirth: "BRAZIL"
+            },
+            prevSpouse: {
+                numberOfPrevious: "3",
+                spouses: [
+                    {
+                        surname: "EX1SILVA", givenName: "CARLA",
+                        dob: { day: "01", month: "MAR", year: "1982" },
+                        nationality: "BRAZIL", cityOfBirth: "SAO PAULO", countryOfBirth: "BRAZIL",
+                        dateOfMarriage: { day: "10", month: "JUN", year: "2005" },
+                        dateMarriageEnded: { day: "20", month: "DEC", year: "2008" },
+                        howEnded: "DIVORCE", countryTerminated: "BRAZIL"
+                    },
+                    {
+                        surname: "EX2COSTA", givenName: "PATRICIA",
+                        dob: { day: "15", month: "JUL", year: "1985" },
+                        nationality: "ARGENTINA", cityOfBirth: "BUENOS AIRES", countryOfBirth: "ARGENTINA",
+                        dateOfMarriage: { day: "01", month: "FEB", year: "2010" },
+                        dateMarriageEnded: { day: "30", month: "SEP", year: "2014" },
+                        howEnded: "DIVORCE", countryTerminated: "BRAZIL"
+                    },
+                    {
+                        surname: "EX3LIMA", givenName: "RENATA",
+                        dob: { day: "22", month: "NOV", year: "1988" },
+                        nationality: "PORTUGAL", cityOfBirth: "LISBON", countryOfBirth: "PORTUGAL",
+                        dateOfMarriage: { day: "15", month: "MAR", year: "2016" },
+                        dateMarriageEnded: { day: "01", month: "JAN", year: "2022" },
+                        howEnded: "DIVORCE", countryTerminated: "PORTUGAL"
+                    }
+                ]
+            }
+        })
+    },
 };
 
 module.exports = { PROFILES, BASE, merge };
+

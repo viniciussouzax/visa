@@ -3,7 +3,25 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "dev": "npx -y serve public -l 5173",
-    "start": "npx -y serve public -l 5173"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "npx -y serve public -l 5173",
+    "queue": "node automation/run.js",
+    "test:seed": "node scripts/seed-test-profiles.js --clean",
+    "test:seed:batch": "node scripts/seed-test-profiles.js --clean --batch=5",
+    "test:check": "node scripts/check-test-results.js",
+    "test:check:errors": "node scripts/check-test-results.js --errors",
+    "test:clean": "node scripts/seed-test-profiles.js --clean-only",
+    "test:list": "node scripts/seed-test-profiles.js --list"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.99.0",
+    "playwright": "^1.58.2",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
   }
 }
