@@ -35,15 +35,22 @@ jobs:
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Execute DS-160 Worker Jobs
+      - name: Update job config
         run: |
-          echo "🚀 Executando ds160-worker: ${{ inputs.tasks }} tasks, ${{ inputs.parallelism }} paralelas"
-          gcloud run jobs execute ds160-worker \
+          echo "⚙️ Configurando ds160-worker: ${{ inputs.tasks }} tasks, ${{ inputs.parallelism }} paralelas"
+          gcloud run jobs update ds160-worker \
             --region=${{ env.GCP_REGION }} \
             --tasks=${{ inputs.tasks }} \
             --parallelism=${{ inputs.parallelism }} \
-            --wait \
-            --format="table(metadata.name, status.conditions[0].type, status.conditions[0].status)"
+            --task-timeout=600s \
+            --quiet
+
+      - name: Execute DS-160 Worker Jobs
+        run: |
+          echo "🚀 Executando ds160-worker..."
+          gcloud run jobs execute ds160-worker \
+            --region=${{ env.GCP_REGION }} \
+            --wait
           echo "✅ Execução concluída"
 
       - name: Show execution logs
@@ -53,5 +60,4 @@ jobs:
           gcloud run jobs executions list \
             --job=ds160-worker \
             --region=${{ env.GCP_REGION }} \
-            --limit=3 \
-            --format="table(name, status.conditions[0].type, createTime)"
+            --limit=3
