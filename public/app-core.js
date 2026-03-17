@@ -1,6 +1,6 @@
 /**
  * app-core.js — Módulo centralizado de config, auth, CRUD, navegação e UI
- * Usado por: dashboard.html, ds160-form.html, portal.html, meus-formularios.html
+ * Usado por: dashboard.html, ds160-form.html, portal.html
  */
 (function () {
     'use strict';
@@ -120,8 +120,10 @@
         window.location.href = buildUrl(page, params);
     }
 
-    function goToDashboard() {
-        navigate('dashboard.html');
+    function goToDashboard(page) {
+        let url = buildUrl('dashboard.html');
+        if (page) url += '#' + page;
+        window.location.href = url;
     }
 
     function goToForm(id, tab) {
@@ -136,10 +138,31 @@
     // ==========================================
     function _injectLoading() {
         if (document.getElementById('appLoadingScreen')) return;
+        // Use org branding from sessionStorage if available
+        var logo = 'logo-azul.png';
+        var bg = '#f0f2f5';
+        var logoMaxW = '120px'; // Platform default
+        var orgLogo = sessionStorage.getItem('client_org_logo');
+        var orgUseLogo = sessionStorage.getItem('client_org_use_logo');
+        var orgBg = sessionStorage.getItem('client_org_bg_color');
+        var orgLogoW = sessionStorage.getItem('client_org_logo_width');
+        if (orgUseLogo === '1' && orgLogo) {
+            logo = orgLogo;
+            logoMaxW = (orgLogoW || '150') + 'px'; // Custom org size
+        }
+        if (orgBg) bg = orgBg;
+
         const div = document.createElement('div');
         div.id = 'appLoadingScreen';
-        div.className = 'loading-screen';
-        div.innerHTML = '<div class="spinner"></div><span>Carregando...</span>';
+        div.style.cssText = 'position:fixed;inset:0;background:' + bg + ';display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity .3s';
+        div.innerHTML = '<img src="' + logo + '" alt="Carregando" style="max-width:' + logoMaxW + ';height:auto;opacity:.7;animation:appPulse 1.5s ease-in-out infinite">';
+        // Inject pulse animation
+        if (!document.getElementById('appPulseStyle')) {
+            const style = document.createElement('style');
+            style.id = 'appPulseStyle';
+            style.textContent = '@keyframes appPulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:.3;transform:scale(.92)}}';
+            document.head.appendChild(style);
+        }
         document.body.insertBefore(div, document.body.firstChild);
     }
 
@@ -199,11 +222,31 @@
         goToDashboard,
         goToForm,
 
+        // Edge Functions
+        callEdgeFunction,
+
         // UI
         showLoading,
         hideLoading,
         toast,
     };
+
+    async function callEdgeFunction(name, body) {
+        const res = await fetch(SUPABASE_URL + '/functions/v1/' + name, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + _bearer(),
+                'apikey': SUPABASE_KEY
+            },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+            const err = await res.text();
+            throw new Error(res.status + ': ' + err);
+        }
+        return res.json();
+    }
 
     // Auto-show loading on page load
     if (document.readyState === 'loading') {

@@ -9,17 +9,312 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap"
         rel="stylesheet">
     <script src="app-core.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/iconoir-icons/iconoir@main/css/iconoir.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/css/intlTelInput.css">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js"></script>
+    <style>
+        /* Prevent FOUC: hide until JS applies roles */
+        body:not(.ready) { opacity: 0; }
+        body.ready { opacity: 1; transition: opacity .15s; }
+
+        body.embedded .header,
+        body.embedded .tabs,
+        body.embedded .btn-bar {
+            display: none !important;
+        }
+
+        body.embedded .container {
+            padding-top: 12px;
+        }
+
+        /* ======== Assessor Mode (new tab) ======== */
+        body.role-assessor .tabs,
+        body.role-assessor .btn-bar,
+        body.role-assessor .header {
+            display: none !important;
+        }
+        body.role-assessor .container.form-wrapper {
+            padding-top: 24px;
+        }
+        /* Assessor: hide checks, progress, section nav — clean flat view */
+        body.role-assessor .section-status,
+        body.role-assessor .progress-container,
+        body.role-assessor .section-nav {
+            display: none !important;
+        }
+        .assessor-conclude {
+            display: none;
+            padding: 0 16px 60px;
+        }
+        body.role-assessor .assessor-conclude {
+            display: block;
+        }
+        .assessor-conclude .btn-conclude {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 3px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            color: #fff;
+            background: var(--success);
+            transition: transform .15s, box-shadow .15s, opacity .15s;
+            letter-spacing: .3px;
+        }
+        .assessor-conclude .btn-conclude:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(22,163,74,.35);
+        }
+        .assessor-conclude .btn-conclude:active {
+            transform: translateY(0);
+        }
+        .assessor-conclude .btn-conclude:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        /* Assessor header (applicant info) */
+        .assessor-header {
+            display: none;
+            padding: 20px 0 16px;
+            margin-bottom: 8px;
+        }
+        body.role-assessor .assessor-header {
+            display: block;
+        }
+        .assessor-header .ah-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .assessor-header .ah-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .assessor-header .ah-back {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 3px;
+            transition: background .15s;
+        }
+        .assessor-header .ah-back:hover {
+            background: var(--bg-hover);
+        }
+        .assessor-header .ah-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .assessor-header .ah-meta span {
+            margin-right: 16px;
+        }
+        .assessor-header .ah-chip {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        /* Confirm modal */
+        .confirm-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.45);
+            z-index: 9999; display: flex; align-items: center; justify-content: center;
+            animation: fadeIn .15s ease;
+        }
+        .confirm-box {
+            background: #fff; border-radius: 16px; padding: 32px;
+            max-width: 400px; width: 90%; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,.2);
+            animation: slideUp .2s ease;
+        }
+        .confirm-box h3 { margin: 0 0 8px; font-size: 18px; color: #1e293b; }
+        .confirm-box p { margin: 0 0 24px; color: #64748b; font-size: 14px; line-height: 1.5; }
+        .confirm-box .confirm-actions { display: flex; gap: 12px; justify-content: center; }
+        .confirm-box .btn-cancel {
+            padding: 10px 24px; border: 1px solid #e2e8f0; border-radius: 8px;
+            background: #fff; color: #475569; font-weight: 600; cursor: pointer;
+            font-size: 14px; transition: background .15s;
+        }
+        .confirm-box .btn-cancel:hover { background: #f8fafc; }
+        .confirm-box .btn-confirm {
+            padding: 10px 24px; border: none; border-radius: 8px;
+            background: var(--success);
+            color: #fff; font-weight: 600; cursor: pointer;
+            font-size: 14px; transition: transform .1s;
+        }
+        .confirm-box .btn-confirm:hover { transform: translateY(-1px); }
+
+        /* ======== Portal Solicitante Mode ======== */
+        body.role-solicitante {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8edf5 50%, #f0f4ff 100%);
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 40px 16px 60px;
+        }
+
+        body.role-solicitante .header,
+        body.role-solicitante .tabs,
+        body.role-solicitante .btn-bar {
+            display: none !important;
+        }
+
+        body.role-solicitante .container.form-wrapper {
+            padding: 12px;
+            max-width: 100%;
+        }
+
+        .portal-form-card {
+            display: none;
+            width: 100%;
+            max-width: 680px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            animation: slideUp .25s ease;
+        }
+
+        @media (max-width: 600px) {
+            body.role-solicitante {
+                padding: 0;
+            }
+            .portal-form-card {
+                max-width: 100%;
+                margin: 0;
+                border-radius: 0;
+                box-shadow: none;
+                min-height: 100vh;
+            }
+            body.role-solicitante .container.form-wrapper {
+                padding: 0 8px;
+            }
+        }
+
+        body.role-solicitante .portal-form-card {
+            display: block;
+        }
+
+        .portal-form-nav {
+            padding: 16px 12px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .portal-form-nav .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .portal-form-nav .brand img {
+            max-width: 120px;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .portal-form-nav .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .portal-form-nav .user-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .portal-form-nav .btn-back {
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: var(--transition);
+            display: inline-flex !important;
+        }
+
+        .portal-form-nav .btn-back:hover {
+            color: var(--accent);
+        }
+
+        .portal-form-intro {
+            padding: 16px 12px 16px;
+        }
+
+        .portal-form-intro h2 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -.2px;
+            color: var(--text-primary);
+            margin: 0 0 4px;
+        }
+
+        .portal-form-intro p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .portal-form-footer {
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-top: 1px solid var(--border);
+            padding: 12px;
+        }
+
+        .portal-form-footer img {
+            max-width: 80px;
+            opacity: .4;
+        }
+    </style>
 </head>
 
 <body class="no-sidebar">
+
+    <div class="portal-form-card" id="portalFormCard">
+        <div class="portal-form-nav">
+            <div class="brand"><img src="logo-azul.png" alt="SENDS160" id="portalFormLogo"></div>
+            <div class="nav-right">
+                <i class="iconoir-xmark btn-back" onclick="goBack()" title="Voltar para lista"></i>
+            </div>
+        </div>
+        <div class="portal-form-intro">
+            <h2>Formulário Rascunho</h2>
+            <p style="margin:-4px 0 2px;font-size:13px;color:var(--text-secondary);font-weight:600;">Coleta de Dados para Assessoria</p>
+            <p style="margin:0;font-size:13px;color:var(--text-muted);" id="portalApplicantName"></p>
+        </div>
+
+        <div id="portalFormContent"></div>
+        <div class="portal-form-footer">
+            <img src="logo-azul.png" alt="SENDS160" id="portalFooterLogo">
+        </div>
+    </div>
 
 
     <div class="header">
         <button class="btn btn-outline" onclick="goBack()">← Voltar</button>
         <h1>DS-160</h1>
         <span class="badge">Schema-Driven</span>
-        <div class="progress-info" id="progressLabel">0/0 campos (0%)</div>
         <div id="syncStatus" class="sync-status">
             <span class="sync-dot"></span> <span id="syncText">Aguardando...</span>
         </div>
@@ -31,16 +326,25 @@
         <div class="tab" onclick="showView('code')">JSON / Playwright</div>
     </div>
 
-    <div class="progress-bar">
-        <div class="progress-fill" id="progressFill" style="width:0%"></div>
-    </div>
-
     <div id="view-group" class="hidden">
         <div class="group-selector" id="groupContent"></div>
     </div>
 
+
     <div class="container form-wrapper">
-        <div id="view-form"></div>
+        <!-- Assessor header: applicant identification -->
+        <div class="assessor-header">
+            <div class="ah-top">
+                <span class="ah-name" id="ahApplicantName">Carregando...</span>
+                <a class="ah-back" onclick="goBack()">Voltar ao Dashboard</a>
+            </div>
+            <div class="ah-meta" id="ahMeta"></div>
+        </div>
+
+        <div id="view-form" style="padding-bottom:20px"></div>
+        <div class="assessor-conclude">
+            <button class="btn-conclude" onclick="showConcludeModal()">Concluir Análise</button>
+        </div>
         <div id="view-review" class="hidden"></div>
         <div id="view-code" class="hidden">
             <div class="code-header">
@@ -77,28 +381,36 @@
         let _applicantId = _params.get('id');
         const _tabParam = _params.get('tab');
         const _secureParam = _params.get('secure_entry');
+        const _directParam = _params.get('direct');
         let _groupParam = _params.get('group');
         let _companyId = null;
 
-        // Detect role: no auth = solicitante (client)
-        let _isAssessor = !!_authToken;
-        if (_tabParam === 'solicitante') _isAssessor = false;
+        // Detect role: assessor ONLY when tab=editar or tab=assessor
+        let _isAssessor = (_tabParam === 'editar' || _tabParam === 'assessor');
 
         // Security Gate Block
-        if (!_isAssessor) {
+        if (_isAssessor) {
+            document.body.classList.add('role-assessor');
+        } else {
             document.body.classList.add('role-solicitante');
+        }
+        // Show body after roles applied (prevents FOUC)
+        document.body.classList.add('ready');
 
-            if (_secureParam === '1') {
-                const sessionAppId = sessionStorage.getItem('client_app_id');
-                if (sessionAppId) {
-                    _applicantId = sessionAppId;
-                } else {
-                    alert('Sessão expirada ou inválida. Faça login novamente.');
-                    window.location.href = 'portal.html';
-                }
+        // Solicitante session management
+        if (!_isAssessor) {
+            const sessionAppId = sessionStorage.getItem('client_app_id');
+
+            if (sessionAppId) {
+                _applicantId = sessionAppId;
             } else if (_applicantId) {
-                // Naked URL access -> Force Portal
-                window.location.href = 'portal.html?id=' + _applicantId;
+                sessionStorage.setItem('client_app_id', _applicantId);
+            } else {
+                let portalUrl = 'portal.html';
+                const orgSlug = AppCore.getOrg();
+                if (orgSlug) portalUrl += '?org=' + encodeURIComponent(orgSlug);
+                alert('Sessão expirada ou inválida. Faça login novamente.');
+                window.location.href = portalUrl;
             }
         }
 
@@ -119,35 +431,78 @@
         // ==========================================
         const engine = new FormEngine(DS160_SCHEMA, 'view-form');
         engine.init();
+        // Solicitante: pages mode (uma seção por vez, step-bar)
+        // Assessor: accordion mode (visão completa)
+        if (!_isAssessor) {
+            engine.setRenderMode('pages');
+        }
         engine.onSave = saveData; // Auto-save on Próximo
 
         // ==========================================
-        // DEBOUNCED AUTO-SAVE (30s after last change)
+        // CHANGE INDICATOR (no auto-save — saves on Próximo/Finalizar only)
         // ==========================================
-        let _autoSaveTimer = null;
-        function scheduleAutoSave() {
-            if (_autoSaveTimer) clearTimeout(_autoSaveTimer);
+        let _hasUnsavedChanges = false;
+        function markUnsaved() {
+            _hasUnsavedChanges = true;
             const syncText = document.getElementById('syncText');
             if (syncText && !syncText.textContent.includes('Salvando')) {
                 syncText.textContent = 'Alterações não salvas';
                 document.getElementById('syncStatus').className = 'sync-status unsaved';
             }
-            _autoSaveTimer = setTimeout(() => { saveData(); }, 30000);
         }
-        engine.onChange = scheduleAutoSave;
+        engine.onChange = markUnsaved;
 
-        // Save on page exit
+        // Update conclude button: assessors always enabled, solicitantes check section completion
+        function updateConcludeButton() {
+            const btn = document.querySelector('.btn-conclude');
+            if (!btn) return;
+            // Assessor: always enabled — they take responsibility for reviewing
+            if (document.body.classList.contains('role-assessor')) {
+                btn.disabled = false;
+                btn.title = 'Concluir e marcar como done';
+                return;
+            }
+            let allComplete = true;
+            engine.schema.sections.forEach((sec, idx) => {
+                // Skip sections hidden by schema conditionals (not pages mode)
+                if (sec.conditional && sec.showWhen) {
+                    const condKey = (sec.showWhen.section || sec.id) + '.' + sec.showWhen.field;
+                    const condVal = engine.data[condKey] || '';
+                    if (sec.showWhen.equals && condVal !== sec.showWhen.equals) return;
+                    if (sec.showWhen.in && !sec.showWhen.in.includes(condVal)) return;
+                    if (sec.showWhen.notIn && sec.showWhen.notIn.includes(condVal)) return;
+                }
+                const secEl = document.getElementById('sec-' + sec.id);
+                if (!secEl || !secEl.classList.contains('section-complete')) allComplete = false;
+            });
+            btn.disabled = !allComplete;
+            btn.title = allComplete ? 'Concluir e marcar como done' : 'Preencha todas as seções para concluir';
+        }
+        const _origUpdateProgress = engine.updateProgress.bind(engine);
+        engine.updateProgress = function() {
+            _origUpdateProgress();
+            setTimeout(updateConcludeButton, 200);
+        };
+
+        // Save on page exit (safety net — saves only if there are unsaved changes)
         window.addEventListener('beforeunload', () => {
-            if (_autoSaveTimer) { clearTimeout(_autoSaveTimer); saveData(); }
+            if (_hasUnsavedChanges) saveData();
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && _hasUnsavedChanges) {
+                saveData();
+            }
         });
 
         // ==========================================
         // LOAD APPLICANT DATA
         // ==========================================
         async function loadApplicantData() {
-            if (!_applicantId) return;
+            if (!_applicantId) { console.warn('[Form] loadApplicantData: _applicantId is empty!'); return; }
+            console.log('[Form] loadApplicantData START — id:', _applicantId, 'isAssessor:', _isAssessor);
             try {
-                const rows = await sbGet('applicants?id=eq.' + _applicantId + '&select=id,full_name,data&limit=1');
+                const rows = await sbGet('applicants?id=eq.' + _applicantId + '&select=id,full_name,email,status,data&limit=1');
+                console.log('[Form] sbGet result:', rows ? rows.length + ' rows' : 'null', rows && rows[0] ? 'has data: ' + !!rows[0].data : 'no row');
                 if (rows && rows[0] && rows[0].data) {
                     // Populate engine data properly using form engine internal loader
                     engine.loadData(rows[0].data);
@@ -160,10 +515,95 @@
                     if (rows[0].full_name) {
                         document.title = 'DS-160 — ' + rows[0].full_name;
                     }
+
+                    // Assessor header: show applicant info
+                    if (_isAssessor && rows[0].full_name) {
+                        const formattedName = rows[0].full_name.replace(/\b\w+/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase());
+                        const ahName = document.getElementById('ahApplicantName');
+                        if (ahName) ahName.textContent = formattedName;
+                        const ahMeta = document.getElementById('ahMeta');
+                        if (ahMeta) {
+                            let metaHtml = '';
+                            if (rows[0].email) metaHtml += `<span>${rows[0].email}</span>`;
+                            if (rows[0].status) {
+                                const chipMap = {
+                                    todo:  { label: 'Pendente',       bg: '#f1f5f9', color: '#64748b' },
+                                    doing: { label: 'Em execução',   bg: '#dbeafe', color: '#2563eb' },
+                                    done:  { label: 'Concluído',     bg: '#dcfce7', color: '#16a34a' },
+                                    error: { label: 'Erro de dados', bg: '#fef3c7', color: '#d97706' },
+                                    fail:  { label: 'Falha técnica', bg: '#fee2e2', color: '#dc2626' },
+                                };
+                                const c = chipMap[rows[0].status] || { label: rows[0].status, bg: '#f1f5f9', color: '#64748b' };
+                                metaHtml += `<span class="ah-chip" style="background:${c.bg};color:${c.color}">${c.label}</span>`;
+                            }
+                            ahMeta.innerHTML = metaHtml;
+                        }
+                    }
+
+                    // Portal mode: show name in portal card
+                    if (!_isAssessor && rows[0].full_name) {
+                        const formattedName = rows[0].full_name.replace(/\b\w+/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase());
+                        const appNameEl = document.getElementById('portalApplicantName');
+                        if (appNameEl) appNameEl.textContent = formattedName;
+                    }
+
                     console.log('[Form] Dados carregados para:', rows[0].full_name);
+                } else {
+                    console.warn('[Form] Nenhum dado encontrado para id:', _applicantId, 'rows:', JSON.stringify(rows));
                 }
             } catch (e) {
                 console.error('[Form] Erro ao carregar:', e);
+            }
+
+            // Portal mode: move form inside card and apply branding
+            if (!_isAssessor) {
+                const card = document.getElementById('portalFormCard');
+                const formWrapper = document.querySelector('.container.form-wrapper');
+                const contentSlot = document.getElementById('portalFormContent');
+                if (card && formWrapper && contentSlot) {
+                    contentSlot.appendChild(formWrapper);
+                }
+
+                // Inject informational notice inside first section body
+                const firstBody = document.getElementById('body-0');
+                if (firstBody && !firstBody.querySelector('.form-notice')) {
+                    const notice = document.createElement('div');
+                    notice.className = 'form-notice';
+                    notice.style.cssText = 'padding:16px 20px;background:#f0f6ff;border:1px solid #bfd4f2;border-radius:8px;margin:0 0 16px;font-size:13px;line-height:1.6;color:#1e3a5f;';
+                    notice.innerHTML = `
+                        <p style="margin:0 0 8px;font-weight:600;font-size:14px;color:#1a3a5c;">
+                            <i class="iconoir-info-circle" style="vertical-align:middle;margin-right:6px;color:#3b82f6;font-size:16px;"></i>
+                            Formulário para coletar as informações do seu processo.
+                        </p>
+                        <p style="margin:0 0 6px;">Os dados são salvos automaticamente, permitindo continuar depois. Todas as perguntas são obrigatórias e devem ser respondidas exatamente como no passaporte e documentos oficiais.</p>
+                        <p style="margin:0;color:#92400e;font-weight:500;">Revise as informações antes de avançar. Se não souber alguma resposta, preencha com <strong>"X"</strong> para a equipe ajustar depois.</p>
+                    `;
+                    firstBody.insertBefore(notice, firstBody.firstChild);
+                }
+                // Apply org branding
+                if (_orgParam) {
+                    try {
+                        const orgs = await sbGet('companies?short_id=eq.' + _orgParam + '&select=logo_url,use_custom_logo,portal_bg_color,portal_btn_color,logo_max_width&limit=1');
+                        if (orgs && orgs[0]) {
+                            const org = orgs[0];
+                            if (org.use_custom_logo && org.logo_url) {
+                                document.querySelectorAll('#portalFormLogo, #portalFooterLogo').forEach(logo => {
+                                    logo.src = org.logo_url;
+                                    logo.style.maxWidth = (org.logo_max_width || 150) + 'px';
+                                });
+                            }
+                            if (org.portal_bg_color) {
+                                document.body.style.backgroundColor = org.portal_bg_color;
+                                document.body.style.backgroundImage = 'none';
+                            }
+                            if (org.portal_btn_color) {
+                                // Use CSS variable so dynamically rendered buttons inherit the color
+                                document.body.style.setProperty('--accent', org.portal_btn_color);
+                                document.body.style.setProperty('--accent-hover', org.portal_btn_color);
+                            }
+                        }
+                    } catch (e) { console.warn('[Form] Branding error:', e); }
+                }
             }
         }
 
@@ -271,7 +711,7 @@
             // Extract key fields
             const surname = (json.personal1?.surname || '').toUpperCase();
             const givenName = (json.personal1?.givenName || '').toUpperCase();
-            const fullName = (surname + ' ' + givenName).trim() || null;
+            const fullName = (givenName + ' ' + surname).trim() || null;
             const passport = json.passport?.number || null;
 
             try {
@@ -280,7 +720,7 @@
                     const newRow = {
                         data: json,
                         full_name: fullName || 'Novo Solicitante',
-                        stage: 'triagem', status: 'aguardando_execucao', result: 'indefinido', priority: 'normal'
+                        stage: 'screening', status: 'todo', result: 'pending', priority: 'normal'
                     };
                     if (passport) newRow.passport_number = passport;
                     if (_companyId) newRow.company_id = _companyId;
@@ -299,6 +739,16 @@
                     if (fullName) updatePayload.full_name = fullName;
                     if (passport) updatePayload.passport_number = passport;
 
+                    // Auto status transitions for portal users in screening stage
+                    if (!_isAssessor) {
+                        const progress = engine.calcOverallProgress();
+                        if (progress >= 100) {
+                            updatePayload.status = 'done';
+                        } else if (progress > 0) {
+                            updatePayload.status = 'doing';
+                        }
+                    }
+
                     await sbFetch('applicants?id=eq.' + _applicantId, 'PATCH', updatePayload);
                     console.log('[Form] Salvo:', fullName || _applicantId);
                 }
@@ -306,6 +756,7 @@
                 if (syncStatus) {
                     syncStatus.className = 'sync-status saved';
                     syncText.textContent = 'Salvo na nuvem';
+                    _hasUnsavedChanges = false;
                     setTimeout(() => {
                         if (syncStatus.classList.contains('saved')) {
                             syncStatus.className = 'sync-status';
@@ -319,10 +770,45 @@
                     syncStatus.className = 'sync-status error';
                     syncText.textContent = 'Erro ao salvar';
                 }
+                // Log save error to form_logs
+                if (engine && engine.formLog) {
+                    engine.formLog('error', 'Erro ao salvar dados: ' + e.message, {
+                        action: 'save_error',
+                        error: e.message,
+                        stack: (e.stack || '').substring(0, 500)
+                    });
+                }
             } finally {
                 _isSaving = false;
             }
         }
+
+        // ========================================
+        // GLOBAL ERROR INTERCEPTOR — catches invisible JS errors
+        // ========================================
+        window.onerror = function(msg, src, line, col, err) {
+            console.error('[GlobalError]', msg, src, line);
+            if (typeof engine !== 'undefined' && engine.formLog) {
+                engine.formLog('error', 'JS Error: ' + msg, {
+                    action: 'js_error',
+                    source: (src || '').split('/').pop(),
+                    line: line,
+                    col: col,
+                    stack: (err && err.stack || '').substring(0, 500)
+                });
+            }
+        };
+        window.addEventListener('unhandledrejection', function(e) {
+            const reason = e.reason || {};
+            const msg = reason.message || String(reason);
+            console.error('[UnhandledRejection]', msg);
+            if (typeof engine !== 'undefined' && engine.formLog) {
+                engine.formLog('error', 'Unhandled Promise: ' + msg.substring(0, 200), {
+                    action: 'promise_error',
+                    stack: (reason.stack || '').substring(0, 500)
+                });
+            }
+        });
 
         async function approveData() {
             const errors = engine.validateAll();
@@ -330,11 +816,28 @@
             await saveData();
             if (!_applicantId) return;
             try {
-                await sbFetch('applicants?id=eq.' + _applicantId, 'PATCH', { status: 'aprovado' });
+                await sbFetch('applicants?id=eq.' + _applicantId, 'PATCH', { status: 'done' });
                 engine._showToast('Aprovado e salvo!', 'success');
             } catch (e) {
                 engine._showToast('Erro ao aprovar: ' + e.message, 'error');
             }
+        }
+
+        function showConcludeModal() {
+            const overlay = document.createElement('div');
+            overlay.className = 'confirm-overlay';
+            overlay.innerHTML = `
+                <div class="confirm-box">
+                    <h3>Concluir Análise</h3>
+                    <p>Tem certeza que deseja concluir a análise deste formulário?<br>O status será alterado para <strong>concluído</strong>.</p>
+                    <div class="confirm-actions">
+                        <button class="btn-cancel" onclick="this.closest('.confirm-overlay').remove()">Cancelar</button>
+                        <button class="btn-confirm" onclick="this.closest('.confirm-overlay').remove(); approveData()">Sim, Concluir</button>
+                    </div>
+                </div>
+            `;
+            overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+            document.body.appendChild(overlay);
         }
 
         function goBack() {
@@ -342,7 +845,19 @@
                 AppCore.navigate('ds160-form.html', { group: _groupParam });
                 return;
             }
-            AppCore.goToDashboard();
+            // Solicitante goes back to portal
+            if (!_isAssessor) {
+                let url = 'portal.html';
+                const orgSlug = AppCore.getOrg();
+                if (orgSlug) url += '?org=' + encodeURIComponent(orgSlug);
+                window.location.href = url;
+                return;
+            }
+            // Assessor: close tab (form opened in new tab from dashboard)
+            // Use 'from' param to return to the correct dashboard page
+            const fromPage = _params.get('from') || '';
+            window.close();
+            AppCore.goToDashboard(fromPage);
         }
 
         function generateGroupCode() {
@@ -371,7 +886,7 @@
                         full_name: name.trim().toUpperCase(),
                         passport_number: null,
                         data: {},
-                        stage: 'triagem', status: 'aguardando_execucao', result: 'indefinido', priority: 'normal',
+                        stage: 'screening', status: 'todo', result: 'pending', priority: 'normal',
                         group_id: groupCode,
                         company_id: _companyId
                     };
@@ -409,7 +924,6 @@
             // Hide form UI, show group view
             document.querySelector('.header').style.display = 'none';
             document.querySelector('.tabs').style.display = 'none';
-            document.querySelector('.progress-bar').style.display = 'none';
             document.querySelector('.container').style.display = 'none';
             document.querySelector('.btn-bar').style.display = 'none';
             document.getElementById('view-group').classList.remove('hidden');
@@ -478,16 +992,6 @@
             try {
                 await resolveCompanyId();
 
-                // Validate assessor token explicitly
-                if (_isAssessor && _authToken && _authToken !== SUPABASE_KEY) {
-                    try {
-                        await AppCore.sbFetch('applicants?select=id&limit=1', 'GET');
-                    } catch (e) {
-                        console.warn('[Auth] Invalid token, downgrading to Solicitante view');
-                        _isAssessor = false;
-                        document.body.classList.add('role-solicitante');
-                    }
-                }
 
                 // If group param and no specific id, show group selector
                 if (_groupParam && !_applicantId) {
@@ -495,9 +999,19 @@
                     return;
                 }
 
+                // Embedded mode: hide chrome
+                if (_params.get('embedded') === '1') document.body.classList.add('embedded');
+
                 await loadApplicantData();
-                // Open requested tab
-                if (_tabParam === 'assessor') showView('review');
+
+                // Direct link access: hide back button (solicitante can't navigate to list)
+                if (!_isAssessor && _directParam === '1') {
+                    const backBtn = document.querySelector('.portal-form-nav .btn-back');
+                    if (backBtn) backBtn.style.setProperty('display', 'none', 'important');
+                }
+
+                // Open requested tab — assessor now uses same form as solicitante
+                if (_tabParam === 'assessor' || _tabParam === 'editar') showView('form');
                 else if (_tabParam === 'code') showView('code');
                 else showView('form');
             } catch (e) {

@@ -6,24 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DS-160 — Portal do Solicitante</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/iconoir-icons/iconoir@main/css/iconoir.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/css/intlTelInput.css">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js"></script>
     <script src="app-core.js"></script>
     <style>
         /* Portal-specific: full-page centered, no sidebar */
         body {
             background: linear-gradient(135deg, #f0f4ff 0%, #e8edf5 50%, #f0f4ff 100%);
+            flex-direction: column;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
         }
 
+        /* ======== VIEW 1 — Search Card ======== */
         .portal-card {
             padding: 28px 24px;
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             width: 380px;
             max-width: 92vw;
             border: 1px solid var(--border);
-            background: #fff;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, .08);
+            background: var(--bg-card);
+            box-shadow: var(--shadow-lg);
             text-align: center;
             animation: slideUp .25s ease;
         }
@@ -112,20 +118,6 @@
             display: block;
         }
 
-        .portal-trust {
-            margin-top: 24px;
-            font-size: 11px;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .portal-trust::before {
-            content: '🔒';
-        }
-
         .portal-brand {
             display: flex;
             align-items: center;
@@ -134,129 +126,591 @@
             margin-bottom: 20px;
         }
 
-        .portal-brand::before {
-            content: '';
-            width: 6px;
-            height: 20px;
-            background: linear-gradient(135deg, var(--accent), #818cf8);
-            border-radius: 3px;
+        .portal-brand img {
+            max-width: 120px;
+            height: auto;
+            object-fit: contain;
         }
 
-        .portal-brand span {
-            font-size: 14px;
-            font-weight: 800;
+        /* ======== VIEW 2 — List ======== */
+        #viewList {
+            display: none;
+            width: 100%;
+            flex: 1;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 40px 16px 60px;
+        }
+
+        .portal-list-card {
+            width: 100%;
+            max-width: 680px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: none;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            animation: slideUp .25s ease;
+        }
+
+        .top-bar {
+            background: var(--bg-card);
+            border-bottom: none;
+            padding: 16px 12px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Remove unused top-bar-inner — nav is now directly in .top-bar */
+
+        .top-bar .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .top-bar .brand img {
+            max-width: 120px;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
             color: var(--text-secondary);
-            letter-spacing: 2px;
+            flex: none;
+            /* Override styles.css sidebar flex:1 */
+        }
+
+        .user-info .email {
+            font-weight: 500;
+        }
+
+        .page-wrap {
+            padding: 12px;
+        }
+
+        .page-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .page-title-row h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -.2px;
+        }
+
+        .page-title-row .subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 2px;
+        }
+
+        /* CTA button */
+        .btn-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, .25);
+        }
+
+        .btn-cta:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 4px 16px rgba(59, 130, 246, .3);
+            transform: translateY(-1px);
+        }
+
+        .btn-cta:active {
+            transform: translateY(0);
+        }
+
+        /* Table */
+        .table-wrap {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+        }
+
+        .form-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 0;
+            overflow: hidden;
+        }
+
+        .form-table th {
+            text-align: left;
+            padding: 10px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--text-muted);
+            background: var(--bg-main);
+        }
+
+        .form-table td {
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+        }
+
+        .form-table tr {
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .form-table tbody tr:hover {
+            background: var(--bg-main);
+        }
+
+        .form-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .form-table .name-col {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-table .applicant-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 16px;
+            color: var(--text-muted);
+            background: var(--border-light);
+        }
+
+        .form-table .name-info .name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-table .name-info .sub {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .stage-badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 99px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+        .stage-badge.screening {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .stage-badge.analysis {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .stage-badge.ds160 {
+            background: #e0e7ff;
+            color: #4f46e5;
+        }
+
+        .stage-badge.payment {
+            background: #fce7f3;
+            color: #db2777;
+        }
+
+        .stage-badge.scheduling {
+            background: #ccfbf1;
+            color: #0d9488;
+        }
+
+        .stage-badge.interview {
+            background: #f3e8ff;
+            color: #7c3aed;
+        }
+
+        .stage-badge.outcome {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .stage-badge.archived {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .form-table .arrow-col {
+            color: var(--text-muted);
+            font-size: 16px;
+            width: 30px;
+            text-align: center;
+            transition: color .15s;
+        }
+
+        .form-table tbody tr:hover .arrow-col {
+            color: var(--accent);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 24px;
+            background: var(--bg-card);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+        }
+
+        .empty-state h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        /* Loading */
+        .loading-box {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 60px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .6s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 500;
+            color: #fff;
+            z-index: 9999;
+            animation: fadeUp .2s;
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ======== MOBILE ======== */
+        @media (max-width: 600px) {
+            .top-bar .brand img {
+                max-width: 100px;
+            }
+
+            .user-info {
+                gap: 8px;
+                font-size: 12px;
+            }
+
+            .page-title-row h1 {
+                font-size: 18px;
+            }
+
+            .page-title-row .subtitle {
+                font-size: 11px;
+            }
+
+            .form-table th {
+                padding: 8px 12px;
+                font-size: 10px;
+            }
+
+            .form-table td {
+                padding: 10px 12px;
+                font-size: 12px;
+            }
+
+            .form-table .applicant-icon {
+                width: 28px;
+                height: 28px;
+                font-size: 14px;
+            }
+
+            .form-table .name-info .name {
+                font-size: 12px;
+            }
+
+            .form-table .name-info .sub {
+                font-size: 10px;
+            }
+
+            .stage-badge {
+                font-size: 9px;
+                padding: 2px 6px;
+            }
+
+            .btn-cta {
+                width: 100%;
+                justify-content: center;
+                padding: 12px 16px;
+            }
+
+            .portal-card {
+                width: 100%;
+                max-width: 92vw;
+                margin: 16px;
+            }
+
+            .portal-field input {
+                font-size: 16px;
+                padding: 12px 14px;
+            }
+
+            .portal-btn {
+                font-size: 15px;
+                padding: 12px;
+            }
+
+            .empty-state {
+                padding: 40px 16px;
+            }
+
+            #viewList {
+                padding: 0;
+            }
+
+            .portal-list-card {
+                border-radius: 0;
+                box-shadow: none;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="portal-card">
-        <div class="portal-brand"><span>SENDS160</span></div>
+    <!-- ======== VIEW 1 — Search ======== -->
+    <div class="portal-card" id="viewSearch" style="display:none">
+        <div class="portal-brand"><img src="logo-azul.png" alt="SENDS160" id="brandLogo"><span></span></div>
         <h1>Portal do Solicitante</h1>
-        <p class="subtitle" id="orgLabel">Insira seu e-mail para acessar seus formulários DS-160.</p>
+        <p class="subtitle" id="searchSubtitle">Insira seu e-mail para acessar ou criar novas solicitações.</p>
 
         <form id="searchForm" onsubmit="searchByEmail(event)">
             <div class="portal-field">
-                <label for="emailInput">E-mail</label>
                 <input type="email" id="emailInput" placeholder="seu@email.com" required autocomplete="email">
             </div>
-            <button type="submit" id="submitBtn" class="portal-btn">Buscar Formulários</button>
+            <button type="submit" id="submitBtn" class="portal-btn">Confirmar</button>
         </form>
 
         <div id="errorMsg" class="portal-error">
             <span id="errorText">E-mail não encontrado.</span>
         </div>
-
-        <div class="portal-trust">Acesso encriptado Fim-a-Fim</div>
     </div>
 
-    <script>
-        const sbGet = AppCore.sbGet;
-        const _params = new URLSearchParams(location.search);
-        const _idParam = _params.get('id');
-        const _orgParam = _params.get('org');
+    <!-- ======== VIEW 2 — List ======== -->
+    <div id="viewList">
+        <div class="portal-list-card">
+            <div class="top-bar">
+                <div class="brand"><img src="logo-azul.png" alt="SENDS160" id="navLogo"></div>
+                <div class="user-info">
+                    <span class="email" id="userEmail">—</span>
+                    <i class="iconoir-xmark hover-danger" onclick="doLogout()" title="Sair" aria-label="Sair"
+                        style="font-size:20px"></i>
+                </div>
+            </div>
 
-        let _companyId = null;
-        let _orgName = '';
+            <div class="page-wrap">
+                <div class="page-title-row">
+                    <div>
+                        <h1>Solicitantes</h1>
+                        <p class="subtitle">Acompanhe o status de cada solicitante e continue o preenchimento do
+                            formulário
+                            rascunho de coleta de dados para assessoria.</p>
+                    </div>
+                </div>
+                <div style="padding:10px 14px;background:#fef9e7;border:1px solid #E0B624;border-radius:6px;color:#7a6c00;font-size:12px;line-height:1.5;margin-bottom:16px">
+                    <i class="iconoir-info-circle" style="vertical-align:middle;margin-right:6px;color:#E0B624"></i>
+                    Somente adicione um novo solicitante aqui se ele for fazer todo o processo junto com você, inclusive ir à entrevista para serem entrevistados juntos.
+                </div>
 
-        // Retrocompatibilidade: ?id= redireciona direto
-        if (_idParam) {
-            sessionStorage.setItem('client_app_id', _idParam);
-            window.location.href = 'index.html?id=' + _idParam + '&secure_entry=1';
-        }
+                <div id="formList"></div>
 
-        // Validate org param — mandatory
-        async function initPortal() {
-            if (!_orgParam) {
-                showOrgError();
-                AppCore.hideLoading();
-                return;
-            }
-            try {
-                const rows = await sbGet('companies?short_id=eq.' + encodeURIComponent(_orgParam) + '&select=id,name&limit=1');
-                if (!rows || !rows[0]) {
-                    showOrgError();
-                    AppCore.hideLoading();
-                    return;
-                }
-                _companyId = rows[0].id;
-                _orgName = rows[0].name || _orgParam;
-                document.getElementById('orgLabel').textContent = _orgName + ' — Insira seu e-mail para acessar seus formulários DS-160.';
-            } catch (e) {
-                console.error('[Portal] Org resolve error:', e);
-                showOrgError();
-            }
-            AppCore.hideLoading();
-        }
+                <div id="addNewBtnWrap" style="margin-top:16px;text-align:center;display:none">
+                    <button class="btn-cta" onclick="createNewForm()" style="width:100%;justify-content:center">Novo Solicitante</button>
+                </div>
 
-        function showOrgError() {
-            document.getElementById('searchForm').style.display = 'none';
-            document.getElementById('errorText').textContent = 'Link inválido. Este portal precisa ser acessado através do link fornecido pela sua organização.';
-            document.getElementById('errorMsg').classList.add('show');
-        }
+                <div id="emptyState" style="display:none">
+                    <div class="empty-state">
+                        <h3>Nenhum formulário encontrado</h3>
+                        <p>Clique em "Novo Solicitante" para começar seu primeiro formulário DS-160.</p>
+                        <button class="btn-cta" onclick="createNewForm()">Novo Solicitante</button>
+                    </div>
+                </div>
 
-        async function searchByEmail(e) {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            const errEl = document.getElementById('errorMsg');
-            const email = document.getElementById('emailInput').value.trim().toLowerCase();
-            if (!email || !_companyId) return;
+                <div id="loadingState" class="loading-box">
+                    <div class="spinner"></div>
+                    <span>Carregando formulários...</span>
+                </div>
+            </div>
+        </div>
 
-            btn.disabled = true;
-            btn.textContent = 'Buscando...';
-            errEl.classList.remove('show');
+        <!-- Modal: Novo Solicitante -->
+        <div id="newApplicantModal"
+            style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center">
+            <div
+                style="background:var(--bg-card);border-radius:var(--radius-lg);padding:20px;width:90%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative">
+                <i class="iconoir-xmark hover-danger" onclick="closeNewModal()" aria-label="Fechar"
+                    style="position:absolute;top:16px;right:16px;font-size:20px"></i>
+                <h2 style="font-size:16px;font-weight:700;margin:0 0 16px;color:var(--text-primary)">Novo Solicitante</h2>
 
-            try {
-                const rows = await sbGet(
-                    'applicants?company_id=eq.' + _companyId +
-                    '&or=(email.ilike.' + encodeURIComponent(email) +
-                    ',data->>email.ilike.' + encodeURIComponent(email) +
-                    ',data->personal1->>email.ilike.' + encodeURIComponent(email) +
-                    ',data->contact->>email.ilike.' + encodeURIComponent(email) +
-                    ')&select=id,full_name,data,stage,created_at&order=created_at.desc'
-                );
+                <!-- Step 1: Tem CPF? -->
+                <div id="modalStep1">
+                    <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px">O solicitante possui CPF?</p>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                        <button class="hover-fill-accent" onclick="modalHasCpf('yes')">Sim</button>
+                        <button class="hover-fill-accent" onclick="modalHasCpf('no')">Não</button>
+                        <button class="hover-fill-accent" onclick="modalHasCpf('later')">Informar depois</button>
+                    </div>
+                </div>
 
-                // Save to session and redirect — even with 0 results
-                // meus-formularios.html shows empty state with "Create New" button
-                sessionStorage.setItem('client_email', email);
-                sessionStorage.setItem('client_company_id', _companyId);
-                sessionStorage.setItem('client_org', _orgParam);
-                sessionStorage.setItem('client_org_name', _orgName);
-                sessionStorage.setItem('client_results', JSON.stringify(rows || []));
-                window.location.href = 'meus-formularios.html';
-            } catch (err) {
-                document.getElementById('errorText').textContent = 'Erro ao buscar: ' + err.message;
-                errEl.classList.add('show');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Buscar Formulários';
-            }
-        }
+                <!-- Step 2a: Campo CPF -->
+                <div id="modalStepCpf" style="display:none">
+                    <div style="margin-bottom:12px">
+                        <label class="field-label">CPF</label>
+                        <div style="display:flex;gap:6px">
+                            <input id="modalCpf" type="text" class="field-input" maxlength="14"
+                                placeholder="000.000.000-00" inputmode="numeric"
+                                style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupCpf();}"
+                                oninput="let v=this.value.replace(/\D/g,'').slice(0,11);v=v.replace(/(\d{3})(\d)/,'$1.$2');v=v.replace(/(\d{3})(\d)/,'$1.$2');v=v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');this.value=v;">
+                            <button id="btnCpfSearch" class="hover-accent" onclick="lookupCpf()"
+                                style="padding:8px 14px;border:none;border-radius:var(--radius);background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Buscar</button>
+                        </div>
+                        <small id="cpfHint" style="color:var(--text-muted);font-size:11px;margin-top:4px;display:block">Digite o CPF completo e clique em Buscar.</small>
+                    </div>
+                </div>
 
-        initPortal();
-    </script>
+                <!-- Step 3a: Campos após CPF (nome/sobrenome separados pela API) -->
+                <div id="modalExtraFieldsCpf" style="display:none">
+                    <div style="margin-bottom:12px">
+                        <label class="field-label">Nome <span class="req">*</span></label>
+                        <input id="modalGivenName" type="text" class="field-input"
+                            style="text-transform:uppercase">
+                    </div>
+                    <div style="margin-bottom:12px">
+                        <label class="field-label">Sobrenome <span class="req">*</span></label>
+                        <input id="modalSurname" type="text" class="field-input"
+                            style="text-transform:uppercase">
+                    </div>
+                    <div style="margin-bottom:12px">
+                        <label class="field-label">WhatsApp</label>
+                        <input id="modalPhoneCpf" type="tel" class="field-input iti-phone">
+                    </div>
+                    <div style="margin-bottom:16px">
+                        <label class="field-label">E-mail</label>
+                        <input id="modalEmailCpf" type="email" class="field-input">
+                    </div>
+                    <div style="display:flex;gap:8px">
+                        <button class="hover-outline-danger" onclick="modalReset()"
+                            style="flex:0 0 auto">Limpar</button>
+                        <button class="hover-accent" onclick="confirmNewApplicant()"
+                            style="flex:1;padding:10px;border:none;border-radius:var(--radius);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Adicionar Solicitante</button>
+                    </div>
+                </div>
+
+                <!-- Step 3b: Campos manuais (Não / Informar depois) -->
+                <div id="modalExtraFieldsManual" style="display:none">
+                    <div style="margin-bottom:12px">
+                        <label class="field-label">Nome completo <span class="req">*</span></label>
+                        <input id="modalFullName" type="text" class="field-input"
+                            style="text-transform:uppercase" placeholder="Nome e sobrenome">
+                    </div>
+                    <div style="margin-bottom:12px">
+                        <label class="field-label">WhatsApp</label>
+                        <input id="modalPhoneManual" type="tel" class="field-input iti-phone">
+                    </div>
+                    <div style="margin-bottom:16px">
+                        <label class="field-label">E-mail</label>
+                        <input id="modalEmailManual" type="email" class="field-input">
+                    </div>
+                    <div style="display:flex;gap:8px">
+                        <button class="hover-outline-danger" onclick="modalReset()"
+                            style="flex:0 0 auto">Limpar</button>
+                        <button class="hover-accent" onclick="confirmNewApplicant()"
+                            style="flex:1;padding:10px;border:none;border-radius:var(--radius);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Adicionar Solicitante</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Confirmar exclusão -->
+        <!-- Delete modal removed: solicitante não pode deletar -->
+
+    <script src="js/portal.js"></script>
 </body>
 
 </html>

@@ -1,37 +1,77 @@
-# DS-160 IA — Sistema de Assessoria de Vistos
+# DS-160 IA — Sistema de Automação
 
-Sistema completo para gestão de formulários DS-160, incluindo preenchimento assistido, automação e gerenciamento de solicitantes.
+Sistema modular de preenchimento automatizado do formulário DS-160 (Visto Americano).
 
-## Estrutura
+## Arquitetura
 
 ```
-├── public/              Frontend (HTML/CSS/JS estático)
-│   ├── dashboard.html   Login + painel do assessor (Kanban)
-│   ├── ds160-form.html  Formulário DS-160 (view assessor)
-│   ├── index.html       Formulário clone DS-160 (solicitante)
-│   ├── portal.html      Portal de acesso do solicitante
-│   ├── admin.html       Painel administrativo
-│   ├── app-core.js      Core: Supabase, auth, navegação
-│   ├── form-engine.js   Motor do formulário (schema-driven)
-│   ├── ds160-schema.js  Schema completo do DS-160
-│   ├── worker.js        Worker de automação
-│   └── worker-monitor.js Monitor do worker
-├── automation/          Automação Playwright (preenchimento DS-160)
-├── scripts/             Scripts de teste e auditoria
-└── .agents/             Workflows e skills do IDE
+📁 DS160 IA/
+├── automation/              # Backend — automação Playwright
+│   ├── filler.js            # Runner principal
+│   ├── queue.js             # Queue runner (Supabase)
+│   ├── run.js               # Entry point
+│   ├── normalize-profile.js # Aggregator: 20 normalizers
+│   ├── field-maps/
+│   │   ├── index.js         # Router por tipo de visto (B/F/J/O)
+│   │   ├── b1-b2-modular.js # Aggregator: 17 page builders
+│   │   └── shared.js        # Postback IDs
+│   ├── helpers/             # fill-field, postback, add-another, verify
+│   └── pages/               # generic-page, travel-page
+│
+├── pages/                   # Módulos por página (57 arquivos)
+│   ├── _shared/
+│   │   ├── options.js       # Options compartilhados
+│   │   ├── field-map-helpers.js
+│   │   └── visa-configs.js  # Resolução dinâmica por visto/idade/marital
+│   ├── 01-location/         # schema + field-map + normalize
+│   ├── 02-personal1/        # ...
+│   ├── ...
+│   ├── 18-student-exchange/ # F/J/M visas (SEVIS)
+│   └── 19-petition-info/    # O visa (I-129)
+│
+├── public/                  # Frontend
+│   ├── ds160-form.html      # Formulário clone
+│   ├── form-engine.js       # Renderizador (accordion + pages mode)
+│   ├── ds160-schema.js      # Schema editável — fonte de verdade do frontend
+│   ├── styles.css           # CSS completo
+│   ├── dashboard.html       # Dashboard admin
+│   └── portal.html          # Portal do solicitante
+│
+├── scripts/                 # Utilitários
+│   ├── build-schema.js      # Gera ds160-schema.js dos módulos
+│   ├── setup-production.sql # Setup do banco
+│   ├── check-queue.js       # Debug: consulta fila
+│   └── test-auth.js         # Debug: testa autenticação
+│
+└── .agents/                 # Skills e workflows do agente IA
 ```
 
-## Como Rodar
+## Tipos de Visto Suportados
+
+| Visto | Tipo | Páginas Extra |
+|-------|------|---------------|
+| **B1/B2** | Turismo/Negócios | — |
+| **F1/F2** | Estudante | SEVIS (student-exchange) |
+| **J1/J2** | Intercâmbio | SEVIS (student-exchange) |
+| **O1/O2/O3** | Habilidade Extraordinária | Petition Info (I-129) |
+
+## Comandos
 
 ```bash
-npm run dev
+# Rebuild schema a partir dos módulos (opcional)
+node scripts/build-schema.js
+
+# Verificar fila de automação
+node scripts/check-queue.js
+
+# Executar automação
+node automation/run.js
 ```
 
-Abre em `http://localhost:5173`. Serve os arquivos estáticos de `public/`.
+## Modo de Renderização do Formulário
 
-## Tecnologias
-
-- **Frontend:** HTML + Tailwind CSS (CDN) + Vanilla JS
-- **Backend:** Supabase (PostgreSQL + Auth + API REST)
-- **Automação:** Playwright (Node.js)
-- **Formulário:** FormEngine schema-driven (vanilla JS)
+```javascript
+// No browser console:
+engine.setRenderMode('pages')     // Multi-page (step-bar)
+engine.setRenderMode('accordion') // Sanfonas (padrão)
+```

@@ -1,0 +1,93 @@
+<div id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_modalStatus_foregroundElement"
+    style="position: fixed; z-index: 10001; left: 292px; top: 10px;">
+    <div id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_pnlStatus" class="application-status"
+        style="position: relative; z-index: 2;">
+
+        <div style="text-align: right;">
+            <span class="RadioCheck">
+
+                <span class="tooltip_text">
+                    <input type="image" name="ctl00$ContentPlaceHolder1$ucApplicationStatusView$btnPrintStatus"
+                        id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_btnPrintStatus" src="_res/img/print.png"
+                        onclick="needToConfirm = false; printDiv('print-screen'); return false;WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$ucApplicationStatusView$btnPrintStatus&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))"
+                        style="border-width:0px;"></span><br>
+            </span>
+        </div>
+        <div id="print-screen">
+            <div id="status-content" class="status-content">
+                <img id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_dosSeal" class="print-only"
+                    src="_res/img/dos_seal.png" style="border-width:0px;">
+                <div id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_pnlTitle" class="title">
+
+                    <span class="dos">U.S. Department of State</span><br>
+                    <span id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblAppName"
+                        class="app-name">NONIMMIGRANT VISA APPLICATION</span>
+
+                </div>
+                <div class="status">
+                    <span id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblStatus">Issued</span>
+                </div>
+                <table style="padding-top:1em; padding-bottom:1em;" role="presentation">
+                    <tbody>
+                        <tr>
+                            <td><span id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblCaseTitle">Application ID
+                                    or Case Number</span>:</td>
+                            <td><span id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblCaseNo">AA00AUE9OL</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblSubmitDateTitle">Case
+                                    Created:</span></td>
+                            <td><span
+                                    id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblSubmitDate">13-Feb-2023</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblStatusDateTitle">Case
+                                    Last Updated:</span></td>
+                            <td><span
+                                    id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblStatusDate">15-Feb-2023</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <br>
+
+                <div id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_postMessage" class="ceac-status-content">
+                    <span id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblMessage">The consular section has
+                        completed processing your application and your visa has been issued. If you do not receive your
+                        passport and visa within 10 working days, please contact the embassy or consulate where you
+                        submitted your application. If at any time additional information is discovered that indicates
+                        you may no longer be eligible for a visa, the U.S. government may revoke your visa. See Section
+                        221(i) of the Immigration and Nationality Act.</span>
+
+
+                    <br>
+                    <div>
+                        <span id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblInfo">For more information,
+                            please visit </span>
+                        <a id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lnkContactUrl"
+                            href="https://br.usembassy.gov/visas/" target="_blank">U.S. Consulate General Sao Paulo.</a>
+                    </div>
+                </div>
+                <br>
+                <div class="ceac-document-warning" style="text-align:center; font-weight:bold;">
+
+                </div>
+            </div>
+        </div>
+
+        <div style="width:600px !important; text-align:center;">
+            <a id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lnkCloseInbox"
+                href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$ucApplicationStatusView$lnkCloseInbox&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">Close</a>
+        </div>
+
+    </div>
+    <div id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_pnlStatus_DropShadow"
+        style="background-color: black; position: absolute; left: 5px; top: 5px; width: 622px; height: 389px; visibility: visible; z-index: 1;">
+    </div>
+</div>

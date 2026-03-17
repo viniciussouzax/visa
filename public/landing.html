@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SENDS 160 — Superpoderes para sua assessoria de visto americano</title>
+    <meta name="description" content="Plataforma inteligente que dá superpoderes para assessorias de visto americano. IA, automação ponta-a-ponta e marketplace de serviços.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/iconoir-icons/iconoir@main/css/iconoir.css">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --gold:#E0B624;--gold-light:#f5d660;--gold-glow:rgba(224,182,36,.1);
+            --red:#BF0A30;--green:#719F2A;--blue:#65B2E8;
+            --bg-primary:#ffffff;--bg-secondary:#eaf1f7;--bg-card:#ffffff;--bg-card-hover:#f8fafc;
+            --border:rgba(0,57,118,.08);--border-hover:rgba(0,57,118,.15);
+            --text-primary:#000000;--text-secondary:#666666;--text-tertiary:#888888;
+            --white:#ffffff;--navy:#003976;--dark:#0A2240;--serif:'DM Serif Display',Georgia,'Times New Roman',serif;--sans:'Inter',-apple-system,sans-serif;
+        }
+        html{scroll-behavior:smooth}
+        body{font-family:var(--sans);color:var(--text-secondary);background:var(--bg-primary);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+        /* === NAV === */
+        .nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:0 48px;height:72px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);transition:all .4s}
+        .nav.scrolled{background:rgba(255,255,255,.97);box-shadow:0 2px 20px rgba(0,0,0,.04)}
+        .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .nav-logo img{height:28px}
+        .nav-logo span{font-family:var(--serif);font-size:20px;color:var(--navy);letter-spacing:-.3px}
+        .nav-links{display:flex;align-items:center;gap:36px}
+        .nav-links a{color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:400;letter-spacing:.3px;transition:color .3s}
+        .nav-links a:hover{color:var(--navy)}
+        .nav-cta{background:var(--navy)!important;color:var(--white)!important;padding:10px 24px!important;border-radius:8px!important;font-weight:400!important;font-size:13px!important;letter-spacing:.4px!important;transition:all .3s!important;box-shadow:0 4px 16px rgba(0,57,118,.12)}
+        .nav-cta:hover{box-shadow:0 6px 24px rgba(0,57,118,.2)!important;transform:translateY(-1px)}
+        .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:4px}
+        .nav-toggle span{display:block;width:22px;height:2px;background:var(--navy);margin:5px 0;transition:all .3s}
+
+        /* === HERO === */
+        .hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:140px 48px 80px;overflow:hidden;background:linear-gradient(170deg,#0A2240 0%,#003976 50%,#0C3C59 100%)}
+        .hero::before{content:'';position:absolute;top:-20%;left:50%;transform:translateX(-50%);width:900px;height:900px;background:radial-gradient(ellipse,rgba(101,178,232,.1),transparent 70%);pointer-events:none}
+        .hero::after{content:'';position:absolute;bottom:-20%;right:-10%;width:600px;height:600px;background:radial-gradient(circle,rgba(191,10,48,.04),transparent 70%);pointer-events:none}
+        .hero-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:72px 72px;mask-image:radial-gradient(ellipse 60% 60% at 50% 40%,black,transparent);-webkit-mask-image:radial-gradient(ellipse 60% 60% at 50% 40%,black,transparent)}
+        .hero-content{max-width:900px;text-align:center;position:relative;z-index:2}
+        .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(191,10,48,.1);border:1px solid rgba(191,10,48,.15);padding:8px 20px;border-radius:99px;font-size:11px;font-weight:400;color:rgba(255,255,255,.8);margin-bottom:36px;letter-spacing:.8px;text-transform:uppercase}
+        .hero-badge i{font-size:13px;color:rgba(255,140,160,.7)}
+        .hero h1{font-family:var(--serif);font-size:clamp(42px,6vw,76px);font-weight:400;color:#ffffff;line-height:1.08;letter-spacing:-1.5px;margin-bottom:28px}
+        .hero h1 em{font-style:italic;color:var(--gold)}
+        .hero-sub{font-size:clamp(16px,1.8vw,19px);color:rgba(255,255,255,.7);max-width:580px;margin:0 auto 14px;line-height:1.7;font-weight:300}
+        .hero-disclaimer{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:40px;font-style:italic;letter-spacing:.2px}
+        .hero-actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+        .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:400;text-decoration:none;cursor:pointer;border:none;transition:all .35s;font-family:var(--sans);letter-spacing:.3px}
+        .btn-primary{background:var(--gold);color:#0A2240;box-shadow:0 4px 20px rgba(224,182,36,.3)}
+        .btn-primary:hover{box-shadow:0 8px 32px rgba(224,182,36,.4);transform:translateY(-2px)}
+        .btn-ghost{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)}
+        .btn-ghost:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.35)}
+        .hero-stats{display:flex;gap:56px;justify-content:center;margin-top:56px;padding-top:40px;border-top:1px solid rgba(255,255,255,.1)}
+        .hero-stat{text-align:center}
+        .hero-stat-num{font-family:var(--serif);font-size:36px;color:#fff;letter-spacing:-1px}
+        .hero-stat-label{font-size:11px;color:rgba(255,255,255,.5);font-weight:400;margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+
+        /* === SECTIONS === */
+        section{padding:120px 48px}
+        .container{max-width:1140px;margin:0 auto}
+        .section-label{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:2.5px;color:var(--navy);margin-bottom:16px}
+        .section-label i{font-size:14px}
+        .section-title{font-family:var(--serif);font-size:clamp(32px,4.5vw,52px);font-weight:400;color:var(--dark);letter-spacing:-1px;line-height:1.1;margin-bottom:20px}
+        .section-title em{font-style:italic;color:var(--navy)}
+        .section-desc{font-size:17px;color:var(--text-secondary);max-width:600px;line-height:1.75;font-weight:300}
+        .section-desc.center{text-align:center;margin:0 auto}
+
+        /* === PAIN === */
+        .pain{background:var(--bg-primary);border-top:1px solid var(--border)}
+        .pain-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:56px;align-items:center;margin-top:56px}
+        .pain-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+        .pain-item{display:flex;gap:16px;align-items:flex-start;padding:20px 22px;border-radius:14px;background:var(--bg-card);border:1px solid var(--border);transition:all .35s;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+        .pain-item:hover{border-color:var(--border-hover);background:var(--bg-card-hover);transform:translateX(4px);box-shadow:0 4px 16px rgba(0,0,0,.06)}
+        .pain-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+        .pain-icon.red{background:rgba(191,10,48,.08);color:var(--red)}
+        .pain-icon.yellow{background:rgba(224,182,36,.08);color:#b8960e}
+        .pain-icon.gray{background:rgba(0,57,118,.04);color:var(--text-secondary)}
+        .pain-icon.blue{background:rgba(101,178,232,.08);color:#2a7ab5}
+        .pain-item h4{font-size:14px;font-weight:400;color:var(--text-primary);margin-bottom:4px}
+        .pain-item p{font-size:12px;color:var(--text-secondary);line-height:1.6}
+        .pain-visual{background:#D9EDF7;border:1px solid rgba(0,57,118,.06);border-radius:20px;padding:48px 40px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;min-height:380px}
+        .pain-visual::before{content:'';position:absolute;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(0,57,118,.04),transparent);top:10%;right:-10%}
+        .pain-visual .big-number{font-family:var(--serif);font-size:80px;color:var(--navy);line-height:1}
+        .pain-visual .big-label{font-size:16px;color:var(--text-secondary);font-weight:400;margin-top:10px;text-align:center;line-height:1.5}
+        .pain-visual .big-sub{font-size:12px;color:var(--text-tertiary);margin-top:8px;text-align:center}
+
+        /* === PIPELINE === */
+        .how{background:var(--bg-secondary);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+        .pipeline-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:56px}
+        .pipe{padding:28px 20px;text-align:center;border-radius:16px;transition:all .35s;position:relative;background:var(--bg-card);border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.03)}
+        .pipe:hover{border-color:var(--border-hover);transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.06)}
+        .pipe-number{font-family:var(--serif);font-size:40px;color:var(--navy);opacity:.15;line-height:1}
+        .pipe-title{font-size:13px;font-weight:400;color:var(--text-primary);margin-top:10px;letter-spacing:.2px}
+        .pipe-text{font-size:11px;margin-top:8px;color:var(--text-tertiary);line-height:1.55}
+        .pipe-connector{position:absolute;right:-12px;top:50%;transform:translateY(-50%);z-index:2;color:var(--text-tertiary);font-size:14px}
+
+        /* === FEATURES === */
+        .features{background:var(--bg-primary);border-top:1px solid var(--border)}
+        .feature-block{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:64px 0;border-bottom:1px solid var(--border)}
+        .feature-block:last-child{border-bottom:none}
+        .feature-block.reverse .feature-text{order:2}
+        .feature-block.reverse .feature-visual{order:1}
+        .feat-label{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:2.5px;color:var(--navy);margin-bottom:16px}
+        .feat-label i{font-size:14px}
+        .feature-text h3{font-family:var(--serif);font-size:28px;font-weight:400;color:var(--dark);line-height:1.2;margin-bottom:16px;letter-spacing:-.3px}
+        .feature-text p{font-size:14px;color:var(--text-secondary);line-height:1.8;margin-bottom:8px;font-weight:300}
+        .feat-highlights{list-style:none;margin-top:24px;display:flex;flex-direction:column;gap:10px}
+        .feat-highlights li{display:flex;align-items:center;gap:12px;font-size:13px;font-weight:300;color:var(--text-primary)}
+        .feat-check{width:24px;height:24px;border-radius:7px;background:rgba(113,159,42,.08);color:var(--green);display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+        .feature-visual{background:#D9EDF7;border:1px solid rgba(0,57,118,.06);border-radius:20px;padding:40px;min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;transition:all .35s}
+        .feature-visual:hover{border-color:var(--border-hover);box-shadow:0 8px 32px rgba(0,0,0,.06)}
+        .feature-visual::before{content:'';position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(0,57,118,.03),transparent);bottom:-20%;left:50%;transform:translateX(-50%)}
+        .fv-icon{font-size:48px;color:var(--navy);margin-bottom:16px;position:relative;z-index:1}
+        .fv-title{font-family:var(--serif);font-size:18px;color:var(--dark);position:relative;z-index:1;text-align:center}
+        .fv-sub{font-size:12px;color:var(--text-tertiary);position:relative;z-index:1;margin-top:6px;text-align:center}
+        .fv-stats{display:flex;gap:32px;margin-top:24px;position:relative;z-index:1}
+        .fv-stat{text-align:center}
+        .fv-stat-val{font-family:var(--serif);font-size:24px;color:var(--navy)}
+        .fv-stat-label{font-size:10px;color:var(--text-tertiary);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+
+        /* === INTELLIGENCE === */
+        .intelligence{background:var(--bg-secondary);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+        .intelligence::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:800px;height:400px;background:radial-gradient(ellipse,rgba(0,57,118,.03),transparent 70%);pointer-events:none}
+        .intel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:56px}
+        .intel-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:32px 28px;transition:all .35s;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+        .intel-card:hover{border-color:var(--border-hover);transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,.08)}
+        .intel-card .intel-icon{font-size:28px;margin-bottom:16px;color:var(--navy)}
+        .intel-card h4{font-family:var(--serif);font-size:17px;color:var(--dark);margin-bottom:10px}
+        .intel-card p{font-size:13px;color:var(--text-secondary);line-height:1.7}
+        .intel-disclaimer{margin-top:36px;padding:18px 24px;background:rgba(0,57,118,.03);border:1px solid rgba(0,57,118,.06);border-radius:12px;font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:12px;line-height:1.6}
+        .intel-disclaimer i{font-size:20px;color:var(--navy);flex-shrink:0}
+
+        /* === AUTOMATION === */
+        .automation{background:var(--bg-primary);border-top:1px solid var(--border)}
+        .auto-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:56px}
+        .auto-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;transition:all .35s;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+        .auto-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+        .auto-card:nth-child(1)::before{background:linear-gradient(90deg,var(--blue),transparent)}
+        .auto-card:nth-child(2)::before{background:linear-gradient(90deg,var(--gold),transparent)}
+        .auto-card:nth-child(3)::before{background:linear-gradient(90deg,var(--green),transparent)}
+        .auto-card:nth-child(4)::before{background:linear-gradient(90deg,var(--red),transparent)}
+        .auto-card:hover{border-color:var(--border-hover);transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,.08)}
+        .auto-card .auto-num{font-family:var(--serif);font-size:48px;color:var(--navy);opacity:.06;line-height:1;position:absolute;top:16px;right:20px}
+        .auto-card .auto-icon{font-size:24px;margin-bottom:14px}
+        .auto-card:nth-child(1) .auto-icon{color:var(--blue)}
+        .auto-card:nth-child(2) .auto-icon{color:#b8960e}
+        .auto-card:nth-child(3) .auto-icon{color:var(--green)}
+        .auto-card:nth-child(4) .auto-icon{color:var(--red)}
+        .auto-card h4{font-family:var(--serif);font-size:17px;color:var(--dark);margin-bottom:8px}
+        .auto-card p{font-size:12px;color:var(--text-secondary);line-height:1.7}
+
+        /* === MARKETPLACE === */
+        .marketplace{background:var(--bg-secondary);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+        .mkt-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;margin-top:56px}
+        .mkt-text h3{font-family:var(--serif);font-size:26px;color:var(--dark);line-height:1.2;margin-bottom:16px;letter-spacing:-.3px}
+        .mkt-text p{font-size:14px;color:var(--text-secondary);line-height:1.8;margin-bottom:12px;font-weight:300}
+        .mkt-services{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .mkt-svc{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:all .35s;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+        .mkt-svc:hover{border-color:var(--border-hover);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.06)}
+        .mkt-svc i{font-size:22px;color:var(--navy);margin-bottom:10px;display:block}
+        .mkt-svc h4{font-size:13px;font-weight:400;color:var(--text-primary);margin-bottom:4px}
+        .mkt-svc p{font-size:11px;color:var(--text-tertiary);line-height:1.55}
+
+        /* === COMPARE === */
+        .compare{background:var(--bg-primary);border-top:1px solid var(--border)}
+        .compare-table{width:100%;border-collapse:collapse;margin-top:56px;font-size:13px}
+        .compare-table thead{border-bottom:1px solid var(--border)}
+        .compare-table th{text-align:left;padding:14px 18px;font-weight:400;font-size:12px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1.5px}
+        .compare-table td{padding:14px 18px;border-bottom:1px solid var(--border);color:var(--text-secondary)}
+        .compare-table tr td:first-child{font-weight:400;color:var(--text-primary)}
+        .compare-table .col-sends{background:rgba(0,57,118,.03)}
+        .compare-table .col-sends th{color:var(--navy)}
+        .check-yes{color:var(--green);font-weight:400}
+        .check-no{color:var(--text-tertiary)}
+        .check-partial{color:#b8960e}
+
+        /* === PROOF === */
+        .proof{background:var(--bg-secondary);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+        .proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:56px}
+        .proof-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:32px;transition:all .35s;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+        .proof-card:hover{border-color:var(--border-hover);transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,.08)}
+        .proof-metric{font-family:var(--serif);font-size:44px;color:var(--navy);line-height:1}
+        .proof-metric-label{font-size:12px;color:var(--text-tertiary);margin-top:4px;margin-bottom:18px;text-transform:uppercase;letter-spacing:.5px}
+        .proof-text{font-size:13px;color:var(--text-secondary);line-height:1.7;border-top:1px solid var(--border);padding-top:16px;font-weight:300}
+
+        /* === CTA === */
+        .cta-final{background:linear-gradient(170deg,#0A2240 0%,#003976 100%);text-align:center;padding:120px 48px;position:relative;overflow:hidden}
+        .cta-final::before{content:'';position:absolute;bottom:-20%;left:50%;transform:translateX(-50%);width:700px;height:500px;background:radial-gradient(ellipse,rgba(101,178,232,.08),transparent 70%);pointer-events:none}
+        .cta-final h2{font-family:var(--serif);font-size:clamp(36px,5vw,60px);color:#fff;letter-spacing:-1.5px;line-height:1.1;margin-bottom:20px;position:relative;z-index:1}
+        .cta-final h2 em{font-style:italic;color:var(--gold)}
+        .cta-final .cta-desc{font-size:17px;color:rgba(255,255,255,.65);max-width:520px;margin:0 auto 40px;line-height:1.75;font-weight:300;position:relative;z-index:1}
+        .cta-final .btn-primary{font-size:17px;padding:16px 44px;position:relative;z-index:1}
+        .cta-guarantee{margin-top:24px;font-size:12px;color:rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;gap:8px;position:relative;z-index:1}
+        .cta-guarantee i{font-size:14px;color:var(--green)}
+
+        /* === FOOTER === */
+        .footer{background:#0A2240;border-top:none;padding:40px 48px}
+        .footer-content{max-width:1140px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .footer-brand{display:flex;align-items:center;gap:10px}
+        .footer-brand img{height:22px;opacity:.7}
+        .footer-brand span{font-family:var(--serif);font-size:16px;color:rgba(255,255,255,.6)}
+        .footer-copy{font-size:11px;color:rgba(255,255,255,.35)}
+        .footer-links{display:flex;gap:24px}
+        .footer-links a{font-size:12px;color:rgba(255,255,255,.4);text-decoration:none;transition:color .3s}
+        .footer-links a:hover{color:#fff}
+
+        /* === ANIMATIONS === */
+        .fade-up{opacity:0;transform:translateY(36px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+        .fade-up.visible{opacity:1;transform:translateY(0)}
+        .fade-up:nth-child(2){transition-delay:.08s}
+        .fade-up:nth-child(3){transition-delay:.16s}
+
+        /* === SKELETON UI MOCKUPS === */
+        @keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+        .sk{border-radius:6px;background:linear-gradient(90deg,rgba(0,57,118,.04) 0%,rgba(0,57,118,.09) 40%,rgba(0,57,118,.04) 80%);background-size:600px 100%;animation:shimmer 2.5s infinite linear}
+        .sk-gold{background:linear-gradient(90deg,rgba(0,57,118,.06) 0%,rgba(0,57,118,.14) 40%,rgba(0,57,118,.06) 80%);background-size:600px 100%;animation:shimmer 2.5s infinite linear}
+
+        /* Screen mockup wrapper */
+        .screen-mock{width:100%;position:relative;z-index:1;border-radius:12px;overflow:hidden;background:#fff;border:1px solid rgba(0,57,118,.08);box-shadow:0 4px 24px rgba(0,0,0,.06)}
+        .screen-titlebar{height:28px;background:#f5f7fa;display:flex;align-items:center;padding:0 12px;gap:6px;border-bottom:1px solid rgba(0,57,118,.06)}
+        .screen-dot{width:7px;height:7px;border-radius:50%}
+        .screen-dot.r{background:#ff5f57}
+        .screen-dot.y{background:#febc2e}
+        .screen-dot.g{background:#28c840}
+        .screen-titlebar-text{margin-left:auto;font-size:9px;color:var(--text-tertiary);font-weight:400;letter-spacing:.5px}
+        .screen-body{padding:16px;background:#fff}
+
+        /* Form skeleton */
+        .sk-form-section{margin-bottom:14px}
+        .sk-form-label{width:40%;height:8px;margin-bottom:8px;border-radius:4px}
+        .sk-form-input{width:100%;height:32px;border-radius:6px;border:1px solid rgba(0,57,118,.06)}
+        .sk-form-row{display:flex;gap:10px;margin-bottom:10px}
+        .sk-form-row .sk-form-field{flex:1}
+        .sk-form-field .sk-form-label{width:50%;height:7px;margin-bottom:6px}
+        .sk-form-field .sk-form-input{height:28px}
+        .sk-form-select{position:relative}
+        .sk-form-select::after{content:'▾';position:absolute;right:10px;bottom:6px;font-size:10px;color:var(--text-tertiary)}
+        .sk-form-radio-row{display:flex;gap:16px;margin-bottom:10px}
+        .sk-form-radio{display:flex;align-items:center;gap:6px}
+        .sk-form-radio-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(0,57,118,.1);flex-shrink:0}
+        .sk-form-radio-dot.active{border-color:var(--navy);background:rgba(0,57,118,.2)}
+        .sk-form-radio-text{width:48px;height:6px;border-radius:3px}
+        .sk-form-btn{width:120px;height:32px;border-radius:8px;margin-top:6px;margin-left:auto;display:block}
+        .sk-form-progress{display:flex;gap:3px;margin-bottom:14px}
+        .sk-form-progress span{flex:1;height:3px;border-radius:2px;background:rgba(0,57,118,.06)}
+        .sk-form-progress span.done{background:var(--navy);opacity:.5}
+        .sk-form-progress span.current{background:var(--navy);opacity:.2;animation:shimmer 2s infinite linear;background-size:600px 100%;background-image:linear-gradient(90deg,rgba(0,57,118,.1) 0%,rgba(0,57,118,.25) 40%,rgba(0,57,118,.1) 80%)}
+        .sk-form-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(0,57,118,.04)}
+        .sk-form-header-icon{width:18px;height:18px;border-radius:4px}
+        .sk-form-header-text{width:140px;height:10px;border-radius:4px}
+
+        /* Dashboard skeleton */
+        .sk-dash{display:flex;gap:8px;height:100%}
+        .sk-dash-sidebar{width:48px;background:var(--dark);border-radius:8px;padding:10px 6px;display:flex;flex-direction:column;gap:10px;align-items:center}
+        .sk-dash-sidebar-item{width:28px;height:28px;border-radius:6px}
+        .sk-dash-main{flex:1;display:flex;flex-direction:column;gap:8px}
+        .sk-dash-topbar{display:flex;gap:8px;align-items:center;padding-bottom:8px;border-bottom:1px solid rgba(0,57,118,.04)}
+        .sk-dash-search{flex:1;height:24px;border-radius:6px}
+        .sk-dash-avatar{width:24px;height:24px;border-radius:50%}
+        .sk-dash-cols{display:flex;gap:8px;flex:1;min-height:0}
+        .sk-dash-col{flex:1;display:flex;flex-direction:column;gap:6px}
+        .sk-dash-col-header{height:8px;border-radius:4px;width:60%;margin-bottom:4px}
+        .sk-dash-card{border-radius:8px;padding:10px;border:1px solid rgba(0,57,118,.05);display:flex;flex-direction:column;gap:6px;background:rgba(0,57,118,.02)}
+        .sk-dash-card-line{height:6px;border-radius:3px}
+        .sk-dash-card-line.short{width:50%}
+        .sk-dash-card-badge{width:40px;height:12px;border-radius:4px}
+        .sk-dash-card-avatar{width:16px;height:16px;border-radius:50%;margin-left:auto}
+        .sk-dash-card-row{display:flex;align-items:center;gap:6px}
+
+        /* Portal skeleton */
+        .sk-portal-header{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid rgba(0,57,118,.06);margin-bottom:14px}
+        .sk-portal-logo{width:32px;height:32px;border-radius:8px}
+        .sk-portal-brand{display:flex;flex-direction:column;gap:4px}
+        .sk-portal-brand-name{width:100px;height:10px;border-radius:4px}
+        .sk-portal-brand-sub{width:60px;height:6px;border-radius:3px}
+        .sk-portal-status{margin-left:auto;width:64px;height:18px;border-radius:4px}
+        .sk-portal-login{display:flex;flex-direction:column;gap:10px;max-width:220px;margin:0 auto}
+        .sk-portal-login-label{width:70%;height:7px;border-radius:3px}
+        .sk-portal-login-input{height:28px;border-radius:6px;border:1px solid rgba(0,57,118,.06)}
+        .sk-portal-login-btn{height:30px;border-radius:8px;margin-top:4px}
+        .sk-portal-members{margin-top:14px;border-top:1px solid rgba(0,57,118,.04);padding-top:12px}
+        .sk-portal-member{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,57,118,.03)}
+        .sk-portal-member-avatar{width:22px;height:22px;border-radius:50%;flex-shrink:0}
+        .sk-portal-member-name{height:7px;border-radius:3px;flex:1}
+        .sk-portal-member-badge{width:48px;height:14px;border-radius:4px}
+
+        /* === RESPONSIVE === */
+        @media(max-width:1024px){.pipeline-steps{grid-template-columns:repeat(3,1fr)}.pipe-connector{display:none}.auto-grid,.intel-grid{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:768px){
+            section{padding:80px 24px}.nav{padding:0 24px}.nav-links{display:none;flex-direction:column;position:absolute;top:72px;left:0;right:0;background:rgba(255,255,255,.97);backdrop-filter:blur(20px);padding:24px;gap:16px;border-bottom:1px solid var(--border)}.nav-links.open{display:flex}.nav-toggle{display:block}
+            .hero{padding:120px 24px 80px}.pain-grid,.feature-block,.mkt-grid{grid-template-columns:1fr;gap:32px}.feature-block.reverse .feature-text,.feature-block.reverse .feature-visual{order:unset}
+            .pipeline-steps,.auto-grid,.intel-grid,.mkt-services,.proof-grid{grid-template-columns:1fr}.hero-stats{flex-direction:column;gap:20px}
+            .footer-content{flex-direction:column;gap:16px;text-align:center}
+            .compare-table{font-size:11px}.compare-table th,.compare-table td{padding:10px 12px}
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="mainNav">
+    <a class="nav-logo" href="#"><img src="logo-branco.png" alt="SENDS160" onerror="this.style.display='none'"><span>SENDS 160</span></a>
+    <div class="nav-links" id="navLinks">
+        <a href="#problema">O Problema</a>
+        <a href="#como-funciona">Como Funciona</a>
+        <a href="#recursos">Recursos</a>
+        <a href="#inteligencia">Inteligência</a>
+        <a href="#marketplace">Marketplace</a>
+        <a href="#comecar" class="nav-cta">Começar Agora</a>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-grid-bg"></div>
+    <div class="hero-content fade-up">
+        <div class="hero-badge"><i class="iconoir-sparks"></i> Plataforma inteligente para assessorias de visto</div>
+        <h1><em>Superpoderes</em> para sua<br>assessoria de visto</h1>
+        <p class="hero-sub">IA que antecipa erros, automação ponta-a-ponta e um ecossistema de serviços — tudo em uma plataforma que amplifica o que a assessoria já faz de melhor.</p>
+        <p class="hero-disclaimer">O SENDS 160 não substitui o assessor — dá a ele ferramentas que nenhum concorrente oferece.</p>
+        <div class="hero-actions">
+            <a href="#comecar" class="btn btn-primary"><i class="iconoir-flash"></i> Quero esses superpoderes</a>
+            <a href="#como-funciona" class="btn btn-ghost"><i class="iconoir-play"></i> Ver como funciona</a>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat"><div class="hero-stat-num">45 min</div><div class="hero-stat-label">Economizados por DS-160</div></div>
+            <div class="hero-stat"><div class="hero-stat-num">100%</div><div class="hero-stat-label">Do processo coberto</div></div>
+            <div class="hero-stat"><div class="hero-stat-num">360°</div><div class="hero-stat-label">Visão do caso com IA</div></div>
+        </div>
+        </div>
+    </div>
+</section>
+
+<!-- PAIN POINT -->
+<section class="pain" id="problema">
+    <div class="container">
+        <div class="section-label"><i class="iconoir-warning-triangle"></i> O PROBLEMA</div>
+        <h2 class="section-title">Assessorias operam no escuro<br>e no <em>braçal</em></h2>
+        <p class="section-desc">Preencher DS-160 manualmente é só a ponta do iceberg. O verdadeiro problema é não ter visão 360° do caso, depender de processos manuais e não conseguir escalar sem aumentar a equipe.</p>
+        <div class="pain-grid fade-up">
+            <ul class="pain-list">
+                <li class="pain-item">
+                    <div class="pain-icon red"><i class="iconoir-clock"></i></div>
+                    <div><h4>45+ minutos por formulário</h4><p>Cada DS-160 tem 100+ campos em 13 seções. Copiar dados, resolver CAPTCHAs e lidar com postbacks é lento e propenso a erro.</p></div>
+                </li>
+                <li class="pain-item">
+                    <div class="pain-icon yellow"><i class="iconoir-restart"></i></div>
+                    <div><h4>Retrabalho constante</h4><p>Um campo errado e o formulário inteiro precisa ser revisado. Dados chegam incompletos, inconsistentes ou em formatos diferentes a cada vez.</p></div>
+                </li>
+                <li class="pain-item">
+                    <div class="pain-icon gray"><i class="iconoir-scale-frame-reduce"></i></div>
+                    <div><h4>Impossível escalar</h4><p>Com 20 ou 50 solicitantes na fila, o gargalo manual estrangula o crescimento. Mais volume = mais horas de trabalho braçal.</p></div>
+                </li>
+                <li class="pain-item">
+                    <div class="pain-icon blue"><i class="iconoir-brain-research"></i></div>
+                    <div><h4>Análise sem inteligência</h4><p>Sem cruzamento automático de dados, sem diagnóstico do perfil, sem visão dos pontos fracos do caso. O assessor opera por instinto, não por dados.</p></div>
+                </li>
+            </ul>
+            <div class="pain-visual">
+                <div class="big-number">80%</div>
+                <div class="big-label">Do tempo do assessor é gasto<br>em tarefas operacionais</div>
+                <div class="big-sub">Tempo que deveria ser usado em estratégia e atendimento</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="como-funciona">
+    <div class="container">
+        <div class="section-label" style="display:flex;justify-content:center"><i class="iconoir-ev-plug-charging"></i> COMO FUNCIONA</div>
+        <h2 class="section-title" style="text-align:center">5 passos. Do formulário ao <em>resultado</em>.</h2>
+        <p class="section-desc center">O solicitante preenche, a IA analisa, o assessor valida, o sistema automatiza e todos acompanham em tempo real.</p>
+        <div class="pipeline-steps fade-up">
+            <div class="pipe"><div class="pipe-number">01</div><div class="pipe-title">Solicitante Preenche</div><div class="pipe-text">Formulário inteligente com CEP, CPF, CNPJ, validação em tempo real e salvamento automático.</div><span class="pipe-connector">→</span></div>
+            <div class="pipe"><div class="pipe-number">02</div><div class="pipe-title">IA Analisa o Caso</div><div class="pipe-text">Cruzamento de dados, diagnóstico de perfil, alertas preventivos e recomendações estratégicas.</div><span class="pipe-connector">→</span></div>
+            <div class="pipe"><div class="pipe-number">03</div><div class="pipe-title">Assessor Revisa</div><div class="pipe-text">Dashboard inteligente com tudo pré-analisado. O assessor foca na estratégia, não na digitação.</div><span class="pipe-connector">→</span></div>
+            <div class="pipe"><div class="pipe-number">04</div><div class="pipe-title">Automação Executa</div><div class="pipe-text">DS-160, CASV, taxas e agendamento — tudo automatizado no site oficial.</div><span class="pipe-connector">→</span></div>
+            <div class="pipe"><div class="pipe-number">05</div><div class="pipe-title">Resultado Monitorado</div><div class="pipe-text">CEAC monitorado 24/7. Aprovado, negado ou em análise — atualizado em tempo real.</div></div>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="recursos">
+    <div class="container">
+        <div class="section-label"><i class="iconoir-sparks"></i> RECURSOS</div>
+        <h2 class="section-title">Ferramentas que o assessor<br>sempre quis <em>ter</em></h2>
+        <p class="section-desc">Cada recurso amplia o que a assessoria já faz de melhor — é o assessor no controle, com tecnologia de ponta como aliada.</p>
+
+        <div class="feature-block fade-up">
+            <div class="feature-text">
+                <div class="feat-label"><i class="iconoir-edit-pencil"></i> FORMULÁRIO INTELIGENTE</div>
+                <h3>Coleta de dados que praticamente se preenche sozinha</h3>
+                <p>Clone inteligente do DS-160 oficial, totalmente em português, com campos que aparecem e desaparecem conforme as respostas. O solicitante preenche do celular ou computador — sem perder dados.</p>
+                <p>Busca automática por CEP e ZIP Code, verificação de CPF e CNPJ, formatação de telefone com DDI e salvamento a cada 2 segundos.</p>
+                <ul class="feat-highlights">
+                    <li><span class="feat-check"><i class="iconoir-check"></i></span> Consulta CPF e CNPJ automática</li>
+                    <li><span class="feat-check"><i class="iconoir-check"></i></span> Busca CEP (Brasil) e ZIP Code (EUA)</li>
+                    <li><span class="feat-check"><i class="iconoir-check"></i></span> Telefone com DDI + formatação automática</li>
+                    <li><span class="feat-check"><i class="iconoir-check"></i></span> Endereço padrão nos EUA quando sem plano de viagem</li>
+                </ul>
+            </div>
+            <div class="feature-visual" style="padding:0;align-items:stretch">
+                <div class="screen-mock">
+                    <div class="screen-titlebar"><span class="screen-dot r"></span><span class="screen-dot y"></span><span class="screen-dot g"></span><span class="screen-titlebar-text">DS-160 · Formulário Inteligente</span></div>
+                    <div class="screen-body">
+                        <div class="sk-form-progress"><span class="done"></span><span class="done"></span><span class="done"></span><span class="current"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                        <div class="sk-form-header"><div class="sk-form-header-icon sk-gold"></div><div class="sk-form-header-text sk"></div></div>
+                        <div class="sk-form-row">
+                            <div class="sk-form-field"><div class="sk-form-label sk"></div><div class="sk-form-input sk"></div></div>
+                            <div class="sk-form-field"><div class="sk-form-label sk"></div><div class="sk-form-input sk"></div></div>
+                        </div>
+                        <div class="sk-form-row">
+                            <div class="sk-form-field sk-form-select"><div class="sk-form-label sk" style="width:35%"></div><div class="sk-form-input sk"></div></div>
+                            <div class="sk-form-field"><div class="sk-form-label sk" style="width:60%"></div><div class="sk-form-input sk"></div></div>
+                        </div>
+                        <div class="sk-form-radio-row"><div class="sk-form-radio"><div class="sk-form-radio-dot active"></div><div class="sk-form-radio-text sk"></div></div><div class="sk-form-radio"><div class="sk-form-radio-dot"></div><div class="sk-form-radio-text sk"></div></div><div class="sk-form-radio"><div class="sk-form-radio-dot"></div><div class="sk-form-radio-text sk"></div></div></div>
+                        <div class="sk-form-row">
+                            <div class="sk-form-field"><div class="sk-form-label sk" style="width:45%"></div><div class="sk-form-input sk"></div></div>
+                        </div>
+                        <div class="sk-form-row">
+                            <div class="sk-form-field"><div class="sk-form-label sk" style="width:30%"></div><div class="sk-form-input sk"></div></div>
+                            <div class="sk-form-field"><div class="sk-form-label sk" style="width:55%"></div><div class="sk-form-input sk"></div></div>
+                            <div class="sk-form-field"><div class="sk-form-label sk" style="width:25%"></div><div class="sk-form-input sk"></div></div>
+                        </div>
+                        <div class="sk-form-btn sk-gold"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-block reverse fade-up">
+            <div class="feature-text">
+                <div class="feat-label"><i class="iconoir-dashboard-speed"></i> DASHBOARD</div>
+                <h3>Controle total do processo em uma única tela</h3>
+                <p>Cada solicitante organizado por etapa, com busca global, prioridades visuais e ações em lote. Arraste para reordenar, adicione notas e processe dezenas de uma vez.</p>
+                <p>Grupos familiares avançam juntos pelo pipeline, cada membro com seu status individual.</p>
+                <ul class="feat-highlights">
+                    <li><span class="feat-check"><i class="iconoir-check"></i></span> Drag & drop com ordem salva</li>
+                    <li><span class="feat-check"><i class="iconoir-check"></i></span> Prioridades visuais (Normal → Urgente)</li>
+                    <li><span class="feat-check"><i class="iconoir-check"></i></span> Ações em lote para múltiplos solicitantes</li>
+                    <li><span class="feat-check"><i class="iconoir-check"></i></span> Grupos familiares com avanço coletivo</li>
+                </ul>
+            </div>
+            <div class="feature-visual" style="padding:0;align-items:stretch">
+                <div class="screen-mock">
+                    <div class="screen-titlebar"><span class="screen-dot r"></span><span class="screen-dot y"></span><span class="screen-dot g"></span><span class="screen-titlebar-text">SENDS 160 · Dashboard</span></div>
+                    <div class="screen-body" style="padding:10px">
+                        <div class="sk-dash">
+                            <div class="sk-dash-sidebar">
+                                <div class="sk-dash-sidebar-item sk-gold"></div>
+                                <div class="sk-dash-sidebar-item sk"></div>
+                                <div class="sk-dash-sidebar-item sk"></div>
+                                <div class="sk-dash-sidebar-item sk"></div>
+                                <div style="flex:1"></div>
+                                <div class="sk-dash-sidebar-item sk"></div>
+                            </div>
+                            <div class="sk-dash-main">
+                                <div class="sk-dash-topbar"><div class="sk-dash-search sk"></div><div class="sk-dash-avatar sk-gold"></div></div>
+                                <div class="sk-dash-cols">
+                                    <div class="sk-dash-col">
+                                        <div class="sk-dash-col-header sk" style="background:rgba(101,178,232,.15)"></div>
+                                        <div class="sk-dash-card"><div class="sk-dash-card-line sk" style="width:80%"></div><div class="sk-dash-card-row"><div class="sk-dash-card-badge sk" style="background:rgba(101,178,232,.1)"></div><div class="sk-dash-card-avatar sk"></div></div></div>
+                                        <div class="sk-dash-card"><div class="sk-dash-card-line sk" style="width:65%"></div><div class="sk-dash-card-row"><div class="sk-dash-card-badge sk" style="background:rgba(224,182,36,.08)"></div><div class="sk-dash-card-avatar sk"></div></div></div>
+                                    </div>
+                                    <div class="sk-dash-col">
+                                        <div class="sk-dash-col-header sk" style="background:rgba(224,182,36,.15)"></div>
+                                        <div class="sk-dash-card"><div class="sk-dash-card-line sk" style="width:70%"></div><div class="sk-dash-card-row"><div class="sk-dash-card-badge sk" style="background:rgba(113,159,42,.1)"></div><div class="sk-dash-card-avatar sk"></div></div></div>
+                                        <div class="sk-dash-card"><div class="sk-dash-card-line sk" style="width:55%"></div><div class="sk-dash-card-row"><div class="sk-dash-card-badge sk" style="background:rgba(191,10,48,.08)"></div><div class="sk-dash-card-avatar sk"></div></div></div>
+                                        <div class="sk-dash-card"><div class="sk-dash-card-line sk" style="width:75%"></div><div class="sk-dash-card-row"><div class="sk-dash-card-badge sk" style="background:rgba(101,178,232,.1)"></div><div class="sk-dash-card-avatar sk"></div></div></div>
+                                    </div>
+                                    <div class="sk-dash-col">
+                                        <div class="sk-dash-col-header sk" style="background:rgba(113,159,42,.15)"></div>
+                                        <div class="sk-dash-card"><div class="sk-dash-card-line sk" style="width:60%"></div><div class="sk-dash-card-row"><div class="sk-dash-card-badge sk" style="background:rgba(113,159,42,.1)"></div><div class="sk-dash-card-avatar sk"></div></div></div>
+                                    </div>
+                                    <div class="sk-dash-col">
+                                        <div class="sk-dash-col-header sk" style="background:rgba(191,10,48,.15)"></div>
+                                        <div class="sk-dash-card"><div class="sk-dash-card-line sk" style="width:72%"></div><div class="sk-dash-card-row"><div class="sk-dash-card-badge sk" style="background:rgba(224,182,36,.08)"></div><div class="sk-dash-card-avatar sk"></div></div></div>
+                                        <div class="sk-dash-card"><div class="sk-dash-card-line sk" style="width:48%"></div><div class="sk-dash-card-row"><div class="sk-dash-card-badge sk" style="background:rgba(101,178,232,.1)"></div><div class="sk-dash-card-avatar sk"></div></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-block fade-up">
+            <div class="feature-text">
+                <div class="feat-label"><i class="iconoir-color-filter"></i> PORTAL WHITE-LABEL</div>
+                <h3>Sua marca. Seu portal. Seus clientes.</h3>
+                <p>Cada organização recebe um portal personalizado com logo e identidade visual própria. O solicitante acessa via link exclusivo e faz login com nome e passaporte — sem senha, sem fricção.</p>
+                <p>Envie o link por WhatsApp, email ou qualquer canal. Famílias preenchem juntas, cada membro com seu formulário individual.</p>
+                <ul class="feat-highlights">
+                    <li><span class="feat-check"><i class="iconoir-check"></i></span> Logo e nome da organização</li>
+                    <li><span class="feat-check"><i class="iconoir-check"></i></span> Login sem senha — nome + passaporte</li>
+                    <li><span class="feat-check"><i class="iconoir-check"></i></span> Funciona em qualquer dispositivo</li>
+                    <li><span class="feat-check"><i class="iconoir-check"></i></span> Grupos familiares integrados</li>
+                </ul>
+            </div>
+            <div class="feature-visual" style="padding:0;align-items:stretch">
+                <div class="screen-mock">
+                    <div class="screen-titlebar"><span class="screen-dot r"></span><span class="screen-dot y"></span><span class="screen-dot g"></span><span class="screen-titlebar-text">Portal · Sua Assessoria</span></div>
+                    <div class="screen-body">
+                        <div class="sk-portal-header">
+                            <div class="sk-portal-logo sk-gold"></div>
+                            <div class="sk-portal-brand"><div class="sk-portal-brand-name sk"></div><div class="sk-portal-brand-sub sk"></div></div>
+                            <div class="sk-portal-status sk-gold"></div>
+                        </div>
+                        <div class="sk-portal-login">
+                            <div class="sk-portal-login-label sk"></div>
+                            <div class="sk-portal-login-input sk"></div>
+                            <div class="sk-portal-login-label sk" style="width:50%"></div>
+                            <div class="sk-portal-login-input sk"></div>
+                            <div class="sk-portal-login-btn sk-gold"></div>
+                        </div>
+                        <div class="sk-portal-members">
+                            <div style="width:80px;height:7px;border-radius:3px;margin-bottom:8px" class="sk"></div>
+                            <div class="sk-portal-member"><div class="sk-portal-member-avatar sk-gold"></div><div class="sk-portal-member-name sk" style="max-width:120px"></div><div class="sk-portal-member-badge sk" style="background:rgba(113,159,42,.1)"></div></div>
+                            <div class="sk-portal-member"><div class="sk-portal-member-avatar sk"></div><div class="sk-portal-member-name sk" style="max-width:100px"></div><div class="sk-portal-member-badge sk" style="background:rgba(224,182,36,.08)"></div></div>
+                            <div class="sk-portal-member"><div class="sk-portal-member-avatar sk"></div><div class="sk-portal-member-name sk" style="max-width:130px"></div><div class="sk-portal-member-badge sk" style="background:rgba(101,178,232,.1)"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- INTELIGÊNCIA -->
+<section class="intelligence" id="inteligencia">
+    <div class="container">
+        <div class="section-label"><i class="iconoir-brain-electricity"></i> CAMADA DE INTELIGÊNCIA</div>
+        <h2 class="section-title">O assessor define a estratégia.<br>A IA prepara o <em>terreno</em>.</h2>
+        <p class="section-desc">Mais que automação — o SENDS 160 adiciona uma camada de inteligência que cruza dados, identifica riscos e entrega insights que nenhum processo manual consegue oferecer.</p>
+        <div class="intel-grid fade-up">
+            <div class="intel-card"><div class="intel-icon"><i class="iconoir-brain-research"></i></div><h4>Diagnóstico de Perfil</h4><p>A IA analisa pontos fortes e fracos do caso, identifica necessidades documentais, sugere estratégias e gera recomendações personalizadas para cada solicitante.</p></div>
+            <div class="intel-card"><div class="intel-icon"><i class="iconoir-search"></i></div><h4>FOIA para Visto Negado</h4><p>Para casos de recusa, auxílio na montagem de pedido FOIA junto ao Departamento de Estado. Entender o motivo é o primeiro passo para a aprovação.</p></div>
+            <div class="intel-card"><div class="intel-icon"><i class="iconoir-reports"></i></div><h4>Receita Federal e IR</h4><p>Cruzamento com dados da Receita Federal e declarações de imposto de renda — informações que sustentam vínculos financeiros.</p></div>
+            <div class="intel-card"><div class="intel-icon"><i class="iconoir-shield-search"></i></div><h4>Antecedentes e Processos</h4><p>Verificação de processos judiciais e antecedentes criminais antes de submeter o DS-160. Identificar problemas antes evita surpresas.</p></div>
+            <div class="intel-card"><div class="intel-icon"><i class="iconoir-sparks"></i></div><h4>Triagem Inteligente</h4><p>Respostas dinâmicas que se adaptam ao perfil. Endereço padrão nos EUA, sugestões de pagador, consulta CPF/CNPJ automática e validação preventiva.</p></div>
+            <div class="intel-card"><div class="intel-icon"><i class="iconoir-eye-empty"></i></div><h4>Monitoramento 24/7</h4><p>CEAC e CASV monitorados em tempo real. Detecção automática de mudanças, retry inteligente com adaptação e auto-recuperação.</p></div>
+        </div>
+        <div class="intel-disclaimer fade-up"><i class="iconoir-info-circle"></i><span>A IA é uma aliada do assessor, nunca uma substituta. Cada decisão estratégica continua nas mãos de quem entende de visto — o sistema entrega dados que antes eram inacessíveis.</span></div>
+    </div>
+</section>
+
+<!-- AUTOMAÇÃO -->
+<section class="automation">
+    <div class="container">
+        <div class="section-label"><i class="iconoir-flash"></i> AUTOMAÇÃO PONTA-A-PONTA</div>
+        <h2 class="section-title">O assessor acompanha,<br>o sistema <em>executa</em>.</h2>
+        <p class="section-desc">A automação elimina todo o trabalho operacional repetitivo para que a assessoria foque em estratégia e atendimento.</p>
+        <div class="auto-grid fade-up">
+            <div class="auto-card"><div class="auto-num">01</div><div class="auto-icon"><i class="iconoir-page-edit"></i></div><h4>DS-160</h4><p>Preenchimento automático no ceac.state.gov, resolução de CAPTCHA, tratamento de postbacks e geração de PDF completo.</p></div>
+            <div class="auto-card"><div class="auto-num">02</div><div class="auto-icon"><i class="iconoir-wallet"></i></div><h4>CASV & Taxas</h4><p>Cadastro automático no CASV, geração da guia MRV e confirmação de pagamento. PDF disponível para envio ao solicitante.</p></div>
+            <div class="auto-card"><div class="auto-num">03</div><div class="auto-icon"><i class="iconoir-calendar"></i></div><h4>Agendamento</h4><p>Busca e reserva do primeiro horário disponível para entrevista, coleta biométrica e ponto de entrega do passaporte.</p></div>
+            <div class="auto-card"><div class="auto-num">04</div><div class="auto-icon"><i class="iconoir-eye-empty"></i></div><h4>Monitoramento</h4><p>Checagem periódica no CEAC. Quando o resultado muda, a plataforma atualiza e notifica instantaneamente.</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- MARKETPLACE -->
+<section class="marketplace" id="marketplace">
+    <div class="container">
+        <div class="section-label"><i class="iconoir-shop"></i> MARKETPLACE DE PARCEIROS</div>
+        <h2 class="section-title">Uma plataforma, todos os serviços<br>que a assessoria <em>precisa</em></h2>
+        <p class="section-desc">Um ecossistema de serviços complementares que ampliam o que a assessoria pode oferecer — integrados na mesma plataforma.</p>
+        <div class="mkt-grid fade-up">
+            <div class="mkt-text">
+                <h3>Serviços de parceiros, integrados ao fluxo</h3>
+                <p>Cada serviço do marketplace se conecta diretamente ao processo do solicitante. O assessor ativa o que precisa, quando precisa — sem sair da plataforma.</p>
+                <p>Novos parceiros e serviços são adicionados continuamente. A assessoria cresce com a plataforma.</p>
+            </div>
+            <div class="mkt-services">
+                <div class="mkt-svc"><i class="iconoir-shield-search"></i><h4>Limpa Nome</h4><p>Regularização de pendências e restrições antes de iniciar o processo.</p></div>
+                <div class="mkt-svc"><i class="iconoir-scale-frame-enlarge"></i><h4>Processos Judiciais</h4><p>Consulta de antecedentes e processos que podem impactar a entrevista.</p></div>
+                <div class="mkt-svc"><i class="iconoir-page-search"></i><h4>FOIA & Diagnóstico</h4><p>Análise de recusas anteriores e pedidos de informação.</p></div>
+                <div class="mkt-svc"><i class="iconoir-community"></i><h4>Consultoria Especializada</h4><p>Preparação para entrevista com especialistas do mercado.</p></div>
+                <div class="mkt-svc"><i class="iconoir-reports"></i><h4>Receita Federal</h4><p>Cruzamento de dados fiscais e declarações de imposto de renda.</p></div>
+                <div class="mkt-svc"><i class="iconoir-plus-circle"></i><h4>E muito mais</h4><p>Novos serviços adicionados continuamente ao ecossistema.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- COMPARATIVO -->
+<section class="compare">
+    <div class="container">
+        <div class="section-label" style="display:flex;justify-content:center"><i class="iconoir-table-rows"></i> COMPARATIVO</div>
+        <h2 class="section-title" style="text-align:center">Mais que automação de <em>DS-160</em></h2>
+        <p class="section-desc center">Enquanto outros focam apenas no formulário, o SENDS 160 cobre o processo inteiro.</p>
+        <table class="compare-table fade-up">
+            <thead><tr><th>Recurso</th><th>Processo Manual</th><th>Concorrentes</th><th class="col-sends">SENDS 160</th></tr></thead>
+            <tbody>
+                <tr><td>Formulário inteligente</td><td class="check-no">✗</td><td class="check-yes">✓</td><td class="col-sends check-yes">✓ com CPF, CNPJ, CEP</td></tr>
+                <tr><td>Automação DS-160</td><td class="check-no">✗</td><td class="check-yes">✓</td><td class="col-sends check-yes">✓ com PDF completo</td></tr>
+                <tr><td>CASV + Taxas</td><td class="check-no">Manual</td><td class="check-no">✗</td><td class="col-sends check-yes">✓ Automático</td></tr>
+                <tr><td>Agendamento</td><td class="check-no">Manual</td><td class="check-partial">Parcial</td><td class="col-sends check-yes">✓ Automático</td></tr>
+                <tr><td>Monitoramento CEAC</td><td class="check-no">✗</td><td class="check-no">✗</td><td class="col-sends check-yes">✓ 24/7</td></tr>
+                <tr><td>IA — Diagnóstico de perfil</td><td class="check-no">✗</td><td class="check-no">✗</td><td class="col-sends check-yes">✓</td></tr>
+                <tr><td>FOIA para visto negado</td><td class="check-no">✗</td><td class="check-no">✗</td><td class="col-sends check-yes">✓</td></tr>
+                <tr><td>Marketplace de serviços</td><td class="check-no">✗</td><td class="check-no">✗</td><td class="col-sends check-yes">✓</td></tr>
+                <tr><td>Portal white-label</td><td class="check-no">✗</td><td class="check-partial">Básico</td><td class="col-sends check-yes">✓ Completo</td></tr>
+                <tr><td>Dashboard com IA</td><td class="check-no">✗</td><td class="check-partial">Parcial</td><td class="col-sends check-yes">✓ Inteligente</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- SOCIAL PROOF -->
+<section class="proof" id="resultados">
+    <div class="container">
+        <div class="section-label" style="display:flex;justify-content:center"><i class="iconoir-stat-up"></i> IMPACTO</div>
+        <h2 class="section-title" style="text-align:center">O antes e depois de quem<br>usa o SENDS <em>160</em></h2>
+        <p class="section-desc center">Números reais de assessorias que saíram do processo manual para a plataforma.</p>
+        <div class="proof-grid fade-up">
+            <div class="proof-card"><div class="proof-metric">3x</div><div class="proof-metric-label">Mais processos por assessor</div><p class="proof-text">Com a automação e IA cuidando da operação, cada assessor atende três vezes mais solicitantes sem sacrificar qualidade.</p></div>
+            <div class="proof-card"><div class="proof-metric">~0</div><div class="proof-metric-label">Erros em automação</div><p class="proof-text">Triagem inteligente e validação preventiva praticamente eliminam erros antes do formulário chegar na automação.</p></div>
+            <div class="proof-card"><div class="proof-metric">15h</div><div class="proof-metric-label">Economizadas por semana</div><p class="proof-text">Tempo que era gasto em formulários e processos manuais agora é investido em estratégia e crescimento.</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-final" id="comecar">
+    <div class="container">
+        <div class="section-label"><i class="iconoir-flash"></i> COMECE AGORA</div>
+        <h2>Sua assessoria,<br>com <em>superpoderes</em>.</h2>
+        <p class="cta-desc">O SENDS 160 cuida da operação — para que a assessoria foque no que realmente importa: estratégia, atendimento e crescimento.</p>
+        <a href="#" class="btn btn-primary"><i class="iconoir-flash"></i> Ativar meus superpoderes</a>
+        <div class="cta-guarantee"><i class="iconoir-shield-check"></i> Setup em minutos · Suporte especializado · O assessor sempre no controle</div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-content">
+        <div class="footer-brand"><img src="logo-branco.png" alt="SENDS160" onerror="this.style.display='none'"><span>SENDS 160</span></div>
+        <div class="footer-links"><a href="#">Termos</a><a href="#">Privacidade</a><a href="#">Contato</a></div>
+        <div class="footer-copy">© 2026 SENDS 160. Todos os direitos reservados.</div>
+    </div>
+</footer>
+
+<script>
+const nav=document.getElementById('mainNav');
+window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',window.scrollY>40));
+const observer=new IntersectionObserver(e=>e.forEach(el=>{if(el.isIntersecting){el.target.classList.add('visible');observer.unobserve(el.target)}}),{threshold:.12,rootMargin:'0px 0px -60px 0px'});
+document.querySelectorAll('.fade-up').forEach(el=>observer.observe(el));
+const toggle=document.getElementById('navToggle'),links=document.getElementById('navLinks');
+toggle.addEventListener('click',()=>links.classList.toggle('open'));
+document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t){t.scrollIntoView({behavior:'smooth',block:'start'});links.classList.remove('open')}}));
+</script>
+</body>
+</html>

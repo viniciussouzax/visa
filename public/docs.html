@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentação — SENDS 160</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/iconoir-icons/iconoir@main/css/iconoir.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app-core.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-body, #f8fafc);
+            color: #1e293b;
+            display: block;
+        }
+
+        /* ---- HEADER ---- */
+        .docs-header {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .docs-header img { height: 26px; }
+        .docs-header h1 { font-size: 16px; font-weight: 700; flex: 1; }
+        .docs-header .back-btn {
+            background: none; border: 1px solid #e2e8f0; border-radius: 3px;
+            padding: 6px 14px; cursor: pointer; font-size: 13px; color: #64748b; font-family: inherit;
+        }
+        .docs-header .back-btn:hover { background: #f1f5f9; }
+
+        /* ---- LAYOUT ---- */
+        .docs-layout { display: flex; max-width: 1100px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+
+        /* ---- NAV ---- */
+        .docs-nav { width: 200px; flex-shrink: 0; position: sticky; top: 80px; align-self: flex-start; max-height: calc(100vh - 100px); overflow-y: auto; }
+        .docs-nav a {
+            display: block; padding: 6px 12px; border-radius: 3px; color: #64748b;
+            text-decoration: none; font-size: 12px; font-weight: 500; transition: all 0.15s;
+            border-left: 2px solid transparent;
+        }
+        .docs-nav a:hover, .docs-nav a.active { background: #f1f5f9; color: #1e293b; border-left-color: var(--accent); }
+        .docs-nav .nav-label {
+            font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
+            letter-spacing: 0.5px; padding: 14px 12px 4px;
+        }
+        .docs-nav .nav-label:first-child { padding-top: 0; }
+
+        /* ---- CONTENT ---- */
+        .docs-content { flex: 1; min-width: 0; }
+
+        .docs-section {
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 3px;
+            padding: 28px 32px; margin-bottom: 20px;
+        }
+        .docs-section h2 {
+            font-size: 18px; font-weight: 700; margin: 0 0 6px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .docs-section h2 .stage-num {
+            background: var(--accent); color: #fff; width: 26px; height: 26px; border-radius: 99px;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; flex-shrink: 0;
+        }
+        .docs-section .subtitle { color: #64748b; font-size: 13px; margin-bottom: 16px; }
+        .docs-section h3 { font-size: 14px; font-weight: 600; margin: 18px 0 6px; color: #334155; }
+        .docs-section p, .docs-section li { font-size: 13px; line-height: 1.7; color: #475569; }
+        .docs-section ul { padding-left: 18px; margin: 6px 0; }
+        .docs-section li { margin-bottom: 3px; }
+
+        /* ---- TABLES ---- */
+        .s-table { width: 100%; border-collapse: collapse; margin: 10px 0 6px; font-size: 13px; }
+        .s-table th { background: #f8fafc; text-align: left; padding: 7px 10px; font-weight: 600; color: #334155; border-bottom: 2px solid #e2e8f0; }
+        .s-table td { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; color: #475569; }
+
+        /* ---- CHIPS ---- */
+        .chip { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+        .chip-gray { background: #f1f5f9; color: #64748b; }
+        .chip-blue { background: #dbeafe; color: #2563eb; }
+        .chip-green { background: #dcfce7; color: #16a34a; }
+        .chip-yellow { background: #fef3c7; color: #d97706; }
+        .chip-red { background: #fee2e2; color: #dc2626; }
+
+        /* ---- BOXES ---- */
+        .info-box { background: #eff6ff; border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 0 3px 3px 0; margin: 14px 0; font-size: 12px; color: #1e40af; line-height: 1.6; }
+        .warn-box { background: #fffbeb; border-left: 3px solid #f59e0b; padding: 10px 14px; border-radius: 0 3px 3px 0; margin: 14px 0; font-size: 12px; color: #92400e; line-height: 1.6; }
+        .tip-box { background: #f0fdf4; border-left: 3px solid #22c55e; padding: 10px 14px; border-radius: 0 3px 3px 0; margin: 14px 0; font-size: 12px; color: #166534; line-height: 1.6; }
+
+        /* ---- FLOW ---- */
+        .flow { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin: 14px 0; }
+        .flow-s { background: #f1f5f9; padding: 5px 12px; border-radius: 3px; font-size: 11px; font-weight: 600; color: #475569; white-space: nowrap; }
+        .flow-a { color: #cbd5e1; font-size: 13px; }
+
+        /* ---- FEATURES GRID ---- */
+        .feat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin: 14px 0; }
+        .feat-card {
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 3px;
+            padding: 14px 16px;
+        }
+        .feat-card .feat-icon { font-size: 20px; margin-bottom: 6px; color: var(--accent); }
+        .feat-card h4 { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .feat-card p { font-size: 12px; color: #64748b; line-height: 1.5; margin: 0; }
+
+        /* ---- PIPELINE ---- */
+        .pipeline { display: flex; gap: 2px; margin: 16px 0; flex-wrap: wrap; }
+        .pipe-step {
+            flex: 1; min-width: 120px; padding: 12px 14px; border-radius: 3px;
+            position: relative; text-align: center;
+        }
+        .pipe-step .pipe-num { font-size: 20px; font-weight: 700; opacity: 0.3; }
+        .pipe-step .pipe-label { font-size: 11px; font-weight: 600; margin-top: 2px; }
+        .pipe-step .pipe-desc { font-size: 10px; margin-top: 4px; opacity: 0.8; line-height: 1.4; }
+        .pipe-1 { background: #dbeafe; color: #1e40af; }
+        .pipe-2 { background: #e0e7ff; color: #3730a3; }
+        .pipe-3 { background: #fae8ff; color: #86198f; }
+        .pipe-4 { background: #fef3c7; color: #92400e; }
+        .pipe-5 { background: #dcfce7; color: #166534; }
+
+        /* ---- KEYBOARD SHORTCUTS ---- */
+        kbd { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 3px; padding: 1px 6px; font-size: 11px; font-family: inherit; color: #475569; }
+
+        /* ---- RESPONSIVE ---- */
+        @media (max-width: 768px) {
+            .docs-layout { flex-direction: column; padding: 16px; }
+            .docs-nav { position: static; width: 100%; }
+            .docs-section { padding: 20px; }
+            .feat-grid { grid-template-columns: 1fr; }
+            .pipeline { flex-direction: column; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="docs-header">
+        <img src="images/logo-sends160.png" alt="SENDS160" onerror="this.style.display='none'">
+        <h1>Central de Ajuda</h1>
+        <button class="back-btn" onclick="AppCore.goToDashboard()">Voltar ao Dashboard</button>
+    </div>
+
+    <div class="docs-layout">
+        <nav class="docs-nav">
+            <div class="nav-label">Plataforma</div>
+            <a href="#visao-geral">Visão Geral</a>
+            <a href="#portal">Portal da Organização</a>
+            <a href="#formulario">Formulário Inteligente</a>
+            <a href="#dashboard">Dashboard</a>
+            <a href="#ia">Inteligência Artificial</a>
+            <a href="#automacao">Automação</a>
+            <div class="nav-label">Etapas do Processo</div>
+            <a href="#fluxo">Fluxo Completo</a>
+            <a href="#triagem">1. Triagem</a>
+            <a href="#analise">2. Análise</a>
+            <a href="#ds160">3. DS-160</a>
+            <a href="#taxas">4. Taxas</a>
+            <a href="#agendamento">5. Agendamento</a>
+            <a href="#entrevista">6. Entrevista</a>
+            <a href="#resultado">7. Resultado</a>
+            <a href="#arquivado">8. Arquivado</a>
+            <div class="nav-label">Recursos</div>
+            <a href="#status">Status e Significados</a>
+            <a href="#grupos">Grupos</a>
+            <a href="#acoes">Ações e Atalhos</a>
+        </nav>
+
+        <div class="docs-content">
+
+            <!-- ============================================ -->
+            <!-- VISÃO GERAL -->
+            <!-- ============================================ -->
+            <div class="docs-section" id="visao-geral">
+                <h2>Visão Geral</h2>
+                <p class="subtitle">O SENDS160 é uma plataforma completa para assessorias de visto americano. Automatiza o preenchimento do DS-160, organiza o fluxo de trabalho e oferece ao solicitante uma experiência guiada de coleta de dados.</p>
+
+                <div class="pipeline">
+                    <div class="pipe-step pipe-1">
+                        <div class="pipe-num">1</div>
+                        <div class="pipe-label">Solicitante</div>
+                        <div class="pipe-desc">Preenche o formulário inteligente pelo portal</div>
+                    </div>
+                    <div class="pipe-step pipe-2">
+                        <div class="pipe-num">2</div>
+                        <div class="pipe-label">Assessor</div>
+                        <div class="pipe-desc">Revisa e corrige os dados na dashboard</div>
+                    </div>
+                    <div class="pipe-step pipe-3">
+                        <div class="pipe-num">3</div>
+                        <div class="pipe-label">Automação</div>
+                        <div class="pipe-desc">DS-160, CASV, taxas, agendamento — tudo automático</div>
+                    </div>
+                    <div class="pipe-step pipe-4">
+                        <div class="pipe-num">4</div>
+                        <div class="pipe-label">Entrevista</div>
+                        <div class="pipe-desc">Aguarda resultado, monitorado pela IA</div>
+                    </div>
+                    <div class="pipe-step pipe-5">
+                        <div class="pipe-num">5</div>
+                        <div class="pipe-label">Resultado</div>
+                        <div class="pipe-desc">Aprovado, negado ou em análise</div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>Em resumo:</strong> O solicitante preenche → o assessor revisa → o sistema automatiza → todos acompanham.
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- PORTAL DA ORGANIZAÇÃO -->
+            <!-- ============================================ -->
+            <div class="docs-section" id="portal">
+                <h2>Portal da Organização</h2>
+                <p class="subtitle">Cada organização tem seu portal personalizado onde os solicitantes acessam e preenchem o formulário.</p>
+
+                <h3>Como funciona</h3>
+                <ul>
+                    <li>Cada organização recebe um <strong>link exclusivo</strong> do portal (ex: <code>sends160.com/portal?org=suaempresa</code>)</li>
+                    <li>O portal exibe o <strong>logo e nome da organização</strong>, transmitindo profissionalismo e confiança</li>
+                    <li>O solicitante faz login com <strong>nome, email e passaporte</strong> — sem senha, sem complicação</li>
+                    <li>Após o login, ele acessa o formulário inteligente para preencher seus dados</li>
+                    <li>Solicitantes de um grupo familiar podem ser criados e gerenciados juntos</li>
+                </ul>
+
+                <h3>Vantagens para a assessoria</h3>
+                <div class="feat-grid">
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-color-filter"></i></div>
+                        <h4>Marca própria</h4>
+                        <p>Logo, nome e cores da organização. O solicitante vê sua marca, não a nossa.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-link"></i></div>
+                        <h4>Link compartilhável</h4>
+                        <p>Envie o link por WhatsApp, email ou qualquer canal. O solicitante acessa de qualquer dispositivo.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-shield-check"></i></div>
+                        <h4>Sem senha</h4>
+                        <p>Login simples com nome e passaporte. Sem fricção para o solicitante.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-group"></i></div>
+                        <h4>Grupos familiares</h4>
+                        <p>Famílias preenchem juntas. Cada membro tem seu formulário individual dentro do grupo.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- FORMULÁRIO INTELIGENTE -->
+            <!-- ============================================ -->
+            <div class="docs-section" id="formulario">
+                <h2>Formulário Inteligente</h2>
+                <p class="subtitle">O formulário é um clone inteligente do DS-160 oficial, projetado para minimizar erros e acelerar o preenchimento.</p>
+
+                <h3>Recursos que tornam o formulário inteligente</h3>
+
+                <div class="feat-grid">
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-fingerprint-circle"></i></div>
+                        <h4>Verificação de CPF</h4>
+                        <p>Ao informar o CPF, o sistema verifica e preenche automaticamente o nome completo e dados pessoais do solicitante — garantindo que estejam corretos e reduzindo erros de digitação.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-pin-alt"></i></div>
+                        <h4>Busca por CEP</h4>
+                        <p>Ao digitar o CEP, rua, bairro, cidade e estado são preenchidos automaticamente. Reduz erros de digitação e acelera o preenchimento de endereço.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-check-circle"></i></div>
+                        <h4>Validação em tempo real</h4>
+                        <p>Cada campo é validado enquanto o solicitante digita. Erros são exibidos imediatamente, em vermelho, antes de avançar.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-eye-empty"></i></div>
+                        <h4>Campos condicionais</h4>
+                        <p>Campos aparecem ou desaparecem conforme as respostas. Ex: selecionar "Casado(a)" revela campos do cônjuge automaticamente.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-cloud-sync"></i></div>
+                        <h4>Salvamento automático</h4>
+                        <p>Os dados são salvos automaticamente a cada 2 segundos. O solicitante pode sair e voltar sem perder nada.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-percentage-circle"></i></div>
+                        <h4>Progresso por seção</h4>
+                        <p>Cada seção mostra se está completa (check verde) ou pendente. Barra de progresso geral mostra o % total.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-add-circle"></i></div>
+                        <h4>Listas dinâmicas</h4>
+                        <p>Adicione múltiplos itens (outros nomes, viagens anteriores, redes sociais) com botão "Adicionar". Sem limite artificial.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-language"></i></div>
+                        <h4>Traduzido e contextualizado</h4>
+                        <p>Todas as perguntas em português com textos de orientação que explicam o que o consulado espera em cada campo.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-calendar"></i></div>
+                        <h4>Inputs especializados</h4>
+                        <p>Datas com seletores de dia/mês/ano, telefones com formatação automática, campos com máscara de CPF e passaporte.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-prohibition"></i></div>
+                        <h4>Prevenção de erros</h4>
+                        <p>Limites de caracteres idênticos ao DS-160 oficial, opções "Does Not Apply" para campos não aplicáveis, e alertas preventivos.</p>
+                    </div>
+                </div>
+
+                <h3>Estrutura do formulário</h3>
+                <p>O formulário é dividido em seções que espelham a estrutura do DS-160 oficial:</p>
+                <table class="s-table">
+                    <thead><tr><th>#</th><th>Seção</th><th>Conteúdo</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td>Termo de Compromisso</td><td>Aceite dos termos de responsabilidade</td></tr>
+                        <tr><td>2</td><td>Local da Entrevista</td><td>Consulado/embaixada de preferência</td></tr>
+                        <tr><td>3</td><td>Informações Pessoais 1</td><td>Nome, sexo, estado civil, nascimento</td></tr>
+                        <tr><td>4</td><td>Informações Pessoais 2</td><td>Nacionalidade, CPF, SSN, Tax ID</td></tr>
+                        <tr><td>5</td><td>Viagem</td><td>Propósito, datas, endereço nos EUA, pagante</td></tr>
+                        <tr><td>6</td><td>Acompanhantes</td><td>Companheiros de viagem e grupo</td></tr>
+                        <tr><td>7</td><td>Viagens Anteriores</td><td>Visitas anteriores, visto anterior, recusas</td></tr>
+                        <tr><td>8</td><td>Endereço e Telefone</td><td>Endereço residencial, telefones, redes sociais</td></tr>
+                        <tr><td>9</td><td>Passaporte</td><td>Dados do passaporte, extraviados</td></tr>
+                        <tr><td>10</td><td>Contato nos EUA</td><td>Ponto de contato nos Estados Unidos</td></tr>
+                        <tr><td>11</td><td>Família</td><td>Informações de pai, mãe, cônjuge e parentes nos EUA</td></tr>
+                        <tr><td>12</td><td>Trabalho e Educação</td><td>Emprego atual, empregos anteriores, educação</td></tr>
+                        <tr><td>13</td><td>Segurança</td><td>Perguntas obrigatórias de segurança do DS-160</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="tip-box">
+                    <strong>Dica para assessores:</strong> Ao revisar o formulário de um solicitante, verifique se todas as seções têm o check verde. Seções com campos incompletos ou inválidos são a principal causa de erros na automação.
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- DASHBOARD -->
+            <!-- ============================================ -->
+            <div class="docs-section" id="dashboard">
+                <h2>Dashboard</h2>
+                <p class="subtitle">A dashboard foi projetada para ser simples, direta e focada no que importa: gerenciar solicitantes de forma eficiente.</p>
+
+                <h3>Filosofia do design</h3>
+                <p>A dashboard segue três princípios:</p>
+                <ul>
+                    <li><strong>Foco no essencial</strong> — Cada página mostra apenas os solicitantes daquela etapa. Sem poluição visual.</li>
+                    <li><strong>Ação rápida</strong> — Tudo que você precisa está a no máximo dois cliques: revisar, avançar, comunicar.</li>
+                    <li><strong>Visão por etapa</strong> — O menu lateral é seu mapa do processo. Cada item = uma etapa. Os badges mostram quantos solicitantes estão em cada uma.</li>
+                </ul>
+
+                <h3>Funcionalidades principais</h3>
+
+                <div class="feat-grid">
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-drag-hand-gesture"></i></div>
+                        <h4>Drag & Drop</h4>
+                        <p>Arraste solicitantes na tabela para reordenar. A ordem é salva automaticamente e reflete a prioridade visual.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-priority-high"></i></div>
+                        <h4>Prioridades</h4>
+                        <p>Defina prioridades (Normal, Alta, Urgente, Retentativa, Baixa) para organizar a fila de atendimento. Chip colorido na tabela.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-edit-pencil"></i></div>
+                        <h4>Notas rápidas</h4>
+                        <p>Clique na coluna "Nota" para adicionar observações. Visível diretamente na tabela. Ideal para comunicação entre assessores.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-settings"></i></div>
+                        <h4>Modal de gerenciamento</h4>
+                        <p>Engrenagem abre um painel completo: alterar etapa, status, prioridade, notas, grupo e dados do solicitante.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-search"></i></div>
+                        <h4>Busca global</h4>
+                        <p>Busque por nome, email ou passaporte em todas as etapas. Encontre qualquer solicitante instantaneamente.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-multiple-pages"></i></div>
+                        <h4>Ações em lote</h4>
+                        <p>Selecione vários solicitantes com checkboxes para mover, arquivar ou alterar status de todos de uma vez.</p>
+                    </div>
+                </div>
+
+                <h3>Navegação por etapas</h3>
+                <p>O menu lateral funciona como um <strong>pipeline visual</strong>. Cada item mostra o nome da etapa e um badge com a quantidade de solicitantes. Ao clicar, a tabela filtra automaticamente.</p>
+
+                <table class="s-table">
+                    <thead><tr><th>Ação</th><th>Como fazer</th></tr></thead>
+                    <tbody>
+                        <tr><td>Abrir formulário do solicitante</td><td>Duplo-clique na linha da tabela</td></tr>
+                        <tr><td>Abrir gerenciamento</td><td>Ícone <i class="iconoir-settings" style="font-size:14px"></i> na coluna Ação</td></tr>
+                        <tr><td>Enviar WhatsApp</td><td>Ícone <i class="iconoir-whatsapp" style="font-size:14px"></i> na coluna Ação</td></tr>
+                        <tr><td>Copiar link do formulário</td><td>Ícone <i class="iconoir-copy" style="font-size:14px"></i> na coluna Ação</td></tr>
+                        <tr><td>Adicionar nota</td><td>Clique direto na coluna Nota</td></tr>
+                        <tr><td>Reordenar por prioridade</td><td>Arrastar (drag & drop) a linha</td></tr>
+                        <tr><td>Selecionar múltiplos</td><td>Checkbox na primeira coluna</td></tr>
+                        <tr><td>Expandir grupo</td><td>Clique na linha do grupo</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- INTELIGÊNCIA ARTIFICIAL -->
+            <!-- ============================================ -->
+            <div class="docs-section" id="ia">
+                <h2>Inteligência Artificial</h2>
+                <p class="subtitle">O SENDS160 utiliza IA para reduzir erros, auxiliar o assessor e manter o sistema sempre atualizado em tempo real.</p>
+
+                <h3>Agente de Suporte ao Assessor</h3>
+                <p>Entre a <strong>Triagem</strong> e a <strong>Análise</strong>, um agente de IA atua automaticamente para preparar o caso:</p>
+
+                <div class="feat-grid">
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-brain-research"></i></div>
+                        <h4>Cruzamento de informações</h4>
+                        <p>A IA cruza os dados preenchidos pelo solicitante com regras do DS-160 e identifica inconsistências antes do assessor iniciar a revisão.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-warning-triangle"></i></div>
+                        <h4>Pontos de atenção</h4>
+                        <p>Alerta sobre campos com alta probabilidade de erro: datas conflitantes, nomes divergentes, endereços incompletos, lacunas no histórico de viagem.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-shield-check"></i></div>
+                        <h4>Validação preventiva</h4>
+                        <p>Verifica se os dados passariam pela validação do site oficial do DS-160 antes de chegar na automação — evitando rejeições e retrabalho.</p>
+                    </div>
+                    <div class="feat-card">
+                        <div class="feat-icon"><i class="iconoir-sparks"></i></div>
+                        <h4>Sugestões inteligentes</h4>
+                        <p>Sugere preenchimentos baseados no histórico e padrões do processo, como propósito de viagem compatível com o tipo de visto.</p>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>Como funciona na prática:</strong> Quando o solicitante conclui o preenchimento na Triagem, a IA analisa os dados automaticamente. Ao abrir o formulário na Análise, o assessor já encontra alertas e sugestões integrados — economizando tempo e aumentando a assertividade.
+                </div>
+
+                <h3>Monitoramento em Tempo Real</h3>
+                <p>A IA trabalha continuamente em segundo plano durante toda a produção:</p>
+                <ul>
+                    <li><strong>Status em tempo real</strong> — Cada etapa da automação é monitorada. O dashboard atualiza o status sem refresh manual</li>
+                    <li><strong>Detecção de falhas</strong> — A IA identifica padrões de erro e ajusta a estratégia de retry automaticamente</li>
+                    <li><strong>Retry inteligente</strong> — Em vez de simplesmente repetir, a IA analisa o erro e adapta a tentativa (ex: ajustar formatação de campo, aguardar mais tempo em postbacks lentos)</li>
+                    <li><strong>Monitoramento de sites externos</strong> — Acompanha em tempo quase real o status no CEAC e CASV, detectando mudanças e atualizando a plataforma automaticamente</li>
+                    <li><strong>Auto-recuperação</strong> — Se o sistema detecta uma falha sistêmica (site fora do ar, mudança de layout), pausa a fila e notifica a equipe em vez de gerar erros em massa</li>
+                </ul>
+
+                <div class="tip-box">
+                    <strong>Transparente para o assessor:</strong> A IA opera em segundo plano. O assessor vê apenas os resultados: alertas no formulário, status atualizado no dashboard e menos erros no processo.
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- AUTOMAÇÃO -->
+            <!-- ============================================ -->
+            <div class="docs-section" id="automacao">
+                <h2>Automação Completa</h2>
+                <p class="subtitle">O SENDS160 automatiza todo o processo burocrático: do preenchimento do DS-160 até o monitoramento do resultado da entrevista. Tudo sem intervenção manual.</p>
+
+                <h3>Pipeline de automação</h3>
+                <p>A automação cobre 4 grandes frentes do processo:</p>
+
+                <div class="pipeline" style="margin: 20px 0;">
+                    <div class="pipe-step pipe-1">
+                        <div class="pipe-num">1</div>
+                        <div class="pipe-label">DS-160</div>
+                        <div class="pipe-desc">Preenchimento + confirmação + PDF</div>
+                    </div>
+                    <div class="pipe-step pipe-2">
+                        <div class="pipe-num">2</div>
+                        <div class="pipe-label">CASV</div>
+                        <div class="pipe-desc">Cadastro + taxas + guia de pagamento</div>
+                    </div>
+                    <div class="pipe-step pipe-3">
+                        <div class="pipe-num">3</div>
+                        <div class="pipe-label">Agendamento</div>
+                        <div class="pipe-desc">Entrevista + entrega de passaporte</div>
+                    </div>
+                    <div class="pipe-step pipe-5">
+                        <div class="pipe-num">4</div>
+                        <div class="pipe-label">Monitoramento</div>
+                        <div class="pipe-desc">Resultado automático da entrevista</div>
+                    </div>
+                </div>
+
+                <!-- DS-160 Automation -->
+                <h3>1. Automação do DS-160</h3>
+                <p>O sistema preenche o formulário DS-160 no site oficial do CEAC de forma automática e completa:</p>
+                <ul>
+                    <li><strong>Preenchimento campo a campo</strong> — Um navegador automatizado abre o site oficial (ceac.state.gov) e preenche cada campo usando os dados revisados na Análise</li>
+                    <li><strong>Resolução de CAPTCHA</strong> — O CAPTCHA de segurança é resolvido automaticamente via integração com serviço externo</li>
+                    <li><strong>Tratamento de postbacks</strong> — O formulário oficial recarrega parcialmente ao selecionar certas opções. A automação detecta e espera cada postback</li>
+                    <li><strong>Suporte a múltiplas entradas</strong> — Campos como "outros nomes", "viagens anteriores" e "redes sociais" com "Add Another" são preenchidos automaticamente</li>
+                    <li><strong>Confirmação e submissão</strong> — Após preencher todas as páginas, o formulário é submetido e o número de confirmação é capturado</li>
+                    <li><strong>PDF de todas as páginas</strong> — Uma cópia completa do DS-160 preenchido é salva em PDF, incluindo todas as páginas e a página de confirmação final</li>
+                </ul>
+
+                <div class="tip-box">
+                    <strong>Documentação completa:</strong> O PDF salvo contém a cópia fiel de cada página do DS-160 como foi submetida ao consulado. Útil para referência, entrevista e arquivo do processo.
+                </div>
+
+                <!-- CASV Automation -->
+                <h3>2. Cadastro e Taxas (CASV)</h3>
+                <p>Após o DS-160 ser concluído, o sistema realiza automaticamente:</p>
+                <ul>
+                    <li><strong>Cadastro no CASV</strong> — Criação da conta do solicitante no site do CASV (Centro de Atendimento ao Solicitante de Visto)</li>
+                    <li><strong>Pagamento da taxa consular</strong> — Geração da guia de pagamento da taxa MRV (US$185 para B1/B2)</li>
+                    <li><strong>Salvamento da guia</strong> — A guia de pagamento é salva em PDF e associada ao solicitante para impressão e uso no dia da entrevista</li>
+                    <li><strong>Confirmação de pagamento</strong> — Após a compensação, o status é atualizado automaticamente</li>
+                </ul>
+
+                <!-- Scheduling Automation -->
+                <h3>3. Agendamento automático</h3>
+                <p>Com a taxa paga, o sistema agenda automaticamente:</p>
+                <ul>
+                    <li><strong>Entrevista no consulado</strong> — Busca e reserva o primeiro horário disponível no consulado/embaixada selecionado</li>
+                    <li><strong>Coleta biométrica</strong> — Agenda a coleta de digitais no CASV (quando aplicável)</li>
+                    <li><strong>Entrega de passaporte</strong> — Registra o ponto de entrega do passaporte após a aprovação</li>
+                    <li><strong>Documentação de entrevista</strong> — Gera um resumo com data, horário, local e documentos necessários para o dia da entrevista</li>
+                </ul>
+
+                <!-- Monitoring -->
+                <h3>4. Monitoramento de resultado</h3>
+                <p>Após a entrevista, o sistema monitora automaticamente o status oficial:</p>
+                <ul>
+                    <li><strong>Checagem periódica</strong> — O sistema consulta o status do visto no site do CEAC em intervalos regulares</li>
+                    <li><strong>Detecção de resultado</strong> — Quando o status muda (Aprovado, Negado, Processo Administrativo, etc.), o solicitante é atualizado automaticamente na plataforma</li>
+                    <li><strong>Notificação</strong> — O assessor é alertado assim que o resultado oficial é detectado</li>
+                    <li><strong>Rastreamento de entrega</strong> — Acompanha o envio do passaporte pelo serviço de courier</li>
+                </ul>
+
+                <h3>O que o assessor precisa saber</h3>
+                <div class="info-box">
+                    <strong>A automação é transparente.</strong> Você não precisa interagir diretamente com ela. Ao mover um solicitante para as etapas automatizadas, ele entra na fila automaticamente. O status na tabela atualiza em tempo real: Pendente → Em execução → Concluído (ou Erro).
+                </div>
+
+                <h3>Retry inteligente e tratamento de erros</h3>
+                <p>O sistema diferencia dois tipos de erro e age de forma diferente para cada um:</p>
+
+                <table class="s-table">
+                    <thead><tr><th>Tipo</th><th>Causa</th><th>Comportamento do retry</th><th>Ação do assessor</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="chip chip-yellow">Erro de dados</span></td>
+                            <td>Campo inválido, dado inconsistente, formato incorreto</td>
+                            <td><strong>Não retenta automaticamente.</strong> O solicitante volta para a fila de Análise para correção</td>
+                            <td>Abrir formulário, corrigir o campo apontado no log de erro, e reenviar para automação</td>
+                        </tr>
+                        <tr>
+                            <td><span class="chip chip-red">Falha técnica</span></td>
+                            <td>Timeout, queda de conexão, site indisponível, CAPTCHA falhou</td>
+                            <td><strong>Retenta automaticamente</strong> até 3 vezes com intervalos progressivos (1min → 5min → 15min). A IA ajusta a estratégia a cada tentativa</td>
+                            <td>Nenhuma — o sistema resolve sozinho. Se todas as tentativas falharem, o assessor é notificado</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Referência rápida de status</h3>
+                <table class="s-table">
+                    <thead><tr><th>Status</th><th>O que significa</th><th>O que fazer</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="chip chip-gray">Pendente</span></td><td>Na fila, aguardando processamento</td><td>Aguardar</td></tr>
+                        <tr><td><span class="chip chip-blue">Em execução</span></td><td>Automação processando agora</td><td>Aguardar</td></tr>
+                        <tr><td><span class="chip chip-green">Concluído</span></td><td>Etapa concluída com sucesso</td><td>Sistema avança automaticamente</td></tr>
+                        <tr><td><span class="chip chip-yellow">Erro de dados</span></td><td>Dados inválidos detectados</td><td>Corrigir na Análise e reenviar</td></tr>
+                        <tr><td><span class="chip chip-red">Falha técnica</span></td><td>Problema no sistema</td><td>Retenta sozinho (até 3x)</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box">
+                    <strong>Fila por prioridade:</strong> Solicitantes com prioridade <strong>Urgente</strong> ou <strong>Alta</strong> são processados primeiro. A fila respeita a ordem de prioridade definida no dashboard.
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- FLUXO COMPLETO -->
+            <!-- ============================================ -->
+            <div class="docs-section" id="fluxo">
+                <h2>Fluxo Completo do Processo</h2>
+                <p class="subtitle">Cada solicitante percorre estas etapas, do início ao resultado final:</p>
+
+                <div class="flow">
+                    <span class="flow-s">Triagem</span><span class="flow-a">→</span>
+                    <span class="flow-s">Análise</span><span class="flow-a">→</span>
+                    <span class="flow-s">DS-160</span><span class="flow-a">→</span>
+                    <span class="flow-s">Taxas</span><span class="flow-a">→</span>
+                    <span class="flow-s">Agendamento</span><span class="flow-a">→</span>
+                    <span class="flow-s">Entrevista</span><span class="flow-a">→</span>
+                    <span class="flow-s">Resultado</span><span class="flow-a">→</span>
+                    <span class="flow-s">Arquivado</span>
+                </div>
+
+                <div class="info-box">
+                    <strong>Regra de grupos:</strong> Ao mudar a etapa de um solicitante que pertence a um grupo, <strong>todos os membros avançam juntos</strong>. O status individual de cada membro é resetado conforme a nova etapa.
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- ETAPAS INDIVIDUAIS -->
+            <!-- ============================================ -->
+
+            <div class="docs-section" id="triagem">
+                <h2><span class="stage-num">1</span> Triagem</h2>
+                <p class="subtitle">Recepção e verificação inicial do solicitante.</p>
+                <h3>O que acontece</h3>
+                <ul>
+                    <li>Solicitante é cadastrado pelo portal ou criado manualmente pelo assessor</li>
+                    <li>Dados básicos são verificados: nome, email, documentos</li>
+                    <li>Prioridade é definida conforme urgência do caso</li>
+                    <li>Solicitantes da mesma família são agrupados</li>
+                </ul>
+                <h3>Ações do assessor</h3>
+                <ul>
+                    <li>Verificar se os dados estão corretos e completos</li>
+                    <li>Definir prioridade (Normal, Alta, Urgente, Retentativa)</li>
+                    <li>Agrupar solicitantes da mesma família se necessário</li>
+                    <li>Enviar link do formulário ao solicitante por WhatsApp ou email</li>
+                </ul>
+                <div class="info-box"><strong>Auto-avanço:</strong> Ao concluir a triagem, o solicitante avança para <strong>Análise</strong> com status <strong>Em execução</strong>.</div>
+            </div>
+
+            <div class="docs-section" id="analise">
+                <h2><span class="stage-num">2</span> Análise</h2>
+                <p class="subtitle">Revisão detalhada dos dados preenchidos pelo solicitante.</p>
+                <h3>O que acontece</h3>
+                <ul>
+                    <li>O assessor abre o formulário do solicitante (duplo-clique na tabela)</li>
+                    <li>Revisa todas as seções, campo por campo</li>
+                    <li>Corrige informações incorretas, incompletas ou inconsistentes</li>
+                    <li>Valida se os dados condizem com documentos oficiais (passaporte, CPF, etc.)</li>
+                </ul>
+                <h3>Ações do assessor</h3>
+                <ul>
+                    <li>Duplo-clique no solicitante para abrir o formulário em modo revisão</li>
+                    <li>Verificar se todas as seções têm o check verde</li>
+                    <li>O botão <strong>Concluir Análise</strong> aparece no final — só é habilitado quando o formulário está 100% completo</li>
+                </ul>
+                <div class="warn-box"><strong>Atenção:</strong> Dados incorretos nesta etapa causarão erros na automação do DS-160. A revisão cuidadosa aqui economiza retrabalho.</div>
+            </div>
+
+            <div class="docs-section" id="ds160">
+                <h2><span class="stage-num">3</span> DS-160</h2>
+                <p class="subtitle">Preenchimento automático do formulário DS-160 no site oficial.</p>
+                <h3>O que acontece</h3>
+                <ul>
+                    <li>A automação abre o site oficial (ceac.state.gov) e preenche cada campo automaticamente</li>
+                    <li>Resolve o CAPTCHA e submete o formulário</li>
+                    <li>O <strong>número de confirmação</strong> é capturado e associado ao solicitante</li>
+                    <li>Um <strong>PDF completo</strong> de todas as páginas é salvo para arquivo e referência</li>
+                </ul>
+                <div class="info-box"><strong>Totalmente automático.</strong> O assessor acompanha o status pela tabela. A confirmação e o PDF ficam disponíveis após a conclusão.</div>
+            </div>
+
+            <div class="docs-section" id="taxas">
+                <h2><span class="stage-num">4</span> Taxas</h2>
+                <p class="subtitle">Cadastro no CASV e pagamento da taxa consular (MRV fee).</p>
+                <h3>O que acontece</h3>
+                <ul>
+                    <li>A automação cadastra o solicitante no <strong>CASV</strong> (Centro de Atendimento ao Solicitante de Visto)</li>
+                    <li>A <strong>guia de pagamento</strong> da taxa MRV é gerada e salva em PDF</li>
+                    <li>Após o pagamento, a confirmação é registrada automaticamente</li>
+                    <li>A guia salva é disponibilizada para impressão — <strong>necessária no dia da entrevista</strong></li>
+                </ul>
+                <div class="tip-box"><strong>Guia salva:</strong> O PDF da guia de pagamento fica associado ao solicitante. O assessor pode acessá-lo a qualquer momento para envio ao solicitante.</div>
+            </div>
+
+            <div class="docs-section" id="agendamento">
+                <h2><span class="stage-num">5</span> Agendamento</h2>
+                <p class="subtitle">Agendamento automático da entrevista e coleta biométrica.</p>
+                <h3>O que acontece</h3>
+                <ul>
+                    <li>A automação busca os <strong>primeiros horários disponíveis</strong> no consulado/embaixada selecionado</li>
+                    <li>Agenda a <strong>entrevista</strong> e a <strong>coleta biométrica</strong> no CASV (quando aplicável)</li>
+                    <li>Registra o <strong>ponto de entrega do passaporte</strong> após aprovação</li>
+                    <li>Gera um <strong>resumo da entrevista</strong> com data, horário, local e documentos necessários</li>
+                </ul>
+                <div class="info-box"><strong>Automático:</strong> O agendamento é feito pelo sistema. O assessor valida a data e comunica o solicitante sobre os próximos passos.</div>
+            </div>
+
+            <div class="docs-section" id="entrevista">
+                <h2><span class="stage-num">6</span> Entrevista</h2>
+                <p class="subtitle">Aguardando a realização da entrevista no consulado.</p>
+                <h3>O que acontece</h3>
+                <ul>
+                    <li>O solicitante comparece à entrevista na data agendada</li>
+                    <li>O status permanece <span class="chip chip-gray">Pendente</span> até que o resultado seja informado</li>
+                    <li>Ao selecionar um resultado, o solicitante avança automaticamente para <strong>Resultado</strong></li>
+                </ul>
+                <h3>Ações do assessor</h3>
+                <ul>
+                    <li>Aguardar a data da entrevista</li>
+                    <li>O <strong>resultado é detectado automaticamente</strong> pelo monitoramento do CEAC</li>
+                    <li>Caso necessário, o assessor pode registrar o resultado manualmente via engrenagem → dropdown "Resultado"</li>
+                </ul>
+                <div class="warn-box"><strong>Importante:</strong> O único status possível nesta etapa é <strong>Pendente</strong>. Ao selecionar qualquer resultado, o solicitante avança automaticamente para a etapa Resultado.</div>
+            </div>
+
+            <div class="docs-section" id="resultado">
+                <h2><span class="stage-num">7</span> Resultado</h2>
+                <p class="subtitle">Desfecho do processo de visto.</p>
+                <h3>Resultados possíveis</h3>
+                <table class="s-table">
+                    <thead><tr><th>Resultado</th><th>Descrição</th><th>Próximo passo</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="chip chip-green">Aprovado</span></td><td>Visto aprovado — passaporte será enviado com o visto</td><td>Arquivar processo</td></tr>
+                        <tr><td><span class="chip chip-red">Negado</span></td><td>Visto negado — motivo informado pelo consulado</td><td>Arquivar ou novo processo</td></tr>
+                        <tr><td><span class="chip chip-blue">Nova Entrevista</span></td><td>Necessário reagendar</td><td>Retornar para Agendamento</td></tr>
+                        <tr><td><span class="chip chip-yellow">Docs Complementares</span></td><td>Documentos adicionais solicitados</td><td>Enviar e acompanhar</td></tr>
+                        <tr><td><span class="chip chip-red">Processo Administrativo</span></td><td>Em análise (pode levar semanas)</td><td>Aguardar consulado</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="docs-section" id="arquivado">
+                <h2><span class="stage-num">8</span> Arquivado</h2>
+                <p class="subtitle">Processos finalizados ou cancelados.</p>
+                <ul>
+                    <li>Processos concluídos (aprovados ou negados) são movidos para cá</li>
+                    <li>Processos cancelados pelo solicitante também ficam aqui</li>
+                    <li>Os dados permanecem disponíveis para consulta futura</li>
+                </ul>
+                <div class="warn-box"><strong>Cuidado:</strong> A exclusão permanente remove todos os dados sem possibilidade de recuperação.</div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- STATUS -->
+            <!-- ============================================ -->
+            <div class="docs-section" id="status">
+                <h2>Status e Significados</h2>
+                <p class="subtitle">O status mostra o andamento do solicitante dentro da etapa atual.</p>
+
+                <h3>Status padrão (Triagem → Agendamento)</h3>
+                <table class="s-table">
+                    <thead><tr><th>Status</th><th>Significado</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="chip chip-gray">Pendente</span></td><td>Aguardando início do trabalho nesta etapa</td></tr>
+                        <tr><td><span class="chip chip-blue">Em execução</span></td><td>Trabalho em andamento (manual ou automação)</td></tr>
+                        <tr><td><span class="chip chip-green">Concluído</span></td><td>Etapa finalizada com sucesso</td></tr>
+                        <tr><td><span class="chip chip-yellow">Erro de dados</span></td><td>Dados incorretos — requer correção</td></tr>
+                        <tr><td><span class="chip chip-red">Falha técnica</span></td><td>Problema no sistema</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Status da Entrevista</h3>
+                <p>Apenas <span class="chip chip-gray">Pendente</span> — até que o resultado seja informado.</p>
+
+                <h3>Status do Resultado</h3>
+                <table class="s-table">
+                    <thead><tr><th>Status</th><th>Significado</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="chip chip-green">Aprovado</span></td><td>Visto aprovado</td></tr>
+                        <tr><td><span class="chip chip-red">Negado</span></td><td>Visto negado</td></tr>
+                        <tr><td><span class="chip chip-blue">Nova Entrevista</span></td><td>Reagendar entrevista</td></tr>
+                        <tr><td><span class="chip chip-yellow">Docs Complementares</span></td><td>Documentos adicionais</td></tr>
+                        <tr><td><span class="chip chip-red">Processo Administrativo</span></td><td>Análise administrativa</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- GRUPOS -->
+            <!-- ============================================ -->
+            <div class="docs-section" id="grupos">
+                <h2>Grupos</h2>
+                <p class="subtitle">Agrupe solicitantes da mesma família ou que viajam juntos.</p>
+                <h3>Como funcionam</h3>
+                <ul>
+                    <li>Solicitantes podem ser agrupados pelo modal de gerenciamento</li>
+                    <li>Ao mudar a <strong>etapa</strong> de qualquer membro, <strong>todo o grupo avança junto</strong></li>
+                    <li>Cada membro mantém seu <strong>status individual</strong> dentro da etapa</li>
+                    <li>Notas de grupo são compartilhadas entre todos os assessores</li>
+                    <li>Clique na linha do grupo para expandir e ver os membros individuais</li>
+                </ul>
+                <div class="tip-box"><strong>Dica:</strong> Use notas do grupo para registrar informações compartilhadas pela família (viagem juntos, mesmo hotel, etc.).</div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- AÇÕES -->
+            <!-- ============================================ -->
+            <div class="docs-section" id="acoes">
+                <h2>Ações e Atalhos</h2>
+                <p class="subtitle">Referência rápida de todas as ações disponíveis.</p>
+
+                <h3>Ações na tabela</h3>
+                <table class="s-table">
+                    <thead><tr><th>Ação</th><th>Como</th><th>Onde</th></tr></thead>
+                    <tbody>
+                        <tr><td>Abrir formulário</td><td>Duplo-clique na linha</td><td>Qualquer solicitante</td></tr>
+                        <tr><td>Gerenciar</td><td>Ícone <i class="iconoir-settings" style="font-size:13px"></i></td><td>Coluna Ação</td></tr>
+                        <tr><td>WhatsApp</td><td>Ícone <i class="iconoir-whatsapp" style="font-size:13px"></i></td><td>Coluna Ação</td></tr>
+                        <tr><td>Copiar link</td><td>Ícone <i class="iconoir-copy" style="font-size:13px"></i></td><td>Coluna Ação</td></tr>
+                        <tr><td>Adicionar nota</td><td>Clique na coluna Nota</td><td>Qualquer solicitante</td></tr>
+                        <tr><td>Reordenar</td><td>Arrastar a linha</td><td>Qualquer linha</td></tr>
+                        <tr><td>Selecionar vários</td><td>Checkbox na primeira coluna</td><td>Qualquer linha</td></tr>
+                        <tr><td>Expandir grupo</td><td>Clique na linha do grupo</td><td>Linhas de grupo</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Atalhos de teclado</h3>
+                <table class="s-table">
+                    <thead><tr><th>Tecla</th><th>Ação</th></tr></thead>
+                    <tbody>
+                        <tr><td><kbd>Esc</kbd></td><td>Fechar modal ou dropdown aberto</td></tr>
+                        <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd></td><td>Recarregar sem cache (útil após atualizações)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Highlight active nav on scroll
+        const secs = document.querySelectorAll('.docs-section');
+        const links = document.querySelectorAll('.docs-nav a');
+        window.addEventListener('scroll', () => {
+            let cur = '';
+            secs.forEach(s => { if (window.scrollY >= s.offsetTop - 100) cur = s.id; });
+            links.forEach(l => { l.classList.toggle('active', l.getAttribute('href') === '#' + cur); });
+        });
+    </script>
+</body>
+</html>
