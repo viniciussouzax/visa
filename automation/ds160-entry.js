@@ -138,25 +138,49 @@ async function main() {
             app = newApp;
         }
 
-        // ── PROXY: atribuir por TASK_INDEX, persistir para retry ──
-        const proxyList = config.proxy_list || [];
+        // ── PROXY: ler de settings.proxy_url (mesma fonte que AIS/dashboard) ──
+        // Proxy residencial rotativo: session ID por TASK_INDEX gera IPs diferentes
         let proxyUrl = null;
 
         if (app.proxy_session) {
-            // Retry: reutilizar proxy salvo da execução anterior
+            // Retry: reutilizar proxy salvo da execução anterior (mesmo IP)
             proxyUrl = app.proxy_session;
             console.log(`🔒 Proxy (retry): ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
-        } else if (proxyList.length > 0) {
-            // Nova execução: atribuir proxy por TASK_INDEX (round-robin)
-            proxyUrl = proxyList[TASK_INDEX % proxyList.length];
-            // Salvar proxy na application para retry futuro
-            await supabase.from('applications').update({
-                proxy_session: proxyUrl,
-                proxy_session_created_at: new Date().toISOString()
-            }).eq('id', app.id);
-            console.log(`🔒 Proxy (novo): ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
         } else {
-            console.log('🌐 Sem proxy — usando IP direto do Cloud Run');
+            // Carregar proxy_url da tabela settings (onde o dashboard/integrações salva)
+            const { data: proxySetting } = await supabase
+                .from('settings')
+                .select('key_value')
+                .eq('key_name', 'proxy_url')
+                .single();
+
+            const baseProxyUrl = proxySetting?.key_value || process.env.PROXY_URL || null;
+
+            if (baseProxyUrl) {
+                // Adicionar session ID para proxy residencial rotativo
+                // Formato: session-ds160-{TASK_INDEX}-{timestamp} → IP diferente por container
+                try {
+                    const parsed = new URL(baseProxyUrl);
+                    const sessionId = `ds160-${TASK_INDEX}-${Date.now()}`;
+                    // Proxies residenciais (DataImpulse, BrightData, etc) usam
+                    // username com session ID: user-session-XXX
+                    if (parsed.username) {
+                        parsed.username = `${parsed.username}-session-${sessionId}`;
+                    }
+                    proxyUrl = parsed.toString();
+                } catch {
+                    proxyUrl = baseProxyUrl; // fallback se URL mal formada
+                }
+
+                // Salvar proxy na application para retry futuro
+                await supabase.from('applications').update({
+                    proxy_session: proxyUrl,
+                    proxy_session_created_at: new Date().toISOString()
+                }).eq('id', app.id);
+                console.log(`🔒 Proxy (novo): ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
+            } else {
+                console.log('🌐 Sem proxy configurado — usando IP direto');
+            }
         }
 
         // Injetar proxy_url no config para o filler.js usar
