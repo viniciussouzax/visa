@@ -104,6 +104,9 @@
                 </div>
                 <button type="submit" class="login-btn" id="loginBtn">Entrar</button>
                 <div class="login-error" id="loginError"></div>
+                <div style="text-align:center;margin-top:12px">
+                    <a href="#" onclick="handleForgotPassword(event)" style="font-size:13px;color:var(--accent,#3b82f6);text-decoration:none;opacity:.8">Esqueci minha senha</a>
+                </div>
             </form>
         </div>
     </div>
@@ -117,23 +120,22 @@
             <div class="nav-item active" data-page="overview" onclick="navigateTo('overview')"><i
                     class="iconoir-graph-up"></i> Dashboard</div>
             <div class="nav-item" data-page="screening" onclick="navigateTo('screening')"><i
-                    class="iconoir-filter"></i> Triagem <span class="badge" id="badge-screening">0</span></div>
+                    class="iconoir-filter"></i> Triagem</div>
             <div class="nav-item" data-page="analysis" onclick="navigateTo('analysis')"><i class="iconoir-strategy"></i>
-                Análise <span class="badge" id="badge-analysis">0</span></div>
+                Análise</div>
             <div class="nav-item" data-page="ds160" onclick="navigateTo('ds160')"><i class="iconoir-input-field"></i>
                 DS-160
-                <span class="badge" id="badge-ds160">0</span>
             </div>
             <div class="nav-item" data-page="payment" onclick="navigateTo('payment')"><i class="iconoir-dollar-circle"></i>
-                Taxas <span class="badge" id="badge-payment">0</span></div>
+                Taxas</div>
             <div class="nav-item" data-page="scheduling" onclick="navigateTo('scheduling')"><i
-                    class="iconoir-calendar"></i> Agendamento <span class="badge" id="badge-scheduling">0</span></div>
+                    class="iconoir-calendar"></i> Agendamento</div>
             <div class="nav-item" data-page="interview" onclick="navigateTo('interview')"><i
-                    class="iconoir-microphone"></i> Entrevista <span class="badge" id="badge-interview">0</span></div>
+                    class="iconoir-microphone"></i> Entrevista</div>
             <div class="nav-item" data-page="outcome" onclick="navigateTo('outcome')"><i class="iconoir-check-circle"></i>
-                Resultado <span class="badge" id="badge-outcome">0</span></div>
+                Resultado</div>
             <div class="nav-item" data-page="archived" onclick="navigateTo('archived')"><i
-                    class="iconoir-archive"></i> Arquivado <span class="badge" id="badge-archived">0</span></div>
+                    class="iconoir-archive"></i> Arquivado</div>
             <div class="nav-spacer"></div>
 
 
@@ -172,6 +174,7 @@
                             <th>Solicitante</th>
                             <th>Etapa</th>
                             <th>Status</th>
+                            <th>Motivo</th>
                             <th>DS-160</th>
                             <th>AIS</th>
                             <th>Nota</th>
@@ -358,9 +361,12 @@
                     <table style="width:100%">
                         <thead>
                             <tr>
+                                <th>Solicitante</th>
                                 <th>Causa</th>
                                 <th>Página / Campo</th>
                                 <th>Mensagem</th>
+                                <th style="text-align:center">Retry</th>
+                                <th style="text-align:center">📸</th>
                                 <th>Data</th>
                                 <th>Ações</th>
                             </tr>

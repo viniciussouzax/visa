@@ -1,4 +1,4 @@
-﻿        // ==========================================
+        // ==========================================
         // THEME
         // ==========================================
         function toggleTheme() { }
@@ -1729,6 +1729,31 @@
             await showDashboard();
         }
 
+        async function handleForgotPassword(e) {
+            if (e) e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            if (!email || !email.includes('@')) {
+                const errEl = document.getElementById('loginError');
+                errEl.textContent = 'Digite seu e-mail acima para recuperar a senha';
+                errEl.classList.add('show');
+                return;
+            }
+            const base = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+            const redirectTo = base + 'update-password.html';
+            const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+            if (error) {
+                const errEl = document.getElementById('loginError');
+                errEl.textContent = 'Erro: ' + error.message;
+                errEl.classList.add('show');
+                return;
+            }
+            const errEl = document.getElementById('loginError');
+            errEl.textContent = '📧 Link de recuperação enviado! Verifique seu e-mail.';
+            errEl.style.color = '#16a34a';
+            errEl.classList.add('show');
+            setTimeout(() => { errEl.style.color = ''; }, 5000);
+        }
+
         function confirmLogout() {
             const existing = document.getElementById('logoutConfirm'); if (existing) existing.remove();
             const html = `<div id="logoutConfirm" class="modal-overlay" onclick="document.getElementById('logoutConfirm').remove()">
@@ -2275,15 +2300,96 @@
         const admCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Internet', timeout: 'Timeout', field_error: 'Campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha', validation_error: 'Validação DS-160', postback_stuck: 'Postback', page_stuck: 'Página travada', unknown: 'Desconhecido' };
         async function admLoadLogs() {
             try {
-                const logs = await sbGet('error_logs?archived=eq.false&order=created_at.desc&limit=50&select=id,error_cause,page_name,field_name,error_message,applicant_name,created_at') || [];
+                const logs = await sbGet('error_logs?archived=eq.false&order=created_at.desc&limit=50&select=id,error_cause,page_name,field_name,error_message,applicant_name,created_at,retry_number,screenshot_url,page_html') || [];
                 const ce = document.getElementById('admLogsCount'); if (ce) ce.textContent = `(${logs.length})`;
                 const be = document.getElementById('admLogsBadge'); if (be) { be.textContent = logs.length; be.style.display = logs.length > 0 ? 'inline' : 'none'; }
                 admUpdateNav('logs');
                 const tb = document.getElementById('admLogsTable');
-                if (logs.length === 0) { tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px">Nenhum erro ativo 🎉</td></tr>'; return; }
-                tb.innerHTML = logs.map(l => { const lb = admCauseLabels[l.error_cause] || l.error_cause || '—'; const ds = new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); const who = l.applicant_name ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">' + l.applicant_name + '</div>' : ''; return `<tr><td><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:#fee2e2;color:#dc2626">${lb}</span>${who}</td><td>${l.page_name || '—'}${l.field_name ? ' <span style="color:var(--accent);font-family:monospace;font-size:12px">' + l.field_name + '</span>' : ''}</td><td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(l.error_message || '').replace(/"/g, '&quot;')}">${l.error_message || '—'}</td><td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${ds}</td><td><button class="btn-new" onclick="admArchiveLog('${l.id}')" style="background:#ef4444;font-size:11px;padding:4px 8px">Arquivar</button></td></tr>`; }).join('');
-            } catch (e) { document.getElementById('admLogsTable').innerHTML = '<tr><td colspan="5" style="color:#ef4444">' + e.message + '</td></tr>'; }
+                if (logs.length === 0) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Nenhum erro ativo 🎉</td></tr>'; return; }
+                // Store logs for modal access
+                window._admLogs = logs;
+                tb.innerHTML = logs.map((l, idx) => {
+                    const lb = admCauseLabels[l.error_cause] || l.error_cause || '—';
+                    const ds = new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    const who = l.applicant_name ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">' + escapeHTML(l.applicant_name) + '</div>' : '';
+                    const retryBadge = l.retry_number != null ? `<span style="background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">#${l.retry_number}</span>` : '—';
+                    const screenshotBtn = l.screenshot_url
+                        ? `<button class="btn-new" onclick="admViewScreenshot(${idx})" style="background:#3b82f6;font-size:11px;padding:3px 6px" title="Ver screenshot">📸</button>`
+                        : '<span style="color:var(--text-muted);font-size:11px">—</span>';
+                    const htmlBtn = l.page_html
+                        ? `<button class="btn-new" onclick="admViewHtml(${idx})" style="background:#8b5cf6;font-size:11px;padding:3px 6px" title="Ver HTML da página">🔍</button>`
+                        : '';
+                    return `<tr>
+                        <td><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:#fee2e2;color:#dc2626">${lb}</span>${who}</td>
+                        <td>${escapeHTML(l.page_name || '—')}${l.field_name ? ' <span style="color:var(--accent);font-family:monospace;font-size:12px">' + escapeHTML(l.field_name) + '</span>' : ''}</td>
+                        <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHTML(l.error_message || '')}">${escapeHTML(l.error_message || '—')}</td>
+                        <td style="text-align:center">${retryBadge}</td>
+                        <td style="text-align:center">${screenshotBtn}${htmlBtn ? ' ' + htmlBtn : ''}</td>
+                        <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${ds}</td>
+                        <td><button class="btn-new" onclick="admArchiveLog('${l.id}')" style="background:#ef4444;font-size:11px;padding:4px 8px">Arquivar</button></td>
+                    </tr>`;
+                }).join('');
+            } catch (e) { document.getElementById('admLogsTable').innerHTML = '<tr><td colspan="8" style="color:#ef4444">' + e.message + '</td></tr>'; }
         }
+
+        function admViewScreenshot(idx) {
+            const log = window._admLogs?.[idx]; if (!log?.screenshot_url) return;
+            const old = document.getElementById('screenshotModal'); if (old) old.remove();
+            const html = `<div id="screenshotModal" class="modal-overlay" onclick="document.getElementById('screenshotModal').remove()" style="z-index:10010;background:rgba(0,0,0,.85)">
+                <div onclick="event.stopPropagation()" style="max-width:90vw;max-height:90vh;position:relative">
+                    <button onclick="document.getElementById('screenshotModal').remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;z-index:1">✕</button>
+                    <img src="${log.screenshot_url}" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)" onerror="this.outerHTML='<div style=\\'color:#fff;padding:40px\\'>Imagem não encontrada</div>'">
+                    <div style="color:#fff;font-size:12px;text-align:center;margin-top:8px;opacity:.7">${escapeHTML(log.applicant_name || '—')} · ${escapeHTML(log.page_name || '—')} · ${escapeHTML(log.error_cause || '')}</div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function admViewHtml(idx) {
+            const log = window._admLogs?.[idx]; if (!log?.page_html) return;
+            const old = document.getElementById('htmlModal'); if (old) old.remove();
+            const html = `<div id="htmlModal" class="modal-overlay" onclick="document.getElementById('htmlModal').remove()" style="z-index:10010">
+                <div class="modal-box" onclick="event.stopPropagation()" style="max-width:900px;width:95vw;max-height:90vh;display:flex;flex-direction:column;padding:0">
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)">
+                        <h3 style="margin:0;font-size:14px">HTML da Página — ${escapeHTML(log.page_name || '—')}</h3>
+                        <div style="display:flex;gap:8px">
+                            <button class="btn-new" onclick="admCopyHtml(${idx})" style="font-size:11px;padding:4px 10px">📋 Copiar</button>
+                            <button class="btn-new" onclick="admRenderHtml(${idx})" style="font-size:11px;padding:4px 10px;background:#8b5cf6">👁 Renderizar</button>
+                            <button onclick="document.getElementById('htmlModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
+                        </div>
+                    </div>
+                    <div id="htmlModalContent" style="flex:1;overflow:auto;padding:16px">
+                        <pre style="white-space:pre-wrap;word-break:break-all;font-size:12px;font-family:'Fira Code',monospace;line-height:1.5;margin:0;color:var(--text-primary)">${escapeHTML(log.page_html)}</pre>
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function admCopyHtml(idx) {
+            const log = window._admLogs?.[idx]; if (!log?.page_html) return;
+            navigator.clipboard.writeText(log.page_html).then(() => showToast('HTML copiado!', 'success')).catch(() => showToast('Erro ao copiar', 'error'));
+        }
+
+        function admRenderHtml(idx) {
+            const log = window._admLogs?.[idx]; if (!log?.page_html) return;
+            const container = document.getElementById('htmlModalContent');
+            if (!container) return;
+            // Toggle: se já tem iframe, volta pra pre
+            if (container.querySelector('iframe')) {
+                container.innerHTML = `<pre style="white-space:pre-wrap;word-break:break-all;font-size:12px;font-family:'Fira Code',monospace;line-height:1.5;margin:0;color:var(--text-primary)">${escapeHTML(log.page_html)}</pre>`;
+                return;
+            }
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'width:100%;height:70vh;border:1px solid var(--border);border-radius:8px;background:#fff';
+            iframe.sandbox = 'allow-same-origin';
+            container.innerHTML = '';
+            container.appendChild(iframe);
+            iframe.contentDocument.open();
+            iframe.contentDocument.write(log.page_html);
+            iframe.contentDocument.close();
+        }
+
         async function admArchiveLog(id) { await sbFetch('error_logs?id=eq.' + id, 'PATCH', { archived: true }); showToast('Erro arquivado', 'success'); admLoadLogs(); }
         async function admArchiveAllLogs() { if (!confirm('Arquivar todos os erros?')) return; await sbFetch('error_logs?archived=eq.false', 'PATCH', { archived: true }); showToast('Todos arquivados', 'success'); admLoadLogs(); }
 
