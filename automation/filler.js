@@ -142,7 +142,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 console.log(`[Filler] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ SessÃƒÆ’Ã‚Â£o jÃƒÆ’Ã‚Â¡ estÃƒÆ’Ã‚Â¡ no ${currentPageName} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â marcando como concluÃƒÆ’Ã‚Â­do`);
                 // Try to capture application_id from page
                 const headerAppId = await page.locator("span[id$='_lblAppID'], span[id$='_lblBarcode']").first().innerText().catch(() => '');
-                const appMatch = headerAppId.match(/[A-Z]{2}[A-Z0-9]{8,}/);
+                const appMatch = headerAppId.match(/[A-Z]{2}\d{2}[A-Z0-9]{6,}/);
                 if (appMatch) application.application_id = appMatch[0];
                 return { success: true, applicationId: application.application_id || null, browser, activePage: page };
             }
@@ -420,7 +420,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 if (await continueBtn.isVisible().catch(() => false)) {
                     // Capture application ID
                     const appIdText = await page.locator("span[id$='_lblAppID'], b").first().innerText().catch(() => '');
-                    const appIdMatch = appIdText.match(/[A-Z]{2}[A-Z0-9]{8,}/);
+                    const appIdMatch = appIdText.match(/[A-Z]{2}\d{2}[A-Z0-9]{6,}/);
                     if (appIdMatch) {
                         application.application_id = appIdMatch[0];
                         console.log(`[Filler] Application ID: ${appIdMatch[0]}`);
@@ -477,7 +477,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 try {
                     const contentMain = page.locator('#content-main');
                     const mainText = await contentMain.innerText({ timeout: 2000 }).catch(() => '');
-                    const contentMatch = mainText.match(/\b([A-Z]{2}[A-Z0-9]{8,})\b/);
+                    const contentMatch = mainText.match(/\b([A-Z]{2}\d{2}[A-Z0-9]{6,})\b/);
                     if (contentMatch) {
                         application.application_id = contentMatch[1];
                         console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â Application ID (from #content-main): ${contentMatch[1]}`);
@@ -503,7 +503,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                             const els = await page.locator(sel).all();
                             for (const el of els) {
                                 const text = await el.innerText().catch(() => '');
-                                const match = text.match(/[A-Z]{2}[A-Z0-9]{8,}/);
+                                const match = text.match(/[A-Z]{2}\d{2}[A-Z0-9]{6,}/);
                                 if (match) {
                                     application.application_id = match[0];
                                     console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â Application ID (from header "${sel}"): ${match[0]}`);
@@ -517,8 +517,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
                 // Strategy 2: URL query parameters or path
                 if (!application.application_id) {
-                    const urlAppIdMatch = url.match(/[?&](?:c|appId|applicationId)=([A-Z]{2}[A-Z0-9]{8,})/i)
-                        || url.match(/\/([A-Z]{2}[A-Z0-9]{8,})\//);
+                    const urlAppIdMatch = url.match(/[?&](?:c|appId|applicationId)=([A-Z]{2}\d{2}[A-Z0-9]{6,})/i)
+                        || url.match(/\/([A-Z]{2}\d{2}[A-Z0-9]{6,})\//);
                     if (urlAppIdMatch) {
                         application.application_id = urlAppIdMatch[1];
                         console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â Application ID (from URL): ${urlAppIdMatch[1]}`);
@@ -531,8 +531,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     try {
                         const bodyText = await page.evaluate(() => {
                             const allText = document.body?.innerText || '';
-                            const m = allText.match(/Application\s*(?:ID|Id|id)[:\s]*([A-Z]{2}[A-Z0-9]{8,})/i)
-                                || allText.match(/\b([A-Z]{2}[A-Z0-9]{8,})\b/);
+                            const m = allText.match(/Application\s*(?:ID|Id|id)[:\s]*([A-Z]{2}\d{2}[A-Z0-9]{6,})/i)
+                                || allText.match(/\b([A-Z]{2}\d{2}[A-Z0-9]{6,})\b/);
                             return m ? m[1] || m[0] : '';
                         });
                         if (bodyText) {
