@@ -105,10 +105,28 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
         if (!browser) {
             // Launch fresh Playwright Chromium
-            browser = await chromium.launch({
+            const launchOpts = {
                 headless: process.env.HEADLESS !== 'false',
                 args: ['--disable-blink-features=AutomationControlled']
-            });
+            };
+
+            // Proxy support — assigned per container via ds160-entry.js
+            const proxyUrl = config.proxy_url || process.env.PROXY_URL || null;
+            if (proxyUrl) {
+                try {
+                    const parsed = new URL(proxyUrl);
+                    launchOpts.proxy = {
+                        server: `${parsed.protocol}//${parsed.hostname}:${parsed.port}`,
+                        username: parsed.username || undefined,
+                        password: parsed.password || undefined,
+                    };
+                    console.log(`[Filler] 🔒 Proxy: ${parsed.hostname}:${parsed.port}`);
+                } catch (e) {
+                    console.warn(`[Filler] ⚠️ Proxy inválido: ${e.message}`);
+                }
+            }
+
+            browser = await chromium.launch(launchOpts);
             const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
             page = await context.newPage();
             page.setDefaultTimeout(15000);

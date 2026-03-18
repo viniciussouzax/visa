@@ -138,6 +138,30 @@ async function main() {
             app = newApp;
         }
 
+        // ── PROXY: atribuir por TASK_INDEX, persistir para retry ──
+        const proxyList = config.proxy_list || [];
+        let proxyUrl = null;
+
+        if (app.proxy_session) {
+            // Retry: reutilizar proxy salvo da execução anterior
+            proxyUrl = app.proxy_session;
+            console.log(`🔒 Proxy (retry): ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
+        } else if (proxyList.length > 0) {
+            // Nova execução: atribuir proxy por TASK_INDEX (round-robin)
+            proxyUrl = proxyList[TASK_INDEX % proxyList.length];
+            // Salvar proxy na application para retry futuro
+            await supabase.from('applications').update({
+                proxy_session: proxyUrl,
+                proxy_session_created_at: new Date().toISOString()
+            }).eq('id', app.id);
+            console.log(`🔒 Proxy (novo): ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
+        } else {
+            console.log('🌐 Sem proxy — usando IP direto do Cloud Run');
+        }
+
+        // Injetar proxy_url no config para o filler.js usar
+        if (proxyUrl) config.proxy_url = proxyUrl;
+
         console.log(`🔧 Application: ${app.id} (status: ${app.fill_status})`);
 
         // Processar — _fillWithRetry cuida de retry, error logging, etc.
