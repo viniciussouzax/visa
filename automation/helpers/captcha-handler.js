@@ -3,9 +3,12 @@
 // Eliminates 3 duplicate CAPTCHA blocks in filler.js
 // ============================================================
 const path = require('path');
+const fs = require('fs');
 const { solveCaptcha } = require('../captcha');
 
 const TMP = path.join(__dirname, '..', '..', 'tmp');
+// Ensure tmp directory exists (critical for Docker containers)
+if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
