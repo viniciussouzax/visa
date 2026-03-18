@@ -92,6 +92,9 @@ async function main() {
     console.log(`🔒 Claimado: ${target.full_name}\n`);
 
     // ── PROCESSAR ──
+    // Cloud Run Job: cada container é INDEPENDENTE e processa apenas SEU applicant.
+    // NÃO usar runner._claimNext() (que é para modo dashboard/fila contínua).
+    // O applicant já foi claimado atomicamente acima (L80-86).
     const { QueueRunner } = require('./queue');
     const runner = new QueueRunner(supabase, 'capmonster');
     runner.companyId = COMPANY_ID;
@@ -99,47 +102,46 @@ async function main() {
 
     try {
         const config = await runner._getConfig();
-        const app = await runner._claimNext();
+
+        // Buscar dados completos do applicant
+        const { data: fullApplicant } = await supabase
+            .from('applicants')
+            .select('*')
+            .eq('id', target.id)
+            .single();
+
+        if (!fullApplicant) {
+            console.error('❌ Applicant não encontrado no banco');
+            await supabase.from('applicants').update({ status: 'error' }).eq('id', target.id);
+            process.exit(1);
+        }
+
+        // Buscar ou criar application para este applicant
+        let { data: app } = await supabase
+            .from('applications')
+            .select('*')
+            .eq('applicant_id', target.id)
+            .single();
 
         if (!app) {
-            // _claimNext pode não encontrar porque nós já claimamos acima
-            // Vamos buscar a application diretamente
-            const { data: existingApp } = await supabase
+            console.log('📝 Nenhuma application encontrada — criando');
+            const { data: newApp, error: insertErr } = await supabase
                 .from('applications')
+                .insert({ applicant_id: target.id, fill_status: 'pending' })
                 .select('*')
-                .eq('applicant_id', target.id)
                 .single();
-
-            if (!existingApp) {
-                console.warn('⚠️ Nenhuma application encontrada — criando');
-                const { data: newApp } = await supabase
-                    .from('applications')
-                    .insert({ applicant_id: target.id, fill_status: 'pending' })
-                    .select('*')
-                    .single();
-                if (!newApp) {
-                    await supabase.from('applicants').update({ status: 'error' }).eq('id', target.id);
-                    process.exit(1);
-                }
-                await runner._fillWithRetry(newApp, target, config);
-            } else {
-                const applicant = { ...target };
-                // Enrich with full data
-                const { data: fullApplicant } = await supabase
-                    .from('applicants')
-                    .select('*')
-                    .eq('id', target.id)
-                    .single();
-                await runner._fillWithRetry(existingApp, fullApplicant || target, config);
+            if (insertErr || !newApp) {
+                console.error('❌ Falha ao criar application:', insertErr?.message);
+                await supabase.from('applicants').update({ status: 'error' }).eq('id', target.id);
+                process.exit(1);
             }
-        } else {
-            const { data: applicant } = await supabase
-                .from('applicants')
-                .select('*')
-                .eq('id', app.applicant_id)
-                .single();
-            await runner._fillWithRetry(app, applicant, config);
+            app = newApp;
         }
+
+        console.log(`🔧 Application: ${app.id} (status: ${app.fill_status})`);
+
+        // Processar — _fillWithRetry cuida de retry, error logging, etc.
+        await runner._fillWithRetry(app, fullApplicant, config);
 
     } catch (e) {
         console.error(`💥 Erro fatal: ${e.message}`);
