@@ -127,7 +127,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             }
 
             browser = await chromium.launch(launchOpts);
-            const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+            const contextOpts = { viewport: { width: 1280, height: 900 } };
+            // BrightData/residential proxies intercept HTTPS — accept their certs
+            if (proxyUrl) contextOpts.ignoreHTTPSErrors = true;
+            const context = await browser.newContext(contextOpts);
             page = await context.newPage();
             page.setDefaultTimeout(15000);
             page.setDefaultNavigationTimeout(30000);
