@@ -22,10 +22,15 @@
         return;
     }
 
-    console.log('[DS160-Ext] ✅ Bundle OK. Funções:', Object.keys(auto).join(', '));
+    if (!window.nativeFillPage) {
+        console.error('[DS160-Ext] ❌ native-filler NÃO carregou!');
+        reportError('native-filler não carregou', 'filler_missing');
+        return;
+    }
 
-    const page = window.createPageShim();
-    const url = page.url();
+    console.log('[DS160-Ext] ✅ Bundle + NativeFiller OK');
+
+    const url = window.location.href;
     const pageName = auto.identifyPage(url);
     console.log(`[DS160-Ext] ═══ Página: ${pageName} ═══ ${url.substring(0, 80)}`);
     reportProgress(pageName, `Carregou ${pageName}`);
@@ -39,13 +44,13 @@
 
         // ── Route ──
         if (pageName === 'Landing' || url.includes('Default.aspx')) {
-            await handleLanding(page, task, auto);
+            await handleLanding(task, auto);
         } else if (pageName === 'SecurityQuestion' || url.includes('SecureQuestion') || url.includes('ConfirmApplicationID')) {
-            await handleSecurityQuestion(page, task, auto);
+            await handleSecurityQuestion(task, auto);
         } else if (auto.isFinalPage(pageName)) {
             await handleFinalPage(pageName);
         } else {
-            await handleFormPage(page, task, auto, pageName);
+            await handleFormPage(task, auto, pageName);
         }
     } catch (err) {
         console.error('[DS160-Ext] ❌ Erro:', err.message);
@@ -56,7 +61,7 @@
 // ═════════════════════════════════════════════════════════════════
 // LANDING PAGE — Step-by-step with state tracking
 // ═════════════════════════════════════════════════════════════════
-async function handleLanding(page, task, auto) {
+async function handleLanding(task, auto) {
     const profile = auto.normalizeProfile(task.data);
     const location = profile.location || 'RCF';
     const settings = task.settings || {};
@@ -153,10 +158,10 @@ async function handleLanding(page, task, auto) {
 // ═════════════════════════════════════════════════════════════════
 // SECURITY QUESTION + CONFIRM APP ID
 // ═════════════════════════════════════════════════════════════════
-async function handleSecurityQuestion(page, task, auto) {
+async function handleSecurityQuestion(task, auto) {
     const profile = auto.normalizeProfile(task.data);
     const settings = task.settings || {};
-    const url = page.url();
+    const url = window.location.href;
 
     if (url.includes('ConfirmApplicationID')) {
         const texts = document.body.innerText;
@@ -202,14 +207,15 @@ async function handleSecurityQuestion(page, task, auto) {
 // ═════════════════════════════════════════════════════════════════
 // FORM PAGE — fill using automation bundle
 // ═════════════════════════════════════════════════════════════════
-async function handleFormPage(page, task, auto, pageName) {
+async function handleFormPage(task, auto, pageName) {
     const profile = auto.normalizeProfile(task.data);
     const fieldMap = auto.buildDynamicFieldMap(profile);
     console.log(`[DS160-Ext] FieldMap: ${fieldMap.length} entries for ${pageName}`);
 
     reportProgress(pageName, `Preenchendo ${pageName}...`);
 
-    const result = await auto.fillPage(page, fieldMap, { maxPasses: 10 });
+    // Use native DOM filler (no Playwright shim)
+    const result = await window.nativeFillPage(fieldMap, { maxPasses: 10 });
     console.log(`[DS160-Ext] ✅ ${pageName}: ${result.passes} passes, ${result.elapsed}s`);
 
     reportProgress(pageName, `✅ ${pageName} [${result.passes}p, ${result.elapsed}s]`);

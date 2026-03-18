@@ -33,9 +33,8 @@
     {
       "matches": ["https://ceac.state.gov/GenNIV/*"],
       "js": [
-        "shared/playwright-shim.js",
         "shared/automation-bundle.js",
-        "shared/dom-helpers.js",
+        "shared/native-filler.js",
         "content_scripts/ds160-bridge.js"
       ],
       "run_at": "document_idle"

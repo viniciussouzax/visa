@@ -1,6 +1,6 @@
 // ==================================================================
-// Build script — compiles Node.js automation modules into a single
-// browser-compatible bundle for the Chrome extension
+// Build LIGHT — only data modules (field-maps + normalizeProfile)
+// NO Playwright-dependent code (postback.js, fill-field.js, generic-page.js)
 // Run: node extension/build.js
 // ==================================================================
 const fs = require('fs');
@@ -11,128 +11,84 @@ const PAGES = path.join(ROOT, 'pages');
 const AUTO = path.join(ROOT, 'automation');
 const OUT = path.join(__dirname, 'shared', 'automation-bundle.js');
 
-// ============================================================
-// Build steps — order matters (dependencies first)
-// ============================================================
 const steps = [];
 
-// 1. Shared helpers
+// 1. Field-map helpers (pure: ph, padDay, normDate, emptyDate, stripZero)
 addFile('field-map-helpers', path.join(PAGES, '_shared', 'field-map-helpers.js'));
-addFile('postback', path.join(AUTO, 'helpers', 'postback.js'));
-addFile('fill-field', path.join(AUTO, 'helpers', 'fill-field.js'));
-addFile('add-another', path.join(AUTO, 'helpers', 'add-another.js'));
-addFile('verify', path.join(AUTO, 'helpers', 'verify.js'));
 
-// 2. Field maps shared (postback IDs)
+// 2. Field maps shared (postback IDs — data only)
 addFile('field-maps-shared', path.join(AUTO, 'field-maps', 'shared.js'));
 
-// 3. ALL page-level field maps (alphabetical by directory)
+// 3. ALL page-level field maps (pure data: buildXxxMap functions)
 const pageDirs = fs.readdirSync(PAGES).filter(d => {
-    const full = path.join(PAGES, d, 'field-map.js');
-    return d !== '_shared' && fs.existsSync(full);
+    return d !== '_shared' && fs.existsSync(path.join(PAGES, d, 'field-map.js'));
 }).sort();
 
 for (const dir of pageDirs) {
     addFile(`page-${dir}`, path.join(PAGES, dir, 'field-map.js'));
 }
 
-// 4. B1/B2 modular aggregator
+// 4. B1/B2 modular aggregator (buildDynamicFieldMap)
 addFile('b1-b2-modular', path.join(AUTO, 'field-maps', 'b1-b2-modular.js'));
 
 // 5. Field maps index (router by visa type)
 addFile('field-maps-index', path.join(AUTO, 'field-maps', 'index.js'));
 
-// 6. Generic page filler
-addFile('generic-page', path.join(AUTO, 'pages', 'generic-page.js'));
-
-// 7. Travel page (custom handler)
-addFile('travel-page', path.join(AUTO, 'pages', 'travel-page.js'));
-
-// 8. Extract normalizeProfile, identifyPage, isFinalPage from filler.js
+// 6. Extract normalizeProfile + identifyPage from filler.js
 steps.push({ name: 'filler-extracts', type: 'extract' });
-
-// ============================================================
 
 function addFile(name, filepath) {
     if (fs.existsSync(filepath)) {
         steps.push({ name, filepath, type: 'file' });
     } else {
-        console.warn(`  ⚠️ SKIP ${name}: ${filepath} not found`);
+        console.warn(`  ⚠️ SKIP ${name}: ${filepath}`);
     }
 }
 
 function convertToBrowser(code) {
-    // Remove 'use strict'
     code = code.replace(/['"]use strict['"];?\s*/g, '');
-    
-    // Remove all require() statements
     code = code.replace(/^const\s+\{[^}]+\}\s*=\s*require\([^)]+\);?\s*$/gm, '');
     code = code.replace(/^const\s+\w+\s*=\s*require\([^)]+\);?\s*$/gm, '');
-    
-    // Remove module.exports
     code = code.replace(/^module\.exports\s*=\s*\{[^}]*\};?\s*$/gm, '');
     code = code.replace(/^module\.exports\s*=\s*require\([^)]+\);?\s*$/gm, '');
     code = code.replace(/^module\.exports\s*=\s*\w+;?\s*$/gm, '');
-    
-    // Remove standalone require() calls
     code = code.replace(/require\([^)]+\)/g, '{}');
-    
-    // Remove Node-specific: path, fs, __dirname
     code = code.replace(/^const\s+(path|fs)\s*=\s*\{};?\s*$/gm, '');
-    
-    // CRITICAL: Convert const/let to var to allow redeclarations across modules
+    // const/let → var to allow redeclarations
     code = code.replace(/^(\s*)const\s+/gm, '$1var ');
     code = code.replace(/^(\s*)let\s+/gm, '$1var ');
-    
     return code.trim();
 }
 
 function extractFromFiller() {
     const src = fs.readFileSync(path.join(AUTO, 'filler.js'), 'utf-8');
-    const functions = [];
-    
-    // Extract named functions using a more robust approach
-    const names = ['normalizeProfile', 'identifyPage', 'isFinalPage', 'isSecurityPage'];
-    for (const name of names) {
+    const fns = [];
+    for (const name of ['normalizeProfile', 'identifyPage', 'isFinalPage', 'isSecurityPage']) {
         const regex = new RegExp(`^function ${name}\\b[\\s\\S]*?\\n\\}`, 'm');
         const m = src.match(regex);
-        if (m) {
-            functions.push(m[0]);
-        } else {
-            console.warn(`  ⚠️ Could not extract ${name} from filler.js`);
-        }
+        if (m) fns.push(m[0]);
+        else console.warn(`  ⚠️ Could not extract ${name}`);
     }
-    
-    return functions.join('\n\n');
+    return fns.join('\n\n');
 }
 
-// ============================================================
 // BUILD
-// ============================================================
-console.log('🔨 Building automation bundle for extension...\n');
-
-var bundle = `// ==================================================================
-// AUTOMATION BUNDLE — auto-generated by extension/build.js
-// Generated: ${new Date().toISOString()}
-// DO NOT EDIT — edit source files and re-run: node extension/build.js
-// ==================================================================
-
-`;
+console.log('🔨 Building LIGHT automation bundle (data only)...\n');
+let bundle = `// AUTOMATION BUNDLE (LIGHT) — field-maps + normalizeProfile only\n// Generated: ${new Date().toISOString()}\n// NO Playwright dependencies\n\n`;
 
 let count = 0;
 for (const step of steps) {
     if (step.type === 'extract') {
         const extracted = extractFromFiller();
         bundle += `\n// ══════ filler-extracts ══════\n${extracted}\n\n`;
-        console.log(`  ✅ filler-extracts (normalizeProfile, identifyPage, isFinalPage)`);
+        console.log('  ✅ filler-extracts');
         count++;
         continue;
     }
-    
     try {
         const raw = fs.readFileSync(step.filepath, 'utf-8');
         const converted = convertToBrowser(raw);
-        bundle += `\n// ══════ ${step.name} (${path.basename(step.filepath)}) ══════\n${converted}\n\n`;
+        bundle += `\n// ══════ ${step.name} ══════\n${converted}\n\n`;
         console.log(`  ✅ ${step.name}`);
         count++;
     } catch (err) {
@@ -140,35 +96,26 @@ for (const step of steps) {
     }
 }
 
-// Global exports
 bundle += `
 // ══════ Global exports ══════
 window._automation = {
     buildDynamicFieldMap,
-    isPostbackSelect,
-    isPostbackClick,
-    fillPage,
-    verifyPage,
     normalizeProfile,
     identifyPage,
     isFinalPage,
-    waitForPostback,
-    waitForPageReady,
-    waitForUrlChange,
-    discoverFields,
-    fillText,
-    fillTextBatch,
-    fillSelect,
-    fillRadio,
-    fillCheckbox,
-    isSelectEmpty,
-    getValidationErrors,
-    sleep,
 };
-console.log('[Bundle] ✅ automation-bundle loaded');
+console.log('[Bundle] ✅ Loaded (light):', Object.keys(window._automation).join(', '));
 `;
 
 fs.writeFileSync(OUT, bundle, 'utf-8');
 const sizeKB = (Buffer.byteLength(bundle) / 1024).toFixed(1);
 console.log(`\n📦 Bundle: ${OUT}`);
 console.log(`   ${count} modules | ${sizeKB} KB`);
+
+// Validate
+try {
+    new Function(bundle);
+    console.log('   ✅ Valid JavaScript');
+} catch (e) {
+    console.error(`   ❌ SYNTAX ERROR: ${e.message}`);
+}
