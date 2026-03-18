@@ -32,7 +32,12 @@
   "content_scripts": [
     {
       "matches": ["https://ceac.state.gov/GenNIV/*"],
-      "js": ["shared/dom-helpers.js", "content_scripts/ds160-bridge.js"],
+      "js": [
+        "shared/playwright-shim.js",
+        "shared/automation-bundle.js",
+        "shared/dom-helpers.js",
+        "content_scripts/ds160-bridge.js"
+      ],
       "run_at": "document_idle"
     },
     {

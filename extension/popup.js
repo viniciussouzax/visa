@@ -6,10 +6,15 @@ const taskInfo = document.getElementById('taskInfo');
 const supaUrl = document.getElementById('supaUrl');
 const supaKey = document.getElementById('supaKey');
 
-// Load saved config
+// Load saved config (will have defaults auto-saved by background.js)
 chrome.storage.local.get(['supabaseUrl', 'supabaseKey'], (data) => {
     if (data.supabaseUrl) supaUrl.value = data.supabaseUrl;
     if (data.supabaseKey) supaKey.value = data.supabaseKey;
+    
+    // If already configured, collapse the config section
+    if (data.supabaseUrl && data.supabaseKey) {
+        document.querySelector('.config').style.display = 'none';
+    }
 });
 
 // Get current status

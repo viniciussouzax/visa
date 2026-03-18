@@ -4,6 +4,10 @@
 const GITHUB_RAW = 'https://raw.githubusercontent.com/viniciussouzax/visa/main/extension';
 const CHECK_INTERVAL_MIN = 2;
 
+// Defaults — auto-configured on install (anon key is public, RLS protects data)
+const DEFAULT_SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
+const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
+
 let isRunning = false;
 let currentTask = null;
 let config = null; // { supabaseUrl, supabaseKey, settings: {} }
@@ -13,14 +17,17 @@ let config = null; // { supabaseUrl, supabaseKey, settings: {} }
 // ------------------------------------------------------------------
 async function loadConfig() {
     const stored = await chrome.storage.local.get(['supabaseUrl', 'supabaseKey']);
+    const supaUrl = stored.supabaseUrl || DEFAULT_SUPABASE_URL;
+    const supaKey = stored.supabaseKey || DEFAULT_SUPABASE_KEY;
+
+    // Auto-save defaults if not yet stored
     if (!stored.supabaseUrl || !stored.supabaseKey) {
-        console.warn('[Worker] Supabase não configurado — abra o popup');
-        return null;
+        await chrome.storage.local.set({ supabaseUrl: supaUrl, supabaseKey: supaKey });
     }
 
     config = {
-        supabaseUrl: stored.supabaseUrl,
-        supabaseKey: stored.supabaseKey,
+        supabaseUrl: supaUrl,
+        supabaseKey: supaKey,
         settings: {},
     };
 
