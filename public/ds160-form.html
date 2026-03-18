@@ -567,7 +567,7 @@
                 const contentSlot = document.getElementById('portalFormContent');
                 if (card && formWrapper && contentSlot) {
                     contentSlot.appendChild(formWrapper);
-                    formWrapper.style.display = ''; // Show after repositioning (FOUC fix)
+                    formWrapper.style.display = 'block'; // Override CSS rule (FOUC fix)
                 }
 
                 // Inject informational notice inside first section body
