@@ -1196,12 +1196,19 @@ class FormEngine {
 
                 if (found) {
                     if (!this.arrayData[key][idx]) this.arrayData[key][idx] = {};
+                    const existing = this.arrayData[key][idx][subF.id];
                     if (this.naFields.has(subKey)) {
                         this.arrayData[key][idx][subF.id] = 'DNA';
                     } else if (this.unknownFields.has(subKey)) {
                         this.arrayData[key][idx][subF.id] = 'UNKNOWN';
                     } else {
-                        this.arrayData[key][idx][subF.id] = val;
+                        // Don't overwrite existing non-empty data with empty DOM value.
+                        // onInput/_setArrayValue already captures real-time user edits;
+                        // _saveArrayData is only a safety sync and must not corrupt loaded data.
+                        const hasExisting = existing !== undefined && existing !== null && existing !== '';
+                        if (val !== '' || !hasExisting) {
+                            this.arrayData[key][idx][subF.id] = val;
+                        }
                     }
                 }
             });
