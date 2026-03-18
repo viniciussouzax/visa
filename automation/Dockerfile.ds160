@@ -10,8 +10,8 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --production --ignore-scripts
 
-# Install Playwright browsers (Chromium only)
-RUN npx playwright install chromium --with-deps
+# Install Playwright browsers (Firefox only — less detectable by anti-bot)
+RUN npx playwright install firefox --with-deps
 
 # Copy application code
 COPY automation/ ./automation/

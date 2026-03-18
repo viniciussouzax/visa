@@ -1,6 +1,6 @@
 // DS-160 Filler ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â extracted from the working Playwright test
-// Uses Playwright's OWN Chromium (not user's Chrome)
-const { chromium } = require('playwright');
+// Uses Playwright's Firefox (less detectable by anti-bot systems)
+const { firefox } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 const { solveCaptcha, solveCaptchaBase64 } = require('./captcha');
@@ -19,7 +19,7 @@ const TMP = path.join(__dirname, '..', 'tmp');
 // MAIN ENTRY POINT
 // ====================================================================
 /**
- * Fill a DS-160 application using Playwright's Chromium.
+ * Fill a DS-160 application using Playwright's Firefox.
  * @param {object} applicant - Row from 'applicants' table (has .data JSON)
  * @param {object} application - Row from 'applications' table
  * @param {function} onAppId - Callback when application_id is captured (for immediate DB persist)
@@ -104,10 +104,9 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
         }
 
         if (!browser) {
-            // Launch fresh Playwright Chromium
+            // Launch fresh Playwright Firefox
             const launchOpts = {
                 headless: process.env.HEADLESS !== 'false',
-                args: ['--disable-blink-features=AutomationControlled']
             };
 
             // Proxy support — assigned per container via ds160-entry.js
@@ -117,8 +116,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     const parsed = new URL(proxyUrl);
                     launchOpts.proxy = {
                         server: `${parsed.protocol}//${parsed.hostname}:${parsed.port}`,
-                        username: parsed.username || undefined,
-                        password: parsed.password || undefined,
+                        username: decodeURIComponent(parsed.username) || undefined,
+                        password: decodeURIComponent(parsed.password) || undefined,
                     };
                     console.log(`[Filler] 🔒 Proxy: ${parsed.hostname}:${parsed.port}`);
                 } catch (e) {
@@ -126,14 +125,14 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 }
             }
 
-            browser = await chromium.launch(launchOpts);
+            browser = await firefox.launch(launchOpts);
             const contextOpts = { viewport: { width: 1280, height: 900 } };
             // BrightData/residential proxies intercept HTTPS — accept their certs
             if (proxyUrl) contextOpts.ignoreHTTPSErrors = true;
             const context = await browser.newContext(contextOpts);
             page = await context.newPage();
-            page.setDefaultTimeout(15000);
-            page.setDefaultNavigationTimeout(30000);
+            page.setDefaultTimeout(proxyUrl ? 60000 : 15000);
+            page.setDefaultNavigationTimeout(proxyUrl ? 90000 : 30000);
             page.on('dialog', async d => d.accept().catch(() => { }));
             console.log('[Filler] Novo browser criado');
         }
