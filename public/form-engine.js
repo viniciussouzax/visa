@@ -9,6 +9,7 @@ class FormEngine {
         this.container = document.getElementById(containerId);
         this.data = {};           // campo key → valor
         this.arrayData = {};      // array key → [{...}, {...}]
+        this._isHydrating = false; // Flag to prevent prune during loadData/renderForm
         this.naFields = new Set(); // campos marcados N/A
         this.unknownFields = new Set(); // campos marcados "Não sei"
         this.currentSection = 0;
@@ -140,6 +141,7 @@ class FormEngine {
     // =========================================
     loadData(json) {
         if (!json || typeof json !== 'object') return;
+        this._isHydrating = true; // Block prune during hydration
         this.data = {};
         this.arrayData = {};
         this.naFields.clear();
@@ -309,6 +311,9 @@ class FormEngine {
 
         // Re-evaluate conditionals to sync DOM visibility with loaded data
         this._reEvaluateAllConditionals();
+
+        // Hydration complete — safe to prune now
+        this._isHydrating = false;
 
         // Post-render sync: apply N/A and Unknown visual states
         this.naFields.forEach(key => {
@@ -1506,6 +1511,18 @@ class FormEngine {
         if (el.value) el.value = el.value.trim();
         if (el.dataset && el.dataset.uppercase === 'true') el.value = el.value.toUpperCase();
 
+        // SSN: collect 3 parts into object (same logic as onInput)
+        // Without this, onBlur would overwrite {p1,p2,p3} with a single part string
+        const ssnCheck = document.getElementById(key + '_p1');
+        if (ssnCheck) {
+            const p1 = document.getElementById(key + '_p1')?.value?.trim() || '';
+            const p2 = document.getElementById(key + '_p2')?.value?.trim() || '';
+            const p3 = document.getElementById(key + '_p3')?.value?.trim() || '';
+            this.data[key] = { p1, p2, p3 };
+            this._debounceSave('SSN', key);
+            return;
+        }
+
         // Array sub-field: save to arrayData, not data
         if (key.includes('[')) {
             this._setArrayValue(key, el.value);
@@ -1983,8 +2000,8 @@ class FormEngine {
 
             el.classList.toggle('visible', visible);
 
-            // Clear values of hidden fields recursively
-            if (!visible) {
+            // Clear values of hidden fields recursively (but NOT during hydration)
+            if (!visible && !this._isHydrating) {
                 // Clear text inputs, selects, textareas
                 el.querySelectorAll('.field-input, select.field-input, textarea.field-input').forEach(input => {
                     input.value = '';
@@ -2018,7 +2035,7 @@ class FormEngine {
                             dataChanged = true;
                         }
                         // Reset DOM: keep only 1 empty entry
-                        const container = arrEl.querySelector('.array-entries');
+                        const container = arrEl; // The array container IS arrEl (class=array-container)
                         if (container) {
                             const entries = container.querySelectorAll('.array-entry');
                             // Remove all entries except the first
@@ -2555,7 +2572,7 @@ class FormEngine {
     // =========================================
     // SHOW REVIEW / FINALIZAR — validates all, saves, updates status
     // =========================================
-    showReview() {
+    async showReview() {
         // 1. Validate all visible sections
         const visible = this.schema.sections.filter(s => {
             if (!s.conditional && !s.showWhen) return true;
@@ -2566,9 +2583,10 @@ class FormEngine {
         const errors = {};
         let totalErrors = 0;
         visible.forEach(sec => {
-            const secErrors = this.validateSection(sec);
+            const secIdx = this.schema.sections.indexOf(sec);
+            const secErrors = this.validateSection(secIdx, true);
             if (secErrors.length > 0) {
-                errors[sec.title || sec.id] = secErrors;
+                errors[sec.label || sec.id] = secErrors;
                 totalErrors += secErrors.length;
             }
         });
@@ -2609,23 +2627,27 @@ class FormEngine {
         // 4. Update applicant status to ready for DS-160
         const applicantId = new URLSearchParams(location.search).get('id');
         if (applicantId && typeof AppCore !== 'undefined') {
-            AppCore.sbFetch(`applicants?id=eq.${applicantId}`, 'PATCH', {
-                stage: 'ds160',
-                status: 'todo',
-                updated_at: new Date().toISOString()
-            }).then(() => {
+            try {
+                await AppCore.sbFetch(`applicants?id=eq.${applicantId}`, 'PATCH', {
+                    stage: 'ds160',
+                    status: 'todo',
+                    updated_at: new Date().toISOString()
+                });
                 console.log('[Form] ✅ Applicant marcado como ds160/todo');
                 this.formLog('info', 'Formulário finalizado com sucesso', {
                     action: 'finalize_success',
                     sections_count: visible.length
                 });
-            }).catch(e => {
+            } catch (e) {
                 console.error('[Form] Erro ao atualizar status:', e);
                 this.formLog('error', 'Erro ao atualizar status do applicant', {
                     action: 'finalize_error',
                     error: e.message
                 });
-            });
+                // Show error to user — do NOT show completion screen
+                alert('Erro ao salvar o formulário. Verifique sua conexão e tente novamente.\n\nDetalhes: ' + (e.message || 'Erro desconhecido'));
+                return;
+            }
 
             // Call onFinalize callback if defined
             if (typeof this.onFinalize === 'function') {
@@ -2852,6 +2874,9 @@ class FormEngine {
                             if (subF.showWhen.in && !subF.showWhen.in.includes(subParentVal)) return;
                         }
                         const subKey = `${key}[${idx}].${subF.id}`;
+                        // Skip required check if N/A or Unknown is marked
+                        if (subF.allowNA && this.naFields.has(subKey)) return;
+                        if (subF.allowUnknown && this.unknownFields.has(subKey)) return;
                         const subVal = entry[subF.id];
                         let empty = false;
                         if (subF.type === 'date') {
@@ -3045,7 +3070,7 @@ class FormEngine {
                     const arr = this.arrayData[key];
                     if (arr && arr.length > 0) {
                         json[sec.id][f.id] = arr.filter(entry =>
-                            Object.values(entry).some(v => v !== undefined && v !== null && v !== '' && v !== 'DNA')
+                            Object.values(entry).some(v => v !== undefined && v !== null && v !== '')
                         ).map(entry => {
                             // Filter conditionals within array entry
                             const newEntry = {};
@@ -3071,8 +3096,8 @@ class FormEngine {
                 }
 
                 let val = this.data[key];
-                // Convert DNA/UNKNOWN markers to empty string
-                if (val === 'DNA' || val === 'UNKNOWN') val = '';
+                // Preserve DNA/UNKNOWN markers so filler knows field is N/A
+                // and loadData can restore checkbox state
                 if (val !== undefined && val !== '' && val !== null) {
                     json[sec.id][f.id] = val;
                 }
