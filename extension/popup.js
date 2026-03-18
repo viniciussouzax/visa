@@ -1,54 +1,90 @@
-// Popup controller
+// Popup controller — with Supabase Auth login
+const loginSection = document.getElementById('loginSection');
+const workerSection = document.getElementById('workerSection');
+const btnLogin = document.getElementById('btnLogin');
+const btnLogout = document.getElementById('btnLogout');
 const btnToggle = document.getElementById('btnToggle');
-const btnSave = document.getElementById('btnSave');
 const statusBox = document.getElementById('statusBox');
 const taskInfo = document.getElementById('taskInfo');
-const supaUrl = document.getElementById('supaUrl');
-const supaKey = document.getElementById('supaKey');
+const userInfo = document.getElementById('userInfo');
+const loginError = document.getElementById('loginError');
+const loginEmail = document.getElementById('loginEmail');
+const loginPassword = document.getElementById('loginPassword');
 
-// Load saved config (will have defaults auto-saved by background.js)
-chrome.storage.local.get(['supabaseUrl', 'supabaseKey'], (data) => {
-    if (data.supabaseUrl) supaUrl.value = data.supabaseUrl;
-    if (data.supabaseKey) supaKey.value = data.supabaseKey;
-    
-    // If already configured, collapse the config section
-    if (data.supabaseUrl && data.supabaseKey) {
-        document.querySelector('.config').style.display = 'none';
+// Check auth state on open
+chrome.runtime.sendMessage({ type: 'GET_STATUS' }, (res) => {
+    if (!res) return;
+    if (res.user) {
+        showWorkerSection(res);
+    } else {
+        showLoginSection();
     }
 });
 
-// Get current status
-chrome.runtime.sendMessage({ type: 'GET_STATUS' }, (res) => {
-    if (!res) return;
-    updateUI(res);
+// Login
+btnLogin.addEventListener('click', async () => {
+    const email = loginEmail.value.trim();
+    const password = loginPassword.value.trim();
+    if (!email || !password) {
+        loginError.textContent = 'Preencha email e senha';
+        return;
+    }
+    
+    loginError.textContent = '';
+    btnLogin.textContent = '⏳ Entrando...';
+    btnLogin.disabled = true;
+
+    chrome.runtime.sendMessage({
+        type: 'LOGIN',
+        email,
+        password,
+    }, (res) => {
+        btnLogin.textContent = '🔐 Entrar';
+        btnLogin.disabled = false;
+
+        if (res?.error) {
+            loginError.textContent = res.error;
+        } else if (res?.user) {
+            showWorkerSection(res);
+        }
+    });
+});
+
+// Logout
+btnLogout.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ type: 'LOGOUT' }, () => {
+        showLoginSection();
+    });
 });
 
 // Toggle on/off
 btnToggle.addEventListener('click', () => {
     chrome.runtime.sendMessage({ type: 'TOGGLE' }, (res) => {
-        if (res) updateUI(res);
+        if (res) updateWorkerUI(res);
     });
 });
 
-// Save config
-btnSave.addEventListener('click', () => {
-    const url = supaUrl.value.trim();
-    const key = supaKey.value.trim();
-    if (!url || !key) return alert('Preencha URL e Key');
-
-    chrome.runtime.sendMessage({
-        type: 'SAVE_CONFIG',
-        supabaseUrl: url,
-        supabaseKey: key,
-    }, (res) => {
-        if (res?.ok) {
-            btnSave.textContent = '✅ Salvo!';
-            setTimeout(() => btnSave.textContent = '💾 Salvar Configuração', 2000);
-        }
-    });
+// Enter key on password field
+loginPassword.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') btnLogin.click();
 });
 
-function updateUI(state) {
+function showLoginSection() {
+    loginSection.classList.remove('hidden');
+    workerSection.classList.add('hidden');
+}
+
+function showWorkerSection(state) {
+    loginSection.classList.add('hidden');
+    workerSection.classList.remove('hidden');
+    
+    if (state.user) {
+        userInfo.textContent = `👤 ${state.user.email}`;
+    }
+    updateWorkerUI(state);
+}
+
+function updateWorkerUI(state) {
     if (state.isRunning) {
         statusBox.className = 'status on';
         statusBox.textContent = '🟢 Ligado — monitorando fila';
@@ -61,13 +97,8 @@ function updateUI(state) {
         btnToggle.className = 'btn-toggle';
     }
 
-    if (!state.configured) {
-        statusBox.className = 'status err';
-        statusBox.textContent = '⚠️ Configure o Supabase abaixo';
-    }
-
     if (state.currentTask) {
-        taskInfo.innerHTML = `📋 <strong>${state.currentTask.type.toUpperCase()}</strong>: ${state.currentTask.name}`;
+        taskInfo.innerHTML = `📋 <strong>${state.currentTask.type?.toUpperCase()}</strong>: ${state.currentTask.name}`;
     } else {
         taskInfo.textContent = '';
     }

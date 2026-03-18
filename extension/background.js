@@ -11,6 +11,7 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
 let isRunning = false;
 let currentTask = null;
 let config = null; // { supabaseUrl, supabaseKey, settings: {} }
+let authSession = null; // { access_token, user: { email, id } }
 
 // ------------------------------------------------------------------
 // Config: load Supabase URL/Key from chrome.storage + settings from DB
@@ -40,6 +41,13 @@ async function loadConfig() {
         console.warn('[Worker] Erro ao carregar settings:', err.message);
     }
 
+    // Restore auth session from storage
+    const authData = await chrome.storage.local.get('authSession');
+    if (authData.authSession) {
+        authSession = authData.authSession;
+        console.log('[Worker] Sessão restaurada:', authSession.user?.email);
+    }
+
     return config;
 }
 
@@ -48,10 +56,12 @@ async function loadConfig() {
 // ------------------------------------------------------------------
 async function supaFetch(path, opts = {}) {
     if (!config) throw new Error('Config não carregada');
+    // Use authenticated token if available, otherwise anon key
+    const authToken = authSession?.access_token || config.supabaseKey;
     const res = await fetch(`${config.supabaseUrl}/rest/v1/${path}`, {
         headers: {
             'apikey': config.supabaseKey,
-            'Authorization': `Bearer ${config.supabaseKey}`,
+            'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json',
             'Prefer': opts.prefer || 'return=representation',
             ...opts.headers,
@@ -65,11 +75,12 @@ async function supaFetch(path, opts = {}) {
 
 async function supaRpc(fn, params = {}) {
     if (!config) throw new Error('Config não carregada');
+    const authToken = authSession?.access_token || config.supabaseKey;
     const res = await fetch(`${config.supabaseUrl}/rest/v1/rpc/${fn}`, {
         method: 'POST',
         headers: {
             'apikey': config.supabaseKey,
-            'Authorization': `Bearer ${config.supabaseKey}`,
+            'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(params),
@@ -78,19 +89,20 @@ async function supaRpc(fn, params = {}) {
     return res.json();
 }
 
-async function supaStorage(bucket, path, blob) {
+async function supaStorage(bucket, filePath, blob) {
     if (!config) throw new Error('Config não carregada');
-    const res = await fetch(`${config.supabaseUrl}/storage/v1/object/${bucket}/${path}`, {
+    const authToken = authSession?.access_token || config.supabaseKey;
+    const res = await fetch(`${config.supabaseUrl}/storage/v1/object/${bucket}/${filePath}`, {
         method: 'POST',
         headers: {
             'apikey': config.supabaseKey,
-            'Authorization': `Bearer ${config.supabaseKey}`,
+            'Authorization': `Bearer ${authToken}`,
             'Content-Type': blob.type || 'application/octet-stream',
         },
         body: blob,
     });
     if (!res.ok) throw new Error(`Storage upload ${res.status}`);
-    return `${config.supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
+    return `${config.supabaseUrl}/storage/v1/object/public/${bucket}/${filePath}`;
 }
 
 // ------------------------------------------------------------------
@@ -246,6 +258,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             sendResponse({
                 isRunning,
                 configured: !!config,
+                user: authSession?.user || null,
                 currentTask: currentTask ? {
                     type: currentTask.type,
                     name: currentTask.applicant?.full_name,
@@ -257,12 +270,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             toggleWorker().then(state => sendResponse(state));
             return true;
 
+        case 'LOGIN':
+            handleLogin(msg.email, msg.password).then(res => sendResponse(res))
+                .catch(err => sendResponse({ error: err.message }));
+            return true;
+
+        case 'LOGOUT':
+            handleLogout().then(() => sendResponse({ ok: true }));
+            return true;
+
         case 'SAVE_CONFIG':
             chrome.storage.local.set({
                 supabaseUrl: msg.supabaseUrl,
                 supabaseKey: msg.supabaseKey,
             }).then(() => {
-                config = null; // force reload
+                config = null;
                 loadConfig().then(() => sendResponse({ ok: true }));
             });
             return true;
@@ -270,6 +292,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 async function toggleWorker() {
+    if (!authSession) return { isRunning: false, error: 'Faça login primeiro' };
     if (!config) {
         config = await loadConfig();
         if (!config) return { isRunning: false, error: 'Supabase não configurado' };
@@ -283,7 +306,56 @@ async function toggleWorker() {
         chrome.alarms.clear('check-queue');
     }
     updateBadge(isRunning ? 'ON' : 'OFF', isRunning ? '#4CAF50' : '#999');
-    return { isRunning };
+    return { isRunning, user: authSession?.user };
+}
+
+// ------------------------------------------------------------------
+// Auth: Login / Logout via Supabase Auth
+// ------------------------------------------------------------------
+async function handleLogin(email, password) {
+    if (!config) await loadConfig();
+
+    const res = await fetch(`${config.supabaseUrl}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: {
+            'apikey': config.supabaseKey,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error_description || body.msg || 'Login falhou');
+    }
+
+    const data = await res.json();
+    authSession = {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        user: { email: data.user?.email, id: data.user?.id },
+    };
+
+    // Persist session
+    await chrome.storage.local.set({ authSession });
+    console.log('[Worker] Login OK:', email);
+
+    // Reload settings with authenticated token
+    try {
+        const rows = await supaFetch('settings?select=key_name,key_value');
+        rows.forEach(r => config.settings[r.key_name] = r.key_value);
+    } catch {}
+
+    return { user: authSession.user };
+}
+
+async function handleLogout() {
+    isRunning = false;
+    chrome.alarms.clear('check-queue');
+    authSession = null;
+    await chrome.storage.local.remove('authSession');
+    updateBadge('OFF', '#999');
+    console.log('[Worker] Logout');
 }
 
 async function handleTaskComplete(msg) {

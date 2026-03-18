@@ -10,35 +10,42 @@
     .status.on { background: #1b5e20; }
     .status.off { background: #333; }
     .status.err { background: #b71c1c; }
-    .config { margin-bottom: 12px; }
+    .section { margin-bottom: 12px; }
     label { font-size: 11px; color: #999; display: block; margin-bottom: 4px; }
     input { width: 100%; padding: 6px 8px; border: 1px solid #333; border-radius: 4px; background: #0f0f1a; color: #eee; font-size: 12px; margin-bottom: 8px; }
-    button { width: 100%; padding: 8px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .btn-toggle { background: #7c83ff; color: #fff; margin-bottom: 8px; }
+    button { width: 100%; padding: 8px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 6px; }
+    .btn-toggle { background: #7c83ff; color: #fff; }
     .btn-toggle.running { background: #f44336; }
-    .btn-save { background: #333; color: #aaa; font-size: 11px; }
-    .btn-save:hover { background: #444; }
+    .btn-login { background: #4CAF50; color: #fff; }
+    .btn-logout { background: #333; color: #f44336; font-size: 11px; }
     .task { font-size: 12px; color: #aaa; margin-top: 8px; }
     .task strong { color: #fff; }
+    .user-info { font-size: 11px; color: #7c83ff; margin-bottom: 8px; padding: 6px 8px; background: #0f0f1a; border-radius: 4px; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
   <h1>🤖 DS-160 & AIS Worker</h1>
 
-  <div id="statusBox" class="status off">⏸ Desligado</div>
+  <!-- Login Section (shown when not authenticated) -->
+  <div id="loginSection" class="section">
+    <div class="status err">🔒 Faça login para começar</div>
+    <label>Email</label>
+    <input type="email" id="loginEmail" placeholder="assessor@empresa.com">
+    <label>Senha</label>
+    <input type="password" id="loginPassword" placeholder="••••••••">
+    <button id="btnLogin" class="btn-login">🔐 Entrar</button>
+    <div id="loginError" style="color: #f44336; font-size: 11px; margin-top: 4px;"></div>
+  </div>
 
-  <button id="btnToggle" class="btn-toggle">▶ Ligar</button>
-
-  <div class="task" id="taskInfo"></div>
-
-  <hr style="border-color: #333; margin: 12px 0;">
-
-  <div class="config">
-    <label>Supabase URL</label>
-    <input type="text" id="supaUrl" placeholder="https://xxx.supabase.co">
-    <label>Supabase Anon Key</label>
-    <input type="password" id="supaKey" placeholder="eyJ...">
-    <button id="btnSave" class="btn-save">💾 Salvar Configuração</button>
+  <!-- Worker Section (shown when authenticated) -->
+  <div id="workerSection" class="section hidden">
+    <div id="userInfo" class="user-info"></div>
+    <div id="statusBox" class="status off">⏸ Desligado</div>
+    <button id="btnToggle" class="btn-toggle">▶ Ligar</button>
+    <div class="task" id="taskInfo"></div>
+    <hr style="border-color: #333; margin: 12px 0;">
+    <button id="btnLogout" class="btn-logout">Sair</button>
   </div>
 
   <script src="popup.js"></script>
