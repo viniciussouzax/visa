@@ -3075,6 +3075,10 @@ class FormEngine {
                             if (arrData && arrData.length > 0 &&
                                 arrData.some(e => Object.values(e).some(v => v && v !== ''))) {
                                 // Has real data — DON'T skip, let it be saved
+                                // Also reconstitute parent value so conditional is visible on reload
+                                if (f.showWhen.equals && !json[sec.id][f.showWhen.field]) {
+                                    json[sec.id][f.showWhen.field] = f.showWhen.equals;
+                                }
                             } else {
                                 return; // Empty array, safe to skip
                             }
