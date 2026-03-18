@@ -1,6 +1,6 @@
 /* ==========================================
-   SENDS160 â€” Design System Premium
-   EstilizaÃ§Ã£o completa do frontend.
+   SENDS160 Ã¢â‚¬â€ Design System Premium
+   EstilizaÃƒÂ§ÃƒÂ£o completa do frontend.
    ========================================== */
 
 /* ---- CSS Custom Properties ---- */
@@ -118,7 +118,7 @@ textarea {
 }
 
 /* ==========================================
-   DS-160 FORM ENGINE â€” Layout & Accordion
+   DS-160 FORM ENGINE Ã¢â‚¬â€ Layout & Accordion
    ========================================== */
 /* ---- No-sidebar layout ---- */
 body.no-sidebar {
@@ -238,7 +238,7 @@ body.no-sidebar {
     transition: opacity .2s ease;
 }
 
-/* Seção ativa (aberta), atual, completa ou introdução — opacidade total */
+/* SeÃ§Ã£o ativa (aberta), atual, completa ou introduÃ§Ã£o â€” opacidade total */
 .section-card:has(.section-body.open),
 .section-card.section-current,
 .section-card.section-complete,
@@ -657,7 +657,7 @@ textarea.field-input {
     transform: rotate(45deg);
 }
 
-/* N/A or Unknown active — only disable the input */
+/* N/A or Unknown active â€” only disable the input */
 .field-row.na-disabled {
     transition: all .2s ease;
 }
@@ -1939,7 +1939,7 @@ select.edit-inline {
     border-collapse: collapse;
 }
 
-/* Column widths — scoped to main applicant table only */
+/* Column widths â€” scoped to main applicant table only */
 #tableContainer table { table-layout: fixed; }
 #tableContainer th:nth-child(1),
 #tableContainer td:nth-child(1) { width: 36px; }
@@ -2537,19 +2537,21 @@ select.edit-inline {
 }
 .problems-table-wrap .data-table { margin: 0; table-layout: fixed; width: 100%; }
 .problems-table-wrap .data-table th:nth-child(2),
-.problems-table-wrap .data-table td:nth-child(2) { width: 10%; text-align: center; }
+.problems-table-wrap .data-table td:nth-child(2) { width: 80px; text-align: center; }
 .problems-table-wrap .data-table th:nth-child(3),
-.problems-table-wrap .data-table td:nth-child(3) { width: 12%; text-align: center; }
+.problems-table-wrap .data-table td:nth-child(3) { width: 110px; text-align: center; }
 .problems-table-wrap .data-table th:nth-child(4),
-.problems-table-wrap .data-table td:nth-child(4) { width: 12%; text-align: center; }
+.problems-table-wrap .data-table td:nth-child(4) { width: 110px; text-align: center; }
 .problems-table-wrap .data-table th:nth-child(5),
-.problems-table-wrap .data-table td:nth-child(5) { width: 10%; text-align: center; }
+.problems-table-wrap .data-table td:nth-child(5) { width: 110px; text-align: center; }
 .problems-table-wrap .data-table th:nth-child(6),
-.problems-table-wrap .data-table td:nth-child(6) { min-width: 0; }
+.problems-table-wrap .data-table td:nth-child(6) { width: 110px; text-align: center; }
 .problems-table-wrap .data-table th:nth-child(7),
-.problems-table-wrap .data-table td:nth-child(7) { width: 80px; text-align: center; }
+.problems-table-wrap .data-table td:nth-child(7) { min-width: 0; }
+.problems-table-wrap .data-table th:nth-child(8),
+.problems-table-wrap .data-table td:nth-child(8) { width: 100px; text-align: right; }
 .problems-table-wrap .data-table .name-col { gap: 8px; }
-.problems-table-wrap .data-table .name-info .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.problems-table-wrap .data-table .name-info .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
 
 @media (max-width: 768px) {
     .chart-container { height: 240px; }
@@ -2696,7 +2698,7 @@ select.edit-inline {
     color: #fff;
 }
 
-/* Col widths — consolidated above in main table section.
+/* Col widths â€” consolidated above in main table section.
    IMPORTANT: Do NOT redefine nth-child widths here to avoid conflicts. */
 
 /* Priority dropdown */
@@ -3127,7 +3129,7 @@ select.edit-inline {
 }
 
 /* ==========================================
-   ADMIN â€” Cards, URL, Section
+   ADMIN Ã¢â‚¬â€ Cards, URL, Section
    ========================================== */
 .info-card {
     margin-bottom: 16px;
@@ -3305,7 +3307,7 @@ select.edit-inline {
 }
 
 /* ==========================================
-   DS160-FORM â€” Header, Tabs, Progress, Code
+   DS160-FORM Ã¢â‚¬â€ Header, Tabs, Progress, Code
    ========================================== */
 .header {
     display: flex;
@@ -3568,7 +3570,7 @@ select.edit-inline {
 }
 
 /* ==========================================
-   FORMENGINE â€” Accordion, Fields, etc.
+   FORMENGINE Ã¢â‚¬â€ Accordion, Fields, etc.
    ========================================== */
 .acc-item {
     overflow: hidden;
@@ -4187,7 +4189,7 @@ body.no-sidebar .tabs {
 }
 
 /* ==========================================
-   DASHBOARD â€” Sidebar, Table, Modals
+   DASHBOARD Ã¢â‚¬â€ Sidebar, Table, Modals
    ========================================== */
 /* ---- Sidebar ---- */
 .sidebar {
@@ -4781,7 +4783,7 @@ tr.drag-over {
 }
 
 /* ==========================================
-   MODALS â€” Overlays, Manage, Confirm
+   MODALS Ã¢â‚¬â€ Overlays, Manage, Confirm
    ========================================== */
 .modal-overlay {
     position: fixed;
@@ -5275,7 +5277,7 @@ tr.drag-over {
         padding: 10px 12px;
     }
 
-    /* FormulÃ¡rio DS-160 */
+    /* FormulÃƒÂ¡rio DS-160 */
     .form-wrapper {
         padding: 0 8px;
     }
@@ -5386,7 +5388,7 @@ tr.drag-over {
     line-height: 1.5;
 }
 
-/* Botão Concluir Formulário — destaque especial */
+/* BotÃ£o Concluir FormulÃ¡rio â€” destaque especial */
 .btn-finish {
     background: #719F2A !important;
     border-color: #719F2A !important;
@@ -5398,7 +5400,7 @@ tr.drag-over {
     background: #5e8623 !important;
     border-color: #5e8623 !important;
 }
-/* Step Bar + Page Nav — Multi-page mode */
+/* Step Bar + Page Nav â€” Multi-page mode */
 .step-bar { display:flex; align-items:center; justify-content:center; padding:16px 20px; background:var(--card-bg,#1a1d23); border-radius:12px; margin-bottom:16px; overflow:hidden; gap:0; border:1px solid var(--border-color,rgba(255,255,255,0.06)); }
 .step-item { display:flex; flex-direction:column; align-items:center; cursor:pointer; padding:4px 8px; min-width:50px; transition:all .2s ease; }
 .step-item:hover { opacity:0.8; }
@@ -5561,7 +5563,7 @@ tr.drag-over {
     border-color: var(--accent);
 }
 
-/* Primary button hover (accent → accent-hover) */
+/* Primary button hover (accent â†’ accent-hover) */
 .hover-accent {
     transition: var(--transition);
 }
@@ -5597,7 +5599,7 @@ tr.drag-over {
 }
 
 /* ==========================================
-   ADMIN PANEL — Component Classes
+   ADMIN PANEL â€” Component Classes
    ========================================== */
 
 /* Card container used throughout admin */
