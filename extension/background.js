@@ -397,6 +397,7 @@ async function handleLogout() {
 
 async function handleTaskComplete(msg) {
     if (!currentTask) return;
+    const tabId = currentTask.tabId;
     try {
         await supaFetch(`applicants?id=eq.${currentTask.applicant.id}`, {
             method: 'PATCH',
@@ -406,14 +407,17 @@ async function handleTaskComplete(msg) {
     } catch (err) {
         console.error('[Worker] Erro ao finalizar:', err.message);
     }
-    if (msg.tabId) chrome.tabs.remove(msg.tabId).catch(() => {});
+    // Always close the tab
+    if (tabId) chrome.tabs.remove(tabId).catch(() => {});
     currentTask = null;
+    await chrome.storage.local.remove('currentTask');
     updateBadge('ON', '#4CAF50');
-    setTimeout(checkQueue, 3000);
+    setTimeout(checkQueue, 5000);
 }
 
 async function handleTaskError(msg) {
     if (!currentTask) return;
+    const tabId = currentTask.tabId;
     try {
         await supaFetch(`applicants?id=eq.${currentTask.applicant.id}`, {
             method: 'PATCH',
@@ -431,9 +435,12 @@ async function handleTaskError(msg) {
     } catch (err) {
         console.error('[Worker] Erro ao registrar falha:', err.message);
     }
+    // Always close the tab
+    if (tabId) chrome.tabs.remove(tabId).catch(() => {});
     currentTask = null;
+    await chrome.storage.local.remove('currentTask');
     updateBadge('ERR', '#F44336');
-    setTimeout(checkQueue, 10000);
+    setTimeout(checkQueue, 15000); // Wait 15s before next attempt
 }
 
 function handleTaskProgress(msg) {
