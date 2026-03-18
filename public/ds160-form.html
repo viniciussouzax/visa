@@ -286,6 +286,11 @@
             max-width: 80px;
             opacity: .4;
         }
+        /* FOUC prevention: hide form content until JS repositions it */
+        .role-solicitante .container.form-wrapper { display: none; }
+        .role-solicitante .header,
+        .role-solicitante .tabs,
+        .role-solicitante .btn-bar { display: none !important; }
     </style>
 </head>
 
@@ -562,6 +567,7 @@
                 const contentSlot = document.getElementById('portalFormContent');
                 if (card && formWrapper && contentSlot) {
                     contentSlot.appendChild(formWrapper);
+                    formWrapper.style.display = ''; // Show after repositioning (FOUC fix)
                 }
 
                 // Inject informational notice inside first section body
