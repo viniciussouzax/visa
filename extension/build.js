@@ -7,88 +7,99 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
+const PAGES = path.join(ROOT, 'pages');
 const AUTO = path.join(ROOT, 'automation');
 const OUT = path.join(__dirname, 'shared', 'automation-bundle.js');
 
-// Modules to inline (order matters — dependencies first)
-const modules = [
-    // Helpers
-    { name: 'sleep', src: null, inline: `function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }` },
-    { name: 'postback', src: path.join(AUTO, 'helpers', 'postback.js') },
-    { name: 'fill-field', src: path.join(AUTO, 'helpers', 'fill-field.js') },
-    { name: 'add-another', src: path.join(AUTO, 'helpers', 'add-another.js') },
-    { name: 'verify', src: path.join(AUTO, 'helpers', 'verify.js') },
-    // Field maps
-    { name: 'field-maps-shared', src: path.join(AUTO, 'field-maps', 'shared.js') },
-    { name: 'b1-b2-modular', src: path.join(AUTO, 'field-maps', 'b1-b2-modular.js') },
-    // Pages
-    { name: 'generic-page', src: path.join(AUTO, 'pages', 'generic-page.js') },
-    { name: 'travel-page', src: path.join(AUTO, 'pages', 'travel-page.js') },
-    // Specialized pages (F/J/O)
-    { name: 'student-exchange-map', src: findPageFieldMap('18-student-exchange'), optional: true },
-    { name: 'petition-info-map', src: findPageFieldMap('19-petition-info'), optional: true },
-    { name: 'student-add-contact-map', src: findPageFieldMap('19a-student-add-contact'), optional: true },
-    // Field map router
-    { name: 'field-maps-index', src: path.join(AUTO, 'field-maps', 'index.js') },
-    // normalizeProfile from filler.js
-    { name: 'normalize', src: null, extract: true },
-];
+// ============================================================
+// Build steps — order matters (dependencies first)
+// ============================================================
+const steps = [];
 
-function findPageFieldMap(pageName) {
-    const p = path.join(AUTO, 'pages', pageName, 'field-map.js');
-    return fs.existsSync(p) ? p : null;
+// 1. Shared helpers
+addFile('field-map-helpers', path.join(PAGES, '_shared', 'field-map-helpers.js'));
+addFile('postback', path.join(AUTO, 'helpers', 'postback.js'));
+addFile('fill-field', path.join(AUTO, 'helpers', 'fill-field.js'));
+addFile('add-another', path.join(AUTO, 'helpers', 'add-another.js'));
+addFile('verify', path.join(AUTO, 'helpers', 'verify.js'));
+
+// 2. Field maps shared (postback IDs)
+addFile('field-maps-shared', path.join(AUTO, 'field-maps', 'shared.js'));
+
+// 3. ALL page-level field maps (alphabetical by directory)
+const pageDirs = fs.readdirSync(PAGES).filter(d => {
+    const full = path.join(PAGES, d, 'field-map.js');
+    return d !== '_shared' && fs.existsSync(full);
+}).sort();
+
+for (const dir of pageDirs) {
+    addFile(`page-${dir}`, path.join(PAGES, dir, 'field-map.js'));
 }
 
-/**
- * Convert a Node.js module to browser-compatible code:
- * - Replace require('./...') with window references
- * - Replace module.exports with window assignments
- */
-function convertToBrowser(code, name) {
-    // Remove 'use strict' (we'll add it globally)
+// 4. B1/B2 modular aggregator
+addFile('b1-b2-modular', path.join(AUTO, 'field-maps', 'b1-b2-modular.js'));
+
+// 5. Field maps index (router by visa type)
+addFile('field-maps-index', path.join(AUTO, 'field-maps', 'index.js'));
+
+// 6. Generic page filler
+addFile('generic-page', path.join(AUTO, 'pages', 'generic-page.js'));
+
+// 7. Travel page (custom handler)
+addFile('travel-page', path.join(AUTO, 'pages', 'travel-page.js'));
+
+// 8. Extract normalizeProfile, identifyPage, isFinalPage from filler.js
+steps.push({ name: 'filler-extracts', type: 'extract' });
+
+// ============================================================
+
+function addFile(name, filepath) {
+    if (fs.existsSync(filepath)) {
+        steps.push({ name, filepath, type: 'file' });
+    } else {
+        console.warn(`  ⚠️ SKIP ${name}: ${filepath} not found`);
+    }
+}
+
+function convertToBrowser(code) {
+    // Remove 'use strict'
     code = code.replace(/['"]use strict['"];?\s*/g, '');
-
-    // Replace require statements with window references
-    code = code.replace(/const\s+\{([^}]+)\}\s*=\s*require\([^)]+\);?/g, (match, imports) => {
-        // These are already available as globals from prior modules
-        return `// [bundle] ${imports.trim()} — available from prior modules`;
-    });
-    code = code.replace(/const\s+(\w+)\s*=\s*require\([^)]+\);?/g, (match, varName) => {
-        return `// [bundle] ${varName} — available from prior modules`;
-    });
+    
+    // Remove all require() statements — replace with comment
+    code = code.replace(/^const\s+\{[^}]+\}\s*=\s*require\([^)]+\);?\s*$/gm, '');
+    code = code.replace(/^const\s+\w+\s*=\s*require\([^)]+\);?\s*$/gm, '');
+    
+    // Remove module.exports
+    code = code.replace(/^module\.exports\s*=\s*\{[^}]*\};?\s*$/gm, '');
+    code = code.replace(/^module\.exports\s*=\s*require\([^)]+\);?\s*$/gm, '');
+    code = code.replace(/^module\.exports\s*=\s*\w+;?\s*$/gm, '');
+    
+    // Remove standalone require() calls
     code = code.replace(/require\([^)]+\)/g, '{}');
-
-    // Replace module.exports
-    code = code.replace(/module\.exports\s*=\s*\{([^}]+)\}/g, (match, exports) => {
-        const items = exports.split(',').map(e => e.trim().split(':')[0].trim()).filter(Boolean);
-        return `// Exported: ${items.join(', ')}`;
-    });
-    code = code.replace(/module\.exports\s*=\s*require\([^)]+\);?/g, '');
-
-    return code;
+    
+    // Remove Node-specific: path, fs, __dirname
+    code = code.replace(/^const\s+(path|fs)\s*=\s*\{};?\s*$/gm, '');
+    
+    return code.trim();
 }
 
-/**
- * Extract normalizeProfile and identifyPage from filler.js
- */
 function extractFromFiller() {
-    const fillerSrc = fs.readFileSync(path.join(AUTO, 'filler.js'), 'utf-8');
+    const src = fs.readFileSync(path.join(AUTO, 'filler.js'), 'utf-8');
+    const functions = [];
     
-    // Extract normalizeProfile function
-    const normalizeMatch = fillerSrc.match(/function normalizeProfile\([\s\S]*?\n\}/m);
+    // Extract named functions using a more robust approach
+    const names = ['normalizeProfile', 'identifyPage', 'isFinalPage', 'isSecurityPage'];
+    for (const name of names) {
+        const regex = new RegExp(`^function ${name}\\b[\\s\\S]*?\\n\\}`, 'm');
+        const m = src.match(regex);
+        if (m) {
+            functions.push(m[0]);
+        } else {
+            console.warn(`  ⚠️ Could not extract ${name} from filler.js`);
+        }
+    }
     
-    // Extract identifyPage function
-    const identifyMatch = fillerSrc.match(/function identifyPage\([\s\S]*?\n\}/m);
-    
-    // Extract isFinalPage function
-    const finalMatch = fillerSrc.match(/function isFinalPage\([\s\S]*?\n\}/m);
-
-    let result = '';
-    if (normalizeMatch) result += normalizeMatch[0] + '\n\n';
-    if (identifyMatch) result += identifyMatch[0] + '\n\n';
-    if (finalMatch) result += finalMatch[0] + '\n\n';
-    
-    return result;
+    return functions.join('\n\n');
 }
 
 // ============================================================
@@ -98,47 +109,37 @@ console.log('🔨 Building automation bundle for extension...\n');
 
 let bundle = `// ==================================================================
 // AUTOMATION BUNDLE — auto-generated by extension/build.js
-// Contains all DS-160 automation logic for content scripts
 // Generated: ${new Date().toISOString()}
-// DO NOT EDIT — edit source files and re-run build
+// DO NOT EDIT — edit source files and re-run: node extension/build.js
 // ==================================================================
 'use strict';
 
 `;
 
-// Add each module
-for (const mod of modules) {
-    if (mod.optional && !mod.src) {
-        console.log(`  ⏭ ${mod.name} (optional, not found)`);
-        continue;
-    }
-    if (mod.inline) {
-        bundle += `\n// === ${mod.name} ===\n${mod.inline}\n`;
-        console.log(`  ✅ ${mod.name} (inline)`);
-        continue;
-    }
-    if (mod.extract) {
+let count = 0;
+for (const step of steps) {
+    if (step.type === 'extract') {
         const extracted = extractFromFiller();
-        if (extracted) {
-            bundle += `\n// === Functions extracted from filler.js ===\n${extracted}\n`;
-            console.log(`  ✅ normalize/identifyPage/isFinalPage (extracted from filler.js)`);
-        }
+        bundle += `\n// ══════ filler-extracts ══════\n${extracted}\n\n`;
+        console.log(`  ✅ filler-extracts (normalizeProfile, identifyPage, isFinalPage)`);
+        count++;
         continue;
     }
     
     try {
-        const raw = fs.readFileSync(mod.src, 'utf-8');
-        const converted = convertToBrowser(raw, mod.name);
-        bundle += `\n// === ${mod.name} (${path.basename(mod.src)}) ===\n${converted}\n`;
-        console.log(`  ✅ ${mod.name} (${path.basename(mod.src)})`);
+        const raw = fs.readFileSync(step.filepath, 'utf-8');
+        const converted = convertToBrowser(raw);
+        bundle += `\n// ══════ ${step.name} (${path.basename(step.filepath)}) ══════\n${converted}\n\n`;
+        console.log(`  ✅ ${step.name}`);
+        count++;
     } catch (err) {
-        console.warn(`  ⚠️ ${mod.name}: ${err.message}`);
+        console.warn(`  ❌ ${step.name}: ${err.message}`);
     }
 }
 
-// Make key functions available globally
+// Global exports
 bundle += `
-// === Global exports for content scripts ===
+// ══════ Global exports ══════
 window._automation = {
     buildDynamicFieldMap,
     isPostbackSelect,
@@ -161,8 +162,10 @@ window._automation = {
     getValidationErrors,
     sleep,
 };
+console.log('[Bundle] ✅ automation-bundle loaded');
 `;
 
 fs.writeFileSync(OUT, bundle, 'utf-8');
 const sizeKB = (Buffer.byteLength(bundle) / 1024).toFixed(1);
-console.log(`\n📦 Bundle written: ${OUT} (${sizeKB} KB)`);
+console.log(`\n📦 Bundle: ${OUT}`);
+console.log(`   ${count} modules | ${sizeKB} KB`);

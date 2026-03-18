@@ -108,11 +108,46 @@ async function supaStorage(bucket, filePath, blob) {
 // ------------------------------------------------------------------
 // Queue: find and claim tasks
 // ------------------------------------------------------------------
+async function ensureAuth() {
+    // Service worker can restart at any time — restore state from storage
+    if (!config) config = await loadConfig();
+    if (!authSession) {
+        const stored = await chrome.storage.local.get('authSession');
+        if (stored.authSession) {
+            authSession = stored.authSession;
+            console.log('[Worker] Auth restaurado:', authSession.user?.email);
+        }
+    }
+    // Refresh token if we have one (tokens expire after 1h)
+    if (authSession?.refresh_token && config) {
+        try {
+            const res = await fetch(`${config.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+                method: 'POST',
+                headers: { 'apikey': config.supabaseKey, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh_token: authSession.refresh_token }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                authSession.access_token = data.access_token;
+                authSession.refresh_token = data.refresh_token;
+                await chrome.storage.local.set({ authSession });
+            }
+        } catch {}
+    }
+    return !!authSession;
+}
+
 async function checkQueue() {
     if (!isRunning || currentTask) return;
-    if (!config) {
-        config = await loadConfig();
-        if (!config) return;
+    
+    // Always restore config+auth (service worker may have restarted)
+    const hasAuth = await ensureAuth();
+    if (!hasAuth) {
+        console.warn('[Worker] Sem auth — desligando');
+        isRunning = false;
+        chrome.alarms.clear('check-queue');
+        updateBadge('OFF', '#999');
+        return;
     }
 
     try {
@@ -305,6 +340,8 @@ async function toggleWorker() {
     } else {
         chrome.alarms.clear('check-queue');
     }
+    // Persist running state
+    await chrome.storage.local.set({ isRunning });
     updateBadge(isRunning ? 'ON' : 'OFF', isRunning ? '#4CAF50' : '#999');
     return { isRunning, user: authSession?.user };
 }
@@ -484,13 +521,28 @@ async function checkForUpdates() {
 chrome.runtime.onInstalled.addListener(() => {
     updateBadge('OFF', '#999');
     checkForUpdates();
-    loadConfig();
+    restoreState();
 });
 
 chrome.runtime.onStartup.addListener(() => {
     checkForUpdates();
-    loadConfig();
+    restoreState();
 });
+
+async function restoreState() {
+    await loadConfig();
+    const stored = await chrome.storage.local.get(['isRunning', 'authSession']);
+    if (stored.authSession) {
+        authSession = stored.authSession;
+    }
+    if (stored.isRunning && authSession) {
+        isRunning = true;
+        chrome.alarms.create('check-queue', { periodInMinutes: CHECK_INTERVAL_MIN });
+        updateBadge('ON', '#4CAF50');
+        console.log('[Worker] Restaurado: ligado + auth:', authSession.user?.email);
+        checkQueue();
+    }
+}
 
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'check-queue') checkQueue();
