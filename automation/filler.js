@@ -215,40 +215,51 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             await waitForPageReady(page);
 
             // ── TSPD/F5 Anti-Bot Challenge Detection ──
-            // CEAC pode exibir uma página de challenge antes do DS-160 real.
-            // Detectamos pelo input#ans (captcha anti-bot) ou texto "support ID"
-            for (let tspd = 1; tspd <= 3; tspd++) {
-                const isTSPD = await page.locator('input#ans').isVisible({ timeout: 2000 }).catch(() => false);
-                if (!isTSPD) break; // Página real do DS-160 — prosseguir
+            // CEAC exibe challenge anti-bot antes do DS-160 real.
+            // Após resolver, os cookies de bypass são setados — precisamos renavegar
+            // para obter uma sessão ASP.NET fresca no DS-160.
+            const isTSPD = await page.locator('input#ans').isVisible({ timeout: 3000 }).catch(() => false);
+            if (isTSPD) {
+                console.log('[Filler] ⚠️ TSPD Anti-Bot Challenge detectado');
+                let tspdSolved = false;
+                for (let tspd = 1; tspd <= 3; tspd++) {
+                    try {
+                        const captchaImg = page.locator('img[src^="data:image"]').first();
+                        await captchaImg.waitFor({ state: 'visible', timeout: 5000 });
+                        const imgPath = path.join(TMP, 'tspd_captcha.png');
+                        await captchaImg.screenshot({ path: imgPath });
 
-                console.log(`[Filler] ⚠️ TSPD Anti-Bot Challenge detectado (tentativa ${tspd}/3)`);
-                try {
-                    // A imagem captcha está inline como base64 no src da primeira <img>
-                    const captchaImg = page.locator('img[src^="data:image"]').first();
-                    await captchaImg.waitFor({ state: 'visible', timeout: 5000 });
-                    const imgPath = path.join(TMP, 'tspd_captcha.png');
-                    await captchaImg.screenshot({ path: imgPath });
+                        const keys = { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key };
+                        const answer = await solveCaptcha(imgPath, captchaMode, keys);
+                        console.log(`[Filler] TSPD Captcha answer (${tspd}/3): ${answer}`);
 
-                    const keys = { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key };
-                    const answer = await solveCaptcha(imgPath, captchaMode, keys);
-                    console.log(`[Filler] TSPD Captcha answer: ${answer}`);
+                        await page.locator('input#ans').fill(answer);
+                        await page.locator('button#jar').click();
+                        await sleep(3000);
 
-                    await page.locator('input#ans').fill(answer);
-                    await page.locator('button#jar').click();
-                    await sleep(3000);
-                    await waitForPageReady(page);
-
-                    // Verificar se saiu do challenge
-                    const stillTSPD = await page.locator('input#ans').isVisible({ timeout: 2000 }).catch(() => false);
-                    if (!stillTSPD) {
-                        console.log('[Filler] ✅ TSPD Challenge resolvido — DS-160 carregado');
-                        break;
+                        const stillTSPD = await page.locator('input#ans').isVisible({ timeout: 2000 }).catch(() => false);
+                        if (!stillTSPD) {
+                            tspdSolved = true;
+                            console.log('[Filler] ✅ TSPD Challenge resolvido — cookies de bypass setados');
+                            break;
+                        }
+                        console.warn(`[Filler] TSPD tentativa ${tspd} falhou — retentando`);
+                    } catch (e) {
+                        console.warn(`[Filler] TSPD attempt ${tspd} error: ${e.message}`);
                     }
-                    console.warn('[Filler] TSPD Challenge não resolvido — retentando');
-                } catch (e) {
-                    console.warn(`[Filler] TSPD attempt ${tspd} error: ${e.message}`);
+                    await sleep(1000);
                 }
-                await sleep(2000);
+
+                if (tspdSolved) {
+                    // Renavegar para obter sessão ASP.NET fresca
+                    // Os cookies TSPD já foram setados, então não vai mostrar challenge de novo
+                    console.log('[Filler] 🔄 Renavegando para DS-160 com sessão fresca...');
+                    await page.goto('https://ceac.state.gov/GenNIV/Default.aspx', { waitUntil: 'domcontentloaded', timeout: 30000 });
+                    await waitForPageReady(page);
+                    console.log('[Filler] ✅ DS-160 carregado com sessão fresca');
+                } else {
+                    throw new Error('TSPD Anti-Bot Challenge não resolvido após 3 tentativas');
+                }
             }
         }
 
