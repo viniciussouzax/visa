@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "DS-160 & AIS Worker",
+  "version": "1.0.0",
+  "description": "Automação de preenchimento DS-160 e AIS para assessores",
+  "permissions": [
+    "tabs",
+    "scripting",
+    "storage",
+    "alarms",
+    "downloads"
+  ],
+  "host_permissions": [
+    "https://ceac.state.gov/*",
+    "https://*.usvisa-info.com/*",
+    "https://zcpvknzktfmotvrybxdf.supabase.co/*",
+    "https://raw.githubusercontent.com/*",
+    "https://api.capmonster.cloud/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://ceac.state.gov/GenNIV/*"],
+      "js": ["shared/dom-helpers.js", "content_scripts/ds160-bridge.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://*.usvisa-info.com/*"],
+      "js": ["shared/dom-helpers.js", "content_scripts/ais-bridge.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "version": "1.0.0",
+  "files": [
+    "content_scripts/ds160-bridge.js",
+    "content_scripts/ais-bridge.js",
+    "shared/dom-helpers.js"
+  ]
+}
