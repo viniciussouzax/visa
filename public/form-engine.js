@@ -3060,12 +3060,28 @@ class FormEngine {
                 if (f.type === 'alert') return; // Skip display-only fields
                 const key = sec.id + '.' + f.id;
 
-                // Skip hidden conditional fields
+                // Skip hidden conditional fields (but NEVER skip arrays with existing data)
                 if (f.showWhen) {
                     const parentKey = (f.showWhen.section || sec.id) + '.' + f.showWhen.field;
                     const parentVal = this.data[parentKey] || '';
-                    if (f.showWhen.equals && parentVal !== f.showWhen.equals) return;
-                    if (f.showWhen.in && !f.showWhen.in.includes(parentVal)) return;
+                    let condHidden = false;
+                    if (f.showWhen.equals && parentVal !== f.showWhen.equals) condHidden = true;
+                    if (f.showWhen.in && !f.showWhen.in.includes(parentVal)) condHidden = true;
+                    // Arrays: preserve existing data even if conditional parent
+                    // was pruned or section is collapsed. Only skip if truly empty.
+                    if (condHidden) {
+                        if (f.type === 'array') {
+                            const arrData = this.arrayData[key];
+                            if (arrData && arrData.length > 0 &&
+                                arrData.some(e => Object.values(e).some(v => v && v !== ''))) {
+                                // Has real data — DON'T skip, let it be saved
+                            } else {
+                                return; // Empty array, safe to skip
+                            }
+                        } else {
+                            return; // Non-array hidden field, skip
+                        }
+                    }
                 }
 
                 if (f.type === 'array') {
