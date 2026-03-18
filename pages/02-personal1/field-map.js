@@ -26,19 +26,21 @@ function buildPersonal1Map(a, ctx) {
     // 2. Other Names (DListAlias) — supports multiple entries via "Add Another"
     // Pergunta: "Have you ever used other names?" → Yes/No
     // Respostas: otherNames[0] (ctl00), otherNames[1] (ctl01 → addAnother), ...
-    if (a.otherNamesUsed && a.otherNames?.length) {
+    if (a.otherNamesUsed) {
       map.push({ pattern: /rblOtherNames_0$/i, value: "", type: "click" });
     
-      a.otherNames.forEach((entry, idx) => {
-        const ctl = `ctl${String(idx).padStart(2, '0')}`;
-        const base = { type: "text" };
-        if (idx > 0) base.addAnother = { list: "DListAlias", idx };
-    
-        map.push(
-          { pattern: new RegExp(`DListAlias_${ctl}_tbxSURNAME$`, 'i'), value: entry.surname || "", ...base },
-          { pattern: new RegExp(`DListAlias_${ctl}_tbxGIVEN_NAME$`, 'i'), value: entry.givenName || "", ...base },
-        );
-      });
+      if (a.otherNames?.length > 0) {
+        a.otherNames.forEach((entry, idx) => {
+          const ctl = `ctl${String(idx).padStart(2, '0')}`;
+          const base = { type: "text" };
+          if (idx > 0) base.addAnother = { list: "DListAlias", idx };
+      
+          map.push(
+            { pattern: new RegExp(`DListAlias_${ctl}_tbxSURNAME$`, 'i'), value: entry.surname || "", ...base },
+            { pattern: new RegExp(`DListAlias_${ctl}_tbxGIVEN_NAME$`, 'i'), value: entry.givenName || "", ...base },
+          );
+        });
+      }
     } else {
       map.push({ pattern: /rblOtherNames_1$/i, value: "", type: "click" });
     }

@@ -232,15 +232,17 @@ function buildAddressPhoneMap(a, ctx) {
     // Additional phones (dtlAddPhone) — supports multiple entries
     // Pergunta: "Do you have additional phone numbers?" → Yes/No
     // Respostas: additionalPhoneNumbers[0] (ctl00), [1] (ctl01 → addAnother), ...
-    if (a.additionalPhones && a.additionalPhoneNumbers?.length) {
+    if (a.additionalPhones) {
       map.push({ pattern: /rblAddPhone_0$/i, value: "", type: "click" });
-      a.additionalPhoneNumbers.forEach((phone, idx) => {
-        const ctl = `ctl${String(idx).padStart(2, '0')}`;
-        const base = { type: "text" };
-        if (idx > 0) base.addAnother = { list: "dtlAddPhone", idx };
-        const phoneVal = typeof phone === 'object' ? (phone.phone || phone.number || '') : phone;
-        map.push({ pattern: new RegExp(`dtlAddPhone_${ctl}_tbxAddPhoneInfo$`, 'i'), value: ph(phoneVal), ...base });
-      });
+      if (a.additionalPhoneNumbers?.length > 0) {
+        a.additionalPhoneNumbers.forEach((phone, idx) => {
+          const ctl = `ctl${String(idx).padStart(2, '0')}`;
+          const base = { type: "text" };
+          if (idx > 0) base.addAnother = { list: "dtlAddPhone", idx };
+          const phoneVal = typeof phone === 'object' ? (phone.phone || phone.number || '') : phone;
+          map.push({ pattern: new RegExp(`dtlAddPhone_${ctl}_tbxAddPhoneInfo$`, 'i'), value: ph(phoneVal), ...base });
+        });
+      }
     } else {
       map.push({ pattern: /rblAddPhone_1$/i, value: "", type: "click" });
     }
@@ -248,15 +250,17 @@ function buildAddressPhoneMap(a, ctx) {
     // Additional emails (dtlAddEmail) — supports multiple entries
     // Pergunta: "Do you have additional email addresses?" → Yes/No
     // Respostas: additionalEmailAddresses[0] (ctl00), [1] (ctl01 → addAnother), ...
-    if (a.additionalEmails && a.additionalEmailAddresses?.length) {
+    if (a.additionalEmails) {
       map.push({ pattern: /rblAddEmail_0$/i, value: "", type: "click" });
-      a.additionalEmailAddresses.forEach((emailEntry, idx) => {
-        const ctl = `ctl${String(idx).padStart(2, '0')}`;
-        const base = { type: "text" };
-        if (idx > 0) base.addAnother = { list: "dtlAddEmail", idx };
-        const emailVal = typeof emailEntry === 'object' ? emailEntry.email : emailEntry;
-        map.push({ pattern: new RegExp(`dtlAddEmail_${ctl}_tbxAddEmailInfo$`, 'i'), value: emailVal || "", ...base });
-      });
+      if (a.additionalEmailAddresses?.length > 0) {
+        a.additionalEmailAddresses.forEach((emailEntry, idx) => {
+          const ctl = `ctl${String(idx).padStart(2, '0')}`;
+          const base = { type: "text" };
+          if (idx > 0) base.addAnother = { list: "dtlAddEmail", idx };
+          const emailVal = typeof emailEntry === 'object' ? emailEntry.email : emailEntry;
+          map.push({ pattern: new RegExp(`dtlAddEmail_${ctl}_tbxAddEmailInfo$`, 'i'), value: emailVal || "", ...base });
+        });
+      }
     } else {
       map.push({ pattern: /rblAddEmail_1$/i, value: "", type: "click" });
     }
@@ -268,19 +272,21 @@ function buildAddressPhoneMap(a, ctx) {
     // Additional Social Media (dtlAddSocial) — supports multiple entries
     // Pergunta: "Do you have additional social media platforms?" → Yes/No
     // Respostas: additionalSocialMediaAccounts[0] (ctl00), [1] (ctl01 → addAnother), ...
-    if (a.additionalSocialMedia && a.additionalSocialMediaAccounts?.length) {
+    if (a.additionalSocialMedia) {
       map.push({ pattern: /rblAddSocial_0$/i, value: "", type: "click" });
-      a.additionalSocialMediaAccounts.forEach((sm, idx) => {
-        const ctl = `ctl${String(idx).padStart(2, '0')}`;
-        const base = {};
-        if (idx > 0) base.addAnother = { list: "dtlAddSocial", idx };
-        map.push(
-          { pattern: new RegExp(`dtlAddSocial_${ctl}_tbxAddSocialPlat$`, 'i'), value: sm.platform || "", type: "text", ...base },
-          { pattern: new RegExp(`dtlAddSocial_${ctl}_tbxAddSocialPlatform$`, 'i'), value: sm.platform || "", type: "text", ...base }, // fallback
-          { pattern: new RegExp(`dtlAddSocial_${ctl}_tbxAddSocialHand$`, 'i'), value: sm.handle || "", type: "text", ...base },
-          { pattern: new RegExp(`dtlAddSocial_${ctl}_tbxSocialMediaIdent$`, 'i'), value: sm.handle || "", type: "text", ...base }, // fallback
-        );
-      });
+      if (a.additionalSocialMediaAccounts?.length > 0) {
+        a.additionalSocialMediaAccounts.forEach((sm, idx) => {
+          const ctl = `ctl${String(idx).padStart(2, '0')}`;
+          const base = {};
+          if (idx > 0) base.addAnother = { list: "dtlAddSocial", idx };
+          map.push(
+            { pattern: new RegExp(`dtlAddSocial_${ctl}_tbxAddSocialPlat$`, 'i'), value: sm.platform || "", type: "text", ...base },
+            { pattern: new RegExp(`dtlAddSocial_${ctl}_tbxAddSocialPlatform$`, 'i'), value: sm.platform || "", type: "text", ...base }, // fallback
+            { pattern: new RegExp(`dtlAddSocial_${ctl}_tbxAddSocialHand$`, 'i'), value: sm.handle || "", type: "text", ...base },
+            { pattern: new RegExp(`dtlAddSocial_${ctl}_tbxSocialMediaIdent$`, 'i'), value: sm.handle || "", type: "text", ...base }, // fallback
+          );
+        });
+      }
     } else {
       map.push({ pattern: /rblAddSocial_1$/i, value: "", type: "click" });
     }

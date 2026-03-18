@@ -22,54 +22,56 @@ function buildPersonal2Map(a, ctx) {
     );
     
     // 2. Other Nationality — supports multiple entries via "Add Another"
-    if (a.otherNationality && a.otherNationalities?.length > 0) {
+    if (a.otherNationality) {
       map.push({ pattern: /rblAPP_OTH_NATL_IND_0$/i, value: "", type: "click" });
     
-      a.otherNationalities.forEach((entry, idx) => {
-        const ctl = `ctl${String(idx).padStart(2, '0')}`; // ctl00, ctl01, ctl02...
-        // For idx > 0, mark that Add Another must be clicked first
-        if (idx > 0) {
-          map.push({
-            pattern: new RegExp(`dtlOTHER_NATL_${ctl}_ddlOTHER_NATL$`, 'i'),
-            value: entry.country || "",
-            type: "select-label",
-            addAnother: { list: "dtlOTHER_NATL", buttonPattern: /btnAdd.*NATL|lnkAdd.*NATL|btnAddOTHER_NATL/i, idx }
-          });
-        } else {
-          map.push({ pattern: new RegExp(`dtlOTHER_NATL_${ctl}_ddlOTHER_NATL$`, 'i'), value: entry.country || "", type: "select-label" });
-        }
-    
-        // Passport for this nationality
-        if (entry.hasPassport === 'Y') {
-          map.push(
-            { pattern: new RegExp(`dtlOTHER_NATL_${ctl}_rblOTHER_PPT_IND_0$`, 'i'), value: "", type: "click" },
-            { pattern: new RegExp(`dtlOTHER_NATL_${ctl}_tbxOTHER_PPT_NUM$`, 'i'), value: entry.passportNumber || "", type: "text" },
-          );
-        } else {
-          map.push({ pattern: new RegExp(`dtlOTHER_NATL_${ctl}_rblOTHER_PPT_IND_1$`, 'i'), value: "", type: "click" });
-        }
-      });
+      if (a.otherNationalities?.length > 0) {
+        a.otherNationalities.forEach((entry, idx) => {
+          const ctl = `ctl${String(idx).padStart(2, '0')}`;
+          if (idx > 0) {
+            map.push({
+              pattern: new RegExp(`dtlOTHER_NATL_${ctl}_ddlOTHER_NATL$`, 'i'),
+              value: entry.country || "",
+              type: "select-label",
+              addAnother: { list: "dtlOTHER_NATL", buttonPattern: /btnAdd.*NATL|lnkAdd.*NATL|btnAddOTHER_NATL/i, idx }
+            });
+          } else {
+            map.push({ pattern: new RegExp(`dtlOTHER_NATL_${ctl}_ddlOTHER_NATL$`, 'i'), value: entry.country || "", type: "select-label" });
+          }
+      
+          if (entry.hasPassport === 'Y') {
+            map.push(
+              { pattern: new RegExp(`dtlOTHER_NATL_${ctl}_rblOTHER_PPT_IND_0$`, 'i'), value: "", type: "click" },
+              { pattern: new RegExp(`dtlOTHER_NATL_${ctl}_tbxOTHER_PPT_NUM$`, 'i'), value: entry.passportNumber || "", type: "text" },
+            );
+          } else {
+            map.push({ pattern: new RegExp(`dtlOTHER_NATL_${ctl}_rblOTHER_PPT_IND_1$`, 'i'), value: "", type: "click" });
+          }
+        });
+      }
     } else {
       map.push({ pattern: /rblAPP_OTH_NATL_IND_1$/i, value: "", type: "click" });
     }
     
     // 3. Permanent Resident Other Country — supports multiple entries via "Add Another"
-    if (a.permanentResidentOtherCountry && a.permanentResidentCountries?.length > 0) {
+    if (a.permanentResidentOtherCountry) {
       map.push({ pattern: /rblPermResOtherCntryInd_0$/i, value: "", type: "click" });
     
-      a.permanentResidentCountries.forEach((entry, idx) => {
-        const ctl = `ctl${String(idx).padStart(2, '0')}`;
-        if (idx > 0) {
-          map.push({
-            pattern: new RegExp(`dtlOthPermResCntry_${ctl}_ddlOthPermResCntry$`, 'i'),
-            value: entry.country || "",
-            type: "select-label",
-            addAnother: { list: "dtlOthPermResCntry", buttonPattern: /btnAdd.*PermRes|lnkAdd.*PermRes|btnAddPerm/i, idx }
-          });
-        } else {
-          map.push({ pattern: new RegExp(`dtlOthPermResCntry_${ctl}_ddlOthPermResCntry$`, 'i'), value: entry.country || "", type: "select-label" });
-        }
-      });
+      if (a.permanentResidentCountries?.length > 0) {
+        a.permanentResidentCountries.forEach((entry, idx) => {
+          const ctl = `ctl${String(idx).padStart(2, '0')}`;
+          if (idx > 0) {
+            map.push({
+              pattern: new RegExp(`dtlOthPermResCntry_${ctl}_ddlOthPermResCntry$`, 'i'),
+              value: entry.country || "",
+              type: "select-label",
+              addAnother: { list: "dtlOthPermResCntry", buttonPattern: /btnAdd.*PermRes|lnkAdd.*PermRes|btnAddPerm/i, idx }
+            });
+          } else {
+            map.push({ pattern: new RegExp(`dtlOthPermResCntry_${ctl}_ddlOthPermResCntry$`, 'i'), value: entry.country || "", type: "select-label" });
+          }
+        });
+      }
     } else {
       map.push({ pattern: /rblPermResOtherCntryInd_1$/i, value: "", type: "click" });
     }
