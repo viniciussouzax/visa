@@ -1966,10 +1966,12 @@
 
             tbody.innerHTML = problems.map(a => {
                 const cfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.todo;
+                const reason = a.result === 'data_error' ? 'Erro de dados' : a.result === 'tech_fail' ? 'Falha técnica' : a.result || '—';
                 return `<tr>
                     <td><div class="name-col"><span class="applicant-icon"><i class="iconoir-user"></i></span><div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${a.email || 'Sem email'}</div></div></div></td>
                     <td><span class="status-badge" style="background:#f1f5f9;color:#475569">${STAGE_LABELS[a.stage] || a.stage}</span></td>
                     <td><span class="status-badge ${cfg.class}">${cfg.label}</span></td>
+                    <td><span style="font-size:12px;color:var(--text-muted)">${reason}</span></td>
                     <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : '—'}</td>
                     <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'failed':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '—'}</td>
                     <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotações"><div class="notes-preview">${a.notes ? a.notes.substring(0, 140) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
