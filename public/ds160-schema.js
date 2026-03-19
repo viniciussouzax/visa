@@ -373,7 +373,7 @@ const DS160_SCHEMA = {
                     options: [
                         { value: "M", label: "Casado(a)" },
                         { value: "C", label: "União Estável" },
-                        { value: "U", label: "União Civil/Parceria Doméstica" },
+                        { value: "P", label: "União Civil/Parceria Doméstica" },
                         { value: "S", label: "Solteiro(a)" },
                         { value: "W", label: "Viúvo(a)" },
                         { value: "D", label: "Divorciado(a)" },
@@ -383,7 +383,7 @@ const DS160_SCHEMA = {
                     optionHints: {
                         M: "Casamento civil formalizado legalmente.",
                         C: "Relação em que o casal vive como casado, sem casamento civil formal.",
-                        U: "União registrada legalmente entre duas pessoas, semelhante ao casamento.",
+                        P: "União registrada legalmente entre duas pessoas, semelhante ao casamento.",
                         S: "Pessoa que nunca se casou.",
                         W: "Pessoa cujo cônjuge faleceu.",
                         D: "Casamento encerrado oficialmente por divórcio.",
@@ -3578,6 +3578,7 @@ const DS160_SCHEMA = {
                     minEntries: 2,
                     maxEntries: 5,
                     required: true,
+                    ds160List: "dtlStudentAddPOC",
                     fields: [
                         { id: "surname", label: "Sobrenome", type: "text", required: true, maxLen: 33, uppercase: true, ds160: "tbxADD_POC_SURNAME" },
                         { id: "givenName", label: "Nome", type: "text", required: true, maxLen: 33, uppercase: true, ds160: "tbxADD_POC_GIVEN_NAME" },
