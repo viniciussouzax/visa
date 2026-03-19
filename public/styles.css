@@ -5778,3 +5778,75 @@ tr.drag-over {
     gap: 20px;
 }
 
+/* ==========================================
+   PROBLEMS TABLE
+   ========================================== */
+.problems-table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+}
+.problems-table-wrap table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+.problems-table-wrap thead th {
+    background: var(--bg-body);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    white-space: nowrap;
+}
+.problems-table-wrap tbody td {
+    padding: 10px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: middle;
+}
+.problems-table-wrap tbody tr:hover {
+    background: rgba(59,130,246,.03);
+}
+/* Column widths: Solicitante, Etapa, Status, Motivo, DS-160, AIS, Nota, Ação */
+.problems-table-wrap th:nth-child(1),
+.problems-table-wrap td:nth-child(1) { width: 22%; }
+.problems-table-wrap th:nth-child(2),
+.problems-table-wrap td:nth-child(2) { width: 90px; }
+.problems-table-wrap th:nth-child(3),
+.problems-table-wrap td:nth-child(3) { width: 100px; }
+.problems-table-wrap th:nth-child(4),
+.problems-table-wrap td:nth-child(4) { width: 100px; }
+.problems-table-wrap th:nth-child(5),
+.problems-table-wrap td:nth-child(5) { width: 110px; }
+.problems-table-wrap th:nth-child(6),
+.problems-table-wrap td:nth-child(6) { width: 100px; }
+.problems-table-wrap th:nth-child(7),
+.problems-table-wrap td:nth-child(7) { width: auto; min-width: 80px; }
+.problems-table-wrap th:nth-child(8),
+.problems-table-wrap td:nth-child(8) { width: 80px; text-align: right; }
+.problems-table-wrap .name-col {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.problems-table-wrap .name-info .name {
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.problems-table-wrap .name-info .passport {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
