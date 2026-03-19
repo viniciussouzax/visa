@@ -1970,7 +1970,7 @@
                 return `<tr>
                     <td><div class="name-col"><span class="applicant-icon"><i class="iconoir-user"></i></span><div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${a.email || 'Sem email'}</div></div></div></td>
                     <td><span class="status-badge" style="background:#f1f5f9;color:#475569">${STAGE_LABELS[a.stage] || a.stage}</span></td>
-                    <td><span class="status-badge ${cfg.class}">${cfg.label}</span></td>
+                    <td><span class="status-badge ${cfg.class}" onclick="event.stopPropagation();openErrorLogsModal('${a.id}','${shortName(a.name).replace(/'/g,"\\'")}')" style="cursor:pointer" title="Ver logs de erro">${cfg.label}</span></td>
                     <td><span style="font-size:12px;color:var(--text-muted)">${reason}</span></td>
                     <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : '—'}</td>
                     <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'failed':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '—'}</td>
@@ -1978,6 +1978,86 @@
                     <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();navigateTo('${a.stage}')" title="Ir para etapa"><i class="iconoir-arrow-right-circle"></i></button><button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Gerenciar"><i class="iconoir-settings"></i></button></div></td>
                 </tr>`;
             }).join('');
+        }
+
+        // ==========================================
+        // ERROR LOGS MODAL (acessível para assessores)
+        // ==========================================
+        const _errorCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Erro no campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'Validação DS-160', postback_stuck: 'Postback travado', page_stuck: 'Página travada', script_error: 'Erro de script', unknown: 'Desconhecido' };
+
+        async function openErrorLogsModal(applicantId, applicantName) {
+            const old = document.getElementById('errorLogsModal'); if (old) old.remove();
+            // Show loading
+            const loadingHtml = `<div id="errorLogsModal" class="modal-overlay" onclick="document.getElementById('errorLogsModal').remove()">
+                <div class="modal-box" onclick="event.stopPropagation()" style="max-width:700px;width:95vw;max-height:85vh;display:flex;flex-direction:column">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                        <h3 class="modal-title" style="margin:0"><i class="iconoir-warning-triangle" style="color:var(--warning);margin-right:6px"></i>Logs de Erro</h3>
+                        <button onclick="document.getElementById('errorLogsModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
+                    </div>
+                    <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px">${escapeHTML(applicantName)}</p>
+                    <div style="text-align:center;padding:30px;color:var(--text-muted)"><div class="spinner"></div> Carregando logs...</div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', loadingHtml);
+
+            try {
+                const logs = await sbGet(`error_logs?applicant_name=ilike.*${encodeURIComponent(applicantName.replace(/[\[\]]/g,''))}*&archived=eq.false&order=created_at.desc&limit=10&select=id,error_cause,page_name,field_name,error_message,created_at,retry_number,screenshot_url`) || [];
+                const modal = document.getElementById('errorLogsModal');
+                if (!modal) return;
+                const content = modal.querySelector('.modal-box');
+                // Remove loading spinner
+                const spinner = content.querySelector('.spinner')?.parentElement;
+                if (spinner) spinner.remove();
+
+                if (logs.length === 0) {
+                    content.insertAdjacentHTML('beforeend', '<div style="text-align:center;padding:20px;color:var(--text-muted)"><i class="iconoir-check-circle" style="font-size:24px;color:var(--success)"></i><p>Nenhum log de erro encontrado</p></div>');
+                    return;
+                }
+
+                let listHtml = '<div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px">';
+                logs.forEach((l, idx) => {
+                    const causeLabel = _errorCauseLabels[l.error_cause] || l.error_cause || '—';
+                    const dt = new Date(l.created_at).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+                    const retryBadge = l.retry_number != null ? `<span style="background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px">#${l.retry_number}</span>` : '';
+                    const screenshotBtn = l.screenshot_url
+                        ? `<button class="btn-new" onclick="event.stopPropagation();viewLogScreenshot('${l.screenshot_url.replace(/'/g,"\\'")}','${escapeHTML(causeLabel)}')" style="background:#3b82f6;font-size:10px;padding:2px 8px;margin-left:auto;flex-shrink:0">📸 Ver</button>`
+                        : '';
+                    listHtml += `<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--bg-body)">
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                            <span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:#fee2e2;color:#dc2626">${causeLabel}</span>
+                            ${l.page_name ? '<span style="font-size:11px;color:var(--text-muted)">Pág: ' + escapeHTML(l.page_name) + '</span>' : ''}
+                            ${l.field_name ? '<span style="font-size:11px;color:var(--accent);font-family:monospace">' + escapeHTML(l.field_name) + '</span>' : ''}
+                            ${retryBadge}
+                            <span style="font-size:10px;color:var(--text-muted);margin-left:auto">${dt}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <p style="font-size:12px;color:var(--text-primary);margin:0;line-height:1.4;flex:1;word-break:break-word">${escapeHTML(l.error_message || '—')}</p>
+                            ${screenshotBtn}
+                        </div>
+                    </div>`;
+                });
+                listHtml += '</div>';
+                content.insertAdjacentHTML('beforeend', listHtml);
+            } catch (e) {
+                const modal = document.getElementById('errorLogsModal');
+                if (modal) {
+                    const content = modal.querySelector('.modal-box');
+                    const spinner = content.querySelector('.spinner')?.parentElement;
+                    if (spinner) spinner.innerHTML = '<p style="color:#ef4444">Erro ao carregar logs: ' + escapeHTML(e.message) + '</p>';
+                }
+            }
+        }
+
+        function viewLogScreenshot(url, cause) {
+            const old = document.getElementById('logScreenshotModal'); if (old) old.remove();
+            const html = `<div id="logScreenshotModal" class="modal-overlay" onclick="document.getElementById('logScreenshotModal').remove()" style="z-index:10012;background:rgba(0,0,0,.85)">
+                <div onclick="event.stopPropagation()" style="max-width:90vw;max-height:90vh;position:relative">
+                    <button onclick="document.getElementById('logScreenshotModal').remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;z-index:1">✕</button>
+                    <img src="${url}" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)" onerror="this.outerHTML='<div style=\'color:#fff;padding:40px\'>Imagem não encontrada</div>'">
+                    <div style="color:#fff;font-size:12px;text-align:center;margin-top:8px;opacity:.7">${cause}</div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
         }
 
         // ==========================================
