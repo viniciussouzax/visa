@@ -243,7 +243,7 @@ async function main() {
             .from('applications')
             .insert({
                 applicant_id: applicant.id,
-                fill_status: 'pending',
+                fill_status: 'todo',
                 security_answer: profileData.securityAnswer || 'TESTPASSWORD',
             });
 

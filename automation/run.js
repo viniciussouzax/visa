@@ -91,7 +91,7 @@ async function main() {
             case 'queue-empty':
                 console.log(`\n⏳ Fila vazia — próxima verificação em ${status.nextCheck}s`);
                 break;
-            case 'filling':
+            case 'doing':
                 console.log(`🔄 Preenchendo: ${status.applicantName} — ${status.page}`);
                 break;
             case 'done':

@@ -1,6 +1,6 @@
 # ============================================================
 # DS-160 Worker — Cloud Run Job
-# Image: Playwright + Node.js for headless form filling
+# Image: patchright (stealth Playwright) + Node.js + Chrome
 # ============================================================
 FROM mcr.microsoft.com/playwright:v1.50.0-noble
 
@@ -10,8 +10,8 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --production --ignore-scripts
 
-# Install Playwright browsers (Firefox only — less detectable by anti-bot)
-RUN npx playwright install firefox --with-deps
+# Install patchright browsers (Chromium — stealth patched)
+RUN npx patchright install chromium --with-deps
 
 # Copy application code
 COPY automation/ ./automation/

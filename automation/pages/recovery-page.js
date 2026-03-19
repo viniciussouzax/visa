@@ -6,6 +6,18 @@ const { solveCaptchaOnPage } = require('../helpers/captcha-handler');
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+/** Type text with human-like variable delay per keystroke (same as filler.js) */
+async function humanType(page, selector, text) {
+    const el = typeof selector === 'string' ? page.locator(selector) : selector;
+    await el.click();
+    await sleep(100 + Math.floor(Math.random() * 200));
+    await el.fill('');
+    for (const char of text) {
+        await page.keyboard.type(char, { delay: 60 + Math.floor(Math.random() * 120) });
+    }
+    await sleep(50 + Math.floor(Math.random() * 150));
+}
+
 /**
  * Handle the DS-160 Recovery page (Recovery.aspx).
  * Phase 1: App ID + CAPTCHA → click Retrieve
@@ -40,12 +52,12 @@ async function handleRecoveryPage(page, profile, application, config, captchaMod
             console.log(`[Filler] Recovery FASE 2: Security Questions (tentativa ${rAttempt})`);
 
             const surname5 = (profile.surname || '').substring(0, 5).toUpperCase();
-            await surnameField.fill(surname5);
+            await humanType(page, surnameField, surname5);
             console.log(`[Filler] Recovery: Surname preenchido: ${surname5}`);
 
             if (await dobYearField.isVisible({ timeout: 1000 }).catch(() => false)) {
                 const birthYear = profile.dob?.year || '';
-                await dobYearField.fill(String(birthYear));
+                await humanType(page, dobYearField, String(birthYear));
                 console.log(`[Filler] Recovery: Year of Birth preenchido: ${birthYear}`);
             }
 
@@ -69,13 +81,13 @@ async function handleRecoveryPage(page, profile, application, config, captchaMod
             const secYearInput = page.locator("input[id$='_txtYear'], input[id$='_tbxYear']").first();
             if (await secYearInput.isVisible({ timeout: 1000 }).catch(() => false)) {
                 const secYear = config.security_year || '2026';
-                await secYearInput.fill(secYear);
+                await humanType(page, secYearInput, secYear);
                 console.log(`[Filler] Recovery: Security year: ${secYear}`);
             }
 
             if (await secAnswerField.isVisible({ timeout: 1000 }).catch(() => false)) {
                 const secAnswer = config.security_answer || profile.securityAnswer || '';
-                await secAnswerField.fill(secAnswer);
+                await humanType(page, secAnswerField, secAnswer);
                 console.log(`[Filler] Recovery: Security answer preenchido`);
             }
         } else if (hasCaptcha) {
@@ -113,7 +125,15 @@ async function handleRecoveryPage(page, profile, application, config, captchaMod
         // Click Retrieve Application button
         const retrieveBtn = page.locator("input[id$='_btnRetrieve'], a[id$='_lnkRetrieve'], input[value*='Retrieve']").first();
         if (await retrieveBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-            await retrieveBtn.click();
+            const rBox = await retrieveBtn.boundingBox();
+            if (rBox) {
+                await page.mouse.move(rBox.x + rBox.width / 2, rBox.y + rBox.height / 2, { steps: 10 + Math.floor(Math.random() * 15) });
+                await page.mouse.down();
+                await page.waitForTimeout(20 + Math.floor(Math.random() * 50));
+                await page.mouse.up();
+            } else {
+                await retrieveBtn.click();
+            }
             console.log('[Filler] Recovery: clicou Retrieve Application');
         } else {
             console.warn('[Filler] Recovery: botão Retrieve não encontrado');

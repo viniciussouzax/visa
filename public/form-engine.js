@@ -1205,8 +1205,10 @@ class FormEngine {
                         // Don't overwrite existing non-empty data with empty DOM value.
                         // onInput/_setArrayValue already captures real-time user edits;
                         // _saveArrayData is only a safety sync and must not corrupt loaded data.
+                        // FIX: null (empty date) was passing `val !== ''` and overwriting saved dates.
                         const hasExisting = existing !== undefined && existing !== null && existing !== '';
-                        if (val !== '' || !hasExisting) {
+                        const isEmpty = val === '' || val === null || val === undefined;
+                        if (!isEmpty || !hasExisting) {
                             this.arrayData[key][idx][subF.id] = val;
                         }
                     }

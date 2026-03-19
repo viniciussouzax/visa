@@ -26,7 +26,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 const TASK_INDEX = parseInt(process.env.CLOUD_RUN_TASK_INDEX || '0', 10);
 const TASK_COUNT = parseInt(process.env.CLOUD_RUN_TASK_COUNT || '1', 10);
 
-process.env.HEADLESS = 'true';
+if (!process.env.HEADLESS) process.env.HEADLESS = 'true';
 
 async function main() {
     const startTime = Date.now();
@@ -43,8 +43,11 @@ async function main() {
         const { error } = await supabase.auth.signInWithPassword({
             email: workerEmail, password: workerPassword,
         });
-        if (error) console.warn(`⚠️ Auth: ${error.message}`);
-        else console.log('🔐 Autenticado');
+        if (error) {
+            console.error(`❌ Auth falhou: ${error.message} — abortando (RLS pode bloquear queries sem auth)`);
+            process.exit(1);
+        }
+        console.log('🔐 Autenticado');
     }
 
     // ── PEGAR APPLICANT POR POSIÇÃO FIXA ──
@@ -127,7 +130,7 @@ async function main() {
             console.log('📝 Nenhuma application encontrada — criando');
             const { data: newApp, error: insertErr } = await supabase
                 .from('applications')
-                .insert({ applicant_id: target.id, fill_status: 'pending' })
+                .insert({ applicant_id: target.id, fill_status: 'todo' })
                 .select('*')
                 .single();
             if (insertErr || !newApp) {

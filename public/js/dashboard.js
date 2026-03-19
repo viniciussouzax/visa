@@ -67,6 +67,7 @@
             error: { label: 'Erro de dados', class: 'status-erro' },
             retry: { label: 'Repetir', class: 'status-retry' },
             failed: { label: 'Falha técnica', class: 'status-falha' },
+            standby: { label: 'Em espera', class: 'status-standby' },
         };
 
 
@@ -128,7 +129,7 @@
                 const appIds = rows.map(r => r.id);
                 let appMap = {};
                 try {
-                    let appQuery = 'applications?select=applicant_id,application_id,fill_status,security_answer,ds160_pdf_url,confirmation_pdf_url,confirmation_screenshot_url&order=created_at.desc';
+                    let appQuery = 'applications?select=applicant_id,application_id,fill_status,fill_error,security_answer,ds160_pdf_url,confirmation_pdf_url,confirmation_screenshot_url&order=created_at.desc';
                     if (appIds.length > 0 && appIds.length <= 200) appQuery += '&applicant_id=in.(' + appIds.join(',') + ')';
                     const apps = await sbGet(appQuery);
                     if (apps) apps.forEach(a => { if (!appMap[a.applicant_id]) appMap[a.applicant_id] = a; });
@@ -153,6 +154,7 @@
                     ds160_pdf_url: appMap[row.id]?.ds160_pdf_url || null,
                     confirmation_pdf_url: appMap[row.id]?.confirmation_pdf_url || null,
                     confirmation_screenshot_url: appMap[row.id]?.confirmation_screenshot_url || null,
+                    fill_error: appMap[row.id]?.fill_error || null,
                     ais_email: aisMap[row.id]?.email || null,
                     ais_password: aisMap[row.id]?.password || null,
                     ais_status: aisMap[row.id]?.ais_status || null,
@@ -296,7 +298,9 @@
         function filterList() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); renderTable(); }
         function sortBy(field) { if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc'; else { sortField = field; sortDir = 'desc'; } renderTable(); }
 
-        function getFilteredByPage() { return applicants.filter(a => a.stage === currentPage); }
+        // Etapas: mostra apenas trabalho ativo (retry, doing, todo)
+        // done → avançar etapa | error/failed → Processos com Problemas
+        function getFilteredByPage() { return applicants.filter(a => a.stage === currentPage && a.status !== 'error' && a.status !== 'fail' && a.status !== 'done'); }
         function getFiltered() {
                         let items = getFilteredByPage();
             if (currentFilter !== 'all') {
@@ -304,8 +308,12 @@
                 else items = items.filter(a => a.status === currentFilter);
             }
             if (searchQuery) items = items.filter(a => a.name.toLowerCase().includes(searchQuery) || a.passport.toLowerCase().includes(searchQuery) || a.id.toString().toLowerCase().includes(searchQuery) || (a.email || '').toLowerCase().includes(searchQuery) || (a.group_id || '').toLowerCase().includes(searchQuery));
+            // Prioridade: retry(0) > doing(1) > todo(2) > done(3)
+            const STATUS_PRIORITY = { retry: 0, standby: 1, doing: 2, todo: 3 };
             items.sort((a, b) => {
-                // sort_order (drag & drop)
+                const pa = STATUS_PRIORITY[a.status] ?? 9, pb = STATUS_PRIORITY[b.status] ?? 9;
+                if (pa !== pb) return pa - pb;
+                // Dentro do mesmo status: sort_order (drag & drop), depois created_at
                 const sa = a.sort_order ?? 9999, sb = b.sort_order ?? 9999;
                 if (sa !== sb) return sa - sb;
                 const ca = a.created_at || '', cb = b.created_at || '';
@@ -367,7 +375,7 @@
 
             // AIS section
             if (a.ais_email) {
-                const statusMap = {confirmed:{l:'Confirmado',d:'confirmed'},waiting_confirmation:{l:'Aguardando',d:'pending'},confirmation_failed:{l:'Falhou',d:'failed'},email_created:{l:'Email criado',d:'pending'}};
+                const statusMap = {confirmed:{l:'Confirmado',d:'confirmed'},waiting_confirmation:{l:'Aguardando',d:'pending'},confirmation_failed:{l:'Falhou',d:'fail'},email_created:{l:'Email criado',d:'pending'}};
                 const st = statusMap[a.ais_status] || {l:a.ais_status||'—',d:'pending'};
                 if (a.ais_confirmed) { st.l = 'Confirmado'; st.d = 'confirmed'; }
                 const cpBtn = (v) => `<td><button class="cred-copy-btn" title="Copiar" onclick="navigator.clipboard.writeText('${v}');this.innerHTML='<i class=\\'iconoir-check\\'></i>';setTimeout(()=>this.innerHTML='<i class=\\'iconoir-copy\\'></i>',1200)"><i class="iconoir-copy"></i></button></td>`;
@@ -414,6 +422,12 @@
             const tableContainer = document.getElementById('tableContainer');
             const paginationEl = document.getElementById('pagination');
             if (loading) loading.style.display = 'none';
+            // Guard: na overview, tableContainer e pagination devem ficar ocultos
+            if (currentPage === 'overview') {
+                if (tableContainer) tableContainer.style.display = 'none';
+                if (paginationEl) paginationEl.style.display = 'none';
+                return;
+            }
             if (tableContainer) tableContainer.style.display = '';
             if (paginationEl) paginationEl.style.display = '';
 
@@ -465,7 +479,7 @@
                         return `<span class="status-badge ${cfg.class}">${cfg.label}</span>`;
                     })()}</td>
                     <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : '—'}</td>
-                    <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'failed':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '—'}</td>
+                    <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '—'}</td>
                     <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotações"><div class="notes-preview">${a.notes ? a.notes.substring(0, 140) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
 
                     <td><div class="row-actions">
@@ -1239,8 +1253,11 @@
                 <div class="manage-section-label">Status</div>
                 ${(() => {
                     if (a.stage === 'interview') {
-                        // Interview: status fixo pending + select de resultado
-                        return `<div class="status-badge status-pendente" style="margin-bottom:8px">Pendente</div>
+                        // Interview: status manuais + select de resultado para avançar
+                        const manualStatuses = ['todo', 'doing', 'done', 'retry'];
+                        return `<select class="manage-select" onchange="updateField('${id}','status',this.value)">
+                                ${manualStatuses.map(k => { const v = STATUS_CONFIG[k]; return `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v.label}</option>`; }).join('')}
+                            </select>
                             <div class="manage-section-label">Resultado da Entrevista</div>
                             <select class="manage-select" onchange="updateField('${id}','result_advance',this.value)">
                                 <option value="" selected disabled>Selecionar resultado...</option>
@@ -1253,9 +1270,10 @@
                             ${Object.entries(outcomeStatuses).map(([k, v]) => `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v}</option>`).join('')}
                         </select>`;
                     } else {
-                        // Normal stages: status padrão
+                        // Normal stages: status manuais (error/failed/standby são controlados pela automação)
+                        const manualStatuses = ['todo', 'doing', 'done', 'retry'];
                         return `<select class="manage-select" onchange="updateField('${id}','status',this.value)">
-                            ${Object.entries(STATUS_CONFIG).map(([k, v]) => `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v.label}</option>`).join('')}
+                            ${manualStatuses.map(k => { const v = STATUS_CONFIG[k]; return `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v.label}</option>`; }).join('')}
                         </select>`;
                     }
                 })()}
@@ -1515,6 +1533,32 @@
                     patch.status = value === 'analysis' ? 'doing' : 'todo';
                 }
 
+                // AUTO-ADVANCE: status done → avança para próxima etapa com status todo
+                // Regras por etapa:
+                //   triagem → análise (form 100% auto-seta done)
+                //   análise → ds160 (assessor manual)
+                //   ds160 → taxas → agendamento → entrevista (done avança)
+                //   entrevista → resultado (via result_advance, NÃO via done)
+                if (field === 'status' && value === 'done' && a && a.stage !== 'interview' && a.stage !== 'outcome') {
+                    const stageOrder = ['screening', 'analysis', 'ds160', 'payment', 'scheduling', 'interview'];
+                    const curIdx = stageOrder.indexOf(a.stage);
+                    if (curIdx >= 0 && curIdx < stageOrder.length - 1) {
+                        const nextStage = stageOrder[curIdx + 1];
+                        patch.stage = nextStage;
+                        patch.status = 'todo';
+                        // Grupo: avançar todos os membros juntos
+                        if (a.group_id) {
+                            const groupMembers = applicants.filter(x => x.group_id === a.group_id && x.stage === a.stage);
+                            for (const m of groupMembers) {
+                                if (m.id !== id) {
+                                    await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', { stage: nextStage, status: 'todo' });
+                                    m.stage = nextStage;
+                                    m.status = 'todo';
+                                }
+                            }
+                        }
+                    }
+                }
                 // === RESULT ADVANCE: interview → outcome ===
                 if (field === 'result_advance' && a) {
                     patch.stage = 'outcome';
@@ -1588,7 +1632,7 @@
                 const appsRes = await sbGet(`applications?applicant_id=eq.${id}&order=created_at.desc&limit=1`);
                 if (appsRes && appsRes.length > 0) {
                     await sbFetch(`applications?id=eq.${appsRes[0].id}`, 'PATCH', {
-                        fill_status: 'pending',
+                        fill_status: 'todo',
                         fill_error: null,
                         fill_worker_id: null,
                         fill_started_at: null,
@@ -1619,7 +1663,8 @@
         // ==========================================
         // BADGES + HELPERS
         // ==========================================
-        function updateBadges() { Object.keys(PAGE_CONFIG).forEach(p => { const c = applicants.filter(a => a.stage === p).length; const el = document.getElementById('badge-' + p); if (el) el.textContent = c; }); }
+        // Badges: contam apenas trabalho ativo (exclui done, error, failed)
+        function updateBadges() { Object.keys(PAGE_CONFIG).forEach(p => { const c = applicants.filter(a => a.stage === p && a.status !== 'error' && a.status !== 'fail' && a.status !== 'done').length; const el = document.getElementById('badge-' + p); if (el) el.textContent = c; }); }
 
         function formatDate(iso) {
             if (!iso) return '—';
@@ -1845,9 +1890,10 @@
             
 
             // Chart data: 3 segments — Verde (OK), Amarelo (error), Vermelho (fail)
-            const okData = stages.map(st => applicants.filter(a => a.stage === st && a.status !== 'error' && a.status !== 'fail').length);
+            const okData = stages.map(st => applicants.filter(a => a.stage === st && !['error', 'fail', 'standby'].includes(a.status)).length);
             const errorData = stages.map(st => applicants.filter(a => a.stage === st && a.status === 'error').length);
             const failData = stages.map(st => applicants.filter(a => a.stage === st && a.status === 'fail').length);
+            const standbyData = stages.map(st => applicants.filter(a => a.stage === st && a.status === 'standby').length);
             const datasets = [
                 {
                     label: 'Sob controle',
@@ -1870,6 +1916,14 @@
                     data: failData,
                     backgroundColor: '#ef4444',
                     borderColor: '#ef4444',
+                    borderWidth: 0,
+                    borderRadius: 6,
+                },
+                {
+                    label: 'Em espera',
+                    data: standbyData,
+                    backgroundColor: '#818cf8',
+                    borderColor: '#818cf8',
                     borderWidth: 0,
                     borderRadius: 6,
                 },
@@ -1935,7 +1989,7 @@
                                 beginAtZero: true,
                                 ticks: { stepSize: 1, font: { size: 11, family: 'Inter' } },
                                 grid: { color: 'rgba(0,0,0,.04)' },
-                                suggestedMax: Math.max(...okData.map((v,i) => v + (errorData[i]||0) + (failData[i]||0))) + 1,
+                                suggestedMax: Math.max(...okData.map((v,i) => v + (errorData[i]||0) + (failData[i]||0) + (standbyData[i]||0))) + 1,
                             }
                         },
                         interaction: { intersect: false, mode: 'index' },
@@ -1964,18 +2018,32 @@
             if (emptyEl) emptyEl.classList.add('hidden');
             if (tableWrap) tableWrap.style.display = '';
 
+            // Ordenar: error(0) acima de failed(1), dentro do mesmo: sort_order, created_at
+            const PROBLEM_PRIORITY = { error: 0, failed: 1 };
+            problems.sort((a, b) => {
+                const pa = PROBLEM_PRIORITY[a.status] ?? 9, pb = PROBLEM_PRIORITY[b.status] ?? 9;
+                if (pa !== pb) return pa - pb;
+                const sa = a.sort_order ?? 9999, sb2 = b.sort_order ?? 9999;
+                if (sa !== sb2) return sa - sb2;
+                const ca = a.created_at || '', cb = b.created_at || '';
+                if (ca < cb) return -1; if (ca > cb) return 1;
+                return 0;
+            });
+
+            // Layout idêntico às tabelas de etapas
             tbody.innerHTML = problems.map(a => {
                 const cfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.todo;
-                const reason = a.result === 'data_error' ? 'Erro de dados' : a.result === 'tech_fail' ? 'Falha técnica' : a.result || '—';
-                return `<tr>
-                    <td><div class="name-col"><span class="applicant-icon"><i class="iconoir-user"></i></span><div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${a.email || 'Sem email'}</div></div></div></td>
-                    <td><span class="status-badge" style="background:#f1f5f9;color:#475569">${STAGE_LABELS[a.stage] || a.stage}</span></td>
+                return `<tr ondblclick="openReview('${a.id}')" style="cursor:pointer">
+                    <td onclick="openReview('${a.id}')"><div class="name-col"><span class="applicant-icon"><i class="iconoir-user"></i></span><div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${a.email || 'Sem email'}</div></div></div></td>
                     <td><span class="status-badge ${cfg.class}" onclick="event.stopPropagation();openErrorLogsModal('${a.id}','${shortName(a.name).replace(/'/g,"\\'")}')" style="cursor:pointer" title="Ver logs de erro">${cfg.label}</span></td>
-                    <td><span style="font-size:12px;color:var(--text-muted)">${reason}</span></td>
                     <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : '—'}</td>
-                    <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'failed':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '—'}</td>
-                    <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotações"><div class="notes-preview">${a.notes ? a.notes.substring(0, 140) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
-                    <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();navigateTo('${a.stage}')" title="Ir para etapa"><i class="iconoir-arrow-right-circle"></i></button><button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Gerenciar"><i class="iconoir-settings"></i></button></div></td>
+                    <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '—'}</td>
+                    <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotações"><div class="notes-preview">${a.notes ? a.notes.substring(0, 80) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
+                    <td><div class="row-actions">
+                        <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Gerenciar"><i class="iconoir-settings"></i></button>
+                        <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
+                        <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link"><i class="iconoir-copy"></i></button>
+                    </div></td>
                 </tr>`;
             }).join('');
         }

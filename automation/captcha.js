@@ -10,11 +10,39 @@ const fs = require('fs');
  */
 async function solveCaptcha(imagePath, mode, keys) {
     const imageBase64 = fs.readFileSync(imagePath, 'base64');
+    return _solveWithFallback(imageBase64, mode, keys);
+}
 
-    if (mode === 'capmonster') {
-        return solveWithCapMonster(imageBase64, keys.capmonsterKey);
-    } else {
-        return solveWithAIVision(imageBase64, keys.aiVisionKey);
+/**
+ * Internal: try primary mode, fallback to secondary if available.
+ */
+async function _solveWithFallback(imageBase64, mode, keys) {
+    const fallbackMode = mode === 'capmonster' ? 'ai_vision' : 'capmonster';
+    const fallbackKey = fallbackMode === 'capmonster' ? keys.capmonsterKey : keys.aiVisionKey;
+
+    try {
+        const result = mode === 'capmonster'
+            ? await solveWithCapMonster(imageBase64, keys.capmonsterKey)
+            : await solveWithAIVision(imageBase64, keys.aiVisionKey);
+        return result;
+    } catch (primaryErr) {
+        console.warn(`[Captcha] ⚠️ ${mode} falhou: ${primaryErr.message}`);
+
+        if (fallbackKey) {
+            console.log(`[Captcha] 🔄 Tentando fallback: ${fallbackMode}`);
+            try {
+                const result = fallbackMode === 'capmonster'
+                    ? await solveWithCapMonster(imageBase64, keys.capmonsterKey)
+                    : await solveWithAIVision(imageBase64, keys.aiVisionKey);
+                console.log(`[Captcha] ✅ Fallback ${fallbackMode} funcionou`);
+                return result;
+            } catch (fallbackErr) {
+                console.error(`[Captcha] ❌ Fallback ${fallbackMode} também falhou: ${fallbackErr.message}`);
+                throw new Error(`Captcha: ambos modos falharam. ${mode}: ${primaryErr.message} | ${fallbackMode}: ${fallbackErr.message}`);
+            }
+        }
+
+        throw primaryErr;
     }
 }
 
@@ -101,11 +129,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
  * Solve captcha directly from base64 string (no file needed).
  */
 async function solveCaptchaBase64(imageBase64, mode, keys) {
-    if (mode === 'capmonster') {
-        return solveWithCapMonster(imageBase64, keys.capmonsterKey);
-    } else {
-        return solveWithAIVision(imageBase64, keys.aiVisionKey);
-    }
+    return _solveWithFallback(imageBase64, mode, keys);
 }
 
 /**

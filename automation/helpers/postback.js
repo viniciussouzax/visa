@@ -6,11 +6,11 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 /**
  * Espera o ASP.NET PageRequestManager terminar o postback assíncrono,
  * depois estabiliza a contagem de campos visíveis.
- * OTIMIZADO: timeout 3s, estabilização rápida 80ms polling.
+ * OTIMIZADO: timeout 8s (proxy residencial pode ser lento), estabilização rápida 80ms polling.
  */
-async function waitForPostback(page, timeout = 3000) {
+async function waitForPostback(page, timeout = 8000) {
     const start = Date.now();
-    // 1. Espera ASP.NET terminar (timeout reduzido de 8s → 3s)
+    // 1. Espera ASP.NET terminar (aumentado para 8s — proxy residencial pode adicionar latência)
     await page.waitForFunction(() => {
         const mgr = window.Sys?.WebForms?.PageRequestManager?.getInstance?.();
         return !mgr || !mgr.get_isInAsyncPostBack();
@@ -29,7 +29,7 @@ async function waitForPostback(page, timeout = 3000) {
 
     const initial = await countFields();
     let last = initial, stable = 0;
-    while (Date.now() - start < 2000) { // Estabilização max 2s (era 3s)
+    while (Date.now() - start < 4000) { // Estabilização max 4s (proxy residencial pode ser lento)
         await sleep(80); // Polling 80ms (era 150ms)
         const cur = await countFields();
         if (cur !== initial && cur === last) { stable += 80; if (stable >= 160) break; } // Estável após 160ms (era 300ms)
@@ -82,16 +82,21 @@ async function waitForUrlChange(page, urlBefore, timeout = 4000) {
 async function discoverFields(page) {
     return page.evaluate(() => {
         const fields = [];
+        const isVisible = (el) => {
+            if (el.offsetParent === null && el.type !== 'radio' && el.type !== 'checkbox') return false;
+            const style = getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden';
+        };
         document.querySelectorAll('select').forEach(sel => {
             if (sel.id.includes('ddlLanguage')) return;
-            fields.push({ tag: 'select', id: sel.id, visible: sel.offsetParent !== null, value: sel.value, optCount: sel.options.length });
+            fields.push({ tag: 'select', id: sel.id, visible: isVisible(sel), value: sel.value, optCount: sel.options.length });
         });
         document.querySelectorAll('input').forEach(inp => {
             if (inp.type === 'hidden') return;
-            fields.push({ tag: 'input', id: inp.id, type: inp.type, visible: inp.offsetParent !== null || inp.type === 'radio' || inp.type === 'checkbox', value: inp.value, checked: inp.checked });
+            fields.push({ tag: 'input', id: inp.id, type: inp.type, visible: isVisible(inp), value: inp.value, checked: inp.checked });
         });
         document.querySelectorAll('textarea').forEach(ta => {
-            fields.push({ tag: 'textarea', id: ta.id, visible: ta.offsetParent !== null, value: ta.value });
+            fields.push({ tag: 'textarea', id: ta.id, visible: isVisible(ta), value: ta.value });
         });
         return fields;
     });

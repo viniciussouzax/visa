@@ -388,6 +388,7 @@
         const _directParam = _params.get('direct');
         let _groupParam = _params.get('group');
         let _companyId = null;
+        let _applicantStage = null; // stage do applicant — controla auto-transition de status
 
         // Detect role: assessor ONLY when tab=editar or tab=assessor
         let _isAssessor = (_tabParam === 'editar' || _tabParam === 'assessor');
@@ -505,11 +506,12 @@
             if (!_applicantId) { console.warn('[Form] loadApplicantData: _applicantId is empty!'); return; }
             console.log('[Form] loadApplicantData START — id:', _applicantId, 'isAssessor:', _isAssessor);
             try {
-                const rows = await sbGet('applicants?id=eq.' + _applicantId + '&select=id,full_name,email,status,data&limit=1');
+                const rows = await sbGet('applicants?id=eq.' + _applicantId + '&select=id,full_name,email,status,stage,data&limit=1');
                 console.log('[Form] sbGet result:', rows ? rows.length + ' rows' : 'null', rows && rows[0] ? 'has data: ' + !!rows[0].data : 'no row');
                 if (rows && rows[0] && rows[0].data) {
                     // Populate engine data properly using form engine internal loader
                     engine.loadData(rows[0].data);
+                    _applicantStage = rows[0].stage || 'screening';
 
                     // Re-render form with loaded data
                     engine.renderForm();
@@ -744,8 +746,9 @@
                     if (fullName) updatePayload.full_name = fullName;
                     if (passport) updatePayload.passport_number = passport;
 
-                    // Auto status transitions for portal users in screening stage
-                    if (!_isAssessor) {
+                    // Auto status transitions — ONLY for screening/analysis stages
+                    // Na etapa ds160+, status é gerenciado pela automação (queue.js)
+                    if (!_isAssessor && _applicantStage && ['screening', 'analysis'].includes(_applicantStage)) {
                         const progress = engine.calcOverallProgress();
                         if (progress >= 100) {
                             updatePayload.status = 'done';

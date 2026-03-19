@@ -11,11 +11,12 @@ function getFiller() {
 const path = require('path');
 
 const POLL_INTERVAL = 30; // 30 seconds fallback (Realtime handles instant detection)
-const MAX_RETRIES = 5;
+const MAX_RETRIES = 3;
 const BACKOFF_DELAYS = [2 * 60, 4 * 60, 6 * 60, 8 * 60]; // 2min, 4min, 6min, 8min between retries
 const GLOBAL_PAUSE = 15 * 60; // 15min pause after 3 consecutive global errors
 const STALE_FILLING_TIMEOUT = 10 * 60; // 10min â€” if filling for longer, consider stale
 const RE_QUEUE_DELAY = 15 * 60; // 15min â€” wait before retrying after max retries exhausted
+const STANDBY_COOLDOWN = 30 * 60; // 30min â€” wait before retrying standby (site-side issue)
 
 class QueueRunner {
     constructor(supabase, captchaMode) {
@@ -174,6 +175,20 @@ class QueueRunner {
                     continue;
                 }
 
+                // 3.5 DoR — Definition of Ready (gate preventivo)
+                const readiness = this._validateReadiness(applicant);
+                if (!readiness.ready) {
+                    const missingList = readiness.missing.join(', ');
+                    const errMsg = `Dados incompletos: ${missingList}`;
+                    console.log(`[Queue] ❌ DoR falhou para ${applicant.full_name}: ${missingList}`);
+                    await this._markError(app.id, errMsg, app.applicant_id);
+                    await this._logError(app, applicant, errMsg, null, 'DoR', null, 'missing_data', null, readiness.missing.map(f => `Campo faltante: ${f}`));
+                    await this.supabase.from('applicants').update({
+                        status: 'error', updated_at: new Date().toISOString()
+                    }).eq('id', app.applicant_id);
+                    continue;
+                }
+
                 // 4. Mark applicant as 'doing' (syncs with dashboard)
                 await this.supabase.from('applicants').update({
                     status: 'doing',
@@ -193,7 +208,7 @@ class QueueRunner {
                 // Sem isso o solicitante ficava preso em 'doing' para sempre
                 if (app?.applicant_id) {
                     await this.supabase.from('applicants').update({
-                        status: 'failed',
+                        status: 'fail',
                         updated_at: new Date().toISOString()
                     }).eq('id', app.applicant_id).catch(() => {});
                     console.log(`[Queue] âŒ Applicant ${app.applicant_id} marcado como failed (exception no loop)`);
@@ -228,7 +243,7 @@ class QueueRunner {
             currentRetry++;
 
             this.emit({
-                type: 'filling',
+                type: 'doing',
                 applicantName: currentApplicant.full_name,
                 page: currentApp.last_page ? `Retomando de ${currentApp.last_page}` : 'Iniciando...'
             });
@@ -263,10 +278,15 @@ class QueueRunner {
                 const { data: oldFiles } = await this.supabase.storage.from('screenshots').list(folder);
                 if (oldFiles && oldFiles.length > 0) {
                     const paths = oldFiles.map(f => `${folder}/${f.name}`);
-                    await this.supabase.storage.from('screenshots').remove(paths);
-                    console.log(`[Queue] 🧹 Storage cleanup: ${paths.length} old files removed`);
+                    // Usar remove em batch — se falhar, logar mas não bloquear
+                    const { error: removeErr } = await this.supabase.storage.from('screenshots').remove(paths);
+                    if (removeErr) {
+                        console.warn(`[Queue] ⚠️ Storage cleanup parcial: ${removeErr.message}`);
+                    } else {
+                        console.log(`[Queue] 🧹 Storage cleanup: ${paths.length} old files removed`);
+                    }
                 }
-            } catch (e) { /* ignore cleanup errors */ }
+            } catch (e) { console.warn(`[Queue] ⚠️ Storage cleanup error: ${e.message}`); }
 
             const onAppId = async (appId) => {
                 try {
@@ -282,7 +302,7 @@ class QueueRunner {
 
             const result = await fillApplication(currentApplicant, currentApp, onAppId, currentConfig, captchaMode, (page) => {
                 lastPage = page;
-                this.emit({ type: 'filling', applicantName: currentApplicant.full_name, page });
+                this.emit({ type: 'doing', applicantName: currentApplicant.full_name, page });
             }, async (pageStats) => {
                 try {
                     await this.supabase.from('fill_logs').insert({
@@ -358,6 +378,10 @@ class QueueRunner {
                 }
 
                 if (result.browser) await result.browser.close().catch(() => {});
+                // DoD — Definition of Done: confirmar applicationId
+                if (!result.applicationId) {
+                    console.warn('[Queue] ⚠️ DoD: success sem applicationId — marcando como done mas sem confirmação');
+                }
                 await this._markDone(currentApp.id, result.applicationId, lastPage);
                 this.emit({ type: 'done', applicantName: currentApplicant.full_name });
                 this.consecutiveErrors = 0;
@@ -436,12 +460,20 @@ class QueueRunner {
                 return;
             }
 
-            // ── MAX RETRIES → stop ──
+            // ── MAX RETRIES → distinguir causa ──
             if (currentRetry >= MAX_RETRIES) {
                 if (result.browser) await result.browser.close().catch(() => {});
-                await this._reQueue(currentApp.id, result.error);
-                console.log(`[DS160] ♻️ ${currentApplicant.full_name} → re-queued (${currentRetry}/${MAX_RETRIES})`);
-                this.emit({ type: 'error', applicantName: currentApplicant.full_name, error: `${errDetail} (${currentRetry}/${MAX_RETRIES})` });
+                // Causas do site → standby (auto-retry após cooldown)
+                const siteCauses = ['timeout', 'network_error', 'page_stuck', 'postback_stuck', 'captcha_failed', 'session_expired'];
+                if (siteCauses.includes(result.cause)) {
+                    await this._markStandby(currentApp.id, result.error, currentApp.applicant_id);
+                    console.log(`[DS160] ⏸️ ${currentApplicant.full_name} → standby (site issue: ${result.cause})`);
+                    this.emit({ type: 'standby', applicantName: currentApplicant.full_name, error: `Em espera: ${result.cause}` });
+                } else {
+                    await this._reQueue(currentApp.id, result.error);
+                    console.log(`[DS160] ♻️ ${currentApplicant.full_name} → re-queued (${currentRetry}/${MAX_RETRIES})`);
+                    this.emit({ type: 'error', applicantName: currentApplicant.full_name, error: `${errDetail} (${currentRetry}/${MAX_RETRIES})` });
+                }
                 return;
             }
 
@@ -488,8 +520,14 @@ class QueueRunner {
             currentApp = { ...currentApp, retry_count: currentRetry, last_page: lastPage };
         }
 
-        // Safety net
+        // Safety net: se loop terminou sem resolver, marcar como retry
         if (currentBrowser) await currentBrowser.close().catch(() => {});
+        if (currentApp?.applicant_id) {
+            await this.supabase.from('applicants').update({
+                status: 'retry', updated_at: new Date().toISOString()
+            }).eq('id', currentApp.applicant_id).eq('status', 'doing').catch(() => {});
+            console.log(`[Queue] Safety net: ${currentApp.applicant_id} resetado de doing → retry`);
+        }
     }
 
     // ==============================================================
@@ -553,7 +591,7 @@ class QueueRunner {
     // CLAIM / QUERY (filtered by organization)
     // Order: sort_order ASC (drag & drop backlog)
     // Resume-first: applicants with existing application_id come first
-    // Auto-reset: if application is 'filled', reset to 'pending'
+    // Auto-reset: if application is 'done', reset to 'pending'
     // Auto-create: if no application exists, create one
     // ==============================================================
     async _claimNext() {
@@ -572,8 +610,8 @@ class QueueRunner {
         const staleThreshold = new Date(Date.now() - STALE_FILLING_TIMEOUT * 1000).toISOString();
         let staleQuery = this.supabase
             .from('applications')
-            .select('id')
-            .eq('fill_status', 'filling')
+            .select('id, applicant_id')
+            .eq('fill_status', 'doing')
             .neq('fill_worker_id', this.workerId)
             .lt('fill_started_at', staleThreshold);
         if (applicantIds) staleQuery = staleQuery.in('applicant_id', applicantIds);
@@ -581,33 +619,47 @@ class QueueRunner {
         if (stale && stale.length > 0) {
             for (const s of stale) {
                 await this.supabase.from('applications').update({
-                    fill_status: 'pending',
+                    fill_status: 'todo',
                     fill_worker_id: null,
                 }).eq('id', s.id);
-                console.log(`[Queue] Recovered stale: ${s.id}`);
+                // Fix: resetar applicant.status para não ficar preso em 'doing'
+                if (s.applicant_id) {
+                    await this.supabase.from('applicants').update({
+                        status: 'todo',
+                        updated_at: new Date().toISOString()
+                    }).eq('id', s.applicant_id).eq('status', 'doing');
+                }
+                console.log(`[Queue] Recovered stale: ${s.id} (applicant reset to todo)`);
             }
         }
 
         // 0b. Recovery: reset orphaned fills (filling but no started_at â€” crashed before start)
         let orphanQuery = this.supabase
             .from('applications')
-            .select('id')
-            .eq('fill_status', 'filling')
+            .select('id, applicant_id')
+            .eq('fill_status', 'doing')
             .is('fill_started_at', null);
         if (applicantIds) orphanQuery = orphanQuery.in('applicant_id', applicantIds);
         const { data: orphans } = await orphanQuery;
         if (orphans && orphans.length > 0) {
             for (const o of orphans) {
                 await this.supabase.from('applications').update({
-                    fill_status: 'pending',
+                    fill_status: 'todo',
                     fill_worker_id: null,
                 }).eq('id', o.id);
-                console.log(`[Queue] Recovered orphan: ${o.id}`);
+                // Fix: resetar applicant.status para não ficar preso em 'doing'
+                if (o.applicant_id) {
+                    await this.supabase.from('applicants').update({
+                        status: 'todo',
+                        updated_at: new Date().toISOString()
+                    }).eq('id', o.applicant_id).eq('status', 'doing');
+                }
+                console.log(`[Queue] Recovered orphan: ${o.id} (applicant reset to todo)`);
             }
         }
 
-        // 1. PRIORITY: ds160 applicants with fill_status != filled/pending (resume incomplete)
-        //    These are applicants being actively processed (filling, error, needs_attention)
+        // 1. PRIORITY: ds160 applicants with fill_status != done/todo (resume incomplete)
+        //    These are applicants being actively processed (doing, error)
         let resumeQuery = this.supabase
             .from('applicants')
             .select('id')
@@ -622,18 +674,18 @@ class QueueRunner {
                 .from('applications')
                 .select('*')
                 .in('applicant_id', resumeIds)
-                .in('fill_status', ['filling', 'error', 'needs_attention', 'queued', 'pending'])
+                .in('fill_status', ['doing', 'error', 'todo'])
                 .limit(1);
 
             if (resumeApps && resumeApps.length > 0) {
                 const app = resumeApps[0];
                 await this.supabase.from('applications').update({
-                    fill_status: 'filling',
+                    fill_status: 'doing',
                     fill_started_at: new Date().toISOString(),
                     fill_worker_id: this.workerId
                 }).eq('id', app.id);
                 console.log('[Queue] Resuming:', app.id);
-                return { ...app, fill_status: 'filling' };
+                return { ...app, fill_status: 'doing' };
             }
         }
 
@@ -649,24 +701,39 @@ class QueueRunner {
         if (applicantIds) approvedQuery = approvedQuery.in('id', applicantIds);
         const { data: approvedApplicants, error: approvedErr } = await approvedQuery.limit(20);
 
+        // 2b. STANDBY: include standby applicants whose cooldown expired
+        const standbyCutoff = new Date(Date.now() - STANDBY_COOLDOWN * 1000).toISOString();
+        let standbyQuery = this.supabase
+            .from('applicants')
+            .select('id, sort_order')
+            .eq('stage', 'ds160')
+            .eq('status', 'standby')
+            .lt('updated_at', standbyCutoff)
+            .order('sort_order', { ascending: true });
+        if (applicantIds) standbyQuery = standbyQuery.in('id', applicantIds);
+        const { data: standbyApplicants } = await standbyQuery.limit(10);
+
+        // Merge: approved first, then standby (lower priority)
+        const allCandidates = [...(approvedApplicants || []), ...(standbyApplicants || [])];
+
         
-        if (!approvedApplicants || approvedApplicants.length === 0) return null;
+        if (!allCandidates || allCandidates.length === 0) return null;
 
         // Check which candidates have existing application_id (resume-first)
-        const candidateIds = approvedApplicants.map(a => a.id);
+        const candidateIds = allCandidates.map(a => a.id);
         const { data: appsWithId } = await this.supabase
             .from('applications')
             .select('applicant_id')
             .in('applicant_id', candidateIds)
             .not('application_id', 'is', null)
-            .eq('fill_status', 'pending');
+            .eq('fill_status', 'todo');
 
         const resumeSet = new Set((appsWithId || []).map(a => a.applicant_id));
 
         // Sorted by sort_order from DB query (drag & drop backlog)
         const sorted = [
-            ...approvedApplicants.filter(a => resumeSet.has(a.id)),
-            ...approvedApplicants.filter(a => !resumeSet.has(a.id))
+            ...allCandidates.filter(a => resumeSet.has(a.id)),
+            ...allCandidates.filter(a => !resumeSet.has(a.id))
         ];
 
         // Try each applicant (resume-first, then sort_order) until one is claimable
@@ -703,7 +770,7 @@ class QueueRunner {
             console.log(`[Queue] No application for ${applicantId} â€” creating`);
             const { data: newApp, error: createErr } = await this.supabase
                 .from('applications')
-                .insert({ applicant_id: applicantId, fill_status: 'pending' })
+                .insert({ applicant_id: applicantId, fill_status: 'todo' })
                 .select()
                 .single();
             if (createErr) {
@@ -711,11 +778,11 @@ class QueueRunner {
                 return null;
             }
             app = newApp;
-        } else if (app.fill_status === 'filled') {
+        } else if (app.fill_status === 'done') {
             // Application exists but was already filled â€” auto-reset for re-fill
             console.log(`[Queue] Auto-resetting filled application ${app.id} for re-fill`);
             const { error: resetErr } = await this.supabase.from('applications').update({
-                fill_status: 'pending',
+                fill_status: 'todo',
                 fill_error: null,
                 fill_worker_id: null,
                 fill_started_at: null,
@@ -729,18 +796,18 @@ class QueueRunner {
                 console.error('[Queue] Failed to reset application:', resetErr.message);
                 return null;
             }
-            app.fill_status = 'pending';
-        } else if (app.fill_status === 'filling') {
-            // Already being filled by another worker â€” skip
+            app.fill_status = 'todo';
+        } else if (app.fill_status === 'doing') {
+            // Already being filled by another worker — skip
             return null;
-        } else if (app.fill_status === 'system_error') {
-            // System error â€” requires dev/AI fix, skip until manually released
+        } else if (app.fill_status === 'fail') {
+            // System failure — requires dev/AI fix, skip until manually released
             return null;
-        } else if (app.fill_status === 'queued' || app.fill_status === 'needs_attention' || app.fill_status === 'error') {
-            // Reset to pending so it can be claimed
-            console.log(`[Queue] Resetting ${app.fill_status} application ${app.id} to pending`);
+        } else if (app.fill_status === 'error') {
+            // Reset to todo so it can be claimed
+            console.log(`[Queue] Resetting ${app.fill_status} application ${app.id} to todo`);
             const { error: resetErr } = await this.supabase.from('applications').update({
-                fill_status: 'pending',
+                fill_status: 'todo',
                 fill_error: null,
                 fill_worker_id: null,
                 fill_started_at: null,
@@ -751,7 +818,7 @@ class QueueRunner {
                 console.error('[Queue] Failed to reset application:', resetErr.message);
                 return null;
             }
-            app.fill_status = 'pending';
+            app.fill_status = 'todo';
         }
 
         // Claim: use RPC (SECURITY DEFINER, bypasses RLS)
@@ -766,7 +833,7 @@ class QueueRunner {
         // Pipeline stays 'approved' during filling (fill_status shows progress)
                 console.log(`[Queue] Claimed ${app.id} -> filling [sort:${app.sort_order || '?'}]`);
 
-        return { ...claimed, fill_status: 'filling' };
+        return { ...claimed, fill_status: 'doing' };
     }
 
     async _getApp(appId) {
@@ -795,7 +862,7 @@ class QueueRunner {
         const { data: appData } = await this.supabase
             .from('applications')
             .update({
-                fill_status: 'filled',
+                fill_status: 'done',
                 fill_finished_at: new Date().toISOString(),
                 application_id: applicationId || null,
                 last_page: lastPage || null,
@@ -879,7 +946,7 @@ class QueueRunner {
         await this.supabase
             .from('applications')
             .update({
-                fill_status: 'needs_attention',
+                fill_status: 'error',
                 fill_error: errMsg,
                 last_error_at: new Date().toISOString()
             })
@@ -891,16 +958,16 @@ class QueueRunner {
         await this.supabase
             .from('applications')
             .update({
-                fill_status: 'system_error',
+                fill_status: 'fail',
                 fill_error: errMsg,
                 last_error_at: new Date().toISOString()
             })
             .eq('id', appId);
 
-                // Sync applicant status to 'failed' (technical failure, dev resolves)
+                // Sync applicant status to 'fail' (technical failure, dev resolves)
         if (applicantId) {
             await this.supabase.from('applicants').update({
-                status: 'failed',
+                status: 'fail',
                 updated_at: new Date().toISOString()
             }).eq('id', applicantId);
         }
@@ -912,7 +979,7 @@ class QueueRunner {
         const { data: appData } = await this.supabase
             .from('applications')
             .update({
-                fill_status: 'pending',
+                fill_status: 'todo',
                 fill_worker_id: null,
                 retry_count: 0,
                 fill_error: errMsg,
@@ -930,6 +997,25 @@ class QueueRunner {
             }).eq('id', appData.applicant_id);
         }
         console.log(`[Queue] Re-queued ${appId} with status=retry`);
+    }
+
+    // Standby: site-side issue — auto-retry after STANDBY_COOLDOWN
+    async _markStandby(appId, errMsg, applicantId) {
+        await this.supabase.from('applications').update({
+            fill_status: 'todo',
+            fill_worker_id: null,
+            retry_count: 0,
+            fill_error: errMsg,
+            last_error_at: new Date().toISOString()
+        }).eq('id', appId);
+
+        if (applicantId) {
+            await this.supabase.from('applicants').update({
+                status: 'standby',
+                updated_at: new Date().toISOString()
+            }).eq('id', applicantId);
+        }
+        console.log(`[Queue] Standby ${appId} — site issue, auto-retry in ${STANDBY_COOLDOWN / 60}min`);
     }
 
     async _updateRetry(appId, retryCount, lastPage, errMsg) {
@@ -971,6 +1057,32 @@ class QueueRunner {
         } catch (e) {
             console.warn('Failed to log error to Supabase:', e.message);
         }
+    }
+
+    // ── DoR — Definition of Ready ──────────────────────────────
+    // Valida campos obrigatórios mínimos ANTES de iniciar automação
+    // Páginas: 1 (location) + 2 (personal1)
+    _validateReadiness(applicant) {
+        const data = applicant.data || {};
+        const missing = [];
+
+        // Page 1 — Location
+        if (!data.location?.location) missing.push('Local da entrevista');
+
+        // Page 2 — Personal 1 (todos os required do schema)
+        if (!data.personal1?.surname) missing.push('Sobrenome');
+        if (!data.personal1?.givenName) missing.push('Nome');
+        if (!data.personal1?.fullNameNative) missing.push('Nome completo nativo');
+        if (!data.personal1?.otherNamesUsed) missing.push('Já usou outros nomes?');
+        if (!data.personal1?.telecode) missing.push('Possui telecode?');
+        if (!data.personal1?.sex) missing.push('Sexo');
+        if (!data.personal1?.maritalStatus) missing.push('Estado civil');
+        if (!data.personal1?.dob) missing.push('Data de nascimento');
+        if (!data.personal1?.cityOfBirth) missing.push('Cidade de nascimento');
+        if (!data.personal1?.stateOfBirth) missing.push('Estado de nascimento');
+        if (!data.personal1?.countryOfBirth) missing.push('País de nascimento');
+
+        return { ready: missing.length === 0, missing };
     }
 }
 

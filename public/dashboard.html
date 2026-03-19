@@ -51,6 +51,7 @@
         .status-preenchido { background: #dcfce7; color: #16a34a; }
         .status-erro { background: #fef3c7; color: #d97706; }
         .status-falha { background: #fee2e2; color: #dc2626; }
+        .status-standby { background: #e0e7ff; color: #4f46e5; animation: pulse-status 3s ease-in-out infinite; }
         @keyframes pulse-status {
             0%, 100% { opacity: 1; }
             50% { opacity: .6; }
@@ -172,9 +173,7 @@
                     <thead>
                         <tr>
                             <th>Solicitante</th>
-                            <th>Etapa</th>
                             <th>Status</th>
-                            <th>Motivo</th>
                             <th>DS-160</th>
                             <th>AIS</th>
                             <th>Nota</th>

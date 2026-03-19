@@ -1,6 +1,7 @@
-// DS-160 Filler ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â extracted from the working Playwright test
-// Uses Playwright's Firefox (less detectable by anti-bot systems)
-const { firefox } = require('playwright');
+// DS-160 Filler — uses patchright (stealth Playwright fork) + real Chrome
+// patchright patches CDP leaks (Runtime.enable, Console.enable, --enable-automation)
+// that standard Playwright exposes, making automation undetectable
+const { chromium } = require('patchright');
 const path = require('path');
 const fs = require('fs');
 const { solveCaptcha, solveCaptchaBase64 } = require('./captcha');
@@ -14,6 +15,47 @@ const { fillTravelPage } = require('./pages/travel-page');
 const { getValidationErrors } = require('./helpers/verify');
 
 const TMP = path.join(__dirname, '..', 'tmp');
+
+// ====================================================================
+// HUMAN SIMULATION HELPERS — realistic interaction timing
+// ====================================================================
+/** Random delay between min-max ms */
+async function humanDelay(page, min = 300, max = 800) {
+    await page.waitForTimeout(min + Math.floor(Math.random() * (max - min)));
+}
+
+/** Type text with human-like variable delay per keystroke */
+async function humanType(page, selector, text) {
+    const el = typeof selector === 'string' ? page.locator(selector) : selector;
+    await el.click();
+    await humanDelay(page, 100, 300);
+    // Clear existing value
+    await el.fill('');
+    // Type character by character with variable delays
+    for (const char of text) {
+        await page.keyboard.type(char, { delay: 60 + Math.floor(Math.random() * 120) });
+    }
+    await humanDelay(page, 50, 200);
+}
+
+/** Click with mouse movement + press/release (more human-like than instant click) */
+async function humanClick(page, selector) {
+    const el = typeof selector === 'string' ? page.locator(selector) : selector;
+    const box = await el.boundingBox();
+    if (box) {
+        const targetX = box.x + box.width / 2 + (Math.random() * 6 - 3);
+        const targetY = box.y + box.height / 2 + (Math.random() * 4 - 2);
+        await page.mouse.move(targetX, targetY, { steps: 10 + Math.floor(Math.random() * 15) });
+        await humanDelay(page, 50, 200);
+        // press/release instead of instant click — anti-bots detect instant clicks
+        await page.mouse.down();
+        await page.waitForTimeout(30 + Math.floor(Math.random() * 70));
+        await page.mouse.up();
+    } else {
+        await el.click();
+    }
+    await humanDelay(page, 100, 400);
+}
 
 // ====================================================================
 // MAIN ENTRY POINT
@@ -41,6 +83,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
     // === PRE-FILL VALIDATION: Check required fields exist in JSON ===
     const missingFields = [];
+    // Location (essencial — sem ele o landing não avança)
+    if (!profile.location) missingFields.push('location');
     // Personal 1
     if (!profile.surname) missingFields.push('personal1.surname');
     if (!profile.givenName) missingFields.push('personal1.givenName');
@@ -104,47 +148,141 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
         }
 
         if (!browser) {
-            // Launch fresh Playwright Firefox
-            const launchOpts = {
-                headless: process.env.HEADLESS !== 'false',
-            };
+            // ══════════════════════════════════════════════════
+            // STEALTH BROWSER SETUP — professional anti-detect
+            // 1 user = 1 IP = 1 session throughout entire flow
+            // ══════════════════════════════════════════════════
+            const isHeadless = process.env.HEADLESS !== 'false';
 
-            // Proxy support — assigned per container via ds160-entry.js
+            // ── PROXY (sticky session — same IP for entire execution) ──
             const proxyUrl = config.proxy_url || process.env.PROXY_URL || null;
+            let proxyOpts = undefined;
             if (proxyUrl) {
                 try {
                     const parsed = new URL(proxyUrl);
-                    launchOpts.proxy = {
+                    if (!parsed.hostname || !parsed.port) {
+                        throw new Error(`URL incompleta: hostname=${parsed.hostname}, port=${parsed.port}`);
+                    }
+                    // Sticky session: append session ID to keep same IP for entire execution
+                    const sessionId = config.session_id || `ds160_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                    let username = decodeURIComponent(parsed.username) || '';
+                    // DataImpulse/BrightData sticky format: user-session-XXX
+                    if (username && !username.includes('-session-')) {
+                        username = `${username}-session-${sessionId}`;
+                    }
+                    proxyOpts = {
                         server: `${parsed.protocol}//${parsed.hostname}:${parsed.port}`,
-                        username: decodeURIComponent(parsed.username) || undefined,
+                        username: username || undefined,
                         password: decodeURIComponent(parsed.password) || undefined,
                     };
-                    console.log(`[Filler] 🔒 Proxy: ${parsed.hostname}:${parsed.port}`);
+                    console.log(`[Filler] 🔒 Proxy sticky: ${parsed.hostname}:${parsed.port} (session=${sessionId})`);
                 } catch (e) {
-                    console.warn(`[Filler] ⚠️ Proxy inválido: ${e.message}`);
+                    throw new Error(`Proxy URL inválida (${proxyUrl}): ${e.message}`);
                 }
             }
 
-            browser = await firefox.launch(launchOpts);
-            const contextOpts = { viewport: { width: 1280, height: 900 } };
-            // BrightData/residential proxies intercept HTTPS — accept their certs
-            if (proxyUrl) contextOpts.ignoreHTTPSErrors = true;
+            // ── IDENTITY (consistent per session — never changes mid-flow) ──
+            const useUsLocale = proxyUrl && (proxyUrl.includes('dataimpulse') || proxyUrl.includes('brightdata') || proxyUrl.includes('us-'));
+            const identity = {
+                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                locale: useUsLocale ? 'en-US' : 'pt-BR',
+                timezoneId: useUsLocale ? 'America/New_York' : 'America/Sao_Paulo',
+                geolocation: useUsLocale ? { latitude: 40.7128, longitude: -74.0060 } : { latitude: -23.5505, longitude: -46.6333 },
+            };
+
+            // ── LAUNCH ARGS (anti-automation + anti-throttling flags) ──
+            const launchArgs = [
+                '--disable-blink-features=AutomationControlled',
+                '--disable-features=IsolateOrigins,site-per-process',
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--disable-gpu',
+                '--window-size=1366,768',
+                '--start-maximized',
+                // Anti-throttling: prevent Chrome from throttling background tabs/timers
+                '--disable-background-timer-throttling',
+                '--disable-backgrounding-occluded-windows',
+                '--disable-renderer-backgrounding',
+                '--disable-ipc-flooding-protection',
+                '--enable-features=NetworkService,NetworkServiceInProcess',
+                // WebRTC leak prevention
+                '--enforce-webrtc-ip-permission-check',
+                '--disable-webrtc-hw-decoding',
+                '--disable-webrtc-hw-encoding',
+            ];
+
+            // ── BROWSER + CONTEXT (playwright-extra compatible) ──
+            const storageStatePath = path.join(TMP, 'storage-state.json');
+            const hasStorageState = fs.existsSync(storageStatePath);
+
+            const launchOpts = {
+                headless: isHeadless ? 'new' : false,
+                channel: 'chrome',  // Chrome real: correct fingerprint (plugins, chrome.app, WebGL)
+                // patchright CDP patches operate at protocol level, work with any channel
+                args: launchArgs,
+            };
+            if (proxyOpts) launchOpts.proxy = proxyOpts;
+
+            browser = await chromium.launch(launchOpts);
+
+            const contextOpts = {
+                viewport: { width: 1366, height: 768 },
+                screen: { width: 1366, height: 768 },
+                // With channel:'chrome', let Chrome send its OWN real UA (avoids version mismatch)
+                // Only override when using bundled Chromium (no channel) e.g. in Docker
+                ...(isHeadless ? { userAgent: identity.userAgent } : {}),
+                locale: identity.locale,
+                timezoneId: identity.timezoneId,
+                geolocation: identity.geolocation,
+                permissions: ['geolocation'],
+                colorScheme: 'light',
+                deviceScaleFactor: 1,
+                isMobile: false,
+                hasTouch: false,
+                javaScriptEnabled: true,
+                bypassCSP: true,  // Allow stealth script injection
+                ignoreHTTPSErrors: true,
+                // HTTP headers that TSPD/Akamai checks — must match real browser
+                extraHTTPHeaders: {
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'Accept-Language': identity.locale === 'pt-BR' ? 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7' : 'en-US,en;q=0.9',
+                    'DNT': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                    'Upgrade-Insecure-Requests': '1',
+                },
+            };
+
+            // Restore session from previous attempt if available
+            if (hasStorageState) {
+                try {
+                    contextOpts.storageState = JSON.parse(fs.readFileSync(storageStatePath, 'utf8'));
+                    console.log('[Filler] 🍪 Restored storageState from previous session');
+                } catch (e) {
+                    console.warn('[Filler] Could not restore storageState:', e.message);
+                }
+            }
+
             const context = await browser.newContext(contextOpts);
             page = await context.newPage();
             page.setDefaultTimeout(proxyUrl ? 60000 : 15000);
             page.setDefaultNavigationTimeout(proxyUrl ? 90000 : 30000);
             page.on('dialog', async d => d.accept().catch(() => { }));
-            console.log('[Filler] Novo browser criado');
+
+            // Save session state periodically (for retry resilience)
+            browser._saveSession = async () => {
+                try {
+                    const state = await context.storageState();
+                    fs.writeFileSync(storageStatePath, JSON.stringify(state));
+                } catch { /* ignore errors during save */ }
+            };
+
+            console.log(`[Filler] Novo browser criado (headless=${isHeadless}, proxy=${!!proxyUrl})`);
         }
-
-        // Anti-detection: hide webdriver flag
-        await page.addInitScript(() => {
-            Object.defineProperty(navigator, 'webdriver', { get: () => false });
-        });
-
-        // Block unnecessary resources (analytics, tracking) for faster page loads
-        await page.route('**/{google-analytics.com,googletagmanager.com,ssl.google-analytics.com,eum.state.gov}/**', route => route.abort());
-        // Font blocking removed ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â minimal perf gain but risks affecting captcha rendering
 
         // =============================================================
         // SMART SESSION DETECTION ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â decide best action
@@ -224,7 +362,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             if (isTSPD) {
                 console.log('[Filler] ⚠️ TSPD Anti-Bot Challenge detectado');
                 let tspdSolved = false;
-                for (let tspd = 1; tspd <= 3; tspd++) {
+                for (let tspd = 1; tspd <= 5; tspd++) {
                     try {
                         const captchaImg = page.locator('img[src^="data:image"]').first();
                         await captchaImg.waitFor({ state: 'visible', timeout: 5000 });
@@ -233,11 +371,11 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
                         const keys = { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key };
                         const answer = await solveCaptcha(imgPath, captchaMode, keys);
-                        console.log(`[Filler] TSPD Captcha answer (${tspd}/3): ${answer}`);
+                        console.log(`[Filler] TSPD Captcha answer (${tspd}/5): ${answer}`);
 
                         await page.locator('input#ans').fill(answer);
                         await page.locator('button#jar').click();
-                        await sleep(3000);
+                        await sleep(2000 + tspd * 1000); // Backoff progressivo: 3s, 4s, 5s, 6s, 7s
 
                         const stillTSPD = await page.locator('input#ans').isVisible({ timeout: 2000 }).catch(() => false);
                         if (!stillTSPD) {
@@ -260,7 +398,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     await waitForPageReady(page);
                     console.log('[Filler] ✅ DS-160 carregado com sessão fresca');
                 } else {
-                    throw new Error('TSPD Anti-Bot Challenge não resolvido após 3 tentativas');
+                    throw new Error('TSPD Anti-Bot Challenge não resolvido após 5 tentativas');
                 }
             }
         }
@@ -276,6 +414,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 1) SELECT LOCATION ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
             const locSelect = page.locator("select[id$='_ddlLocation']");
             if (await locSelect.isVisible().catch(() => false)) {
+                await humanDelay(page, 200, 500); // Quick pause — humans are fast
                 await locSelect.selectOption(location);
                 // ASP.NET precisa do change event para disparar postback e carregar captcha
                 await locSelect.dispatchEvent('change');
@@ -309,8 +448,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 console.log('[Landing] 3/5 No modal ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â skipping');
             }
 
-            // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 4) SOLVE CAPTCHA ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+            // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 4) SOLVE CAPTCHA            // ── ── 4) SOLVE CAPTCHA ── ──
             // At this point page is fully stable, no modal, captcha image is ready
+            const captchaStartTime = Date.now();
+            console.log(`[TIMING] Captcha phase started at: ${new Date().toISOString()}`);
             let landingPassed = false;
             for (let attempt = 1; attempt <= 3; attempt++) {
                 try {
@@ -325,11 +466,11 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     await imgEl.screenshot({ path: imgPath });
                     const answer = await solveCaptcha(imgPath, captchaMode, keys);
 
-                    console.log(`[Landing] 4/5 Captcha answer (attempt ${attempt}): ${answer}`);
+                    const captchaSolveMs = Date.now() - captchaStartTime;
+                    console.log(`[Landing] 4/5 Captcha answer (attempt ${attempt}): ${answer} [solved in ${captchaSolveMs}ms = ${(captchaSolveMs/1000).toFixed(1)}s]`);
 
                     const input = page.locator("input[id$='_txtCodeTextBox']").first();
-                    await input.fill('');
-                    await input.fill(answer);
+                    await humanType(page, input, answer);  // human-like typing fires proper keyboard events
                 } catch (e) {
                     console.warn(`[Landing] 4/5 Captcha attempt ${attempt} failed:`, e.message);
                     if (attempt < 3) { await sleep(1000); continue; }
@@ -359,14 +500,14 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     // Fill Application ID
                     const appIdInput = page.locator("input[id$='_tbxApplicationID']").first();
                     if (await appIdInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-                        await appIdInput.fill(application.application_id);
+                        await humanType(page, appIdInput, application.application_id);
                     }
 
                     // Fill security answer
                     const secAnswerInput = page.locator("input[id$='_txtAnswer']").first();
                     if (await secAnswerInput.isVisible({ timeout: 2000 }).catch(() => false)) {
                         const secAnswer = config.security_answer || profile.securityAnswer || '';
-                        await secAnswerInput.fill(secAnswer);
+                        await humanType(page, secAnswerInput, secAnswer);
                     }
 
                     // Click Retrieve
@@ -393,8 +534,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         continue;
                     }
 
-                    console.log(`[Landing] 5/5 ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Retrieve successful`);
+                    console.log(`[Landing] 5/5 ✓ Retrieve successful`);
                     landingPassed = true;
+                    // Save session after successful retrieve (critical checkpoint)
+                    if (browser._saveSession) await browser._saveSession();
                     break;
                 } else {
                     console.log(`[Landing] 5/5 Start New Application`);
@@ -403,15 +546,25 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     if (box) {
                         const targetX = box.x + box.width * (0.3 + Math.random() * 0.4);
                         const targetY = box.y + box.height * (0.3 + Math.random() * 0.4);
-                        await page.mouse.move(targetX, targetY, { steps: 5 + Math.floor(Math.random() * 10) });
-                        await sleep(100 + Math.floor(Math.random() * 200));
+                        await page.mouse.move(targetX, targetY, { steps: 10 + Math.floor(Math.random() * 15) });
+                        await page.waitForTimeout(30 + Math.floor(Math.random() * 70));
+                        await page.mouse.down();
+                        await page.waitForTimeout(20 + Math.floor(Math.random() * 50));
+                        await page.mouse.up();
+                    } else {
+                        await startBtn.click({ timeout: 15000 });
                     }
-                    await startBtn.click({ timeout: 15000 });
+                    const preClickMs = Date.now() - captchaStartTime;
+                    console.log(`[DEBUG] URL before click: ${page.url()} [total elapsed: ${preClickMs}ms = ${(preClickMs/1000).toFixed(1)}s since captcha start]`);
                     await sleep(2000);
                     await waitForPageReady(page);
 
                     const currentUrl = page.url();
+                    console.log(`[DEBUG] URL after click: ${currentUrl}`);
                     if (currentUrl.includes('SessionTimedOut') || currentUrl.includes('TimedOut')) {
+                        // Capture page content for debug
+                        const bodyText = await page.evaluate(() => document.body?.innerText?.substring(0, 500) || '').catch(() => '');
+                        console.log(`[DEBUG] SessionTimedOut body: ${bodyText}`);
                         throw new Error('Session expired after clicking Start');
                     }
 
@@ -425,8 +578,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         continue;
                     }
 
-                    console.log(`[Landing] 5/5 ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Start successful`);
+                    console.log(`[Landing] 5/5 ✓ Start successful`);
                     landingPassed = true;
+                    // Save session after successful start (critical checkpoint)
+                    if (browser._saveSession) await browser._saveSession();
                     break;
                 }
             } // end for (captcha attempts)

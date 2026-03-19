@@ -124,12 +124,12 @@ async function verifyPage(page) {
 // ==================== INTERNAL: Single Fill Pass ====================
 
 async function _fillPass(page, fieldMap, passNum, addAnotherClicked, postbackSelectsFilled) {
-    // Scroll rápido para forçar rendering (sem sleep excessivo)
+    // Scroll rápido para forçar rendering de todos os campos
     await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight);
         window.scrollTo(0, 0);
     }).catch(() => { });
-    await sleep(300 + Math.random() * 200); // 300-500ms — simular scroll humano
+    await sleep(200 + Math.random() * 150);
 
     const fields = await discoverFields(page);
     const visible = fields.filter(f => f.visible && f.id);
@@ -158,7 +158,7 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked, postbackSel
         const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
         try {
             if (!await loc.isVisible({ timeout: 300 }).catch(() => false)) continue;
-            await sleep(200 + Math.random() * 300); // micro-delay humano antes de clicar
+            await sleep(100 + Math.random() * 150);
             await loc.click();
             filled++;
             postbackNeeded = true;

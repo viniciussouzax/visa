@@ -159,13 +159,13 @@ async function main() {
             entry.duration = `${(ms / 1000).toFixed(0)}s`;
         }
 
-        if (fillStatus === 'filled' || a.status === 'done') {
+        if (fillStatus === 'done' || a.status === 'done') {
             results.done.push(entry);
-        } else if (['error', 'needs_attention', 'system_error'].includes(fillStatus) || a.status === 'error' || a.status === 'failed') {
+        } else if (['error', 'fail'].includes(fillStatus) || a.status === 'error' || a.status === 'fail') {
             results.error.push(entry);
-        } else if (fillStatus === 'filling' || a.status === 'doing') {
+        } else if (fillStatus === 'doing' || a.status === 'doing') {
             results.doing.push(entry);
-        } else if (a.status === 'todo' || fillStatus === 'pending') {
+        } else if (a.status === 'todo' || fillStatus === 'todo') {
             results.todo.push(entry);
         } else {
             results.other.push(entry);
