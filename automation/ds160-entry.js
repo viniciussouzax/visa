@@ -25,6 +25,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 // Cloud Run injeta automaticamente essas vars
 const TASK_INDEX = parseInt(process.env.CLOUD_RUN_TASK_INDEX || '0', 10);
 const TASK_COUNT = parseInt(process.env.CLOUD_RUN_TASK_COUNT || '1', 10);
+// Webhook override: trigger-ds160 Edge Function passes specific applicant ID
+const TARGET_APPLICANT_ID = process.env.TARGET_APPLICANT_ID || null;
 
 if (!process.env.HEADLESS) process.env.HEADLESS = 'true';
 
@@ -32,7 +34,11 @@ async function main() {
     const startTime = Date.now();
     console.log('═══════════════════════════════════════');
     console.log('  🏛️  DS-160 Worker (Cloud Run Job)');
-    console.log(`  Task: ${TASK_INDEX + 1} / ${TASK_COUNT}`);
+    if (TARGET_APPLICANT_ID) {
+        console.log(`  Mode: WEBHOOK (target: ${TARGET_APPLICANT_ID})`);
+    } else {
+        console.log(`  Mode: BATCH (task ${TASK_INDEX + 1} / ${TASK_COUNT})`);
+    }
     console.log(`  Start: ${new Date().toISOString()}`);
     console.log('═══════════════════════════════════════\n');
 
@@ -50,27 +56,42 @@ async function main() {
         console.log('🔐 Autenticado');
     }
 
-    // ── PEGAR APPLICANT POR POSIÇÃO FIXA ──
-    // Cada container pega o applicant na posição TASK_INDEX (sem depender de status)
-    let query = supabase
-        .from('applicants')
-        .select('id, full_name, status')
-        .eq('stage', 'ds160')
-        .order('sort_order', { ascending: true });
+    // ── PEGAR APPLICANT ──
+    let target;
 
-    if (COMPANY_ID) query = query.eq('company_id', COMPANY_ID);
+    if (TARGET_APPLICANT_ID) {
+        // WEBHOOK MODE: buscar applicant específico pelo ID
+        const { data: row, error: qErr } = await supabase
+            .from('applicants')
+            .select('id, full_name, status')
+            .eq('id', TARGET_APPLICANT_ID)
+            .single();
 
-    // range(start, end) é inclusive
-    query = query.range(TASK_INDEX, TASK_INDEX);
+        if (qErr || !row) {
+            console.log(`📭 Applicant ${TARGET_APPLICANT_ID} não encontrado`);
+            process.exit(0);
+        }
+        target = row;
+    } else {
+        // BATCH MODE: buscar por posição (TASK_INDEX)
+        let query = supabase
+            .from('applicants')
+            .select('id, full_name, status')
+            .eq('stage', 'ds160')
+            .order('sort_order', { ascending: true });
 
-    const { data: rows, error: qErr } = await query;
+        if (COMPANY_ID) query = query.eq('company_id', COMPANY_ID);
+        query = query.range(TASK_INDEX, TASK_INDEX);
 
-    if (qErr || !rows || rows.length === 0) {
-        console.log(`📭 Task ${TASK_INDEX}: nenhum applicant nesta posição`);
-        process.exit(0);
+        const { data: rows, error: qErr } = await query;
+
+        if (qErr || !rows || rows.length === 0) {
+            console.log(`📭 Task ${TASK_INDEX}: nenhum applicant nesta posição`);
+            process.exit(0);
+        }
+        target = rows[0];
     }
 
-    const target = rows[0];
     console.log(`📋 Meu applicant: ${target.full_name} (status: ${target.status})`);
 
     // Se já foi processado ou está sendo processado, sair
