@@ -28,7 +28,7 @@ const TASK_COUNT = parseInt(process.env.CLOUD_RUN_TASK_COUNT || '1', 10);
 // Webhook override: trigger-ds160 Edge Function passes specific applicant ID
 const TARGET_APPLICANT_ID = process.env.TARGET_APPLICANT_ID || null;
 
-if (!process.env.HEADLESS) process.env.HEADLESS = 'true';
+if (!process.env.HEADLESS) process.env.HEADLESS = 'false'; // Xvfb provides virtual display
 
 async function main() {
     const startTime = Date.now();

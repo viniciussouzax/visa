@@ -1,13 +1,13 @@
 # ============================================================
-# DS-160 Worker — Cloud Run Job
-# Image: patchright (stealth Playwright) + Node.js + Chrome
+# DS-160 Worker — Fly.io Machine
+# Image: patchright (stealth Playwright) + Node.js + Chrome + Xvfb
 # ============================================================
-FROM mcr.microsoft.com/playwright:v1.50.0-noble
+FROM mcr.microsoft.com/playwright:v1.58.0-noble
 
 WORKDIR /app
 
-# Install Google Chrome Stable (required by channel: 'chrome')
-RUN apt-get update && apt-get install -y wget gnupg \
+# Install Google Chrome Stable + Xvfb (virtual display for HEADLESS=false)
+RUN apt-get update && apt-get install -y wget gnupg xvfb \
     && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
     && apt-get update && apt-get install -y google-chrome-stable \
@@ -24,12 +24,17 @@ RUN npx patchright install chromium --with-deps
 COPY automation/ ./automation/
 COPY pages/ ./pages/
 
-# Create tmp directory for captcha screenshots
-RUN mkdir -p /app/tmp
+# Create tmp directory for captcha screenshots + video recordings
+RUN mkdir -p /app/tmp /app/tmp/videos
 
-# Environment
-ENV HEADLESS=true
+# Copy startup script (Xvfb launcher)
+COPY automation/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+# Environment — HEADLESS=false uses Xvfb virtual display (harder to detect)
+ENV HEADLESS=false
+ENV DISPLAY=:99
 ENV NODE_ENV=production
 
-# Entrypoint: process 1 applicant, then exit
-CMD ["node", "automation/ds160-entry.js"]
+# Entrypoint: start Xvfb → run Node.js
+CMD ["/app/start.sh", "automation/ds160-entry.js"]

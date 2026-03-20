@@ -11,13 +11,14 @@ primary_region = "iad"
   dockerfile = "automation/Dockerfile.ds160"
 
 [env]
-  HEADLESS = "true"
+  HEADLESS = "false"
+  DISPLAY = ":99"
   NODE_ENV = "production"
 
 # No HTTP service — this is a worker process
 # The machine runs, processes, and stops.
 
-# Machine resources
+# Machine resources (non-headless Chrome needs more memory)
 [[vm]]
-  memory = "2gb"
+  memory = "4gb"
   cpus = 2

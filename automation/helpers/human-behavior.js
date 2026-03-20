@@ -76,10 +76,8 @@ async function humanClick(page, selector) {
         // Random offset within element (not always center)
         const targetX = box.x + box.width * (0.2 + Math.random() * 0.6);
         const targetY = box.y + box.height * (0.2 + Math.random() * 0.6);
-        // Move mouse with human-like steps (10-25 intermediate points)
-        await page.mouse.move(targetX, targetY, {
-            steps: 8 + Math.floor(Math.random() * 18)
-        });
+        // Move mouse with cubic Bézier curve (humans don't move in straight lines)
+        await _bezierMouseMove(page, targetX, targetY);
         await humanDelay(40, 180);
         // press/release instead of instant click — anti-bots detect instant clicks
         await page.mouse.down();
@@ -90,6 +88,70 @@ async function humanClick(page, selector) {
         await el.click();
     }
     await humanDelay(100, 350);
+}
+
+/**
+ * Move mouse along a cubic Bézier curve with micro-jitter.
+ * Linear mouse movement is a strong bot signal — real humans move in curves.
+ * @param {import('playwright').Page} page
+ * @param {number} targetX
+ * @param {number} targetY
+ */
+async function _bezierMouseMove(page, targetX, targetY) {
+    // Get current mouse position (or start from a random edge)
+    let startX, startY;
+    try {
+        const pos = await page.evaluate(() => ({
+            x: window._lastMouseX || 200 + Math.random() * 400,
+            y: window._lastMouseY || 200 + Math.random() * 200,
+        }));
+        startX = pos.x;
+        startY = pos.y;
+    } catch {
+        startX = 200 + Math.random() * 400;
+        startY = 200 + Math.random() * 200;
+    }
+
+    // Generate 2 random control points for cubic Bézier
+    const dx = targetX - startX;
+    const dy = targetY - startY;
+    const spread = Math.min(80, Math.sqrt(dx * dx + dy * dy) * 0.4);
+
+    const cp1x = startX + dx * (0.2 + Math.random() * 0.2) + (Math.random() - 0.5) * spread;
+    const cp1y = startY + dy * (0.2 + Math.random() * 0.2) + (Math.random() - 0.5) * spread;
+    const cp2x = startX + dx * (0.6 + Math.random() * 0.2) + (Math.random() - 0.5) * spread;
+    const cp2y = startY + dy * (0.6 + Math.random() * 0.2) + (Math.random() - 0.5) * spread;
+
+    const steps = 15 + Math.floor(Math.random() * 15); // 15-30 steps
+
+    for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        // Cubic Bézier formula: B(t) = (1-t)³P0 + 3(1-t)²tP1 + 3(1-t)t²P2 + t³P3
+        const oneMinusT = 1 - t;
+        const x = oneMinusT*oneMinusT*oneMinusT*startX
+                + 3*oneMinusT*oneMinusT*t*cp1x
+                + 3*oneMinusT*t*t*cp2x
+                + t*t*t*targetX;
+        const y = oneMinusT*oneMinusT*oneMinusT*startY
+                + 3*oneMinusT*oneMinusT*t*cp1y
+                + 3*oneMinusT*t*t*cp2y
+                + t*t*t*targetY;
+
+        // Micro-jitter (hand tremor) — ±1px
+        const jx = (Math.random() - 0.5) * 2;
+        const jy = (Math.random() - 0.5) * 2;
+
+        await page.mouse.move(x + jx, y + jy, { steps: 1 });
+        // Variable speed: slower at start/end (acceleration curve)
+        const speed = 6 + Math.random() * 10;
+        await new Promise(r => setTimeout(r, speed));
+    }
+
+    // Save position for next call
+    await page.evaluate((x, y) => {
+        window._lastMouseX = x;
+        window._lastMouseY = y;
+    }, targetX, targetY).catch(() => {});
 }
 
 /**
