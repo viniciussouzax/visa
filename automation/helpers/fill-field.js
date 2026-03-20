@@ -1,5 +1,6 @@
 // helpers/fill-field.js — Preenchimento de campos individual e por lotes
 'use strict';
+const { humanFillText, humanFillTextBatch, humanScroll, humanDelay } = require('./human-behavior');
 
 /**
  * Verifica se um valor de select é "vazio" (não selecionado).
@@ -16,12 +17,7 @@ function isSelectEmpty(val) {
  * Preenche um campo de texto usando Playwright nativo (dispara blur/validators ASP.NET).
  */
 async function fillText(page, fieldId, value) {
-    const loc = page.locator(`#${fieldId.replace(/\$/g, '\\$')}`);
-    const isVis = await loc.isVisible({ timeout: 300 }).catch(() => false);
-    if (!isVis) return false;
-    await loc.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
-    await loc.fill(String(value).trim());
-    return true;
+    return humanFillText(page, fieldId, value);
 }
 
 /**
@@ -29,27 +25,7 @@ async function fillText(page, fieldId, value) {
  * Usado para campos que não precisam de blur/validator nativo.
  */
 async function fillTextBatch(page, entries) {
-    if (!entries || entries.length === 0) return 0;
-    return page.evaluate((batch) => {
-        let count = 0;
-        batch.forEach(({ id, value }) => {
-            const el = document.getElementById(id);
-            if (el && (!el.value || el.value.trim() === '')) {
-                try {
-                    const proto = el.tagName === 'TEXTAREA'
-                        ? window.HTMLTextAreaElement.prototype
-                        : window.HTMLInputElement.prototype;
-                    const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
-                    if (setter) setter.call(el, value);
-                    else el.value = value;
-                } catch { el.value = value; }
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-                el.dispatchEvent(new Event('change', { bubbles: true }));
-                count++;
-            }
-        });
-        return count;
-    }, entries);
+    return humanFillTextBatch(page, entries);
 }
 
 /**
@@ -60,7 +36,8 @@ async function fillSelect(page, fieldId, value, type = 'select') {
     const loc = page.locator(`#${fieldId.replace(/\$/g, '\\$')}`);
     const isVis = await loc.isVisible({ timeout: 300 }).catch(() => false);
     if (!isVis) return false;
-    await loc.scrollIntoViewIfNeeded({ timeout: 500 }).catch(() => { });
+    await humanScroll(page, loc);
+    await humanDelay(80, 200);
 
     if (type === 'select-search' || type === 'select-label') {
         // Busca fuzzy: exato → parcial → por value
@@ -136,6 +113,8 @@ async function fillRadio(page, fieldId, value) {
     if (!isVis) return false;
     const alreadyChecked = await loc.isChecked().catch(() => false);
     if (!alreadyChecked) {
+        await humanScroll(page, loc);
+        await humanDelay(50, 150);
         await loc.click();
     }
     return true;
@@ -150,6 +129,8 @@ async function fillCheckbox(page, fieldId) {
     if (!isVis) return false;
     const alreadyChecked = await loc.isChecked().catch(() => false);
     if (!alreadyChecked) {
+        await humanScroll(page, loc);
+        await humanDelay(50, 150);
         await loc.check();
     }
     return true;

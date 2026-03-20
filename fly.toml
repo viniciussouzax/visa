@@ -1,0 +1,25 @@
+# ============================================================
+# Fly.io — DS-160 Worker Configuration
+# This is a Machine worker (not a web service).
+# It processes one applicant, then exits.
+# ============================================================
+
+app = "ds160-worker"
+primary_region = "iad"  # Ashburn, Virginia — closest to CEAC (Washington DC)
+
+[build]
+  dockerfile = "automation/Dockerfile.ds160"
+
+# No HTTP service — this is a worker, not a web server
+# Fly Machines will start on-demand via API or CLI
+
+[env]
+  HEADLESS = "true"
+  NODE_ENV = "production"
+
+# Machine configuration
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "2048mb"   # 2GB — minimum for Chrome + Node.js
+  auto_stop_machines = "stop"  # Stop (not destroy) after exit
+  auto_start_machines = false  # Started on-demand via trigger

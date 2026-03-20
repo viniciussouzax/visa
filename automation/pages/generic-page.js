@@ -2,6 +2,7 @@
 // Usa field-map.js para mapeamento + helpers para preenchimento
 'use strict';
 const { waitForPostback, waitForPageReady, discoverFields, sleep } = require('../helpers/postback');
+const { humanClick, humanScroll, humanDelay, thinkingPause } = require('../helpers/human-behavior');
 const { isSelectEmpty, fillText, fillTextBatch, fillSelect, fillRadio, fillCheckbox } = require('../helpers/fill-field');
 const { clickAddAnother } = require('../helpers/add-another');
 const { verifyPageFields, getValidationErrors } = require('../helpers/verify');
@@ -124,12 +125,15 @@ async function verifyPage(page) {
 // ==================== INTERNAL: Single Fill Pass ====================
 
 async function _fillPass(page, fieldMap, passNum, addAnotherClicked, postbackSelectsFilled) {
-    // Scroll rápido para forçar rendering de todos os campos
+    // Smooth scroll to force rendering + simulate human scanning
     await page.evaluate(() => {
-        window.scrollTo(0, document.body.scrollHeight);
-        window.scrollTo(0, 0);
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }).catch(() => { });
-    await sleep(200 + Math.random() * 150);
+    await humanDelay(400, 800);
+    await page.evaluate(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }).catch(() => { });
+    await humanDelay(300, 600);
 
     const fields = await discoverFields(page);
     const visible = fields.filter(f => f.visible && f.id);
@@ -158,8 +162,7 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked, postbackSel
         const loc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
         try {
             if (!await loc.isVisible({ timeout: 300 }).catch(() => false)) continue;
-            await sleep(100 + Math.random() * 150);
-            await loc.click();
+            await humanClick(page, loc);
             filled++;
             postbackNeeded = true;
             postbackField = field.id;
@@ -184,7 +187,7 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked, postbackSel
             if (postbackSelectsFilled.has(field.id)) continue; // prevent infinite loop
 
             try {
-                await sleep(150 + Math.random() * 250); // micro-delay humano antes de selecionar
+                await humanDelay(200, 400);
                 const ok = await fillSelect(page, field.id, match.value, match.type);
                 if (ok) {
                     filled++;
@@ -265,14 +268,14 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked, postbackSel
                 case 'select-label':
                 case 'select-search':
                     if (!isSelectEmpty(field.value)) continue;
-                    await sleep(80 + Math.random() * 120); // micro-delay entre campos
+                    await humanDelay(100, 300);
                     if (await fillSelect(page, field.id, match.value, match.type)) filled++;
                     break;
                 case 'click':
                     if (field.checked) continue;
                     const clickLoc = page.locator(`#${field.id.replace(/\$/g, '\\$')}`);
                     if (await clickLoc.isVisible({ timeout: 300 }).catch(() => false)) {
-                        await clickLoc.click();
+                        await humanClick(page, clickLoc);
                         filled++;
                     }
                     break;
@@ -313,7 +316,7 @@ async function _fillPass(page, fieldMap, passNum, addAnotherClicked, postbackSel
 
         // Campos normais: batch evaluate (rápido)
         if (normalBatch.length > 0) {
-            await sleep(300 + Math.random() * 300); // pausa humana entre batches
+            await thinkingPause();
             const batchFilled = await fillTextBatch(page, normalBatch);
             filled += batchFilled;
         }

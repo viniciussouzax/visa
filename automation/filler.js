@@ -5,6 +5,7 @@ const { chromium } = require('patchright');
 const path = require('path');
 const fs = require('fs');
 const { solveCaptcha, solveCaptchaBase64 } = require('./captcha');
+const { humanDelay, humanType, humanClick, thinkingPause } = require('./helpers/human-behavior');
 
 // ====================================================================
 // MODULES ƒ¢aa modular architecture (helpers + generic page filler)
@@ -17,45 +18,14 @@ const { getValidationErrors } = require('./helpers/verify');
 const TMP = path.join(__dirname, '..', 'tmp');
 
 // ====================================================================
-// HUMAN SIMULATION HELPERS — realistic interaction timing
+// HUMAN SIMULATION HELPERS — imported from helpers/human-behavior.js
+// humanDelay, humanType, humanClick, thinkingPause are imported above.
+// Kept as comments for documentation:
+//   humanDelay(min, max) — gaussian random delay
+//   humanType(page, selector, text) — char-by-char typing
+//   humanClick(page, selector) — mouse move + press/release
+//   thinkingPause() — 10% chance long pause (simulates reading)
 // ====================================================================
-/** Random delay between min-max ms */
-async function humanDelay(page, min = 300, max = 800) {
-    await page.waitForTimeout(min + Math.floor(Math.random() * (max - min)));
-}
-
-/** Type text with human-like variable delay per keystroke */
-async function humanType(page, selector, text) {
-    const el = typeof selector === 'string' ? page.locator(selector) : selector;
-    await el.click();
-    await humanDelay(page, 100, 300);
-    // Clear existing value
-    await el.fill('');
-    // Type character by character with variable delays
-    for (const char of text) {
-        await page.keyboard.type(char, { delay: 60 + Math.floor(Math.random() * 120) });
-    }
-    await humanDelay(page, 50, 200);
-}
-
-/** Click with mouse movement + press/release (more human-like than instant click) */
-async function humanClick(page, selector) {
-    const el = typeof selector === 'string' ? page.locator(selector) : selector;
-    const box = await el.boundingBox();
-    if (box) {
-        const targetX = box.x + box.width / 2 + (Math.random() * 6 - 3);
-        const targetY = box.y + box.height / 2 + (Math.random() * 4 - 2);
-        await page.mouse.move(targetX, targetY, { steps: 10 + Math.floor(Math.random() * 15) });
-        await humanDelay(page, 50, 200);
-        // press/release instead of instant click — anti-bots detect instant clicks
-        await page.mouse.down();
-        await page.waitForTimeout(30 + Math.floor(Math.random() * 70));
-        await page.mouse.up();
-    } else {
-        await el.click();
-    }
-    await humanDelay(page, 100, 400);
-}
 
 // ====================================================================
 // MAIN ENTRY POINT
@@ -397,7 +367,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             // ƒ¢aaaa 1) SELECT LOCATION ƒ¢aaaa
             const locSelect = page.locator("select[id$='_ddlLocation']");
             if (await locSelect.isVisible().catch(() => false)) {
-                await humanDelay(page, 200, 500); // Quick pause — humans are fast
+                await humanDelay(200, 500); // Quick pause — humans are fast
                 await locSelect.selectOption(location);
                 // ASP.NET precisa do change event para disparar postback e carregar captcha
                 await locSelect.dispatchEvent('change');
@@ -1243,13 +1213,18 @@ async function clickNextAndWait(page) {
 
     const next = page.locator("input[type=submit][value*='Next']").first();
 
-    // Use waitForResponse to detect navigation instead of polling
+    // Human review delay: scroll up, pause as if reviewing, then click
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })).catch(() => {});
+    await humanDelay(1500, 3500); // 1.5-3.5s simulating human reviewing page
+    await thinkingPause(); // 10% chance of extra long pause
+
+    // Use humanClick for the Next button (mouse movement + press/release)
     const [response] = await Promise.all([
         page.waitForResponse(
             r => r.url().includes('.aspx') && r.status() === 200,
             { timeout: 15000 }
         ).catch(() => null),
-        next.click()
+        humanClick(page, next)
     ]);
 
     // Also wait for URL change as fallback
