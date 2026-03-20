@@ -5,7 +5,7 @@ const { chromium } = require('patchright');
 const path = require('path');
 const fs = require('fs');
 const { solveCaptcha, solveCaptchaBase64 } = require('./captcha');
-const { humanDelay, humanType, humanClick, thinkingPause } = require('./helpers/human-behavior');
+const { humanDelay, humanType, humanClick, humanSelect, thinkingPause } = require('./helpers/human-behavior');
 
 // ====================================================================
 // MODULES ƒ¢aa modular architecture (helpers + generic page filler)
@@ -367,8 +367,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             // ƒ¢aaaa 1) SELECT LOCATION ƒ¢aaaa
             const locSelect = page.locator("select[id$='_ddlLocation']");
             if (await locSelect.isVisible().catch(() => false)) {
-                await humanDelay(200, 500); // Quick pause — humans are fast
-                await locSelect.selectOption(location);
+                await humanSelect(page, locSelect, location);
                 // ASP.NET precisa do change event para disparar postback e carregar captcha
                 await locSelect.dispatchEvent('change');
                 console.log(`[Landing] 1/5 Location selected: ${location}`);
@@ -389,7 +388,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 console.log('[Landing] 3/5 Modal detected ƒ¢aa clicking Close (postback)...');
                 const closeBtn = page.locator('[id*="lnkClose"]').first();
                 if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-                    await closeBtn.click();
+                    await humanClick(page, closeBtn);
                 }
                 // Wait for postback from Close to complete and page to stabilize
                 await page.waitForSelector('.modalBackground', { state: 'hidden', timeout: 10000 }).catch(() => { });
@@ -466,7 +465,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     // Click Retrieve
                     const retrieveBtn = page.locator("a[id$='_lnkRetrieve'], input[id$='_btnRetrieve']").first();
                     const urlBefore = page.url();
-                    await retrieveBtn.click({ timeout: 15000 });
+                    await humanClick(page, retrieveBtn);
                     await sleep(2000);
                     await waitForPageReady(page);
 
