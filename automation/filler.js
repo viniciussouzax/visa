@@ -6,6 +6,40 @@ const path = require('path');
 const fs = require('fs');
 const { solveCaptcha, solveCaptchaBase64 } = require('./captcha');
 const { humanDelay, humanType, humanClick, humanSelect, thinkingPause, maybeRandomScroll } = require('./helpers/human-behavior');
+// New helpers for Fly stability
+const { buildFlyIdentityProfile, buildLaunchOptions, buildContextOptions } = require('./helpers/fly-profile');
+const { waitForState, ensureLandingReady, ensureNoChallenge } = require('./helpers/page-guards');
+
+// Helper: get current page state if page is available
+async function getPageState(page) {
+    try {
+        const { detectPageState, PageState } = require('./helpers/page-state');
+        return await detectPageState(page);
+    } catch {
+        return { type: 'unknown', url: page?.url() || '' };
+    }
+}
+
+function logFillerEvent(event, data = {}) {
+    const payload = {
+        ts: new Date().toISOString(),
+        scope: 'filler',
+        event,
+        ...data,
+    };
+    console.log(`[FillerEvent] ${JSON.stringify(payload)}`);
+}
+
+async function logPageEvent(page, event, data = {}) {
+    const state = await getPageState(page);
+    const payload = {
+        pageState: state.type,
+        url: state.url,
+        ...data,
+    };
+    logFillerEvent(event, payload);
+    return state;
+}
 
 // ====================================================================
 // MODULES ƒ¢aa modular architecture (helpers + generic page filler)
@@ -31,7 +65,7 @@ const TMP = path.join(__dirname, '..', 'tmp');
 // MAIN ENTRY POINT
 // ====================================================================
 /**
- * Fill a DS-160 application using Playwright's Firefox.
+ * Fill a DS-160 application using Patchright with real Chrome.
  * @param {object} applicant - Row from 'applicants' table (has .data JSON)
  * @param {object} application - Row from 'applications' table
  * @param {function} onAppId - Callback when application_id is captured (for immediate DB persist)
@@ -77,18 +111,19 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
     if (!profile.phone) missingFields.push('addressPhone.phone');
     if (!profile.email) missingFields.push('addressPhone.email');
 
+    let browser, page;
+    const visited = [];
+
     if (missingFields.length > 0) {
         console.warn(`[Filler]   DADOS FALTANTES (${missingFields.length}): ${missingFields.join(', ')}`);
         return {
             success: false,
-            error: `Dados faltantes no formul¡rio: ${missingFields.join(', ')}`,
+            error: `Dados faltantes no formulário: ${missingFields.join(', ')}`,
             cause: 'missing_data',
-            missingFields
+            missingFields,
+            pageState: 'unknown',
         };
     }
-
-    let browser, page;
-    const visited = []; // Declared outside try so catch can access it
 
     try {
         if (existingBrowser) {
@@ -134,60 +169,13 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 })
                 : undefined;
 
-            // ── IDENTITY (randomized per session — reduces fingerprint patterns) ──
-            const useUsLocale = proxyUrl && (proxyUrl.includes('__cr.us') || config.proxy_countries?.includes('us'));
+            // ── IDENTITY / PROFILE (Fly-consistent) ──
+            const identity = buildFlyIdentityProfile({
+                proxy_url: proxyUrl,
+                proxy_countries: config.proxy_countries || 'us,br',
+            });
 
-            // Random screen resolution from common real-world desktop sizes
-            const COMMON_RESOLUTIONS = [
-                { width: 1920, height: 1080 },
-                { width: 1366, height: 768 },
-                { width: 1536, height: 864 },
-                { width: 1440, height: 900 },
-                { width: 1280, height: 720 },
-                { width: 1600, height: 900 },
-            ];
-            const screenRes = COMMON_RESOLUTIONS[Math.floor(Math.random() * COMMON_RESOLUTIONS.length)];
-
-            // Geolocation with noise (±0.05° ~5km radius) — avoid exact same coords every time
-            const baseGeo = useUsLocale
-                ? { latitude: 40.7128, longitude: -74.0060 }   // NYC area
-                : { latitude: -23.5505, longitude: -46.6333 }; // São Paulo
-            const geoNoise = () => (Math.random() - 0.5) * 0.1; // ±0.05°
-            const geo = {
-                latitude: baseGeo.latitude + geoNoise(),
-                longitude: baseGeo.longitude + geoNoise(),
-            };
-
-            // Random UA from expanded pool (Chrome 70%, Edge 20%, Firefox 10%)
-            // Different browser brands prevent fingerprint clustering
-            const CHROME_MAJORS = [131, 132, 133, 134];
-            const pickMajor = () => CHROME_MAJORS[Math.floor(Math.random() * CHROME_MAJORS.length)];
-            const pickBuild = () => Math.floor(Math.random() * 200); // minor build variation
-            const UA_POOL = [
-                // Chrome (Windows) — most common
-                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
-                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
-                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
-                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
-                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
-                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
-                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
-                // Edge (Windows) — shares Chromium base
-                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36 Edg/${pickMajor()}.0.${2800 + pickBuild()}.${pickBuild()}`,
-                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36 Edg/${pickMajor()}.0.${2800 + pickBuild()}.${pickBuild()}`,
-                // Firefox (Windows) — different engine
-                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:${115 + Math.floor(Math.random() * 10)}.0) Gecko/20100101 Firefox/${115 + Math.floor(Math.random() * 10)}.0`,
-            ];
-            const generatedUA = UA_POOL[Math.floor(Math.random() * UA_POOL.length)]();
-
-            const identity = {
-                userAgent: generatedUA,
-                locale: useUsLocale ? 'en-US' : 'pt-BR',
-                timezoneId: useUsLocale ? 'America/New_York' : 'America/Sao_Paulo',
-                geolocation: geo,
-                screenRes,
-            };
-            console.log(`[Filler] Identity: ${generatedUA.includes('Edg/') ? 'Edge' : generatedUA.includes('Firefox') ? 'Firefox' : 'Chrome'}, ${screenRes.width}x${screenRes.height}, tz=${identity.timezoneId}`);
+            console.log(`[Filler] Identity: Chrome, ${identity.screenRes.width}x${identity.screenRes.height}, tz=${identity.timezoneId}`);
 
             // ── LAUNCH ARGS (anti-automation + anti-throttling + anti-datacenter) ──
             const launchArgs = [
@@ -198,7 +186,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 '--disable-dev-shm-usage',
                 '--disable-accelerated-2d-canvas',
                 '--disable-gpu',
-                `--window-size=${screenRes.width},${screenRes.height}`,
+                `--window-size=${identity.screenRes.width},${identity.screenRes.height}`,
                 '--start-maximized',
                 // Anti-throttling: prevent Chrome from throttling background tabs/timers
                 '--disable-background-timer-throttling',
@@ -218,46 +206,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             const storageStatePath = path.join(TMP, 'storage-state.json');
             const hasStorageState = fs.existsSync(storageStatePath);
 
-            const launchOpts = {
-                headless: isHeadless,
-                channel: 'chrome',  // Chrome real: correct fingerprint (plugins, chrome.app, WebGL)
-                // patchright CDP patches operate at protocol level, work with any channel
-                args: launchArgs,
-            };
-            if (proxyOpts) launchOpts.proxy = proxyOpts;
-
+            const launchOpts = buildLaunchOptions(identity, proxyOpts || null);
             browser = await chromium.launch(launchOpts);
 
-            const contextOpts = {
-                viewport: { width: screenRes.width, height: screenRes.height },
-                screen: { width: screenRes.width, height: screenRes.height },
-                // With channel:'chrome', let Chrome send its OWN real UA (avoids version mismatch)
-                // Only override when using bundled Chromium (no channel) e.g. in Docker
-                ...(isHeadless ? { userAgent: identity.userAgent } : {}),
-                locale: identity.locale,
-                timezoneId: identity.timezoneId,
-                geolocation: identity.geolocation,
-                permissions: ['geolocation'],
-                colorScheme: 'light',
-                // Randomize deviceScaleFactor (most desktops = 1, some HiDPI = 1.25 or 1.5)
-                deviceScaleFactor: [1, 1, 1, 1.25][Math.floor(Math.random() * 4)],
-                isMobile: false,
-                hasTouch: false,
-                javaScriptEnabled: true,
-                bypassCSP: true,  // Allow stealth script injection
-                ignoreHTTPSErrors: true,
-                // HTTP headers that TSPD/Akamai checks — must match real browser
-                extraHTTPHeaders: {
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                    'Accept-Language': identity.locale === 'pt-BR' ? 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7' : 'en-US,en;q=0.9',
-                    'DNT': '1',
-                    'Sec-Fetch-Dest': 'document',
-                    'Sec-Fetch-Mode': 'navigate',
-                    'Sec-Fetch-Site': 'none',
-                    'Sec-Fetch-User': '?1',
-                    'Upgrade-Insecure-Requests': '1',
-                },
-            };
+            const contextOpts = buildContextOptions(identity);
 
             // Restore session from previous attempt if available
             // IMPORTANT: Clean up cookies that may be bot-flagged before restoring
@@ -332,18 +284,38 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 // 5) Platform — ensure Windows (match UA)
                 Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
 
-                // 6) Plugins — empty plugin array is a bot signal; add common ones
+                // 6) Plugins — Chrome returns a PluginArray (special object), not a plain array
+                // Must behave like real PluginArray: indexed, item(), namedItem(), refresh(), length live
                 Object.defineProperty(navigator, 'plugins', {
                     get: () => {
-                        const arr = [
+                        const plugins = [
                             { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer', description: 'Portable Document Format' },
                             { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai', description: '' },
                             { name: 'Native Client', filename: 'internal-nacl-plugin', description: '' },
+                            { name: 'Widevine Content Decryption Module', filename: 'widevinecdmadapter.dll', description: 'Widevine Content Decryption Module' },
                         ];
-                        arr.item = (i) => arr[i];
-                        arr.namedItem = (n) => arr.find(p => p.name === n);
-                        arr.refresh = () => {};
-                        return arr;
+
+                        // Create a PluginArray-like wrapper with numeric indices and methods
+                        const pluginArray = {
+                            length: plugins.length,
+                            item: (index) => plugins[index] || null,
+                            namedItem: (name) => plugins.find(p => p.name === name) || null,
+                            refresh: () => {},
+                            [Symbol.iterator]: function* () { yield* plugins; }
+                        };
+
+                        // Also expose as array-indexed properties
+                        plugins.forEach((plugin, index) => {
+                            pluginArray[index] = plugin;
+                        });
+
+                        // Ensure length is dynamic (if someone adds more later)
+                        Object.defineProperty(pluginArray, 'length', {
+                            get: () => plugins.length,
+                            enumerable: true,
+                        });
+
+                        return pluginArray;
                     }
                 });
 
@@ -566,10 +538,11 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     await page.goto(DS160_URL, { waitUntil: 'domcontentloaded', timeout: navTimeout });
                     await waitForPageReady(page);
 
-                    // Check if we got a real page (not just TSPD JS challenge with no content)
-                    const hasContent = await page.locator('form, input, select, #ctl00_SiteContentPlaceHolder_ucLocation_ddlLocation').first()
-                        .isVisible({ timeout: 5000 }).catch(() => false);
-                    const hasTSPDChallenge = await page.locator('input#ans').isVisible({ timeout: 2000 }).catch(() => false);
+                    // Use centralized page state detector (more robust)
+                    const { detectPageState, PageState } = require('./helpers/page-state');
+                    const pageState = await detectPageState(page);
+                    const hasContent = pageState.type !== PageState.CHALLENGE && pageState.type !== PageState.UNKNOWN;
+                    const hasTSPDChallenge = pageState.type === PageState.CHALLENGE;
 
                     if (hasContent || hasTSPDChallenge) {
                         navSuccess = true;
@@ -634,7 +607,15 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             }
 
             if (!navSuccess) {
-                throw new Error('Falha ao carregar DS-160 após todas as tentativas (proxy + direto)');
+                const state = await getPageState(page);
+                return {
+                    success: false,
+                    error: 'Falha ao carregar DS-160 após todas as tentativas (proxy + direto)',
+                    cause: 'navigation_failed',
+                    pageState: state.type,
+                    url: state.url,
+                    activePage: page,
+                };
             }
 
             // ── TSPD/F5 Anti-Bot Challenge Detection ──
@@ -683,7 +664,16 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     await waitForPageReady(page);
                     console.log('[Filler] ✅ DS-160 carregado com sessão fresca');
                 } else {
-                    throw new Error(`TSPD Anti-Bot Challenge não resolvido após ${MAX_TSPD} tentativas`);
+                    // TSPD não resolvido — retornar erro estruturado com pageState
+                    const state = await getPageState(page);
+                    return {
+                        success: false,
+                        error: `TSPD Anti-Bot Challenge não resolvido após ${MAX_TSPD} tentativas`,
+                        cause: 'challenge_detected',
+                        pageState: state.type,
+                        url: state.url,
+                        activePage: page, // para screenshot
+                    };
                 }
             }
         }
@@ -694,7 +684,30 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             // Flow: 1) Location → 2) Wait loading → 3) Modal check → 4) Captcha → 5) Click Start/Retrieve
             // ============================================================
             onPage('Landing');
+
+            // ── GUARD: Validate landing state before interacting ──
+            try {
+                await ensureLandingReady(page, 'start of landing flow');
+            } catch (e) {
+                const state = await getPageState(page);
+                return {
+                    success: false,
+                    error: `Landing validation failed: ${e.message}`,
+                    cause: 'landing_dom_mismatch',
+                    pageState: state.type,
+                    url: state.url,
+                    activePage: page,
+                };
+            }
+
             const location = profile.location;
+
+            // Log landing ready state
+            await logPageEvent(page, 'landing_ready', {
+                phase: 'before_warmup',
+                mode: useRetrieve ? 'retrieve' : 'new_application',
+                location: profile.location,
+            });
 
             // ── HUMAN WARM-UP: simulate real person arriving on page ──
             // Anti-bot (TSPD) watches the first seconds VERY closely.
@@ -730,12 +743,22 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 // ASP.NET precisa do change event para disparar postback e carregar captcha
                 await locSelect.dispatchEvent('change');
                 console.log(`[Landing] 1/5 Location selected: ${location}`);
+
+                await logPageEvent(page, 'landing_location_selected', {
+                    phase: 'after_location_select',
+                    location,
+                });
             }
 
             // ƒ¢aaaa 2) WAIT FOR LOADING (postback after location change) ƒ¢aaaa
             await waitForPostback(page);
             await waitForPageReady(page);
             console.log('[Landing] 2/5 Page loaded after location select');
+
+            await logPageEvent(page, 'landing_postback_complete', {
+                phase: 'after_location_postback',
+                location,
+            });
 
             // ƒ¢aaaa 3) CHECK & CLOSE MODAL (if present) ƒ¢aaaa
             // Some locations (e.g. RCF/Recife) show "Additional Location Information" modal.
@@ -754,9 +777,19 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 await waitForPageReady(page);
                 modalDismissed = true;
                 console.log('[Landing] 3/5 Modal closed via postback ƒ¢aa page stable, new captcha ready');
+
+                await logPageEvent(page, 'landing_modal_result', {
+                    phase: 'after_modal_check',
+                    modalDismissed: true,
+                });
             } catch {
                 // No modal appeared within timeout ƒ¢aa that's fine
                 console.log('[Landing] 3/5 No modal ƒ¢aa skipping');
+
+                await logPageEvent(page, 'landing_modal_result', {
+                    phase: 'after_modal_check',
+                    modalDismissed: false,
+                });
             }
 
             // ƒ¢aaaa 4) SOLVE CAPTCHA            // ── ── 4) SOLVE CAPTCHA ── ──
@@ -784,8 +817,25 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     await humanType(page, input, answer);  // human-like typing fires proper keyboard events
                 } catch (e) {
                     console.warn(`[Landing] 4/5 Captcha attempt ${attempt} failed:`, e.message);
+
+                    await logPageEvent(page, 'landing_captcha_attempt_failed', {
+                        phase: 'captcha',
+                        attempt,
+                        error: e.message,
+                    });
+
                     if (attempt < 3) { await sleep(1000); continue; }
-                    return { success: false, error: 'Captcha nao resolvido apos 3 tentativas', cause: 'captcha_failed', browser, activePage: page };
+
+                    const state = await getPageState(page);
+                    return {
+                        success: false,
+                        error: 'Captcha nao resolvido apos 3 tentativas',
+                        cause: 'captcha_failed',
+                        pageState: state.type,
+                        url: state.url,
+                        browser,
+                        activePage: page
+                    };
                 }
 
                 // ƒ¢aaaa 4.5) PRE-CLICK: dismiss any modal that reappeared ƒ¢aaaa
@@ -897,7 +947,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 }
             } // end for (captcha attempts)
             if (!landingPassed) {
-                return { success: false, error: 'Failed to pass Landing after 3 captcha attempts', cause: 'captcha_failed', browser, activePage: page };
+                const state = await getPageState(page);
+                return { success: false, error: 'Failed to pass Landing after 3 captcha attempts', cause: 'captcha_failed', pageState: state.type, url: state.url, browser, activePage: page };
             }
             await waitForPageReady(page);
 
@@ -1402,7 +1453,28 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             cause = 'page_stuck';
         }
 
-        return { success: false, error: e.message, stack: e.stack, field, page: currentPage, cause, validationErrors, browser, activePage: page };
+        const state = await getPageState(page);
+
+        await logPageEvent(page, 'filler_error', {
+            cause,
+            field,
+            error: e.message,
+            validationErrorCount: validationErrors?.length || 0,
+        });
+
+        return {
+            success: false,
+            error: e.message,
+            stack: e.stack,
+            field,
+            page: currentPage,
+            cause,
+            validationErrors,
+            pageState: state.type,
+            url: state.url,
+            browser,
+            activePage: page
+        };
     }
     // NOTE: browser is NOT closed here ƒ¢aa caller (queue.js) decides when to close
 }

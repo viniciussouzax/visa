@@ -9,6 +9,8 @@ function getFiller() {
     return require('./filler');
 }
 const path = require('path');
+// New: session hygiene helpers
+const { shouldDiscardSession } = require('./helpers/failure-context');
 
 const POLL_INTERVAL = 30; // 30 seconds fallback (Realtime handles instant detection)
 const MAX_RETRIES = 3;
@@ -99,6 +101,48 @@ class QueueRunner {
 
     emit(status) {
         if (this._emitter) this._emitter(status);
+    }
+
+    _buildRunId(app, retryNumber) {
+        return `${app?.id || 'noapp'}_${retryNumber}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    _safeText(value, max = 500) {
+        if (value == null) return null;
+        const text = String(value);
+        return text.length > max ? `${text.slice(0, max)}...` : text;
+    }
+
+    _logEvent(event, data = {}) {
+        const payload = {
+            ts: new Date().toISOString(),
+            scope: 'queue',
+            workerId: this.workerId,
+            event,
+            ...data,
+        };
+        console.log(`[QueueEvent] ${JSON.stringify(payload)}`);
+    }
+
+    _buildRunId(app, retryNumber) {
+        return `${app?.id || 'noapp'}_${retryNumber}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    _safeText(value, max = 500) {
+        if (value == null) return null;
+        const text = String(value);
+        return text.length > max ? `${text.slice(0, max)}...` : text;
+    }
+
+    _logEvent(event, data = {}) {
+        const payload = {
+            ts: new Date().toISOString(),
+            scope: 'queue',
+            workerId: this.workerId,
+            event,
+            ...data,
+        };
+        console.log(`[QueueEvent] ${JSON.stringify(payload)}`);
     }
 
     /**
@@ -242,15 +286,33 @@ class QueueRunner {
         while (currentRetry < MAX_RETRIES && this.running) {
             currentRetry++;
 
+            const runId = this._buildRunId(currentApp, currentRetry);
+            const attemptStartedAt = Date.now();
+            const sessionReusedAtStart = !!currentPage;
+
+            this._logEvent('attempt_start', {
+                runId,
+                applicationId: currentApp.id,
+                applicantId: currentApp.applicant_id,
+                applicantName: currentApplicant.full_name,
+                retryNumber: currentRetry,
+                lastPage: currentApp.last_page || null,
+                sessionReused: sessionReusedAtStart,
+                proxyEnabled: !!(currentConfig.proxy_url || process.env.PROXY_URL),
+                captchaMode: currentConfig.captcha_mode || this.captchaMode || 'capmonster',
+            });
+
             this.emit({
                 type: 'doing',
                 applicantName: currentApplicant.full_name,
-                page: currentApp.last_page ? `Retomando de ${currentApp.last_page}` : 'Iniciando...'
+                page: currentApp.last_page ? `Retomando de ${currentApp.last_page}` : 'Iniciando...',
+                runId,
+                retryNumber: currentRetry,
+                sessionReused: sessionReusedAtStart,
             });
 
             if (global.smartCheckForUpdates) global.smartCheckForUpdates();
 
-            const captchaMode = currentConfig.captcha_mode || this.captchaMode || 'capmonster';
             let lastPage = currentApp.last_page || '';
 
             // Bug 5: Verificar se page/browser estao vivos antes de reutilizar
@@ -302,7 +364,23 @@ class QueueRunner {
 
             const result = await fillApplication(currentApplicant, currentApp, onAppId, currentConfig, captchaMode, (page) => {
                 lastPage = page;
-                this.emit({ type: 'doing', applicantName: currentApplicant.full_name, page });
+
+                this._logEvent('page_update', {
+                    runId,
+                    applicationId: currentApp.id,
+                    applicantId: currentApp.applicant_id,
+                    applicantName: currentApplicant.full_name,
+                    retryNumber: currentRetry,
+                    page,
+                });
+
+                this.emit({
+                    type: 'doing',
+                    applicantName: currentApplicant.full_name,
+                    page,
+                    runId,
+                    retryNumber: currentRetry,
+                });
             }, async (pageStats) => {
                 try {
                     await this.supabase.from('fill_logs').insert({
@@ -382,8 +460,30 @@ class QueueRunner {
                 if (!result.applicationId) {
                     console.warn('[Queue] ⚠️ DoD: success sem applicationId — marcando como done mas sem confirmação');
                 }
+
+                const durationMs = Date.now() - attemptStartedAt;
+
+                this._logEvent('attempt_end', {
+                    runId,
+                    status: 'success',
+                    applicationId: currentApp.id,
+                    applicantId: currentApp.applicant_id,
+                    applicantName: currentApplicant.full_name,
+                    retryNumber: currentRetry,
+                    lastPage,
+                    durationMs,
+                    applicationIdCaptured: result.applicationId || null,
+                });
+
                 await this._markDone(currentApp.id, result.applicationId, lastPage);
-                this.emit({ type: 'done', applicantName: currentApplicant.full_name });
+                this.emit({
+                    type: 'done',
+                    applicantName: currentApplicant.full_name,
+                    runId,
+                    retryNumber: currentRetry,
+                    durationMs,
+                    applicationId: result.applicationId || null,
+                });
                 this.consecutiveErrors = 0;
                 return;
             }
@@ -502,12 +602,61 @@ class QueueRunner {
                 } catch (e) { console.warn('[Queue] Video capture failed:', e.message); }
             }
 
-            await this._logError(currentApp, currentApplicant, result.error, result.stack, lastPage, result.field, result.cause, screenshotUrl, result.validationErrors, pageHtml, videoUrl);
+            const durationMs = Date.now() - attemptStartedAt;
+            const errorMeta = {
+                runId,
+                retryNumber: currentRetry,
+                durationMs,
+                lastPage,
+                pageState: result.pageState || 'unknown',
+                finalUrl: result.url || null,
+                field: result.field || null,
+                proxyEnabled: !!(currentConfig.proxy_url || process.env.PROXY_URL),
+                sessionReused: sessionReusedAtStart,
+                validationErrorCount: result.validationErrors?.length || 0,
+                screenshotCaptured: !!screenshotUrl,
+                videoCaptured: !!videoUrl,
+            };
+
+            this._logEvent('attempt_end', {
+                status: 'error',
+                applicationId: currentApp.id,
+                applicantId: currentApp.applicant_id,
+                applicantName: currentApplicant.full_name,
+                cause: result.cause || 'unknown',
+                error: this._safeText(result.error, 200),
+                ...errorMeta,
+            });
+
+            await this._logError(
+                currentApp,
+                currentApplicant,
+                result.error,
+                result.stack,
+                lastPage,
+                result.field,
+                result.cause,
+                screenshotUrl,
+                result.validationErrors,
+                pageHtml,
+                videoUrl,
+                errorMeta
+            );
             this.consecutiveErrors++;
 
             // ── CLASSIFY ERROR ──
             const dataErrorCauses = ['missing_data', 'validation_error', 'select_mismatch', 'invalid_field_value'];
-            const retryableCauses = ['captcha_failed', 'network_error', 'session_expired', 'browser_closed', 'postback_stuck', 'page_stuck'];
+            const retryableCauses = [
+                'captcha_failed',
+                'network_error',
+                'session_expired',
+                'browser_closed',
+                'postback_stuck',
+                'page_stuck',
+                'challenge_detected',
+                'landing_dom_mismatch',
+                'recovery_dom_mismatch',
+            ];
             const hasValidationErrors = result.validationErrors && result.validationErrors.length > 0;
             const isDataError = dataErrorCauses.includes(result.cause) || hasValidationErrors;
             const isRetryable = retryableCauses.includes(result.cause) && !hasValidationErrors;
@@ -544,7 +693,17 @@ class QueueRunner {
             if (currentRetry >= MAX_RETRIES) {
                 if (result.browser) await result.browser.close().catch(() => {});
                 // Causas do site → standby (auto-retry após cooldown)
-                const siteCauses = ['timeout', 'network_error', 'page_stuck', 'postback_stuck', 'captcha_failed', 'session_expired'];
+                const siteCauses = [
+                    'timeout',
+                    'network_error',
+                    'page_stuck',
+                    'postback_stuck',
+                    'captcha_failed',
+                    'session_expired',
+                    'challenge_detected',
+                    'landing_dom_mismatch',
+                    'recovery_dom_mismatch',
+                ];
                 if (siteCauses.includes(result.cause)) {
                     await this._markStandby(currentApp.id, result.error, currentApp.applicant_id);
                     console.log(`[DS160] ⏸️ ${currentApplicant.full_name} → standby (site issue: ${result.cause})`);
@@ -583,15 +742,35 @@ class QueueRunner {
                 return;
             }
 
-            // Carry browser/page for next iteration
-            // ⚠️ Se Session expired/timeout → FECHAR browser para criar sessão limpa
-            const isSessionExpired = (result.cause === 'timeout' || /session.*expired|timed out/i.test(result.error || ''));
-            if (isSessionExpired && result.browser) {
-                console.log('[Queue] 🔄 Session expired → fechando browser para criar sessão limpa no retry');
-                await result.browser.close().catch(() => {});
-                currentBrowser = null;
-                currentPage = null;
+            // Re-enhance: Se a causa indica sessão contaminada, descartar browser/page
+            // Exemplos: challenge_detected, dom_mismatch, session_expired
+            const discardSession = shouldDiscardSession(result.cause, result.pageState);
+            if (discardSession && result.browser) {
+                this._logEvent('session_discarded', {
+                    runId,
+                    applicationId: currentApp.id,
+                    applicantId: currentApp.applicant_id,
+                    cause: result.cause,
+                    pageState: result.pageState || 'unknown',
+                });
+
+                console.log(`[Queue] 🧹 Discarting contaminated session (cause=${result.cause}, state=${result.pageState || 'unknown'})`);
+                try {
+                    await result.browser.close().catch(() => {});
+                } finally {
+                    currentBrowser = null;
+                    currentPage = null;
+                }
             } else {
+                this._logEvent('session_reused', {
+                    runId,
+                    applicationId: currentApp.id,
+                    applicantId: currentApp.applicant_id,
+                    cause: result.cause,
+                    pageState: result.pageState || 'unknown',
+                });
+
+                // Carry over browser/page if alive (re-use para performance)
                 currentBrowser = result.browser || null;
                 currentPage = result.activePage || null;
             }
@@ -1113,8 +1292,13 @@ class QueueRunner {
     // ==============================================================
     // ERROR LOGGING (to Supabase for developer monitoring)
     // ==============================================================
-    async _logError(app, applicant, errorMessage, errorStack, pageName, fieldName, errorCause, screenshotUrl, validationErrors, pageHtml, videoUrl) {
+    async _logError(app, applicant, errorMessage, errorStack, pageName, fieldName, errorCause, screenshotUrl, validationErrors, pageHtml, videoUrl, meta = null) {
         try {
+            const metaJson = meta ? JSON.stringify(meta) : null;
+            const mergedStack = [errorStack, metaJson ? `[log_meta] ${metaJson}` : null]
+                .filter(Boolean)
+                .join('\n\n');
+
             await this.supabase
                 .from('error_logs')
                 .insert({
@@ -1122,7 +1306,7 @@ class QueueRunner {
                     application_id: app?.id || null,
                     applicant_name: (typeof applicant === 'string') ? applicant : (applicant?.full_name || null),
                     error_message: errorMessage,
-                    error_stack: errorStack || null,
+                    error_stack: mergedStack || null,
                     page_name: pageName || null,
                     retry_number: app?.retry_count ? (app.retry_count + 1) : 1,
                     software_version: global.softwareVersion || 'dev',
@@ -1135,6 +1319,10 @@ class QueueRunner {
                     company_id: (typeof applicant === 'object') ? (applicant?.company_id || null) : null,
                     page_html: pageHtml || null
                 });
+
+            if (metaJson) {
+                console.log(`[QueueErrorMeta] ${metaJson}`);
+            }
         } catch (e) {
             console.warn('Failed to log error to Supabase:', e.message);
         }

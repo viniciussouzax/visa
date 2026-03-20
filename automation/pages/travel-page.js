@@ -3,6 +3,7 @@
 'use strict';
 const { waitForPostback, waitForPageReady } = require('../helpers/postback');
 const { fillSelect } = require('../helpers/fill-field');
+const { maybeRandomScroll } = require('../helpers/human-behavior');
 
 // DS-160 date selects use values '1'-'12' for months and '1'-'31' for days (NO leading zeros)
 const MONTH_MAP = { JAN: '1', FEB: '2', MAR: '3', APR: '4', MAY: '5', JUN: '6', JUL: '7', AUG: '8', SEP: '9', OCT: '10', NOV: '11', DEC: '12' };
@@ -26,6 +27,8 @@ const stripZero = (v) => {
 async function fillTravelPage(page, fieldMap, profile) {
     const start = Date.now();
     await waitForPageReady(page);
+    // Random scroll em 30% das páginas — adiciona variação comportamental
+    await maybeRandomScroll(page);
 
     const t = profile.travel || {};
     const hasSpecific = profile.hasSpecificPlans;
