@@ -29,7 +29,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
  */
 async function solveCaptchaOnPage(page, captchaMode, config, options = {}) {
     const {
-        maxAttempts = 3,
+        maxAttempts = 5,
         label = 'Captcha',
         tmpFilename = 'captcha.png',
         imageTimeout = 10000,

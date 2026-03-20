@@ -54,7 +54,7 @@ async function handleESignPage(page, profile, config, captchaMode, { waitForPage
         const captchaResult = await solveCaptchaOnPage(page, captchaMode, config, {
             label: 'ESign',
             tmpFilename: 'captcha_esign.png',
-            maxAttempts: 3,
+            maxAttempts: 5,
         });
         if (!captchaResult.success) {
             return { success: false, error: 'ESign: CAPTCHA não resolvido após 3 tentativas', cause: 'captcha_failed' };

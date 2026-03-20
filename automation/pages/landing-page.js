@@ -90,7 +90,7 @@ async function handleLandingPage(page, profile, application, config, captchaMode
     const captchaResult = await solveCaptchaOnPage(page, captchaMode, config, {
         label: 'Landing',
         tmpFilename: 'captcha_landing.png',
-        maxAttempts: 3,
+        maxAttempts: 5,
     });
     if (!captchaResult.success) {
         return { success: false, error: 'Captcha não resolvido após 3 tentativas', cause: 'captcha_failed' };

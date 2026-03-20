@@ -5,7 +5,7 @@ const { chromium } = require('patchright');
 const path = require('path');
 const fs = require('fs');
 const { solveCaptcha, solveCaptchaBase64 } = require('./captcha');
-const { humanDelay, humanType, humanClick, humanSelect, thinkingPause } = require('./helpers/human-behavior');
+const { humanDelay, humanType, humanClick, humanSelect, thinkingPause, maybeRandomScroll } = require('./helpers/human-behavior');
 
 // ====================================================================
 // MODULES ƒ¢aa modular architecture (helpers + generic page filler)
@@ -148,10 +148,6 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             ];
             const screenRes = COMMON_RESOLUTIONS[Math.floor(Math.random() * COMMON_RESOLUTIONS.length)];
 
-            // Random Chrome version (recent stable versions)
-            const CHROME_VERSIONS = ['131.0.0.0', '132.0.0.0', '133.0.0.0', '134.0.0.0'];
-            const chromeVer = CHROME_VERSIONS[Math.floor(Math.random() * CHROME_VERSIONS.length)];
-
             // Geolocation with noise (±0.05° ~5km radius) — avoid exact same coords every time
             const baseGeo = useUsLocale
                 ? { latitude: 40.7128, longitude: -74.0060 }   // NYC area
@@ -162,14 +158,36 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 longitude: baseGeo.longitude + geoNoise(),
             };
 
+            // Random UA from expanded pool (Chrome 70%, Edge 20%, Firefox 10%)
+            // Different browser brands prevent fingerprint clustering
+            const CHROME_MAJORS = [131, 132, 133, 134];
+            const pickMajor = () => CHROME_MAJORS[Math.floor(Math.random() * CHROME_MAJORS.length)];
+            const pickBuild = () => Math.floor(Math.random() * 200); // minor build variation
+            const UA_POOL = [
+                // Chrome (Windows) — most common
+                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
+                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
+                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
+                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
+                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
+                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
+                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36`,
+                // Edge (Windows) — shares Chromium base
+                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36 Edg/${pickMajor()}.0.${2800 + pickBuild()}.${pickBuild()}`,
+                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${pickMajor()}.0.${6700 + pickBuild()}.${pickBuild()} Safari/537.36 Edg/${pickMajor()}.0.${2800 + pickBuild()}.${pickBuild()}`,
+                // Firefox (Windows) — different engine
+                () => `Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:${115 + Math.floor(Math.random() * 10)}.0) Gecko/20100101 Firefox/${115 + Math.floor(Math.random() * 10)}.0`,
+            ];
+            const generatedUA = UA_POOL[Math.floor(Math.random() * UA_POOL.length)]();
+
             const identity = {
-                userAgent: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVer} Safari/537.36`,
+                userAgent: generatedUA,
                 locale: useUsLocale ? 'en-US' : 'pt-BR',
                 timezoneId: useUsLocale ? 'America/New_York' : 'America/Sao_Paulo',
                 geolocation: geo,
                 screenRes,
             };
-            console.log(`[Filler] Identity: Chrome/${chromeVer}, ${screenRes.width}x${screenRes.height}, tz=${identity.timezoneId}`);
+            console.log(`[Filler] Identity: ${generatedUA.includes('Edg/') ? 'Edge' : generatedUA.includes('Firefox') ? 'Firefox' : 'Chrome'}, ${screenRes.width}x${screenRes.height}, tz=${identity.timezoneId}`);
 
             // ── LAUNCH ARGS (anti-automation + anti-throttling + anti-datacenter) ──
             const launchArgs = [

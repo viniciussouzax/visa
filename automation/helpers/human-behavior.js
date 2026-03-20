@@ -259,6 +259,24 @@ async function humanFillTextBatch(page, entries) {
     return filled;
 }
 
+/**
+ * Random scroll simulation — 30% chance of scrolling 50-300px down.
+ * Perfectly static viewports are a bot signal — humans scroll to browse.
+ * Call at start of each page fill to vary scroll patterns.
+ * @param {import('playwright').Page} page
+ */
+async function maybeRandomScroll(page) {
+    if (Math.random() < 0.30) {
+        const scrollAmount = 50 + Math.floor(Math.random() * 250);
+        try {
+            await page.mouse.wheel(0, scrollAmount);
+            await humanDelay(300, 800);
+        } catch {
+            // Ignore scroll errors (page may not be scrollable)
+        }
+    }
+}
+
 module.exports = {
     humanDelay,
     thinkingPause,
@@ -268,4 +286,5 @@ module.exports = {
     humanScroll,
     humanFillText,
     humanFillTextBatch,
+    maybeRandomScroll,
 };

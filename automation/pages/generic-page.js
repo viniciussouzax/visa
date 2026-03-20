@@ -2,7 +2,7 @@
 // Usa field-map.js para mapeamento + helpers para preenchimento
 'use strict';
 const { waitForPostback, waitForPageReady, discoverFields, sleep } = require('../helpers/postback');
-const { humanClick, humanScroll, humanDelay, thinkingPause } = require('../helpers/human-behavior');
+const { humanClick, humanScroll, humanDelay, thinkingPause, maybeRandomScroll } = require('../helpers/human-behavior');
 const { isSelectEmpty, fillText, fillTextBatch, fillSelect, fillRadio, fillCheckbox } = require('../helpers/fill-field');
 const { clickAddAnother } = require('../helpers/add-another');
 const { verifyPageFields, getValidationErrors } = require('../helpers/verify');
@@ -40,6 +40,8 @@ function buildFieldIndex(fieldMap, visibleFields) {
 async function fillPage(page, fieldMap, options = {}) {
     const { maxPasses = 10 } = options;
     await waitForPageReady(page);
+    // Random scroll before filling — 30% chance, simulates reading/browsing
+    await maybeRandomScroll(page);
     const pageStart = Date.now();
     let pass = 0, needsRescan = true;
     const postbackLog = [];
