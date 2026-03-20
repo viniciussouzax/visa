@@ -411,21 +411,44 @@ class QueueRunner {
             if (pageAlive) {
                 try { pageHtml = await result.activePage.content().catch(() => null); } catch {}
                 try {
-                    // Wait for page stability before screenshot
-                    await result.activePage.waitForTimeout(1000).catch(() => {});
+                    // Wait for page stability + content rendering
+                    await result.activePage.waitForTimeout(2000).catch(() => {});
+
+                    // If page is in TSPD anti-bot challenge (only scripts, no visible content),
+                    // wait longer for the challenge to resolve
+                    const hasTSPD = pageHtml && pageHtml.includes('/TSPD/') && !pageHtml.includes('<form');
+                    if (hasTSPD) {
+                        console.log('[Queue] TSPD challenge detected — waiting 5s for resolution...');
+                        await result.activePage.waitForTimeout(5000).catch(() => {});
+                        // Re-capture HTML after waiting
+                        try { pageHtml = await result.activePage.content().catch(() => null); } catch {}
+                    }
+
+                    // Wait for any visible element (body with content)
+                    await result.activePage.waitForSelector('body *:not(script):not(style):not(noscript)', { timeout: 3000 }).catch(() => {});
                     
                     // Try fullPage first, fallback to visible area
                     let buf;
                     try {
-                        buf = await result.activePage.screenshot({ fullPage: true, type: 'jpeg', quality: 70, timeout: 5000 });
+                        buf = await result.activePage.screenshot({ fullPage: true, type: 'jpeg', quality: 70, timeout: 8000 });
                     } catch {
                         buf = await result.activePage.screenshot({ fullPage: false, type: 'jpeg', quality: 70, timeout: 5000 });
                     }
                     
                     console.log(`[Queue] Screenshot buffer: ${buf?.length || 0} bytes`);
+
+                    // Blank JPEG detection: if too small, retry after extra wait
+                    if (buf && buf.length < 10000) {
+                        console.log('[Queue] Screenshot parece em branco, tentando novamente em 3s...');
+                        await result.activePage.waitForTimeout(3000).catch(() => {});
+                        try {
+                            buf = await result.activePage.screenshot({ fullPage: true, type: 'jpeg', quality: 80, timeout: 8000 });
+                            console.log(`[Queue] Screenshot retry: ${buf?.length || 0} bytes`);
+                        } catch {}
+                    }
                     
-                    if (buf && buf.length > 1000) {
-                        // Only upload if screenshot is > 1KB (blank JPEGs are ~600-800 bytes)
+                    if (buf && buf.length > 2000) {
+                        // Upload (threshold raised: blank JPEGs at 1280x720 are ~2-8KB)
                         const filename = `errors/${currentApp.id}_${Date.now()}.jpg`;
                         const { data: upload, error: uploadErr } = await this.supabase.storage
                             .from('screenshots').upload(filename, buf, { contentType: 'image/jpeg', upsert: false });
