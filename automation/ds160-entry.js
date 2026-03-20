@@ -94,8 +94,10 @@ async function main() {
 
     console.log(`📋 Meu applicant: ${target.full_name} (status: ${target.status})`);
 
-    // Se já foi processado ou está sendo processado, sair
-    if (!['todo', 'retry'].includes(target.status)) {
+    // Status check — only skip if truly done or in a terminal error state
+    // 'doing' + 'standby' are processable: they mean a previous worker died/expired
+    const PROCESSABLE_STATUSES = ['todo', 'retry', 'doing', 'standby'];
+    if (!PROCESSABLE_STATUSES.includes(target.status)) {
         console.log(`⏭️ Já processado (${target.status}) — saindo`);
         process.exit(0);
     }
@@ -103,9 +105,9 @@ async function main() {
     // ── CLAIM ATÔMICO ──
     const { data: claimed, error: claimErr } = await supabase
         .from('applicants')
-        .update({ status: 'doing' })
+        .update({ status: 'doing', updated_at: new Date().toISOString() })
         .eq('id', target.id)
-        .in('status', ['todo', 'retry'])
+        .in('status', PROCESSABLE_STATUSES)
         .select('id')
         .single();
 
@@ -114,6 +116,28 @@ async function main() {
         process.exit(0);
     }
     console.log(`🔒 Claimado: ${target.full_name}\n`);
+
+    // ── GRACEFUL SHUTDOWN: reset status on SIGTERM/SIGINT (Fly.io deploy, timeout) ──
+    let shuttingDown = false;
+    const gracefulShutdown = async (signal) => {
+        if (shuttingDown) return;
+        shuttingDown = true;
+        console.log(`\n⚠️ ${signal} recebido — resetando status de ${target.full_name} para 'todo'`);
+        try {
+            await supabase.from('applicants').update({
+                status: 'todo', updated_at: new Date().toISOString()
+            }).eq('id', target.id).eq('status', 'doing');
+            await supabase.from('applications').update({
+                fill_status: 'todo', fill_worker_id: null
+            }).eq('applicant_id', target.id).eq('fill_status', 'filling');
+            console.log('✅ Status resetado — applicant será reprocessado na próxima trigger');
+        } catch (e) {
+            console.error('❌ Falha ao resetar status:', e.message);
+        }
+        process.exit(0);
+    };
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
     // ── PROCESSAR ──
     // Cloud Run Job: cada container é INDEPENDENTE e processa apenas SEU applicant.
