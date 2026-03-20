@@ -162,21 +162,26 @@ async function main() {
             app = newApp;
         }
 
-        // ── PROXY: ler de settings.proxy_url (mesma fonte que AIS/dashboard) ──
+        // ── PROXY: ler de settings (proxy_url + proxy_countries) ──
+        const { resolveProxyUrl, resolveProxyCountries } = require('./helpers/proxy-helper');
         let proxyUrl = null;
+        let proxyCountries = 'us,br';
 
         if (app.proxy_session) {
             // Retry: reutilizar proxy salvo
             proxyUrl = app.proxy_session;
-            console.log(`🔒 Proxy (retry): ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
+            console.log(`Proxy (retry): ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
         } else {
-            const { data: proxySetting } = await supabase
+            const { data: proxySettings } = await supabase
                 .from('settings')
-                .select('key_value')
-                .eq('key_name', 'proxy_url')
-                .single();
+                .select('key_name, key_value')
+                .in('key_name', ['proxy_url', 'proxy_countries']);
 
-            proxyUrl = proxySetting?.key_value || process.env.PROXY_URL || null;
+            const urlRow = proxySettings?.find(r => r.key_name === 'proxy_url');
+            const countriesRow = proxySettings?.find(r => r.key_name === 'proxy_countries');
+
+            proxyUrl = resolveProxyUrl({ settingsRow: urlRow });
+            proxyCountries = resolveProxyCountries({ settingsRow: countriesRow });
 
             if (proxyUrl) {
                 // Salvar na application para retry futuro
@@ -184,14 +189,15 @@ async function main() {
                     proxy_session: proxyUrl,
                     proxy_session_created_at: new Date().toISOString()
                 }).eq('id', app.id);
-                console.log(`🔒 Proxy: ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
+                console.log(`Proxy: ${proxyUrl.replace(/\/\/.*@/, '//***@')} | countries: ${proxyCountries}`);
             } else {
-                console.log('🌐 Sem proxy configurado — usando IP direto');
+                console.log('Sem proxy configurado — usando IP direto');
             }
         }
 
-        // Injetar proxy_url no config para o filler.js usar
+        // Injetar no config para o filler.js usar
         if (proxyUrl) config.proxy_url = proxyUrl;
+        config.proxy_countries = proxyCountries;
 
         console.log(`🔧 Application: ${app.id} (status: ${app.fill_status})`);
 

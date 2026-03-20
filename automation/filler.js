@@ -154,40 +154,18 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             // ══════════════════════════════════════════════════
             const isHeadless = process.env.HEADLESS !== 'false';
 
-            // ── PROXY (sticky session — same IP for entire execution) ──
+            // ── PROXY (centralised via proxy-helper) ──
+            const { buildProxyOpts } = require('./helpers/proxy-helper');
             const proxyUrl = config.proxy_url || process.env.PROXY_URL || null;
-            let proxyOpts = undefined;
-            if (proxyUrl) {
-                try {
-                    const parsed = new URL(proxyUrl);
-                    if (!parsed.hostname || !parsed.port) {
-                        throw new Error(`URL incompleta: hostname=${parsed.hostname}, port=${parsed.port}`);
-                    }
-                    // Sticky session: append session ID to keep same IP for entire execution
-                    const sessionId = config.session_id || `ds160_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-                    let username = decodeURIComponent(parsed.username) || '';
-                    // DataImpulse geo-targeting: user__cr.XX,YY (double underscore + cr.)
-                    const proxyCountries = config.proxy_countries || 'us,br';
-                    if (username && !username.includes('__cr.')) {
-                        username = `${username}__cr.${proxyCountries}`;
-                    }
-                    // DataImpulse sticky session: user__s.XXXXX
-                    if (username && !username.includes('__s.')) {
-                        username = `${username}__s.${sessionId}`;
-                    }
-                    proxyOpts = {
-                        server: `${parsed.protocol}//${parsed.hostname}:${parsed.port}`,
-                        username: username || undefined,
-                        password: decodeURIComponent(parsed.password) || undefined,
-                    };
-                    console.log(`[Filler] 🔒 Proxy sticky: ${parsed.hostname}:${parsed.port} (session=${sessionId})`);
-                } catch (e) {
-                    throw new Error(`Proxy URL inválida (${proxyUrl}): ${e.message}`);
-                }
-            }
+            const proxyOpts = proxyUrl
+                ? buildProxyOpts(proxyUrl, {
+                    countries: config.proxy_countries || 'us,br',
+                    sessionId: config.session_id || `ds160_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                })
+                : undefined;
 
             // ── IDENTITY (consistent per session — never changes mid-flow) ──
-            const useUsLocale = proxyUrl && (proxyUrl.includes('__cr.us') || proxyUrl.includes('us-'));
+            const useUsLocale = proxyUrl && (proxyUrl.includes('__cr.us') || config.proxy_countries?.includes('us'));
             const identity = {
                 userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                 locale: useUsLocale ? 'en-US' : 'pt-BR',

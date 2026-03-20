@@ -42,16 +42,8 @@ async function confirmAisAccount({
                 args: ['--disable-blink-features=AutomationControlled', '--no-sandbox'],
             };
             if (proxyUrl) {
-                try {
-                    const parsed = new URL(proxyUrl);
-                    launchOpts.proxy = {
-                        server: `${parsed.protocol}//${parsed.hostname}:${parsed.port}`,
-                        username: decodeURIComponent(parsed.username),
-                        password: decodeURIComponent(parsed.password),
-                    };
-                } catch (e) {
-                    console.warn(`[AIS-Confirm] ⚠️ Proxy inválido: ${e.message}`);
-                }
+                const { buildProxyOpts } = require('../helpers/proxy-helper');
+                launchOpts.proxy = buildProxyOpts(proxyUrl, { sessionId: `ais_confirm_${Date.now()}` });
             }
             browser = await chromium.launch(launchOpts);
             const context = await browser.newContext({
