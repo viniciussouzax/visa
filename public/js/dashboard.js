@@ -422,8 +422,8 @@
             const tableContainer = document.getElementById('tableContainer');
             const paginationEl = document.getElementById('pagination');
             if (loading) loading.style.display = 'none';
-            // Guard: na overview, tableContainer e pagination devem ficar ocultos
-            if (currentPage === 'overview') {
+            // Guard: na overview ou admin, tableContainer e pagination devem ficar ocultos
+            if (currentPage === 'overview' || document.getElementById('adminPanel')?.style.display === 'block') {
                 if (tableContainer) tableContainer.style.display = 'none';
                 if (paginationEl) paginationEl.style.display = 'none';
                 return;
@@ -2019,7 +2019,7 @@
             if (tableWrap) tableWrap.style.display = '';
 
             // Ordenar: error(0) acima de failed(1), dentro do mesmo: sort_order, created_at
-            const PROBLEM_PRIORITY = { error: 0, failed: 1 };
+            const PROBLEM_PRIORITY = { error: 0, fail: 1 };
             problems.sort((a, b) => {
                 const pa = PROBLEM_PRIORITY[a.status] ?? 9, pb = PROBLEM_PRIORITY[b.status] ?? 9;
                 if (pa !== pb) return pa - pb;
@@ -2450,17 +2450,51 @@
         const admCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Internet', timeout: 'Timeout', field_error: 'Campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha', validation_error: 'Validação DS-160', postback_stuck: 'Postback', page_stuck: 'Página travada', unknown: 'Desconhecido' };
         async function admLoadLogs() {
             try {
+                // 1. Buscar logs estruturados da tabela error_logs
                 const logs = await sbGet('error_logs?archived=eq.false&order=created_at.desc&limit=50&select=id,error_cause,page_name,field_name,error_message,applicant_name,created_at,retry_number,screenshot_url,page_html') || [];
-                const ce = document.getElementById('admLogsCount'); if (ce) ce.textContent = `(${logs.length})`;
-                const be = document.getElementById('admLogsBadge'); if (be) { be.textContent = logs.length; be.style.display = logs.length > 0 ? 'inline' : 'none'; }
+
+                // 2. Também buscar erros de applications (fill_error) que podem não ter log estruturado
+                let appErrors = [];
+                try {
+                    appErrors = await sbGet('applications?fill_status=in.(error,fail)&fill_error=not.is.null&order=last_error_at.desc&limit=50&select=id,applicant_id,fill_status,fill_error,last_error_at,last_page') || [];
+                    // Enriquecer com nome do applicant
+                    if (appErrors.length > 0) {
+                        const appIds = [...new Set(appErrors.map(a => a.applicant_id).filter(Boolean))];
+                        if (appIds.length > 0) {
+                            const names = await sbGet('applicants?id=in.(' + appIds.join(',') + ')&select=id,full_name') || [];
+                            const nameMap = {}; names.forEach(n => nameMap[n.id] = n.full_name);
+                            appErrors.forEach(a => a._applicant_name = nameMap[a.applicant_id] || '—');
+                        }
+                    }
+                } catch(e2) { console.warn('Failed to load app errors:', e2); }
+
+                // 3. Merge: combinar error_logs + app_errors (sem duplicatas)
+                const loggedAppIds = new Set(logs.map(l => l.application_id).filter(Boolean));
+                const extraErrors = appErrors.filter(a => !loggedAppIds.has(a.id)).map(a => ({
+                    id: 'app_' + a.id,
+                    error_cause: a.fill_status === 'fail' ? 'system_error' : 'field_error',
+                    page_name: a.last_page || null,
+                    field_name: null,
+                    error_message: a.fill_error,
+                    applicant_name: a._applicant_name || '—',
+                    created_at: a.last_error_at,
+                    retry_number: null,
+                    screenshot_url: null,
+                    page_html: null,
+                    _fromApp: true
+                }));
+                const allLogs = [...logs, ...extraErrors].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+                const ce = document.getElementById('admLogsCount'); if (ce) ce.textContent = `(${allLogs.length})`;
+                const be = document.getElementById('admLogsBadge'); if (be) { be.textContent = allLogs.length; be.style.display = allLogs.length > 0 ? 'inline' : 'none'; }
                 admUpdateNav('logs');
                 const tb = document.getElementById('admLogsTable');
-                if (logs.length === 0) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Nenhum erro ativo 🎉</td></tr>'; return; }
+                if (allLogs.length === 0) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Nenhum erro ativo 🎉</td></tr>'; return; }
                 // Store logs for modal access
-                window._admLogs = logs;
-                tb.innerHTML = logs.map((l, idx) => {
+                window._admLogs = allLogs;
+                tb.innerHTML = allLogs.map((l, idx) => {
                     const lb = admCauseLabels[l.error_cause] || l.error_cause || '—';
-                    const ds = new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    const ds = l.created_at ? new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
                     const who = l.applicant_name ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">' + escapeHTML(l.applicant_name) + '</div>' : '';
                     const retryBadge = l.retry_number != null ? `<span style="background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">#${l.retry_number}</span>` : '—';
                     const screenshotBtn = l.screenshot_url
@@ -2469,6 +2503,9 @@
                     const htmlBtn = l.page_html
                         ? `<button class="btn-new" onclick="admViewHtml(${idx})" style="background:#8b5cf6;font-size:11px;padding:3px 6px" title="Ver HTML da página">🔍</button>`
                         : '';
+                    const archiveBtn = l._fromApp
+                        ? '<span style="color:var(--text-muted);font-size:11px">fill_error</span>'
+                        : `<button class="btn-new" onclick="admArchiveLog('${l.id}')" style="background:#ef4444;font-size:11px;padding:4px 8px">Arquivar</button>`;
                     return `<tr>
                         <td><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:#fee2e2;color:#dc2626">${lb}</span>${who}</td>
                         <td>${escapeHTML(l.page_name || '—')}${l.field_name ? ' <span style="color:var(--accent);font-family:monospace;font-size:12px">' + escapeHTML(l.field_name) + '</span>' : ''}</td>
@@ -2476,7 +2513,7 @@
                         <td style="text-align:center">${retryBadge}</td>
                         <td style="text-align:center">${screenshotBtn}${htmlBtn ? ' ' + htmlBtn : ''}</td>
                         <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${ds}</td>
-                        <td><button class="btn-new" onclick="admArchiveLog('${l.id}')" style="background:#ef4444;font-size:11px;padding:4px 8px">Arquivar</button></td>
+                        <td>${archiveBtn}</td>
                     </tr>`;
                 }).join('');
             } catch (e) { document.getElementById('admLogsTable').innerHTML = '<tr><td colspan="8" style="color:#ef4444">' + e.message + '</td></tr>'; }
