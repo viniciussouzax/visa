@@ -66,7 +66,7 @@
             done: { label: 'Concluído', class: 'status-preenchido' },
             error: { label: 'Erro de dados', class: 'status-erro' },
             retry: { label: 'Repetir', class: 'status-retry' },
-            failed: { label: 'Falha técnica', class: 'status-falha' },
+            fail: { label: 'Falha técnica', class: 'status-falha' },
             standby: { label: 'Em espera', class: 'status-standby' },
         };
 
