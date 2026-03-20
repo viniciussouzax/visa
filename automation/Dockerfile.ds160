@@ -6,11 +6,18 @@ FROM mcr.microsoft.com/playwright:v1.50.0-noble
 
 WORKDIR /app
 
+# Install Google Chrome Stable (required by channel: 'chrome')
+RUN apt-get update && apt-get install -y wget gnupg \
+    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update && apt-get install -y google-chrome-stable \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Install dependencies first (cache layer)
 COPY package.json package-lock.json* ./
 RUN npm ci --production --ignore-scripts
 
-# Install patchright browsers (Chromium — stealth patched)
+# Install patchright browsers (patches CDP leaks for stealth)
 RUN npx patchright install chromium --with-deps
 
 # Copy application code
