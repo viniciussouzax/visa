@@ -2447,7 +2447,7 @@
         }
 
         // Logs
-        const admCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Internet', timeout: 'Timeout', field_error: 'Campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha', validation_error: 'Validação DS-160', postback_stuck: 'Postback', page_stuck: 'Página travada', unknown: 'Desconhecido' };
+        const admCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Campo inválido', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'Validação DS-160', postback_stuck: 'Postback travado', page_stuck: 'Página travada', missing_data: 'Dados incompletos', missing_applicant: 'Solicitante não encontrado', system_error: 'Erro do sistema', select_mismatch: 'Opção não encontrada', invalid_field_value: 'Valor inválido', session_expired: 'Sessão expirada', unknown: 'Desconhecido' };
         async function admLoadLogs() {
             try {
                 // 1. Buscar logs estruturados da tabela error_logs

@@ -171,7 +171,7 @@ class QueueRunner {
                 if (!applicant) {
                     const errMsg = 'Dados do solicitante nÃ£o encontrados';
                     await this._markError(app.id, errMsg, app.applicant_id);
-                    await this._logError(app, null, errMsg, null, null, null);
+                    await this._logError(app, null, errMsg, null, null, null, 'missing_applicant');
                     continue;
                 }
 
@@ -200,7 +200,7 @@ class QueueRunner {
 
             } catch (e) {
                 console.error('Queue loop error:', e);
-                await this._logError(null, null, e.message, e.stack, null, null);
+                await this._logError(null, null, e.message, e.stack, null, null, 'system_error');
                 this.emit({ type: 'error', applicantName: 'â€”', error: e.message });
                 this.consecutiveErrors++;
 
