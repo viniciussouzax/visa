@@ -554,9 +554,88 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
         }
 
         if (!skipToFilling) {
-            // Navigate to DS-160 Landing (needed for both Start New and Retrieve)
-            await page.goto('https://ceac.state.gov/GenNIV/Default.aspx', { waitUntil: 'domcontentloaded' });
-            await waitForPageReady(page);
+            // Navigate to DS-160 Landing with retry + fallback
+            const DS160_URL = 'https://ceac.state.gov/GenNIV/Default.aspx';
+            let navSuccess = false;
+            const MAX_NAV_RETRIES = 3;
+
+            for (let navAttempt = 1; navAttempt <= MAX_NAV_RETRIES; navAttempt++) {
+                try {
+                    const navTimeout = proxyUrl ? 60000 + (navAttempt * 15000) : 30000; // Progressive timeout
+                    console.log(`[Filler] 🌐 Navegando para DS-160 (tentativa ${navAttempt}/${MAX_NAV_RETRIES}, timeout=${navTimeout/1000}s)...`);
+                    await page.goto(DS160_URL, { waitUntil: 'domcontentloaded', timeout: navTimeout });
+                    await waitForPageReady(page);
+
+                    // Check if we got a real page (not just TSPD JS challenge with no content)
+                    const hasContent = await page.locator('form, input, select, #ctl00_SiteContentPlaceHolder_ucLocation_ddlLocation').first()
+                        .isVisible({ timeout: 5000 }).catch(() => false);
+                    const hasTSPDChallenge = await page.locator('input#ans').isVisible({ timeout: 2000 }).catch(() => false);
+
+                    if (hasContent || hasTSPDChallenge) {
+                        navSuccess = true;
+                        console.log(`[Filler] ✅ DS-160 carregado ${hasTSPDChallenge ? '(TSPD challenge)' : '(form ok)'}`);
+                        break;
+                    }
+
+                    // Page loaded but no useful content — might be blocked
+                    const bodyHtml = await page.content().catch(() => '');
+                    if (bodyHtml.includes('/TSPD/') && !bodyHtml.includes('<form')) {
+                        console.log(`[Filler] ⚠️ TSPD JS-only page (sem form) — aguardando resolução automática...`);
+                        await sleep(5000);
+                        // Check again after wait
+                        const hasContentNow = await page.locator('form, input#ans').first()
+                            .isVisible({ timeout: 5000 }).catch(() => false);
+                        if (hasContentNow) {
+                            navSuccess = true;
+                            console.log('[Filler] ✅ TSPD resolvido automaticamente');
+                            break;
+                        }
+                    }
+
+                    console.warn(`[Filler] Navegação ${navAttempt}/${MAX_NAV_RETRIES} — página sem conteúdo útil`);
+                } catch (e) {
+                    console.warn(`[Filler] Navegação ${navAttempt}/${MAX_NAV_RETRIES} falhou: ${e.message}`);
+                }
+
+                if (navAttempt < MAX_NAV_RETRIES) {
+                    const retryDelay = 5000 + navAttempt * 5000; // 10s, 15s
+                    console.log(`[Filler] ⏳ Aguardando ${retryDelay/1000}s antes de retry...`);
+                    await sleep(retryDelay);
+                }
+            }
+
+            // Fallback: try without proxy if all proxy attempts failed
+            if (!navSuccess && proxyUrl) {
+                console.log('[Filler] 🔄 Todas as tentativas com proxy falharam — tentando conexão direta...');
+                try {
+                    await browser.close();
+                } catch {}
+
+                // Relaunch without proxy
+                const directLaunchArgs = launchArgs.filter(a => !a.includes('proxy'));
+                browser = await chromium.launch({
+                    headless: isHeadless,
+                    args: directLaunchArgs,
+                });
+                const directContext = await browser.newContext({
+                    ...contextOpts,
+                    proxy: undefined,
+                });
+                page = await directContext.newPage();
+                page.setDefaultTimeout(15000);
+                page.setDefaultNavigationTimeout(30000);
+                page.on('dialog', async d => d.accept().catch(() => {}));
+
+                console.log('[Filler] 🌐 Navegando sem proxy...');
+                await page.goto(DS160_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+                await waitForPageReady(page);
+                navSuccess = true;
+                console.log('[Filler] ✅ DS-160 carregado via conexão direta');
+            }
+
+            if (!navSuccess) {
+                throw new Error('Falha ao carregar DS-160 após todas as tentativas (proxy + direto)');
+            }
 
             // ── TSPD/F5 Anti-Bot Challenge Detection ──
             // CEAC exibe challenge anti-bot antes do DS-160 real.
