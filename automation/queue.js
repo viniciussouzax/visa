@@ -467,7 +467,42 @@ class QueueRunner {
                 console.warn(`[Queue] Pagina nao disponivel para screenshot (pageAlive=${pageAlive})`);
             }
 
-            await this._logError(currentApp, currentApplicant, result.error, result.stack, lastPage, result.field, result.cause, screenshotUrl, result.validationErrors, pageHtml);
+            // ── SESSION VIDEO: upload recorded video ──
+            let videoUrl = null;
+            if (pageAlive) {
+                try {
+                    const video = result.activePage.video();
+                    if (video) {
+                        // Close page to finalize the video file
+                        await result.activePage.close().catch(() => {});
+                        const videoPath = await video.path();
+                        const fs = require('fs');
+                        if (videoPath && fs.existsSync(videoPath)) {
+                            const videoBuffer = fs.readFileSync(videoPath);
+                            console.log(`[Queue] 🎥 Video: ${videoPath} (${(videoBuffer.length / 1024 / 1024).toFixed(1)}MB)`);
+                            // Only upload if < 50MB (Supabase limit)
+                            if (videoBuffer.length < 50 * 1024 * 1024) {
+                                const videoFilename = `videos/${currentApp.id}_${Date.now()}.webm`;
+                                const { data: vidUpload, error: vidErr } = await this.supabase.storage
+                                    .from('screenshots').upload(videoFilename, videoBuffer, { contentType: 'video/webm', upsert: false });
+                                if (vidUpload && !vidErr) {
+                                    const { data: vidPub } = this.supabase.storage.from('screenshots').getPublicUrl(videoFilename);
+                                    videoUrl = vidPub?.publicUrl || null;
+                                    console.log(`[Queue] 🎥 Video salvo: ${videoUrl}`);
+                                } else if (vidErr) {
+                                    console.warn('[Queue] Video upload failed:', vidErr.message);
+                                }
+                            } else {
+                                console.warn(`[Queue] Video muito grande (${(videoBuffer.length/1024/1024).toFixed(0)}MB) — ignorando upload`);
+                            }
+                            // Cleanup local video file
+                            fs.unlinkSync(videoPath);
+                        }
+                    }
+                } catch (e) { console.warn('[Queue] Video capture failed:', e.message); }
+            }
+
+            await this._logError(currentApp, currentApplicant, result.error, result.stack, lastPage, result.field, result.cause, screenshotUrl, result.validationErrors, pageHtml, videoUrl);
             this.consecutiveErrors++;
 
             // ── CLASSIFY ERROR ──
@@ -1078,7 +1113,7 @@ class QueueRunner {
     // ==============================================================
     // ERROR LOGGING (to Supabase for developer monitoring)
     // ==============================================================
-    async _logError(app, applicant, errorMessage, errorStack, pageName, fieldName, errorCause, screenshotUrl, validationErrors, pageHtml) {
+    async _logError(app, applicant, errorMessage, errorStack, pageName, fieldName, errorCause, screenshotUrl, validationErrors, pageHtml, videoUrl) {
         try {
             await this.supabase
                 .from('error_logs')
@@ -1094,6 +1129,7 @@ class QueueRunner {
                     field_name: fieldName || null,
                     error_cause: errorCause || 'unknown',
                     screenshot_url: screenshotUrl || null,
+                    video_url: videoUrl || null,
                     validation_errors: validationErrors && validationErrors.length > 0 ? validationErrors : null,
                     user_id: (typeof applicant === 'object') ? (applicant?.user_id || null) : null,
                     company_id: (typeof applicant === 'object') ? (applicant?.company_id || null) : null,

@@ -208,6 +208,11 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     'Sec-Fetch-User': '?1',
                     'Upgrade-Insecure-Requests': '1',
                 },
+                // Session recording (like Hotjar) — saves .webm to /tmp/videos
+                recordVideo: {
+                    dir: path.join(TMP, 'videos'),
+                    size: { width: 1280, height: 720 },
+                },
             };
 
             // Restore session from previous attempt if available
@@ -234,7 +239,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 } catch { /* ignore errors during save */ }
             };
 
-            console.log(`[Filler] Novo browser criado (headless=${isHeadless}, proxy=${!!proxyUrl})`);
+            console.log(`[Filler] Novo browser criado (headless=${isHeadless}, proxy=${!!proxyUrl}, video=true)`);
         }
 
         // =============================================================
@@ -559,10 +564,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 const isDisabled = await questionSelect.evaluate(el => el.disabled).catch(() => false);
                 if (!isDisabled) {
                     const questionIndex = parseInt(config.security_question || '0', 10);
-                    await questionSelect.selectOption({ index: questionIndex });
+                    await humanSelect(page, questionSelect, { index: questionIndex });
                     // Security answer: config (from settings/dashboard) takes priority, profile as fallback
                     const secAnswer = config.security_answer || profile.securityAnswer || '';
-                    await page.locator("input[id$='_txtAnswer']").fill(secAnswer);
+                    await humanType(page, page.locator("input[id$='_txtAnswer']"), secAnswer);
                 } else {
                     console.log('[Filler] Security question already set (disabled) ƒ¢aa skipping');
                     // Still fill answer if input is enabled
@@ -570,7 +575,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     const answerDisabled = await answerInput.evaluate(el => el.disabled).catch(() => true);
                     if (!answerDisabled) {
                         const secAnswer = config.security_answer || profile.securityAnswer || '';
-                        await answerInput.fill(secAnswer);
+                        await humanType(page, answerInput, secAnswer);
                     }
                 }
 
@@ -579,14 +584,14 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 const continueBtn377 = page.locator("input[id$='_btnContinue']:not([disabled])");
                 const nextBtn = page.locator("input[type='submit'][value*='Next']:not([disabled])").first();
                 if (await continueBtn377.isVisible({ timeout: 2000 }).catch(() => false)) {
-                    await continueBtn377.click();
+                    await humanClick(page, continueBtn377);
                 } else if (await nextBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-                    await nextBtn.click();
+                    await humanClick(page, nextBtn);
                 } else {
                     // Last resort: force-click any submit button that exists
                     const anySubmit = page.locator("input[type='submit']:not([disabled])").first();
                     if (await anySubmit.isVisible({ timeout: 2000 }).catch(() => false)) {
-                        await anySubmit.click();
+                        await humanClick(page, anySubmit);
                     }
                 }
                 await waitForUrlChange(page, urlBefore);
@@ -605,7 +610,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     }
 
                     const urlBefore2 = page.url();
-                    await continueBtn.click();
+                    await humanClick(page, continueBtn);
                     await waitForUrlChange(page, urlBefore2);
                     await waitForPageReady(page);
                 }
@@ -748,20 +753,20 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
                         // Surname ƒ¢aa first 5 letters, uppercase
                         const surname5 = (profile.surname || '').substring(0, 5).toUpperCase();
-                        await surnameField.fill(surname5);
+                        await humanType(page, surnameField, surname5);
                         console.log(`[Filler] Recovery: Surname preenchido: ${surname5}`);
 
                         // Year of Birth
                         if (await dobYearField.isVisible({ timeout: 1000 }).catch(() => false)) {
                             const birthYear = profile.dob?.year || '';
-                            await dobYearField.fill(String(birthYear));
+                            await humanType(page, dobYearField, String(birthYear));
                             console.log(`[Filler] Recovery: Year of Birth preenchido: ${birthYear}`);
                         }
 
                         // Security Answer
                         if (await secAnswerField.isVisible({ timeout: 1000 }).catch(() => false)) {
                             const secAnswer = config.security_answer || profile.securityAnswer || '';
-                            await secAnswerField.fill(secAnswer);
+                            await humanType(page, secAnswerField, secAnswer);
                             console.log(`[Filler] Recovery: Security answer preenchido`);
                         }
 
@@ -773,7 +778,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         if (await appIdInput.isVisible({ timeout: 2000 }).catch(() => false)) {
                             const isEnabled = await appIdInput.isEnabled().catch(() => false);
                             if (isEnabled) {
-                                await appIdInput.fill(application.application_id || '');
+                                await humanType(page, appIdInput, application.application_id || '');
                                 console.log(`[Filler] Recovery: App ID preenchido: ${application.application_id}`);
                             }
                         }
@@ -787,7 +792,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                             console.log(`[Filler] Recovery captcha (attempt ${rAttempt}): ${answer}`);
                             const captchaInput = page.locator("input[id$='_txtCodeTextBox']").first();
                             await captchaInput.fill('');
-                            await captchaInput.fill(answer);
+                            await humanType(page, captchaInput, answer);
                         } catch (e) {
                             console.warn(`[Filler] Recovery captcha error:`, e.message);
                         }
@@ -798,7 +803,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         if (await appIdInput.isVisible({ timeout: 2000 }).catch(() => false)) {
                             const isEnabled = await appIdInput.isEnabled().catch(() => false);
                             if (isEnabled) {
-                                await appIdInput.fill(application.application_id || '');
+                                await humanType(page, appIdInput, application.application_id || '');
                                 console.log(`[Filler] Recovery: App ID preenchido: ${application.application_id}`);
                             }
                         }
@@ -807,7 +812,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     // Click Retrieve Application button
                     const retrieveBtn = page.locator("input[id$='_btnRetrieve'], a[id$='_lnkRetrieve'], input[value*='Retrieve']").first();
                     if (await retrieveBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-                        await retrieveBtn.click();
+                        await humanClick(page, retrieveBtn);
                         console.log('[Filler] Recovery: clicou Retrieve Application');
                     } else {
                         console.warn('[Filler] Recovery: bot£o Retrieve nao encontrado');
