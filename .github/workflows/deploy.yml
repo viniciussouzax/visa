@@ -71,12 +71,12 @@ jobs:
           gcloud run jobs deploy ds160-worker \
             --image=$IMAGE \
             --region=${{ env.GCP_REGION }} \
-            --task-timeout=600s \
+            --task-timeout=1200s \
             --max-retries=2 \
-            --memory=2Gi \
-            --cpu=1 \
+            --memory=4Gi \
+            --cpu=2 \
             --parallelism=1 \
-            --set-env-vars="SUPABASE_URL=${{ secrets.SUPABASE_URL }},SUPABASE_KEY=${{ secrets.SUPABASE_KEY }},WORKER_EMAIL=${{ secrets.WORKER_EMAIL }},WORKER_PASSWORD=${{ secrets.WORKER_PASSWORD }},PROXY_URL=${{ secrets.PROXY_URL }}"
+            --set-env-vars="SUPABASE_URL=${{ secrets.SUPABASE_URL }},SUPABASE_KEY=${{ secrets.SUPABASE_KEY }},WORKER_EMAIL=${{ secrets.WORKER_EMAIL }},WORKER_PASSWORD=${{ secrets.WORKER_PASSWORD }},PROXY_URL=${{ secrets.PROXY_URL }},HEADLESS=true"
 
   # ────────────────────────────────────────────
   # AIS WORKER → Cloud Run Job
