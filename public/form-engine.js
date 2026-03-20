@@ -1252,9 +1252,14 @@ class FormEngine {
                         // onInput/_setArrayValue already captures real-time user edits;
                         // _saveArrayData is only a safety sync and must not corrupt loaded data.
                         // FIX: null (empty date) was passing `val !== ''` and overwriting saved dates.
+                        // FIX2: Don't overwrite existing data with schema defaults read from stale DOM.
+                        // If DOM has the field's default but arrayData has a different non-empty value,
+                        // the loaded data takes priority (DOM may reflect a stale render cycle).
                         const hasExisting = existing !== undefined && existing !== null && existing !== '';
                         const isEmpty = val === '' || val === null || val === undefined;
-                        if (!isEmpty || !hasExisting) {
+                        if (hasExisting && !isEmpty && val !== existing && subF.default && val === subF.default) {
+                            // DOM shows schema default but loaded data is different — keep loaded data
+                        } else if (!isEmpty || !hasExisting) {
                             this.arrayData[key][idx][subF.id] = val;
                         }
                     }
