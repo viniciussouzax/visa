@@ -920,13 +920,16 @@ class FormEngine {
             this.arrayData[key] = [initEntry];
         } else {
             // Apply defaults to first entry if fields are empty
-            const firstEntry = this.arrayData[key][0];
-            if (firstEntry) {
-                (f.fields || []).forEach(subF => {
-                    if (subF.default && !firstEntry[subF.id]) {
-                        firstEntry[subF.id] = subF.default;
-                    }
-                });
+            // BUT NOT during hydration — loadData already set the authoritative values
+            if (!this._isHydrating) {
+                const firstEntry = this.arrayData[key][0];
+                if (firstEntry) {
+                    (f.fields || []).forEach(subF => {
+                        if (subF.default && !firstEntry[subF.id]) {
+                            firstEntry[subF.id] = subF.default;
+                        }
+                    });
+                }
             }
         }
 
@@ -3142,11 +3145,9 @@ class FormEngine {
                 }
 
                 if (f.type === 'array') {
-                    // Always sync array data from DOM — elements exist even when
-                    // section is hidden (display:none). _saveArrayData checks if
-                    // elements exist (found guard) so it won't wipe data if they
-                    // were removed from DOM by conditional logic.
-                    this._saveArrayData(sec.id, f.id);
+                    // Array data is maintained by onInput/_setArrayValue in real-time.
+                    // DO NOT call _saveArrayData here — it reads DOM which may have
+                    // stale defaults from init() render cycle, corrupting loaded data.
                     const arr = this.arrayData[key];
                     if (arr && arr.length > 0) {
                         json[sec.id][f.id] = arr.filter(entry =>
@@ -3317,8 +3318,8 @@ class FormEngine {
                 }
 
                 if (f.type === 'array') {
-                    // Force save current UI into array data just in case, won't break anything if in load mode
-                    this._saveArrayData(sec.id, f.id);
+                    // Array data is maintained by onInput/_setArrayValue.
+                    // DO NOT call _saveArrayData — it may read stale DOM values.
                     const arr = this.arrayData[key] || [];
 
                     let arrayHtml = '';
