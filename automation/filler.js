@@ -257,11 +257,6 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     'Sec-Fetch-User': '?1',
                     'Upgrade-Insecure-Requests': '1',
                 },
-                // Session recording (like Hotjar) — saves .webm to /tmp/videos
-                recordVideo: {
-                    dir: path.join(TMP, 'videos'),
-                    size: { width: 1280, height: 720 },
-                },
             };
 
             // Restore session from previous attempt if available
