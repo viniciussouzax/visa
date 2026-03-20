@@ -368,6 +368,47 @@ class FormEngine {
             });
         });
 
+        // Post-render sync: force array select values to match arrayData
+        // Fixes race condition where init() renders defaults before loadData() runs
+        for (const [arrKey, entries] of Object.entries(this.arrayData)) {
+            if (!Array.isArray(entries)) continue;
+            let arrField = null;
+            for (const sec of this.schema.sections) {
+                arrField = sec.fields.find(f => sec.id + '.' + f.id === arrKey && f.type === 'array');
+                if (arrField) break;
+            }
+            if (!arrField) continue;
+            entries.forEach((entry, idx) => {
+                if (!entry || typeof entry !== 'object') return;
+                (arrField.fields || []).forEach(subF => {
+                    if (subF.type !== 'select') return;
+                    const subKey = `${arrKey}[${idx}].${subF.id}`;
+                    const el = document.getElementById(subKey);
+                    if (el && entry[subF.id] !== undefined && entry[subF.id] !== '') {
+                        el.value = entry[subF.id];
+                    }
+                });
+            });
+            // Re-evaluate noneOnlyFirstEntry: update Add button and handle disabled state
+            if (arrField.noneOnlyFirstEntry && entries[0]) {
+                const noneVal = arrField.noneValue || 'NONE';
+                const noneFieldId = arrField.noneField || 'platform';
+                const platformVal = entries[0][noneFieldId] || '';
+                const isNone = platformVal === noneVal;
+                const addBtn = document.getElementById('arradd-' + arrKey);
+                if (addBtn) addBtn.style.display = isNone ? 'none' : '';
+                (arrField.fields || []).forEach(subF => {
+                    if (subF.id === noneFieldId) return;
+                    const handleEl = document.getElementById(`${arrKey}[0].${subF.id}`);
+                    if (handleEl) {
+                        handleEl.disabled = isNone;
+                        const row = handleEl.closest('.field-row');
+                        if (row) row.classList.toggle('na-disabled', isNone);
+                    }
+                });
+            }
+        }
+
         // Smart accordion: update status first, then open sections
         this._updateSectionStatus();
         const isAssessorMode = document.body.classList.contains('role-assessor');
@@ -696,16 +737,21 @@ class FormEngine {
 
     // Resolve value for both regular fields (this.data) and array sub-fields (this.arrayData)
     _resolveValue(key) {
-        // Regular field
-        if (this.data[key] !== undefined) return this.data[key];
         // Array sub-field: key pattern is "section.arrayId[idx].subFieldId"
+        // Check arrayData FIRST — it is the authoritative source for array entries.
+        // this.data[key] may hold stale values from a prior render cycle.
         const arrMatch = key.match(/^(.+)\[(\d+)\]\.(.+)$/);
         if (arrMatch) {
             const [, arrKey, idxStr, subId] = arrMatch;
             const idx = parseInt(idxStr);
             const arr = this.arrayData[arrKey];
             if (arr && arr[idx] && arr[idx][subId] !== undefined) return arr[idx][subId];
+            // Fallback to this.data for array keys (e.g. user just changed via onInput)
+            if (this.data[key] !== undefined) return this.data[key];
+            return '';
         }
+        // Regular field
+        if (this.data[key] !== undefined) return this.data[key];
         return '';
     }
 
