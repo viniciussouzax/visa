@@ -166,6 +166,11 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     // Sticky session: append session ID to keep same IP for entire execution
                     const sessionId = config.session_id || `ds160_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
                     let username = decodeURIComponent(parsed.username) || '';
+                    // DataImpulse/BrightData geo-targeting: user-country-XX
+                    const proxyCountry = config.proxy_country || 'us'; // DS-160 = US gov site, US IPs are safest
+                    if (username && !username.includes('-country-')) {
+                        username = `${username}-country-${proxyCountry}`;
+                    }
                     // DataImpulse/BrightData sticky format: user-session-XXX
                     if (username && !username.includes('-session-')) {
                         username = `${username}-session-${sessionId}`;
@@ -182,7 +187,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             }
 
             // ── IDENTITY (consistent per session — never changes mid-flow) ──
-            const useUsLocale = proxyUrl && (proxyUrl.includes('dataimpulse') || proxyUrl.includes('brightdata') || proxyUrl.includes('us-'));
+            const useUsLocale = proxyUrl && (proxyUrl.includes('-country-us') || proxyUrl.includes('us-'));
             const identity = {
                 userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                 locale: useUsLocale ? 'en-US' : 'pt-BR',
@@ -218,7 +223,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             const hasStorageState = fs.existsSync(storageStatePath);
 
             const launchOpts = {
-                headless: isHeadless ? 'new' : false,
+                headless: isHeadless,
                 channel: 'chrome',  // Chrome real: correct fingerprint (plugins, chrome.app, WebGL)
                 // patchright CDP patches operate at protocol level, work with any channel
                 args: launchArgs,
