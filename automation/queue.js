@@ -1,4 +1,4 @@
-// Queue Runner â€” Resilient automation with retry, backoff, and smart updates
+// Queue Runner  Resilient automation with retry, backoff, and smart updates
 function getFiller() {
     // Clear caches to pick up any code changes (modular architecture)
     const base = require('path').join(__dirname);
@@ -14,16 +14,16 @@ const POLL_INTERVAL = 30; // 30 seconds fallback (Realtime handles instant detec
 const MAX_RETRIES = 3;
 const BACKOFF_DELAYS = [2 * 60, 4 * 60, 6 * 60, 8 * 60]; // 2min, 4min, 6min, 8min between retries
 const GLOBAL_PAUSE = 15 * 60; // 15min pause after 3 consecutive global errors
-const STALE_FILLING_TIMEOUT = 10 * 60; // 10min â€” if filling for longer, consider stale
-const RE_QUEUE_DELAY = 15 * 60; // 15min â€” wait before retrying after max retries exhausted
-const STANDBY_COOLDOWN = 30 * 60; // 30min â€” wait before retrying standby (site-side issue)
+const STALE_FILLING_TIMEOUT = 10 * 60; // 10min  if filling for longer, consider stale
+const RE_QUEUE_DELAY = 15 * 60; // 15min  wait before retrying after max retries exhausted
+const STANDBY_COOLDOWN = 30 * 60; // 30min  wait before retrying standby (site-side issue)
 
 class QueueRunner {
     constructor(supabase, captchaMode) {
         this.supabase = supabase;
         this.captchaMode = captchaMode || 'capmonster';
         this.running = false;
-        this.companyId = null; // loaded on start â€” filters by organization
+        this.companyId = null; // loaded on start  filters by organization
         this.workerId = `worker_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         this._emitter = null;
         this._countdownTimer = null;
@@ -58,13 +58,13 @@ class QueueRunner {
                 { event: 'UPDATE', schema: 'public', table: 'applicants', filter: 'stage=eq.ds160' },
                 (payload) => {
                     if (payload.new?.status === 'todo') {
-                        console.log(`[DS160] âš¡ Realtime: nova solicitaÃ§Ã£o â†’ ${payload.new?.full_name || payload.new?.id}`);
+                        console.log(`[DS160]  Realtime: nova solicitacao  ${payload.new?.full_name || payload.new?.id}`);
                         this.triggerNow();
                     }
                 }
             )
             .subscribe((status) => {
-                if (status === 'SUBSCRIBED') console.log('[Queue] \u2705 Realtime connected â€” instant queue detection active');
+                if (status === 'SUBSCRIBED') console.log('[Queue] \u2705 Realtime connected  instant queue detection active');
             });
 
         this._loop();
@@ -169,7 +169,7 @@ class QueueRunner {
                 // 3. Fetch applicant data
                 const applicant = await this._getApplicant(app.applicant_id);
                 if (!applicant) {
-                    const errMsg = 'Dados do solicitante nÃ£o encontrados';
+                    const errMsg = 'Dados do solicitante nao encontrados';
                     await this._markError(app.id, errMsg, app.applicant_id);
                     await this._logError(app, null, errMsg, null, null, null, 'missing_applicant');
                     continue;
@@ -201,7 +201,7 @@ class QueueRunner {
             } catch (e) {
                 console.error('Queue loop error:', e);
                 await this._logError(null, null, e.message, e.stack, null, null, 'system_error');
-                this.emit({ type: 'error', applicantName: 'â€”', error: e.message });
+                this.emit({ type: 'error', applicantName: '', error: e.message });
                 this.consecutiveErrors++;
 
                 // BUG FIX: Se temos o applicant_id, marcar como fail no dashboard
@@ -211,11 +211,11 @@ class QueueRunner {
                         status: 'fail',
                         updated_at: new Date().toISOString()
                     }).eq('id', app.applicant_id).catch(() => {});
-                    console.log(`[Queue] âŒ Applicant ${app.applicant_id} marcado como failed (exception no loop)`);
+                    console.log(`[Queue]  Applicant ${app.applicant_id} marcado como failed (exception no loop)`);
                 }
 
                 if (this.consecutiveErrors >= 3) {
-                    console.log(`[Queue] ${this.consecutiveErrors} consecutive errors â€” pausing ${GLOBAL_PAUSE / 60}min`);
+                    console.log(`[Queue] ${this.consecutiveErrors} consecutive errors  pausing ${GLOBAL_PAUSE / 60}min`);
                     this.emit({ type: 'paused', message: `Pausado: ${this.consecutiveErrors} erros consecutivos` });
                     await this._waitWithCountdown(GLOBAL_PAUSE);
                     this.consecutiveErrors = 0;
@@ -227,9 +227,9 @@ class QueueRunner {
     }
 
     // ==============================================================
-    // FILL WITH RETRY (up to MAX_RETRIES attempts) â€” ITERATIVE LOOP
-    // Bug 3 fix: loop iterativo ao invÃ©s de recursÃ£o (evita stack overflow)
-    // Bug 5 fix: verifica se page/browser estÃ£o vivos antes de reutilizar
+    // FILL WITH RETRY (up to MAX_RETRIES attempts)  ITERATIVE LOOP
+    // Bug 3 fix: loop iterativo ao inves de recursao (evita stack overflow)
+    // Bug 5 fix: verifica se page/browser estao vivos antes de reutilizar
     // ==============================================================
     async _fillWithRetry(app, applicant, config, existingBrowser, existingPage) {
         let currentRetry = (app.retry_count || 0);
@@ -253,17 +253,17 @@ class QueueRunner {
             const captchaMode = currentConfig.captcha_mode || this.captchaMode || 'capmonster';
             let lastPage = currentApp.last_page || '';
 
-            // Bug 5: Verificar se page/browser estÃ£o vivos antes de reutilizar
+            // Bug 5: Verificar se page/browser estao vivos antes de reutilizar
             if (currentPage) {
                 try {
                     if (currentPage.isClosed()) {
-                        console.log('[Queue] âš ï¸ Page morta â€” fechando browser, criando novo');
+                        console.log('[Queue]  Page morta  fechando browser, criando novo');
                         if (currentBrowser) await currentBrowser.close().catch(() => {});
                         currentBrowser = null;
                         currentPage = null;
                     }
                 } catch {
-                    console.log('[Queue] âš ï¸ Page check falhou â€” browser morto');
+                    console.log('[Queue]  Page check falhou  browser morto');
                     currentBrowser = null;
                     currentPage = null;
                 }
@@ -388,21 +388,21 @@ class QueueRunner {
                 return;
             }
 
-            // âš ï¸ MISSING DATA â†’ error imediato
+            //  MISSING DATA  error imediato
             if (result.cause === 'missing_data') {
                 if (result.browser) await result.browser.close().catch(() => {});
-                const missingList = result.missingFields?.join(', ') || 'campos nÃ£o identificados';
+                const missingList = result.missingFields?.join(', ') || 'campos nao identificados';
                 await this._logError(currentApp, currentApplicant, result.error, null, 'Validation', null, 'missing_data', null, result.missingFields?.map(f => `Campo faltante: ${f}`));
                 await this._markNeedsAttention(currentApp.id, `Dados incompletos: ${missingList}`);
                 await this.supabase.from('applicants').update({
                     status: 'error', updated_at: new Date().toISOString()
                 }).eq('id', currentApp.applicant_id);
-                console.log(`[DS160] âŒ ERROR: ${currentApplicant.full_name} â€” dados incompletos`);
+                console.log(`[DS160]  ERROR: ${currentApplicant.full_name}  dados incompletos`);
                 this.emit({ type: 'error', applicantName: currentApplicant.full_name, error: `Dados incompletos: ${missingList}` });
                 return;
             }
 
-            // âŒ ERROR â€” capturar screenshot
+            //  ERROR  capturar screenshot
             console.error(`[Queue] Error on ${currentApplicant.full_name} (attempt ${currentRetry}):`, result.error);
 
             let screenshotUrl = null;
@@ -411,15 +411,37 @@ class QueueRunner {
             if (pageAlive) {
                 try { pageHtml = await result.activePage.content().catch(() => null); } catch {}
                 try {
-                    const buf = await result.activePage.screenshot({ fullPage: true, type: 'jpeg', quality: 70 });
-                    const filename = `errors/${currentApp.id}_${Date.now()}.jpg`;
-                    const { data: upload, error: uploadErr } = await this.supabase.storage
-                        .from('screenshots').upload(filename, buf, { contentType: 'image/jpeg', upsert: false });
-                    if (upload && !uploadErr) {
-                        const { data: pub } = this.supabase.storage.from('screenshots').getPublicUrl(filename);
-                        screenshotUrl = pub?.publicUrl || null;
+                    // Wait for page stability before screenshot
+                    await result.activePage.waitForTimeout(1000).catch(() => {});
+                    
+                    // Try fullPage first, fallback to visible area
+                    let buf;
+                    try {
+                        buf = await result.activePage.screenshot({ fullPage: true, type: 'jpeg', quality: 70, timeout: 5000 });
+                    } catch {
+                        buf = await result.activePage.screenshot({ fullPage: false, type: 'jpeg', quality: 70, timeout: 5000 });
+                    }
+                    
+                    console.log(`[Queue] Screenshot buffer: ${buf?.length || 0} bytes`);
+                    
+                    if (buf && buf.length > 1000) {
+                        // Only upload if screenshot is > 1KB (blank JPEGs are ~600-800 bytes)
+                        const filename = `errors/${currentApp.id}_${Date.now()}.jpg`;
+                        const { data: upload, error: uploadErr } = await this.supabase.storage
+                            .from('screenshots').upload(filename, buf, { contentType: 'image/jpeg', upsert: false });
+                        if (upload && !uploadErr) {
+                            const { data: pub } = this.supabase.storage.from('screenshots').getPublicUrl(filename);
+                            screenshotUrl = pub?.publicUrl || null;
+                            console.log(`[Queue] Screenshot salvo: ${screenshotUrl}`);
+                        } else if (uploadErr) {
+                            console.warn('[Queue] Screenshot upload failed:', uploadErr.message);
+                        }
+                    } else {
+                        console.warn(`[Queue] Screenshot muito pequeno (${buf?.length || 0} bytes) - pagina provavelmente em branco`);
                     }
                 } catch (e) { console.warn('[Queue] Screenshot failed:', e.message); }
+            } else {
+                console.warn(`[Queue] Pagina nao disponivel para screenshot (pageAlive=${pageAlive})`);
             }
 
             await this._logError(currentApp, currentApplicant, result.error, result.stack, lastPage, result.field, result.cause, screenshotUrl, result.validationErrors, pageHtml);
@@ -436,7 +458,7 @@ class QueueRunner {
             await this._updateRetry(currentApp.id, currentRetry, lastPage, errDetail);
 
             // ── DATA ERROR → stop immediately, no retry ──
-            // Erros de dados (nome inválido, campo rejeitado pelo DS-160) NÃO resolvem com retry.
+            // Erros de dados (nome inválido, campo rejeitado pelo DS-160) NO resolvem com retry.
             // O usuário precisa corrigir os dados no formulário clone.
             if (isDataError) {
                 if (result.browser) await result.browser.close().catch(() => {});
@@ -556,7 +578,7 @@ class QueueRunner {
                     type: 'waiting',
                     countdown: this._countdown,
                     display: display,
-                    message: `PrÃ³xima verificaÃ§Ã£o em ${display}`
+                    message: `Proxima verificacao em ${display}`
                 });
 
                 if (this._countdown <= 0) {
@@ -633,7 +655,7 @@ class QueueRunner {
             }
         }
 
-        // 0b. Recovery: reset orphaned fills (filling but no started_at â€” crashed before start)
+        // 0b. Recovery: reset orphaned fills (filling but no started_at  crashed before start)
         let orphanQuery = this.supabase
             .from('applications')
             .select('id, applicant_id')
@@ -741,7 +763,7 @@ class QueueRunner {
             const result = await this._ensureAndClaimApp(candidate.id);
             if (result) {
                 if (resumeSet.has(candidate.id)) {
-                    console.log(`[Queue] ðŸ”„ Priorizando retomada: ${candidate.id} (jÃ¡ tem application_id)`);
+                    console.log(`[Queue]  Priorizando retomada: ${candidate.id} (ja tem application_id)`);
                 }
                 return result;
             }
@@ -766,8 +788,8 @@ class QueueRunner {
         let app = allApps && allApps[0] ? allApps[0] : null;
 
         if (!app) {
-            // No application exists â€” create one
-            console.log(`[Queue] No application for ${applicantId} â€” creating`);
+            // No application exists  create one
+            console.log(`[Queue] No application for ${applicantId}  creating`);
             const { data: newApp, error: createErr } = await this.supabase
                 .from('applications')
                 .insert({ applicant_id: applicantId, fill_status: 'todo' })
@@ -779,7 +801,7 @@ class QueueRunner {
             }
             app = newApp;
         } else if (app.fill_status === 'done') {
-            // Application exists but was already filled â€” auto-reset for re-fill
+            // Application exists but was already filled  auto-reset for re-fill
             console.log(`[Queue] Auto-resetting filled application ${app.id} for re-fill`);
             const { error: resetErr } = await this.supabase.from('applications').update({
                 fill_status: 'todo',
@@ -933,7 +955,7 @@ class QueueRunner {
             })
             .eq('id', appId);
 
-        // BUG FIX: TambÃ©m atualizar applicants.status para refletir no dashboard
+        // BUG FIX: Tambem atualizar applicants.status para refletir no dashboard
         if (applicantId) {
             await this.supabase.from('applicants').update({
                 status: 'error',
@@ -953,7 +975,7 @@ class QueueRunner {
             .eq('id', appId);
     }
 
-    // System error â€” requires dev fix, software will NOT retry until manually released
+    // System error  requires dev fix, software will NOT retry until manually released
         async _markSystemError(appId, errMsg, applicantId) {
         await this.supabase
             .from('applications')
@@ -971,7 +993,7 @@ class QueueRunner {
                 updated_at: new Date().toISOString()
             }).eq('id', applicantId);
         }
-        console.log(`[DS160] ðŸ’¥ FAIL: ${appId} â€” priority set to retry, awaiting dev fix`);
+        console.log(`[DS160]  FAIL: ${appId}  priority set to retry, awaiting dev fix`);
     }
 
     // Re-queue: reset application + set applicant status to 'retry'

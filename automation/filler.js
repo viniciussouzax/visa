@@ -7,7 +7,7 @@ const fs = require('fs');
 const { solveCaptcha, solveCaptchaBase64 } = require('./captcha');
 
 // ====================================================================
-// MODULES ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â modular architecture (helpers + generic page filler)
+// MODULES ƒ¢aa modular architecture (helpers + generic page filler)
 // ====================================================================
 const { buildDynamicFieldMap, isPostbackSelect, isPostbackClick } = require('./field-map');
 const { fillPage, verifyPage } = require('./pages/generic-page');
@@ -68,7 +68,7 @@ async function humanClick(page, selector) {
  * @param {object} config - From automation_config table
  * @param {string} captchaMode - 'capmonster' | 'ai_vision'
  * @param {function} onPage - Callback(pageName) for status updates
- * @param {function} [onPageFilled] - Callback(pageStats) for fill_logs ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â called after each page is filled
+ * @param {function} [onPageFilled] - Callback(pageStats) for fill_logs ƒ¢aa called after each page is filled
  * @param {object} [existingBrowser] - Reuse this browser instead of creating new
  * @param {object} [existingPage] - Reuse this page instead of creating new
  * @returns {{ success: boolean, applicationId?: string, error?: string, browser, activePage }}
@@ -108,10 +108,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
     if (!profile.email) missingFields.push('addressPhone.email');
 
     if (missingFields.length > 0) {
-        console.warn(`[Filler] ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â DADOS FALTANTES (${missingFields.length}): ${missingFields.join(', ')}`);
+        console.warn(`[Filler]   DADOS FALTANTES (${missingFields.length}): ${missingFields.join(', ')}`);
         return {
             success: false,
-            error: `Dados faltantes no formulÃƒÆ’Ã‚Â¡rio: ${missingFields.join(', ')}`,
+            error: `Dados faltantes no formul¡rio: ${missingFields.join(', ')}`,
             cause: 'missing_data',
             missingFields
         };
@@ -130,18 +130,18 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 if (contexts.length > 0 && existingPage && !existingPage.isClosed()) {
                     // Reuse existing page
                     page = existingPage;
-                    console.log('[Filler] Reutilizando browser e pÃƒÆ’Ã‚Â¡gina existentes');
+                    console.log('[Filler] Reutilizando browser e p¡gina existentes');
                 } else {
-                    // Browser alive but page gone ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â create new page
+                    // Browser alive but page gone ƒ¢aa create new page
                     const ctx = contexts[0] || await browser.newContext({ viewport: { width: 1280, height: 900 } });
                     page = await ctx.newPage();
                     page.setDefaultTimeout(15000);
                     page.setDefaultNavigationTimeout(30000);
                     page.on('dialog', async d => d.accept().catch(() => { }));
-                    console.log('[Filler] Reutilizando browser, nova pÃƒÆ’Ã‚Â¡gina');
+                    console.log('[Filler] Reutilizando browser, nova p¡gina');
                 }
             } catch {
-                // Browser crashed ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â create new one
+                // Browser crashed ƒ¢aa create new one
                 existingBrowser = null;
                 browser = null;
             }
@@ -268,7 +268,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
         }
 
         // =============================================================
-        // SMART SESSION DETECTION ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â decide best action
+        // SMART SESSION DETECTION ƒ¢aa decide best action
         // =============================================================
         let skipToFilling = false;  // Skip Landing/Captcha/Security, go straight to fill loop
         let useRetrieve = false;    // Use "Retrieve Application" instead of "Start New"
@@ -276,11 +276,11 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
         if (existingPage && page === existingPage) {
             const currentUrl = page.url();
             const currentPageName = identifyPage(currentUrl);
-            console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â SessÃƒÆ’Ã‚Â£o existente detectada ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â URL: ${currentUrl}, PÃƒÆ’Ã‚Â¡gina: ${currentPageName}`);
+            console.log(`[Filler] a Sessao existente detectada ƒ¢aa URL: ${currentUrl}, P¡gina: ${currentPageName}`);
 
-            // Scenario A: Already at Review/Confirmation ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ mark as done immediately
+            // Scenario A: Already at Review/Confirmation ƒ¢a a mark as done immediately
             if (currentPageName === 'Review' || currentPageName === 'Confirmation') {
-                console.log(`[Filler] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ SessÃƒÆ’Ã‚Â£o jÃƒÆ’Ã‚Â¡ estÃƒÆ’Ã‚Â¡ no ${currentPageName} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â marcando como concluÃƒÆ’Ã‚Â­do`);
+                console.log(`[Filler] a Sessao j¡ est¡ no ${currentPageName} ƒ¢aa marcando como conclu­do`);
                 // Try to capture application_id from page
                 const headerAppId = await page.locator("span[id$='_lblAppID'], span[id$='_lblBarcode']").first().innerText().catch(() => '');
                 const appMatch = headerAppId.match(/[A-Z]{2}\d{2}[A-Z0-9]{6,}/);
@@ -288,20 +288,20 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 return { success: true, applicationId: application.application_id || null, browser, activePage: page };
             }
 
-            // Scenario B: Active form page ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ continue from where we left off
+            // Scenario B: Active form page ƒ¢a a continue from where we left off
             const isTimedOut = currentUrl.includes('TimedOut') || currentUrl.includes('SessionTimedOut');
             const isOnLanding = currentUrl.includes('Default.aspx');
             let sessionExpired = isTimedOut;
 
             // If on SessionTimedOut page, click OK to dismiss and go back to Landing
             if (isTimedOut) {
-                console.log('[Filler] ÃƒÂ¢Ã‚ÂÃ‚Â° Session timeout detectado ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â clicando OK para voltar ao Landing');
+                console.log('[Filler]  Session timeout detectado ƒ¢aa clicando OK para voltar ao Landing');
                 const okBtn = page.getByRole('button', { name: 'OK' });
                 if (await okBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
                     await okBtn.click();
                     await page.waitForLoadState('domcontentloaded').catch(() => { });
                     await waitForPageReady(page);
-                    console.log('[Filler] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ OK clicado, redirecionado para:', page.url());
+                    console.log('[Filler] a OK clicado, redirecionado para:', page.url());
                 }
             }
 
@@ -312,23 +312,23 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             }
 
             if (!sessionExpired && !isOnLanding && currentPageName !== 'Unknown' && currentPageName !== 'Landing') {
-                console.log(`[Filler] ÃƒÂ¢Ã¢â€žÂ¢Ã‚Â»ÃƒÂ¯Ã‚Â¸Ã‚Â SessÃƒÆ’Ã‚Â£o ativa na pÃƒÆ’Ã‚Â¡gina: ${currentPageName} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â continuando preenchimento`);
+                console.log(`[Filler] ƒ¢aâ€ž Sessao ativa na p¡gina: ${currentPageName} ƒ¢aa continuando preenchimento`);
                 skipToFilling = true;
                 await waitForPageReady(page);
             }
-            // Scenario C: Session expired/Landing BUT we have an application_id ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ use Retrieve
+            // Scenario C: Session expired/Landing BUT we have an application_id ƒ¢a a use Retrieve
             else if (application.application_id) {
-                console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Å¾ SessÃƒÆ’Ã‚Â£o expirada mas app_id existe (${application.application_id}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â usando Retrieve Application`);
+                console.log(`[Filler] aa Sessao expirada mas app_id existe (${application.application_id}) ƒ¢aa usando Retrieve Application`);
                 useRetrieve = true;
             }
-            // Scenario D: No app_id ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ start fresh
+            // Scenario D: No app_id ƒ¢a a start fresh
             else {
-                console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â¢ Sem app_id ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â iniciando nova aplicaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o`);
+                console.log(`[Filler] a a Sem app_id ƒ¢aa iniciando nova aplica§£o`);
             }
         }
-        // No existing page but we have an app_id ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ also use Retrieve
+        // No existing page but we have an app_id ƒ¢a a also use Retrieve
         else if (application.application_id) {
-            console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Å¾ Novo browser mas app_id existe (${application.application_id}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â usando Retrieve Application`);
+            console.log(`[Filler] aa Novo browser mas app_id existe (${application.application_id}) ƒ¢aa usando Retrieve Application`);
             useRetrieve = true;
         }
 
@@ -389,12 +389,12 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
         if (!skipToFilling) {
             // ============================================================
             // STEP 1: Landing page
-            // Flow: 1) Location ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 2) Wait loading ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 3) Modal check ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 4) Captcha ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 5) Click Start/Retrieve
+            // Flow: 1) Location ƒ¢a a 2) Wait loading ƒ¢a a 3) Modal check ƒ¢a a 4) Captcha ƒ¢a a 5) Click Start/Retrieve
             // ============================================================
             onPage('Landing');
             const location = profile.location;
 
-            // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 1) SELECT LOCATION ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+            // ƒ¢aaaa 1) SELECT LOCATION ƒ¢aaaa
             const locSelect = page.locator("select[id$='_ddlLocation']");
             if (await locSelect.isVisible().catch(() => false)) {
                 await humanDelay(page, 200, 500); // Quick pause — humans are fast
@@ -404,19 +404,19 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 console.log(`[Landing] 1/5 Location selected: ${location}`);
             }
 
-            // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 2) WAIT FOR LOADING (postback after location change) ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+            // ƒ¢aaaa 2) WAIT FOR LOADING (postback after location change) ƒ¢aaaa
             await waitForPostback(page);
             await waitForPageReady(page);
             console.log('[Landing] 2/5 Page loaded after location select');
 
-            // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 3) CHECK & CLOSE MODAL (if present) ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+            // ƒ¢aaaa 3) CHECK & CLOSE MODAL (if present) ƒ¢aaaa
             // Some locations (e.g. RCF/Recife) show "Additional Location Information" modal.
             // MUST click Close (triggering postback) to keep ASP.NET session state consistent.
             // DOM-only hide causes "Session expired" because server state becomes stale.
             let modalDismissed = false;
             try {
                 await page.waitForSelector('.modalBackground', { state: 'visible', timeout: 5000 });
-                console.log('[Landing] 3/5 Modal detected ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â clicking Close (postback)...');
+                console.log('[Landing] 3/5 Modal detected ƒ¢aa clicking Close (postback)...');
                 const closeBtn = page.locator('[id*="lnkClose"]').first();
                 if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
                     await closeBtn.click();
@@ -425,13 +425,13 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 await page.waitForSelector('.modalBackground', { state: 'hidden', timeout: 10000 }).catch(() => { });
                 await waitForPageReady(page);
                 modalDismissed = true;
-                console.log('[Landing] 3/5 Modal closed via postback ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â page stable, new captcha ready');
+                console.log('[Landing] 3/5 Modal closed via postback ƒ¢aa page stable, new captcha ready');
             } catch {
-                // No modal appeared within timeout ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â that's fine
-                console.log('[Landing] 3/5 No modal ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â skipping');
+                // No modal appeared within timeout ƒ¢aa that's fine
+                console.log('[Landing] 3/5 No modal ƒ¢aa skipping');
             }
 
-            // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 4) SOLVE CAPTCHA            // ── ── 4) SOLVE CAPTCHA ── ──
+            // ƒ¢aaaa 4) SOLVE CAPTCHA            // ── ── 4) SOLVE CAPTCHA ── ──
             // At this point page is fully stable, no modal, captcha image is ready
             const captchaStartTime = Date.now();
             console.log(`[TIMING] Captcha phase started at: ${new Date().toISOString()}`);
@@ -457,10 +457,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 } catch (e) {
                     console.warn(`[Landing] 4/5 Captcha attempt ${attempt} failed:`, e.message);
                     if (attempt < 3) { await sleep(1000); continue; }
-                    return { success: false, error: 'Captcha nÃƒÆ’Ã‚Â£o resolvido apÃƒÆ’Ã‚Â³s 3 tentativas', cause: 'captcha_failed', browser, activePage: page };
+                    return { success: false, error: 'Captcha nao resolvido apos 3 tentativas', cause: 'captcha_failed', browser, activePage: page };
                 }
 
-                // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 4.5) PRE-CLICK: dismiss any modal that reappeared ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+                // ƒ¢aaaa 4.5) PRE-CLICK: dismiss any modal that reappeared ƒ¢aaaa
                 // Safety net: hide modal via DOM if it showed up during captcha solve
                 const preclickDismissed = await page.evaluate(() => {
                     const bg = document.querySelector('.modalBackground');
@@ -476,7 +476,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     console.log('[Landing] 4.5 Modal hidden via DOM before click');
                 }
 
-                // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 5) CLICK START or RETRIEVE ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+                // ƒ¢aaaa 5) CLICK START or RETRIEVE ƒ¢aaaa
                 if (useRetrieve) {
                     console.log(`[Landing] 5/5 Retrieve Application: ${application.application_id}`);
 
@@ -510,9 +510,9 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     const stillOnLanding = currentUrl.includes('Default.aspx');
 
                     if (hasError || stillOnLanding) {
-                        console.warn(`[Landing] 5/5 Retrieve failed (attempt ${attempt}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â captcha wrong or invalid app_id`);
+                        console.warn(`[Landing] 5/5 Retrieve failed (attempt ${attempt}) ƒ¢aa captcha wrong or invalid app_id`);
                         if (attempt < 3) { await sleep(1000); continue; }
-                        console.log('[Landing] Retrieve falhou 3x ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tentando Start New como fallback');
+                        console.log('[Landing] Retrieve falhou 3x ƒ¢aa tentando Start New como fallback');
                         useRetrieve = false;
                         continue;
                     }
@@ -556,7 +556,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     const stillOnLanding = currentUrl.includes('Default.aspx') || (!currentUrl.includes('SecureQuestion') && !currentUrl.includes('ConfirmApplicationID') && !currentUrl.includes('complete_'));
 
                     if (hasError || stillOnLanding) {
-                        console.warn(`[Landing] 5/5 Captcha wrong (attempt ${attempt}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â page didn't advance`);
+                        console.warn(`[Landing] 5/5 Captcha wrong (attempt ${attempt}) ƒ¢aa page didn't advance`);
                         if (attempt < 3) await sleep(1000);
                         continue;
                     }
@@ -595,7 +595,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     const secAnswer = config.security_answer || profile.securityAnswer || '';
                     await page.locator("input[id$='_txtAnswer']").fill(secAnswer);
                 } else {
-                    console.log('[Filler] Security question already set (disabled) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â skipping');
+                    console.log('[Filler] Security question already set (disabled) ƒ¢aa skipping');
                     // Still fill answer if input is enabled
                     const answerInput = page.locator("input[id$='_txtAnswer']");
                     const answerDisabled = await answerInput.evaluate(el => el.disabled).catch(() => true);
@@ -678,17 +678,17 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             onPage(pageName);
             visited.push(pageName);
 
-            // Capture application_id ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the ID format is AA00XXXXXX (2 letters + 8+ alphanumeric)
-            // e.g. AA00FCUFGX ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â contains LETTERS after the initial prefix, NOT just digits!
+            // Capture application_id ƒ¢aa the ID format is AA00XXXXXX (2 letters + 8+ alphanumeric)
+            // e.g. AA00FCUFGX ƒ¢aa contains LETTERS after the initial prefix, NOT just digits!
             if (!application.application_id) {
-                // Strategy 0: #content-main ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the Application ID is visible on EVERY DS-160 page
+                // Strategy 0: #content-main ƒ¢aa the Application ID is visible on EVERY DS-160 page
                 try {
                     const contentMain = page.locator('#content-main');
                     const mainText = await contentMain.innerText({ timeout: 2000 }).catch(() => '');
                     const contentMatch = mainText.match(/\b([A-Z]{2}\d{2}[A-Z0-9]{6,})\b/);
                     if (contentMatch) {
                         application.application_id = contentMatch[1];
-                        console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â Application ID (from #content-main): ${contentMatch[1]}`);
+                        console.log(`[Filler] a a Application ID (from #content-main): ${contentMatch[1]}`);
                         if (typeof onAppId === 'function') onAppId(contentMatch[1]);
                     }
                 } catch { }
@@ -714,7 +714,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                                 const match = text.match(/[A-Z]{2}\d{2}[A-Z0-9]{6,}/);
                                 if (match) {
                                     application.application_id = match[0];
-                                    console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â Application ID (from header "${sel}"): ${match[0]}`);
+                                    console.log(`[Filler] a a Application ID (from header "${sel}"): ${match[0]}`);
                                     if (typeof onAppId === 'function') onAppId(match[0]);
                                     break;
                                 }
@@ -729,7 +729,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         || url.match(/\/([A-Z]{2}\d{2}[A-Z0-9]{6,})\//);
                     if (urlAppIdMatch) {
                         application.application_id = urlAppIdMatch[1];
-                        console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â Application ID (from URL): ${urlAppIdMatch[1]}`);
+                        console.log(`[Filler] a a Application ID (from URL): ${urlAppIdMatch[1]}`);
                         if (typeof onAppId === 'function') onAppId(urlAppIdMatch[1]);
                     }
                 }
@@ -745,7 +745,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         });
                         if (bodyText) {
                             application.application_id = bodyText;
-                            console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬Â Application ID (from page text): ${bodyText}`);
+                            console.log(`[Filler] a a Application ID (from page text): ${bodyText}`);
                             if (typeof onAppId === 'function') onAppId(bodyText);
                         }
                     } catch { }
@@ -753,10 +753,10 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             }
 
             // ====== RECOVERY PAGE: Retrieve a DS-160 Application ======
-            // Phase 1: App ID + Captcha ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ click Retrieve
-            // Phase 2: App ID (disabled) + Surname (5 letters) + Year of Birth + Security Answer ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ click Retrieve
+            // Phase 1: App ID + Captcha ƒ¢a a click Retrieve
+            // Phase 2: App ID (disabled) + Surname (5 letters) + Year of Birth + Security Answer ƒ¢a a click Retrieve
             if (pageName === 'Recovery') {
-                console.log(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Å¾ Recovery.aspx detectada ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â recuperando aplicaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o`);
+                console.log(`[Filler] aa Recovery.aspx detectada ƒ¢aa recuperando aplica§£o`);
                 onPage('Recovery');
 
                 let recoveryDone = false;
@@ -777,7 +777,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         // ====== PHASE 2: Security Questions ======
                         console.log(`[Filler] Recovery FASE 2: Security Questions (tentativa ${rAttempt})`);
 
-                        // Surname ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â first 5 letters, uppercase
+                        // Surname ƒ¢aa first 5 letters, uppercase
                         const surname5 = (profile.surname || '').substring(0, 5).toUpperCase();
                         await surnameField.fill(surname5);
                         console.log(`[Filler] Recovery: Surname preenchido: ${surname5}`);
@@ -841,7 +841,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         await retrieveBtn.click();
                         console.log('[Filler] Recovery: clicou Retrieve Application');
                     } else {
-                        console.warn('[Filler] Recovery: botÃƒÆ’Ã‚Â£o Retrieve nÃƒÆ’Ã‚Â£o encontrado');
+                        console.warn('[Filler] Recovery: bot£o Retrieve nao encontrado');
                     }
 
                     await sleep(3000);
@@ -849,7 +849,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
                     const newUrl = page.url();
                     if (!newUrl.includes('Recovery.aspx')) {
-                        console.log(`[Filler] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Recovery bem-sucedido ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â navegou para: ${newUrl}`);
+                        console.log(`[Filler] a Recovery bem-sucedido ƒ¢aa navegou para: ${newUrl}`);
                         recoveryDone = true;
                         break;
                     }
@@ -860,43 +860,43 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         console.warn(`[Filler] Recovery erro: ${errorText.substring(0, 100)}`);
                     }
 
-                    console.warn(`[Filler] Recovery tentativa ${rAttempt} falhou ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ainda em Recovery.aspx`);
+                    console.warn(`[Filler] Recovery tentativa ${rAttempt} falhou ƒ¢aa ainda em Recovery.aspx`);
                 }
 
                 if (!recoveryDone) {
-                    throw new Error('Recovery.aspx: falhou 5x ao tentar recuperar aplicaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o');
+                    throw new Error('Recovery.aspx: falhou 5x ao tentar recuperar aplica§£o');
                 }
                 continue; // Re-enter loop to identify the new page
             }
 
-            // Detectar pÃƒÆ’Ã‚Â¡ginas desconhecidas e tentar recovery
+            // Detectar p¡ginas desconhecidas e tentar recovery
             if (pageName === 'Unknown') {
-                console.warn(`[Filler] ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â PÃƒÆ’Ã‚Â¡gina desconhecida: ${url}`);
+                console.warn(`[Filler]   P¡gina desconhecida: ${url}`);
 
-                // Verificar se ÃƒÆ’Ã‚Â© timeout/session expired
+                // Verificar se © timeout/session expired
                 const pageText = await page.locator('body').innerText().catch(() => '');
                 const isTimeout = /timeout|session.*expired|timed out|idle/i.test(pageText);
                 const isWarning = /warning|continue.*application|recover/i.test(pageText);
 
                 if (isTimeout) {
-                    console.warn('[Filler] ÃƒÂ¢Ã‚ÂÃ‚Â° Session timeout detectado na pÃƒÆ’Ã‚Â¡gina ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â clicando OK');
+                    console.warn('[Filler]  Session timeout detectado na p¡gina ƒ¢aa clicando OK');
                     // Try to click OK button to dismiss timeout dialog
                     const okBtn = page.getByRole('button', { name: 'OK' });
                     if (await okBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
                         await okBtn.click();
                         await page.waitForLoadState('domcontentloaded').catch(() => { });
                         await waitForPageReady(page);
-                        console.log('[Filler] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ OK clicado, redirecionado para:', page.url());
+                        console.log('[Filler] a OK clicado, redirecionado para:', page.url());
                         continue; // Re-enter loop to handle the new page (Landing)
                     }
                     // If no OK button found, throw
-                    console.error('[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â´ Session expirada sem botÃƒÆ’Ã‚Â£o OK');
+                    console.error('[Filler] a Session expirada sem bot£o OK');
                     throw new Error('Session expired: ' + url);
                 }
 
                 if (isWarning) {
-                    console.warn('[Filler] ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â PÃƒÆ’Ã‚Â¡gina de warning ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tentando continuar');
-                    // Tentar clicar em botÃƒÆ’Ã‚Âµes de continuaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o/recovery
+                    console.warn('[Filler]   P¡gina de warning ƒ¢aa tentando continuar');
+                    // Tentar clicar em botµes de continua§£o/recovery
                     const recoveryBtns = [
                         "input[value*='Continue']",
                         "input[value*='OK']",
@@ -919,8 +919,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     if (recovered) continue;
                 }
 
-                // Se chegou aqui, pÃƒÆ’Ã‚Â¡gina desconhecida sem recovery
-                console.error(`[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â´ PÃƒÆ’Ã‚Â¡gina desconhecida sem recovery: ${url}`);
+                // Se chegou aqui, p¡gina desconhecida sem recovery
+                console.error(`[Filler] a P¡gina desconhecida sem recovery: ${url}`);
                 throw new Error(`Unknown page: ${url}`);
             }
 
@@ -956,7 +956,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         const id = await r.getAttribute('id').catch(() => '');
                         if (id) yesIds.push(id.replace(/_0$/, ''));
                     }
-                    console.warn(`[Filler] ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â SECURITY: ${answeredYes} respostas YES: ${yesIds.join(', ')}`);
+                    console.warn(`[Filler]   SECURITY: ${answeredYes} respostas YES: ${yesIds.join(', ')}`);
                 }
                 console.log(`[Filler] Security: ${answeredYes} Yes, ${answeredNo} No (${totalRadioGroups} perguntas)`);
                 // Report security page stats via callback
@@ -970,18 +970,18 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             // ====== FILL PAGE (modular) + VERIFY + NEXT ======
             let fillResult = null;
             for (let attempt = 1; attempt <= 3; attempt++) {
-                // Travel page: handler especializado (elimina esperas desnecessÃƒÆ’Ã‚Â¡rias)
+                // Travel page: handler especializado (elimina esperas desnecess¡rias)
                 if (pageName === 'Travel') {
                     fillResult = await fillTravelPage(page, fieldMap, profile);
                 } else {
-                    // Fill using generic-page module (4 phases: postback ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Add Another ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ non-postback ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ text)
+                    // Fill using generic-page module (4 phases: postback ƒ¢a a Add Another ƒ¢a a non-postback ƒ¢a a text)
                     fillResult = await fillPage(page, fieldMap);
                 }
 
-                // VERIFICAÃƒÆ’Ã¢â‚¬Â¡ÃƒÆ’Ã†â€™O OBRIGATÃƒÆ’Ã¢â‚¬Å“RIA antes de Next
+                // VERIFICAaO OBRIGATaRIA antes de Next
                 const verification = await verifyPage(page);
                 if (!verification.ok && attempt < 3) {
-                    console.warn(`[Filler] VerificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o falhou (tentativa ${attempt}): ${verification.empty.length} vazios ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â re-preenchendo`);
+                    console.warn(`[Filler] Verifica§£o falhou (tentativa ${attempt}): ${verification.empty.length} vazios ƒ¢aa re-preenchendo`);
                     continue;
                 }
 
@@ -1076,7 +1076,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
         return { success: false, error: e.message, stack: e.stack, field, page: currentPage, cause, validationErrors, browser, activePage: page };
     }
-    // NOTE: browser is NOT closed here ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â caller (queue.js) decides when to close
+    // NOTE: browser is NOT closed here ƒ¢aa caller (queue.js) decides when to close
 }
 
 // ====================================================================
@@ -1151,7 +1151,7 @@ async function waitForPostback(page) {
 async function waitForPageReady(page, timeout = 2000) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
-        // Evaluate ÃƒÆ’Ã…Â¡NICO: scroll + count + postback check
+        // Evaluate NICO: scroll + count + postback check
         const { count, inPB } = await page.evaluate(() => {
             window.scrollTo(0, document.body.scrollHeight);
             window.scrollTo(0, 0);
@@ -1188,7 +1188,7 @@ async function clickNextAndWait(page) {
     try {
         const modalBg = page.locator('div[id*="modalBackground"], div.modalBackground').first();
         if (await modalBg.isVisible({ timeout: 500 }).catch(() => false)) {
-            console.log('[Filler] ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Â Modal detectado ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tentando fechar...');
+            console.log('[Filler] aa Modal detectado ƒ¢aa tentando fechar...');
 
             // Try clicking OK/Continue/Yes buttons inside modal panels
             const modalBtns = [
@@ -1212,7 +1212,7 @@ async function clickNextAndWait(page) {
                 try {
                     if (await btn.isVisible({ timeout: 500 }).catch(() => false)) {
                         await btn.click({ force: true });
-                        console.log(`[Filler] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Modal fechado via: ${sel}`);
+                        console.log(`[Filler] a Modal fechado via: ${sel}`);
                         await sleep(500);
                         await waitForPostback(page);
                         dismissed = true;
@@ -1223,7 +1223,7 @@ async function clickNextAndWait(page) {
 
             // Fallback: remove modal overlay via JavaScript
             if (!dismissed) {
-                console.log('[Filler] ÃƒÂ¢Ã…Â¡Ã‚Â¡ Removendo modal overlay via JS');
+                console.log('[Filler]  Removendo modal overlay via JS');
                 await page.evaluate(() => {
                     document.querySelectorAll('div[id*="modalBackground"], div.modalBackground').forEach(el => {
                         el.style.display = 'none';
@@ -1264,7 +1264,7 @@ async function clickNextAndWait(page) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ====================================================================
-// NORMALIZE ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â convert Supabase applicant.data to field-map profile format
+// NORMALIZE ƒ¢aa convert Supabase applicant.data to field-map profile format
 // Handles both camelCase (JS form) and snake_case (DB) keys
 // ====================================================================
 function normalizeProfile(data) {
@@ -1646,10 +1646,10 @@ function normalizeProfile(data) {
                 _original: sm.platform,
                 platform: PLATFORM_MAP[(sm.platform || '').toUpperCase()] || sm.platform,
             }));
-            // Plataformas sem cÃƒÆ’Ã‚Â³digo DS-160 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ movidas para additionalSocialMedia
+            // Plataformas sem c³digo DS-160 ƒ¢a a movidas para additionalSocialMedia
             const unsupported = mapped.filter(sm => !VALID_CODES.has((sm.platform || '').toUpperCase()));
             if (unsupported.length > 0) {
-                unsupported.forEach(sm => console.log(`[Normalize] ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â€ÃƒÂ¯Ã‚Â¸Ã‚Â "${sm._original}" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ additionalSocialMedia (nÃƒÆ’Ã‚Â£o tem cÃƒÆ’Ã‚Â³digo DS-160)`));
+                unsupported.forEach(sm => console.log(`[Normalize] ƒ¢a a "${sm._original}" ƒ¢a a additionalSocialMedia (nao tem c³digo DS-160)`));
                 // Auto-inject into additionalSocialMedia (merged below)
                 addr._overflowSocialMedia = unsupported.map(sm => ({
                     platform: sm._original || sm.platform,
