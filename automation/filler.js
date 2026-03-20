@@ -566,7 +566,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             if (isTSPD) {
                 console.log('[Filler] ⚠️ TSPD Anti-Bot Challenge detectado');
                 let tspdSolved = false;
-                for (let tspd = 1; tspd <= 5; tspd++) {
+                const MAX_TSPD = 10;
+                for (let tspd = 1; tspd <= MAX_TSPD; tspd++) {
                     try {
                         const captchaImg = page.locator('img[src^="data:image"]').first();
                         await captchaImg.waitFor({ state: 'visible', timeout: 5000 });
@@ -575,23 +576,24 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
 
                         const keys = { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key };
                         const answer = await solveCaptcha(imgPath, captchaMode, keys);
-                        console.log(`[Filler] TSPD Captcha answer (${tspd}/5): ${answer}`);
+                        console.log(`[Filler] TSPD Captcha answer (${tspd}/${MAX_TSPD}): ${answer}`);
 
                         await page.locator('input#ans').fill(answer);
+                        await humanDelay(300, 800); // Human-like pause before clicking
                         await page.locator('button#jar').click();
-                        await sleep(2000 + tspd * 1000); // Backoff progressivo: 3s, 4s, 5s, 6s, 7s
+                        await sleep(2000 + tspd * 1000); // Backoff progressivo: 3s, 4s, ..., 12s
 
-                        const stillTSPD = await page.locator('input#ans').isVisible({ timeout: 2000 }).catch(() => false);
+                        const stillTSPD = await page.locator('input#ans').isVisible({ timeout: 3000 }).catch(() => false);
                         if (!stillTSPD) {
                             tspdSolved = true;
                             console.log('[Filler] ✅ TSPD Challenge resolvido — cookies de bypass setados');
                             break;
                         }
-                        console.warn(`[Filler] TSPD tentativa ${tspd} falhou — retentando`);
+                        console.warn(`[Filler] TSPD tentativa ${tspd}/${MAX_TSPD} falhou — retentando`);
                     } catch (e) {
-                        console.warn(`[Filler] TSPD attempt ${tspd} error: ${e.message}`);
+                        console.warn(`[Filler] TSPD attempt ${tspd}/${MAX_TSPD} error: ${e.message}`);
                     }
-                    await sleep(1000);
+                    await sleep(1500);
                 }
 
                 if (tspdSolved) {
@@ -602,7 +604,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     await waitForPageReady(page);
                     console.log('[Filler] ✅ DS-160 carregado com sessão fresca');
                 } else {
-                    throw new Error('TSPD Anti-Bot Challenge não resolvido após 5 tentativas');
+                    throw new Error(`TSPD Anti-Bot Challenge não resolvido após ${MAX_TSPD} tentativas`);
                 }
             }
         }
