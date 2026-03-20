@@ -166,14 +166,14 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                     // Sticky session: append session ID to keep same IP for entire execution
                     const sessionId = config.session_id || `ds160_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
                     let username = decodeURIComponent(parsed.username) || '';
-                    // DataImpulse/BrightData geo-targeting: user-country-XX
-                    const proxyCountry = config.proxy_country || 'us'; // DS-160 = US gov site, US IPs are safest
-                    if (username && !username.includes('-country-')) {
-                        username = `${username}-country-${proxyCountry}`;
+                    // DataImpulse geo-targeting: user__cr.XX,YY (double underscore + cr.)
+                    const proxyCountries = config.proxy_countries || 'us,br';
+                    if (username && !username.includes('__cr.')) {
+                        username = `${username}__cr.${proxyCountries}`;
                     }
-                    // DataImpulse/BrightData sticky format: user-session-XXX
-                    if (username && !username.includes('-session-')) {
-                        username = `${username}-session-${sessionId}`;
+                    // DataImpulse sticky session: user__s.XXXXX
+                    if (username && !username.includes('__s.')) {
+                        username = `${username}__s.${sessionId}`;
                     }
                     proxyOpts = {
                         server: `${parsed.protocol}//${parsed.hostname}:${parsed.port}`,
@@ -187,7 +187,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             }
 
             // ── IDENTITY (consistent per session — never changes mid-flow) ──
-            const useUsLocale = proxyUrl && (proxyUrl.includes('-country-us') || proxyUrl.includes('us-'));
+            const useUsLocale = proxyUrl && (proxyUrl.includes('__cr.us') || proxyUrl.includes('us-'));
             const identity = {
                 userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                 locale: useUsLocale ? 'en-US' : 'pt-BR',
