@@ -247,9 +247,35 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             };
 
             // Restore session from previous attempt if available
+            // IMPORTANT: Clean up cookies that may be bot-flagged before restoring
             if (hasStorageState) {
                 try {
-                    contextOpts.storageState = JSON.parse(fs.readFileSync(storageStatePath, 'utf8'));
+                    const savedState = JSON.parse(fs.readFileSync(storageStatePath, 'utf8'));
+                    // Filter out cookies that anti-bot systems use to mark bots
+                    // Keep only safe CEAC session cookies
+                    const BOT_COOKIE_PATTERNS = [
+                        /^TS/i,           // F5/TSPD tracking cookies
+                        /^TSPD/i,         // F5 bot detection
+                        /^_abck/i,        // Akamai bot manager
+                        /^bm_/i,          // Akamai bot cookies
+                        /^ak_bmsc/i,      // Akamai
+                        /^__cf_/i,        // Cloudflare
+                        /^cf_/i,          // Cloudflare
+                        /^datadome/i,     // DataDome
+                        /^_px/i,          // PerimeterX
+                        /^reese84/i,      // Imperva/Reese84
+                    ];
+                    if (savedState.cookies) {
+                        const before = savedState.cookies.length;
+                        savedState.cookies = savedState.cookies.filter(cookie => {
+                            return !BOT_COOKIE_PATTERNS.some(pattern => pattern.test(cookie.name));
+                        });
+                        const removed = before - savedState.cookies.length;
+                        if (removed > 0) {
+                            console.log(`[Filler] 🧹 Removed ${removed} bot-tracking cookies from storageState`);
+                        }
+                    }
+                    contextOpts.storageState = savedState;
                     console.log('[Filler] 🍪 Restored storageState from previous session');
                 } catch (e) {
                     console.warn('[Filler] Could not restore storageState:', e.message);
