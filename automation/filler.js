@@ -364,12 +364,39 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
         if (!skipToFilling) {
             // ============================================================
             // STEP 1: Landing page
-            // Flow: 1) Location ƒ¢a a 2) Wait loading ƒ¢a a 3) Modal check ƒ¢a a 4) Captcha ƒ¢a a 5) Click Start/Retrieve
+            // Flow: 1) Location → 2) Wait loading → 3) Modal check → 4) Captcha → 5) Click Start/Retrieve
             // ============================================================
             onPage('Landing');
             const location = profile.location;
 
-            // ƒ¢aaaa 1) SELECT LOCATION ƒ¢aaaa
+            // ── HUMAN WARM-UP: simulate real person arriving on page ──
+            // Anti-bot (TSPD) watches the first seconds VERY closely.
+            // A bot goes straight to form fields; a human looks around first.
+            console.log('[Landing] 👤 Human warm-up: simulating page reading...');
+
+            // 1) Initial "reading" pause — human scans the page visually (2-5s)
+            await humanDelay(2000, 5000);
+
+            // 2) Random mouse movements — simulate eyes scanning page
+            const viewport = page.viewportSize() || { width: 1280, height: 900 };
+            for (let i = 0; i < 2 + Math.floor(Math.random() * 3); i++) {
+                const x = 100 + Math.floor(Math.random() * (viewport.width - 200));
+                const y = 80 + Math.floor(Math.random() * (viewport.height * 0.6));
+                await page.mouse.move(x, y, { steps: 5 + Math.floor(Math.random() * 15) });
+                await humanDelay(200, 600);
+            }
+
+            // 3) Small exploratory scroll down and back (looking at form)
+            await page.mouse.wheel(0, 80 + Math.floor(Math.random() * 120));
+            await humanDelay(500, 1200);
+            await page.mouse.wheel(0, -(40 + Math.floor(Math.random() * 60)));
+            await humanDelay(300, 800);
+
+            // 4) Thinking pause before first interaction
+            await thinkingPause();
+            console.log('[Landing] 👤 Warm-up complete — starting form interaction');
+
+            // ─── 1) SELECT LOCATION ───
             const locSelect = page.locator("select[id$='_ddlLocation']");
             if (await locSelect.isVisible().catch(() => false)) {
                 await humanSelect(page, locSelect, location);
