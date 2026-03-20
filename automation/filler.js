@@ -134,16 +134,44 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 })
                 : undefined;
 
-            // ── IDENTITY (consistent per session — never changes mid-flow) ──
+            // ── IDENTITY (randomized per session — reduces fingerprint patterns) ──
             const useUsLocale = proxyUrl && (proxyUrl.includes('__cr.us') || config.proxy_countries?.includes('us'));
-            const identity = {
-                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-                locale: useUsLocale ? 'en-US' : 'pt-BR',
-                timezoneId: useUsLocale ? 'America/New_York' : 'America/Sao_Paulo',
-                geolocation: useUsLocale ? { latitude: 40.7128, longitude: -74.0060 } : { latitude: -23.5505, longitude: -46.6333 },
+
+            // Random screen resolution from common real-world desktop sizes
+            const COMMON_RESOLUTIONS = [
+                { width: 1920, height: 1080 },
+                { width: 1366, height: 768 },
+                { width: 1536, height: 864 },
+                { width: 1440, height: 900 },
+                { width: 1280, height: 720 },
+                { width: 1600, height: 900 },
+            ];
+            const screenRes = COMMON_RESOLUTIONS[Math.floor(Math.random() * COMMON_RESOLUTIONS.length)];
+
+            // Random Chrome version (recent stable versions)
+            const CHROME_VERSIONS = ['131.0.0.0', '132.0.0.0', '133.0.0.0', '134.0.0.0'];
+            const chromeVer = CHROME_VERSIONS[Math.floor(Math.random() * CHROME_VERSIONS.length)];
+
+            // Geolocation with noise (±0.05° ~5km radius) — avoid exact same coords every time
+            const baseGeo = useUsLocale
+                ? { latitude: 40.7128, longitude: -74.0060 }   // NYC area
+                : { latitude: -23.5505, longitude: -46.6333 }; // São Paulo
+            const geoNoise = () => (Math.random() - 0.5) * 0.1; // ±0.05°
+            const geo = {
+                latitude: baseGeo.latitude + geoNoise(),
+                longitude: baseGeo.longitude + geoNoise(),
             };
 
-            // ── LAUNCH ARGS (anti-automation + anti-throttling flags) ──
+            const identity = {
+                userAgent: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVer} Safari/537.36`,
+                locale: useUsLocale ? 'en-US' : 'pt-BR',
+                timezoneId: useUsLocale ? 'America/New_York' : 'America/Sao_Paulo',
+                geolocation: geo,
+                screenRes,
+            };
+            console.log(`[Filler] Identity: Chrome/${chromeVer}, ${screenRes.width}x${screenRes.height}, tz=${identity.timezoneId}`);
+
+            // ── LAUNCH ARGS (anti-automation + anti-throttling + anti-datacenter) ──
             const launchArgs = [
                 '--disable-blink-features=AutomationControlled',
                 '--disable-features=IsolateOrigins,site-per-process',
@@ -152,7 +180,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 '--disable-dev-shm-usage',
                 '--disable-accelerated-2d-canvas',
                 '--disable-gpu',
-                '--window-size=1366,768',
+                `--window-size=${screenRes.width},${screenRes.height}`,
                 '--start-maximized',
                 // Anti-throttling: prevent Chrome from throttling background tabs/timers
                 '--disable-background-timer-throttling',
@@ -160,10 +188,12 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 '--disable-renderer-backgrounding',
                 '--disable-ipc-flooding-protection',
                 '--enable-features=NetworkService,NetworkServiceInProcess',
-                // WebRTC leak prevention
+                // WebRTC leak prevention — blocks datacenter IP from leaking
                 '--enforce-webrtc-ip-permission-check',
                 '--disable-webrtc-hw-decoding',
                 '--disable-webrtc-hw-encoding',
+                // Force WebRTC to only use the proxy IP (no direct connection)
+                '--force-webrtc-ip-handling-policy=disable_non_proxied_udp',
             ];
 
             // ── BROWSER + CONTEXT (playwright-extra compatible) ──
@@ -181,8 +211,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             browser = await chromium.launch(launchOpts);
 
             const contextOpts = {
-                viewport: { width: 1366, height: 768 },
-                screen: { width: 1366, height: 768 },
+                viewport: { width: screenRes.width, height: screenRes.height },
+                screen: { width: screenRes.width, height: screenRes.height },
                 // With channel:'chrome', let Chrome send its OWN real UA (avoids version mismatch)
                 // Only override when using bundled Chromium (no channel) e.g. in Docker
                 ...(isHeadless ? { userAgent: identity.userAgent } : {}),
@@ -191,7 +221,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 geolocation: identity.geolocation,
                 permissions: ['geolocation'],
                 colorScheme: 'light',
-                deviceScaleFactor: 1,
+                // Randomize deviceScaleFactor (most desktops = 1, some HiDPI = 1.25 or 1.5)
+                deviceScaleFactor: [1, 1, 1, 1.25][Math.floor(Math.random() * 4)],
                 isMobile: false,
                 hasTouch: false,
                 javaScriptEnabled: true,
@@ -226,6 +257,60 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             }
 
             const context = await browser.newContext(contextOpts);
+
+            // ── ANTI-DATACENTER STEALTH SCRIPTS ──
+            // Injected before any page loads — hides VM/server fingerprints
+            await context.addInitScript(() => {
+                // 1) WebGL Renderer — datacenter VMs often show "SwiftShader" or "llvmpipe"
+                //    Override to a common desktop GPU
+                const getParameter = WebGLRenderingContext.prototype.getParameter;
+                WebGLRenderingContext.prototype.getParameter = function(param) {
+                    if (param === 37445) return 'Google Inc. (NVIDIA)'; // UNMASKED_VENDOR_WEBGL
+                    if (param === 37446) return 'ANGLE (NVIDIA, NVIDIA GeForce GTX 1660 SUPER Direct3D11 vs_5_0 ps_5_0, D3D11)'; // UNMASKED_RENDERER_WEBGL
+                    return getParameter.call(this, param);
+                };
+                // Also for WebGL2
+                if (typeof WebGL2RenderingContext !== 'undefined') {
+                    const getParam2 = WebGL2RenderingContext.prototype.getParameter;
+                    WebGL2RenderingContext.prototype.getParameter = function(param) {
+                        if (param === 37445) return 'Google Inc. (NVIDIA)';
+                        if (param === 37446) return 'ANGLE (NVIDIA, NVIDIA GeForce GTX 1660 SUPER Direct3D11 vs_5_0 ps_5_0, D3D11)';
+                        return getParam2.call(this, param);
+                    };
+                }
+
+                // 2) Hardware concurrency — servers have 8-64 cores, real PCs have 4-8
+                Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => [4, 6, 8][Math.floor(Math.random() * 3)] });
+
+                // 3) Device memory — cap at realistic values (servers may report 16-128GB)
+                Object.defineProperty(navigator, 'deviceMemory', { get: () => [4, 8][Math.floor(Math.random() * 2)] });
+
+                // 4) Connection type — datacenter has "ethernet" at huge bandwidth
+                if (navigator.connection) {
+                    Object.defineProperty(navigator.connection, 'effectiveType', { get: () => '4g' });
+                    Object.defineProperty(navigator.connection, 'rtt', { get: () => 50 + Math.floor(Math.random() * 100) });
+                    Object.defineProperty(navigator.connection, 'downlink', { get: () => 5 + Math.random() * 15 });
+                }
+
+                // 5) Platform — ensure Windows (match UA)
+                Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
+
+                // 6) Plugins — empty plugin array is a bot signal; add common ones
+                Object.defineProperty(navigator, 'plugins', {
+                    get: () => {
+                        const arr = [
+                            { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer', description: 'Portable Document Format' },
+                            { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai', description: '' },
+                            { name: 'Native Client', filename: 'internal-nacl-plugin', description: '' },
+                        ];
+                        arr.item = (i) => arr[i];
+                        arr.namedItem = (n) => arr.find(p => p.name === n);
+                        arr.refresh = () => {};
+                        return arr;
+                    }
+                });
+            });
+
             page = await context.newPage();
             page.setDefaultTimeout(proxyUrl ? 60000 : 15000);
             page.setDefaultNavigationTimeout(proxyUrl ? 90000 : 30000);
