@@ -1863,6 +1863,76 @@ select.edit-inline {
     min-width: 0;
 }
 
+.portal-url-copy {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    max-width: 360px;
+    padding: 4px 4px 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+}
+
+.portal-url-copy input {
+    flex: 1;
+    min-width: 0;
+    max-width: 280px;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: default;
+}
+
+.portal-link-copy-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.portal-link-copy-btn:hover {
+    background: rgba(15, 23, 42, .05);
+    color: var(--accent);
+}
+
+.portal-link-copy-btn i {
+    font-size: 20px;
+}
+
+.nav-search-trigger {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.nav-search-trigger:hover {
+    background: rgba(15, 23, 42, .05);
+    color: var(--accent);
+}
+
+.nav-search-trigger i {
+    font-size: 22px;
+}
+
 .nav-portal-actions {
     display: none;
     align-items: center;
