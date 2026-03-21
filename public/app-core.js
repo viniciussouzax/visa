@@ -10,7 +10,7 @@
     // ==========================================
     const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
-    const PUBLIC_APP_BASE_URL = 'https://viniciussouzax.github.io/visa/';
+    const PUBLIC_APP_BASE_URL = 'https://sends160.site/';
 
     // ==========================================
     // SESSION MANAGEMENT (sessionStorage)
