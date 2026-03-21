@@ -1875,6 +1875,10 @@ select.edit-inline {
     background: var(--surface);
 }
 
+.portal-url-copy.is-disabled {
+    opacity: .72;
+}
+
 .portal-url-copy input {
     flex: 1;
     min-width: 0;
@@ -1908,6 +1912,10 @@ select.edit-inline {
 
 .portal-link-copy-btn i {
     font-size: 20px;
+}
+
+.portal-url-copy.is-disabled .portal-link-copy-btn {
+    opacity: .6;
 }
 
 .nav-search-trigger {

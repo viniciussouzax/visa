@@ -499,7 +499,10 @@
         }
 
         function copyPortalLink() {
-            if (!_orgParam) return;
+            if (!_orgParam) {
+                showToast(isMasterUser ? 'Selecione uma organiza??o para copiar o portal.' : 'Portal indispon?vel neste contexto.', 'info');
+                return;
+            }
             const url = AppCore.buildPortalUrl(_orgParam);
             navigator.clipboard.writeText(url).then(() => {
                 // Feedback no Ã­cone do nav bar
@@ -2676,12 +2679,24 @@
                                     resolvedCompanyId = m[0].company_id;
                                     resolvedCompanyName = cData[0].name;
                                     const navBtn = document.getElementById('portalLinkBtnNav');
-                                    if (navBtn) { navBtn.style.display = 'flex'; const urlInput = document.getElementById('portalUrlInput'); if (urlInput) urlInput.value = _orgParam; }
+                                    if (navBtn) {
+                                        navBtn.style.display = 'flex';
+                                        navBtn.classList.remove('is-disabled');
+                                        const urlInput = document.getElementById('portalUrlInput');
+                                        if (urlInput) urlInput.value = AppCore.buildPortalUrl(_orgParam);
+                                    }
                                 }
                             } catch { }
                         }
                     } else if (isMasterUser) {
                         document.getElementById('orgFooter').textContent = `Administrador Master #${window._userNumId || '0001'}`;
+                        const navBtn = document.getElementById('portalLinkBtnNav');
+                        const urlInput = document.getElementById('portalUrlInput');
+                        if (navBtn) {
+                            navBtn.style.display = 'flex';
+                            navBtn.classList.add('is-disabled');
+                        }
+                        if (urlInput) urlInput.value = 'Selecione uma organiza??o';
                     }
                 }
             } catch { }
