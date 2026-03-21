@@ -3298,10 +3298,24 @@
             tb.textContent = _admSelectedOrg.active ? 'Desativar' : 'Ativar';
             tb.style.background = _admSelectedOrg.active ? '#ef4444' : '#22c55e';
             document.getElementById('admOrgInfoCards').innerHTML = `
-                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Nome</div><div style="font-size:14px;font-weight:600;margin-top:4px">${_admSelectedOrg.name}</div></div>
-                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Short ID</div><div style="font-size:14px;font-family:monospace;margin-top:4px">${_admSelectedOrg.short_id || '-'}</div></div>
-                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">CNPJ</div><div style="font-size:14px;margin-top:4px">${_admSelectedOrg.cnpj || '-'}</div></div>
-                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Status</div><div style="margin-top:4px"><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${_admSelectedOrg.active ? '#dcfce7' : '#fee2e2'};color:${_admSelectedOrg.active ? '#16a34a' : '#dc2626'}">${_admSelectedOrg.active ? 'Ativa' : 'Inativa'}</span></div></div>`;
+                <div class="adm-org-stat-card">
+                    <div class="adm-org-stat-label">Nome</div>
+                    <div class="adm-org-stat-value">${_admSelectedOrg.name}</div>
+                </div>
+                <div class="adm-org-stat-card">
+                    <div class="adm-org-stat-label">Short ID</div>
+                    <div class="adm-org-stat-value adm-org-stat-mono">${_admSelectedOrg.short_id || '-'}</div>
+                </div>
+                <div class="adm-org-stat-card">
+                    <div class="adm-org-stat-label">CNPJ</div>
+                    <div class="adm-org-stat-value">${_admSelectedOrg.cnpj || '-'}</div>
+                </div>
+                <div class="adm-org-stat-card">
+                    <div class="adm-org-stat-label">Status</div>
+                    <div class="adm-org-stat-badge-wrap">
+                        <span class="adm-org-status-badge ${_admSelectedOrg.active ? 'is-active' : 'is-inactive'}">${_admSelectedOrg.active ? 'Ativa' : 'Inativa'}</span>
+                    </div>
+                </div>`;
             document.getElementById('admFormUrlDisplay').textContent = admGetFormUrl();
             admRefreshLogoUI();
             admUpdateNav('orgs');
