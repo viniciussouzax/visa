@@ -325,7 +325,7 @@
                     <td style="text-align:center"><span class="stage-badge ${stage}">${stageLabel}</span></td>
                     <td style="text-align:center"><span style="display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;background:${stCfg.bg};color:${stCfg.color}">${stCfg.label}</span></td>
                     <td style="text-align:center;width:40px">${canDelete ? `<button onclick="event.stopPropagation();deletePortalApplicant('${form.id}','${displayName.replace(/'/g, "\\'")}')"
-                        style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;padding:4px" title="Remover formulário">
+                        style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;padding:4px" title="Arquivar formulário">
                         <i class="iconoir-trash"></i></button>` : ''}</td>
                 </tr>`;
                 });
@@ -343,6 +343,50 @@
                     await reloadFormList();
                 } catch (e) { showToast('Erro: ' + e.message, 'error'); }
             }
+            window.deletePortalApplicant = deletePortalApplicant;
+
+            deletePortalApplicant = async function(id, name) {
+                try {
+                    const rows = await AppCore.sbGet('applicants?id=eq.' + id + '&select=id,stage,group_id&limit=1');
+                    const applicant = rows?.[0];
+                    if (!applicant) {
+                        showToast('Solicitante não encontrado', 'error');
+                        return;
+                    }
+
+                    if (applicant.stage !== 'archived') {
+                        if (!confirm('Arquivar o formulário de "' + name + '"?\nEle sairá da lista ativa e poderá ser excluído permanentemente depois, se necessário.')) return;
+                        await AppCore.sbFetch('applicants?id=eq.' + id, 'PATCH', { stage: 'archived', status: 'done' });
+                        showToast('Formulário arquivado', 'success');
+                        await reloadFormList();
+                        return;
+                    }
+
+                    if (!confirm('Excluir definitivamente o formulário de "' + name + '"?\nTodos os dados vinculados serão apagados do banco.')) return;
+                    const cleanupEndpoints = [
+                        'ais_accounts?applicant_id=eq.' + id,
+                        'applications?applicant_id=eq.' + id,
+                        'applicant_data_backups?applicant_id=eq.' + id
+                    ];
+                    for (const endpoint of cleanupEndpoints) {
+                        try { await AppCore.sbFetch(endpoint, 'DELETE'); } catch (_) { }
+                    }
+                    await AppCore.sbFetch('applicants?id=eq.' + id, 'DELETE');
+                    if (applicant.group_id) {
+                        const remaining = await AppCore.sbGet('applicants?group_id=eq.' + applicant.group_id + '&select=id&limit=2');
+                        if (!remaining?.length) {
+                            try { await AppCore.sbFetch('groups?id=eq.' + applicant.group_id, 'DELETE'); } catch (_) { }
+                        } else if (remaining.length === 1) {
+                            try { await AppCore.sbFetch('applicants?id=eq.' + remaining[0].id, 'PATCH', { group_id: null }); } catch (_) { }
+                            try { await AppCore.sbFetch('groups?id=eq.' + applicant.group_id, 'DELETE'); } catch (_) { }
+                        }
+                    }
+                    showToast('Formulário excluído permanentemente', 'success');
+                    await reloadFormList();
+                } catch (e) {
+                    showToast('Erro: ' + e.message, 'error');
+                }
+            };
             window.deletePortalApplicant = deletePortalApplicant;
 
             function titleCase(s) { return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); }

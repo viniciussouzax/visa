@@ -125,6 +125,75 @@
             return 'todo';
         }
 
+        function getSortedGroupMembers(list) {
+            return [...list].sort((a, b) =>
+                (a.sort_order ?? 9999) - (b.sort_order ?? 9999) ||
+                (a.created || '').localeCompare(b.created || '')
+            );
+        }
+
+        function getGroupMembers(groupId, options = {}) {
+            const { includeArchived = false, stage = null } = options;
+            let members = applicants.filter(a => String(a.group_id) === String(groupId));
+            if (!includeArchived) members = members.filter(a => a.stage !== 'archived');
+            if (stage) members = members.filter(a => a.stage === stage);
+            return getSortedGroupMembers(members);
+        }
+
+        function getGroupStageMembers(groupId, stage) {
+            return getGroupMembers(groupId, { includeArchived: stage === 'archived', stage });
+        }
+
+        function getNextGroupSortOrder(groupId) {
+            const members = getGroupMembers(groupId, { includeArchived: true });
+            const maxSort = members.reduce((max, m) => Math.max(max, m.sort_order ?? 0), 0);
+            return maxSort >= 10 ? maxSort + 10 : (maxSort || 0) + 10;
+        }
+
+        async function patchApplicantsLocallyAndRemotely(patches) {
+            await Promise.all(patches.map(({ id, patch }) => sbFetch(`applicants?id=eq.${id}`, 'PATCH', patch)));
+            patches.forEach(({ id, patch }) => {
+                const app = applicants.find(x => x.id === id);
+                if (app) Object.assign(app, patch);
+            });
+        }
+
+        function getGroupJoinValidation(applicantStage, groupId) {
+            const groupMembers = getGroupMembers(groupId);
+            if (!groupMembers.length) return { ok: false, message: 'Grupo não encontrado.' };
+            const groupStage = groupMembers[0].stage || 'screening';
+            if (groupStage !== applicantStage) {
+                return {
+                    ok: false,
+                    message: `Só é possível vincular na mesma etapa. Grupo em ${STAGE_LABELS[groupStage]} e solicitante em ${STAGE_LABELS[applicantStage] || applicantStage}.`
+                };
+            }
+            return { ok: true, groupStage };
+        }
+
+        async function linkApplicantToGroup(applicantId, groupId) {
+            const applicant = applicants.find(x => x.id === applicantId);
+            if (!applicant) throw new Error('Solicitante não encontrado.');
+
+            const validation = getGroupJoinValidation(applicant.stage, groupId);
+            if (!validation.ok) throw new Error(validation.message);
+
+            const applicantPatch = {
+                group_id: groupId,
+                updated_at: new Date().toISOString()
+            };
+
+            await patchApplicantsLocallyAndRemotely([{ id: applicantId, patch: applicantPatch }]);
+            return { groupStage: validation.groupStage };
+        }
+
+        function getGroupAdvanceReadiness(groupId, stage, completedApplicantId) {
+            const members = getGroupMembers(groupId);
+            const sameStage = members.length > 0 && members.every(m => m.stage === stage);
+            const allDone = sameStage && members.every(m => m.id === completedApplicantId || m.status === 'done');
+            return { members, sameStage, allDone };
+        }
+
         function getApplicantsForPage(page) {
             return applicants.filter(a => {
                 if (a.stage !== page) return false;
@@ -498,7 +567,16 @@
 
 
             const groupMap = {}; const solos = [];
-            items.forEach(a => { if (a.group_id) { if (!groupMap[a.group_id]) groupMap[a.group_id] = []; groupMap[a.group_id].push(a); } else solos.push(a); });
+            items.forEach(a => {
+                if (a.group_id) {
+                    if (!groupMap[a.group_id]) {
+                        const stageMembers = getGroupStageMembers(a.group_id, currentPage);
+                        groupMap[a.group_id] = stageMembers.length ? stageMembers : getGroupMembers(a.group_id, { includeArchived: currentPage === 'archived' });
+                    }
+                } else {
+                    solos.push(a);
+                }
+            });
             Object.values(groupMap).forEach(members => members.sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999)));
             // #5 fix: ensure groupMap members are sorted for consistent principal display
 
@@ -643,8 +721,7 @@
                         `Deseja vincular <strong>${dragApplicant.name}</strong> ao grupo <strong>${getGroupLabel(linkGroupId)}</strong>?`,
                         async () => {
                             try {
-                                await sbFetch(`applicants?id=eq.${dragApplicant.id}`, 'PATCH', { group_id: linkGroupId });
-                                dragApplicant.group_id = linkGroupId;
+                                await linkApplicantToGroup(dragApplicant.id, linkGroupId);
                                 renderTable(); updateBadges();
                                 showToast('Vinculado ao grupo!', 'success');
                             } catch (err) { showToast('Erro: ' + err.message, 'error'); }
@@ -921,15 +998,11 @@
                     `<span style="color:#ef4444;font-weight:700">ATENÇÃO:</span> Todos os <strong>${members.length} membros</strong> e seus dados serão <strong>excluídos permanentemente</strong>. Esta ação não pode ser desfeita.`,
                     async () => {
                         try {
-                            // Delete applications first (if any)
-                            for (const m of members) {
-                                await sbFetch(`applications?applicant_id=eq.${m.id}`, 'DELETE', null);
-                            }
                             // Delete group record
                             if (group) await sbFetch(`groups?id=eq.${groupId}`, 'DELETE', null);
-                            // Delete all members
+                            // Delete all members and related data
                             for (const m of members) {
-                                await sbFetch(`applicants?id=eq.${m.id}`, 'DELETE', null);
+                                await purgeApplicantData(m.id);
                             }
                             // Remove from local array
                             members.forEach(m => {
@@ -971,6 +1044,9 @@
             if (_orgParam) url += '&org=' + encodeURIComponent(_orgParam);
             return url;
         }
+        function _portalGroupUrl(groupId) {
+            return _portalUrl(groupId);
+        }
         function openReview(id) {
             const a = applicants.find(x => x.id === id);
             let url = _formUrl(id);
@@ -988,12 +1064,9 @@
         function openForm(id) { window.open(_formUrl(id), '_blank'); }
 
         function copyGroupLink(groupId) {
-            const members = applicants.filter(a => String(a.group_id) === String(groupId)).sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
-            const principal = members[0];
-            if (!principal) { showToast('Grupo sem membros', 'error'); return; }
-            const base = new URL('portal.html', location.href).href.split('?')[0];
-            let url = base + '?id=' + encodeURIComponent(principal.id);
-            if (_orgParam) url += '&org=' + encodeURIComponent(_orgParam);
+            const members = getGroupMembers(groupId, { includeArchived: true });
+            if (!members.length) { showToast('Grupo sem membros', 'error'); return; }
+            const url = _portalGroupUrl(groupId);
             navigator.clipboard.writeText(url).then(() => showToast('Link do grupo copiado!', 'success')).catch(() => showToast('Erro ao copiar', 'error'));
         }
         function copyApplicantLink(id) {
@@ -1049,16 +1122,16 @@
                 const a = applicants.find(x => x.id === id);
                 phone = a?.data?.addressPhone?.phone || a?.data?.phone || '';
             } else if (groupId) {
-                const members = applicants.filter(x => x.group_id === groupId).sort((a,b) => (a.sort_order??999) - (b.sort_order??999));
+                const members = getGroupMembers(groupId, { includeArchived: true });
                 phone = members[0]?.data?.addressPhone?.phone || members[0]?.data?.phone || '';
-                targetId = members[0]?.id;
+                targetId = groupId;
             }
             phone = phone.replace(/\D/g, '');
             if (!phone) {
                 showToast('Nenhum telefone cadastrado', 'error');
                 return;
             }
-            const portalUrl = _portalUrl(targetId || id);
+            const portalUrl = groupId ? _portalGroupUrl(targetId || groupId) : _portalUrl(targetId || id);
             const msg = encodeURIComponent('Olá! Segue o link para preencher seu formulário DS-160:\n' + portalUrl);
             window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
         }
@@ -1140,7 +1213,7 @@
                 try {
                     for (let i = 0; i < members.length; i++) {
                         const m = members[i];
-                        const p = { full_name: m.name, passport_number: null, data: {}, stage: 'screening', status: 'todo', result: 'pending', sort_order: i };
+                        const p = { full_name: m.name, passport_number: null, data: {}, stage: 'screening', status: 'todo', result: 'pending', sort_order: i * 10 };
                         if (m.email) p.email = m.email;
                         if (resolvedCompanyId) p.company_id = resolvedCompanyId;
                         if (groupId) p.group_id = groupId;
@@ -1367,6 +1440,127 @@
             });
         }
 
+        async function archiveApplicantRecord(id) {
+            await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { stage: 'archived', status: 'done' });
+            const a = applicants.find(x => x.id === id);
+            if (a) {
+                a.stage = 'archived';
+                a.status = 'done';
+            }
+        }
+
+        async function purgeApplicantData(id) {
+            const applicant = applicants.find(x => x.id === id);
+            const oldGroupId = applicant?.group_id || null;
+            const cleanupEndpoints = [
+                `ais_accounts?applicant_id=eq.${id}`,
+                `applications?applicant_id=eq.${id}`,
+                `applicant_data_backups?applicant_id=eq.${id}`
+            ];
+
+            for (const endpoint of cleanupEndpoints) {
+                try {
+                    await sbFetch(endpoint, 'DELETE');
+                } catch (e) {
+                    console.warn('[ApplicantPurge] Cleanup skipped:', endpoint, e.message);
+                }
+            }
+
+            await sbFetch(`applicants?id=eq.${id}`, 'DELETE');
+            applicants = applicants.filter(x => x.id !== id);
+            selectedIds.delete(id);
+
+            if (oldGroupId) {
+                const remaining = getGroupMembers(oldGroupId, { includeArchived: true });
+                if (remaining.length === 0) {
+                    try { await sbFetch(`groups?id=eq.${oldGroupId}`, 'DELETE'); } catch (_) { }
+                    _groups = _groups.filter(g => String(g.id) !== String(oldGroupId));
+                } else if (remaining.length === 1) {
+                    const loneMember = remaining[0];
+                    await sbFetch(`applicants?id=eq.${loneMember.id}`, 'PATCH', { group_id: null });
+                    loneMember.group_id = null;
+                    try { await sbFetch(`groups?id=eq.${oldGroupId}`, 'DELETE'); } catch (_) { }
+                    _groups = _groups.filter(g => String(g.id) !== String(oldGroupId));
+                }
+            }
+        }
+
+        deleteApplicant = async function(id, name) {
+            const a = applicants.find(x => x.id === id);
+            if (!a) return;
+
+            if (a.stage !== 'archived') {
+                showConfirmModal('Arquivar Solicitante',
+                    `Deseja arquivar <strong>${name}</strong>?<br><small style="color:var(--text-muted)">Ele sairá da operação ativa e poderá ser excluído permanentemente depois, se necessário.</small>`,
+                    async () => {
+                        try {
+                            await archiveApplicantRecord(id);
+                            renderTable(); renderFilters(); updateBadges();
+                            showToast('Solicitante arquivado.', 'success');
+                        } catch (e) { showToast('Erro: ' + e.message, 'error'); }
+                    });
+                return;
+            }
+
+            showConfirmModal('Excluir Permanentemente',
+                `Deseja apagar <strong>${name}</strong> definitivamente?<br><small style="color:var(--text-muted)">Todos os dados vinculados serão removidos do banco.</small>`,
+                async () => {
+                    try {
+                        if (a.group_id) {
+                            const groupMembers = getGroupMembers(a.group_id, { includeArchived: true });
+                            const isPrincipal = groupMembers[0]?.id === id;
+                            if (isPrincipal && groupMembers.length > 1) {
+                                showToast('Não é possível excluir o principal enquanto houver outros membros vinculados ao grupo.', 'error');
+                                return;
+                            }
+                        }
+                        await purgeApplicantData(id);
+                        renderTable(); renderFilters(); updateBadges();
+                        showToast('Solicitante excluído permanentemente.', 'success');
+                    } catch (e) { showToast('Erro ao excluir: ' + e.message, 'error'); }
+                });
+        };
+
+        bulkDelete = async function() {
+            const selectedApplicants = applicants.filter(a => selectedIds.has(a.id));
+            if (!selectedApplicants.length) return;
+
+            const activeApplicants = selectedApplicants.filter(a => a.stage !== 'archived');
+            const archivedApplicants = selectedApplicants.filter(a => a.stage === 'archived');
+            const activeLabel = activeApplicants.length ? `${activeApplicants.length} arquivamento(s)` : null;
+            const archivedLabel = archivedApplicants.length ? `${archivedApplicants.length} exclusão(ões) permanente(s)` : null;
+            const summary = [activeLabel, archivedLabel].filter(Boolean).join(' e ');
+
+            showConfirmModal('Confirmar ação',
+                `Deseja processar ${summary || `${selectedApplicants.length} solicitante(s)`}?<br><small style="color:var(--text-muted)">Ativos serão arquivados. Arquivados serão excluídos definitivamente.</small>`,
+                async () => {
+                    try {
+                        for (const applicant of activeApplicants) {
+                            await archiveApplicantRecord(applicant.id);
+                        }
+
+                        for (const applicant of archivedApplicants) {
+                            if (applicant.group_id) {
+                                const groupMembers = getGroupMembers(applicant.group_id, { includeArchived: true });
+                                const isPrincipal = groupMembers[0]?.id === applicant.id;
+                                if (isPrincipal && groupMembers.length > 1) {
+                                    showToast(`Não é possível excluir o principal ${shortName(applicant.name)} enquanto houver outros membros vinculados.`, 'error');
+                                    continue;
+                                }
+                            }
+                            await purgeApplicantData(applicant.id);
+                        }
+
+                        await loadApplicants();
+                        clearSelection();
+                        navigateTo(currentPage);
+                        showToast('Ação concluída com sucesso!', 'success');
+                    } catch (e) {
+                        showToast('Erro: ' + e.message, 'error');
+                    }
+                });
+        };
+
         // ==========================================
         // MANAGE MENU
         // ==========================================
@@ -1536,22 +1730,10 @@
 
         async function linkToSearchedGroup(applicantId, groupId) {
             try {
-                const groupMembers = applicants.filter(x => x.group_id === groupId);
-                                const groupStage = groupMembers[0]?.stage || 'screening';
-                const groupStatus = 'todo';
-
-                // #12 fix: also reset result when linking to group
-                await sbFetch(`applicants?id=eq.${applicantId}`, 'PATCH', {
-                    group_id: groupId,
-                    stage: groupStage,
-                    status: groupStatus,
-                    result: 'pending'
-                });
-                const a = applicants.find(x => x.id === applicantId);
-                if (a) { a.group_id = groupId; a.stage = groupStage; a.status = groupStatus; a.result = 'pending'; }
+                await linkApplicantToGroup(applicantId, groupId);
                 closeGroupSearchResults();
                 closeManageMenu(); renderTable(); renderFilters(); updateBadges();
-                showToast(`Vinculado ao ${getGroupLabel(groupId)}! Movido para ${STAGE_LABELS[groupStage]}`, 'success');
+                showToast(`Vinculado ao ${getGroupLabel(groupId)}!`, 'success');
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
         }
 
@@ -1655,16 +1837,23 @@
             const name = (input?.value || '').trim();
             if (!name) { showToast('Informe o nome', 'error'); return; }
             try {
-                const existingMembers = applicants.filter(x => String(x.group_id) === String(groupId));
-                const maxSort = existingMembers.reduce((max, m) => Math.max(max, m.sort_order ?? 0), 0);
-                // #1 fix: herdar stage do grupo
-                const groupStage = existingMembers[0]?.stage || 'screening';
-                                const body = { full_name: name, group_id: groupId, stage: groupStage, status: 'todo', sort_order: maxSort + 1, result: 'pending', data: {} };
+                const validation = getGroupJoinValidation('screening', groupId);
+                if (!validation.ok) throw new Error(validation.message);
+
+                const body = {
+                    full_name: name,
+                    group_id: groupId,
+                    stage: 'screening',
+                    status: 'todo',
+                    sort_order: getNextGroupSortOrder(groupId),
+                    result: 'pending',
+                    data: {}
+                };
                 if (resolvedCompanyId) body.company_id = resolvedCompanyId;
                 const res = await sbFetch('applicants', 'POST', body);
                 document.getElementById('addMemberModal')?.remove();
                 expandedGroups.add(String(groupId));
-                showToast('Solicitante adicionado ao grupo');
+                showToast(`Solicitante adicionado ao ${getGroupLabel(groupId)}!`);
                 await loadApplicants(); renderTable(); updateBadges();
             } catch (e) { console.error(e); showToast('Erro ao adicionar', 'error'); }
         }
@@ -1833,6 +2022,138 @@
                 }
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
         }
+
+        updateField = async function(id, field, value) {
+            try {
+                const patch = { [field]: value };
+                const a = applicants.find(x => x.id === id);
+
+                if (field === 'stage' && a && a.group_id) {
+                    const groupMembers = getGroupMembers(a.group_id);
+                    const currentIdx = STAGE_ORDER.indexOf(a.stage);
+                    const targetIdx = STAGE_ORDER.indexOf(value);
+                    const isAdvancing = targetIdx > currentIdx;
+
+                    if (isAdvancing) {
+                        const allSameStage = groupMembers.every(m => m.stage === a.stage);
+                        if (!allSameStage) {
+                            showToast('Grupo: todos precisam estar na mesma etapa para avançar.', 'error');
+                            return;
+                        }
+
+                        if (a.stage === 'screening' && value === 'analysis') {
+                            const incomplete = groupMembers.filter(m => m.progress < 100);
+                            if (incomplete.length > 0) {
+                                showToast(`Formulários incompletos: ${incomplete.map(m => m.name).join(', ')}`, 'error');
+                                return;
+                            }
+                        }
+
+                        if (a.stage === 'analysis' && value === 'ds160') {
+                            const notDone = groupMembers.filter(m => m.status !== 'done');
+                            if (notDone.length > 0) {
+                                showToast(`Ainda não concluídos: ${notDone.map(m => m.name).join(', ')}`, 'error');
+                                return;
+                            }
+                        }
+                    }
+
+                    for (const m of groupMembers) {
+                        if (m.id !== id) {
+                            const memberPatch = { stage: value, status: getDefaultStatusForStage(value) };
+                            if (value === 'outcome' && !m.result) memberPatch.result = getOutcomeValue(m);
+                            await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', memberPatch);
+                            m.stage = value;
+                            m.status = memberPatch.status;
+                            if (memberPatch.result) m.result = memberPatch.result;
+                        }
+                    }
+                }
+
+                if (field === 'stage' && a) {
+                    patch.status = getDefaultStatusForStage(value);
+                    if (value === 'outcome' && !patch.result) patch.result = getOutcomeValue(a);
+                }
+
+                if (field === 'status' && value === 'done' && a && a.stage !== 'interview' && a.stage !== 'outcome') {
+                    const curIdx = STAGE_ORDER.indexOf(a.stage);
+                    const interviewIdx = STAGE_ORDER.indexOf('interview');
+                    if (curIdx >= 0 && curIdx < interviewIdx) {
+                        const nextStage = STAGE_ORDER[curIdx + 1];
+                        if (a.group_id) {
+                            const readiness = getGroupAdvanceReadiness(a.group_id, a.stage, id);
+                            if (readiness.sameStage && readiness.allDone) {
+                                patch.stage = nextStage;
+                                patch.status = 'todo';
+                                for (const m of readiness.members) {
+                                    if (m.id !== id) {
+                                        await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', { stage: nextStage, status: 'todo' });
+                                        m.stage = nextStage;
+                                        m.status = 'todo';
+                                    }
+                                }
+                            } else {
+                                patch.status = 'done';
+                                if (!readiness.sameStage) {
+                                    showToast('O grupo precisa estar inteiro na mesma etapa para avançar.', 'info');
+                                }
+                            }
+                        } else {
+                            patch.stage = nextStage;
+                            patch.status = 'todo';
+                        }
+                    }
+                }
+
+                if (field === 'result_advance' && a) {
+                    patch.stage = 'outcome';
+                    patch.status = 'done';
+                    patch.result = value;
+                    delete patch.result_advance;
+                    if (a.group_id) {
+                        const groupMembers = getGroupMembers(a.group_id);
+                        for (const m of groupMembers) {
+                            if (m.id !== id) {
+                                await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', { stage: 'outcome', status: 'done', result: value });
+                                m.stage = 'outcome';
+                                m.status = 'done';
+                                m.result = value;
+                            }
+                        }
+                    }
+                }
+
+                if (field === 'result' && a) {
+                    patch.result = value;
+                    patch.status = 'done';
+                    if (a.group_id) {
+                        const groupMembers = getGroupMembers(a.group_id, { stage: 'outcome' });
+                        for (const m of groupMembers) {
+                            if (m.id !== id) {
+                                await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', { result: value, status: 'done' });
+                                m.result = value;
+                                m.status = 'done';
+                            }
+                        }
+                    }
+                }
+
+                await sbFetch(`applicants?id=eq.${id}`, 'PATCH', patch);
+                const origStage = a?.stage;
+                if (a) Object.assign(a, patch);
+                const autoMsg = patch.stage && patch.stage !== origStage ? ` → ${STAGE_LABELS[patch.stage]}` : '';
+                showToast('Atualizado!' + autoMsg, 'success');
+
+                renderTable(); renderFilters(); updateBadges();
+                const popup = document.getElementById('managePopup');
+                if (popup) {
+                    closeManageMenu();
+                    showManageMenu(id);
+                }
+            } catch (e) {
+                showToast('Erro: ' + e.message, 'error');
+            }
+        };
 
         async function saveNotes(id) {
             try {

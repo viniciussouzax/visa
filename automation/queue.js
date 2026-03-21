@@ -1135,14 +1135,15 @@ class QueueRunner {
                 .update({ status: 'done', updated_at: new Date().toISOString() })
                 .eq('id', applicantId);
 
-            // Check all group members in ds160 stage
+            // Check the full active group before advancing
             const { data: groupMembers } = await this.supabase
                 .from('applicants')
-                .select('id, status')
+                .select('id, status, stage')
                 .eq('group_id', applicant.group_id)
-                .eq('stage', 'ds160');
+                .neq('stage', 'archived');
 
-            const allDone = groupMembers && groupMembers.every(m => m.status === 'done' || m.id === applicantId);
+            const sameStage = groupMembers && groupMembers.every(m => m.stage === 'ds160');
+            const allDone = sameStage && groupMembers.every(m => m.status === 'done' || m.id === applicantId);
 
             if (allDone) {
                 // All done → advance entire group to payment
@@ -1153,8 +1154,12 @@ class QueueRunner {
                     .eq('stage', 'ds160');
                 console.log(`[DS160] ✅ GROUP DONE: ${applicant.group_id} → all members advancing to payment`);
             } else {
-                const doneCount = groupMembers.filter(m => m.status === 'done' || m.id === applicantId).length;
-                console.log(`[DS160] ✅ DONE: ${applicantId} (group ${applicant.group_id}: ${doneCount}/${groupMembers.length} done)`);
+                const doneCount = (groupMembers || []).filter(m => m.status === 'done' || m.id === applicantId).length;
+                if (!sameStage) {
+                    console.log(`[DS160] GROUP HOLD: ${applicant.group_id} has members outside ds160; not advancing to payment`);
+                } else {
+                    console.log(`[DS160] ✅ DONE: ${applicantId} (group ${applicant.group_id}: ${doneCount}/${groupMembers.length} done)`);
+                }
             }
         } else {
             // ── SOLO: advance immediately ──
