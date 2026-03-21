@@ -322,26 +322,16 @@
         }
 
         const PAGE_CONFIG = {
-            overview: { title: 'Dashboard', subtitle: 'VisÃƒÂ£o Geral' },
+            overview: { title: 'Dashboard', subtitle: 'Visão Geral' },
             screening: { title: 'Triagem', subtitle: 'Triagem Inicial' },
-            analysis: { title: 'AnÃƒÂ¡lise', subtitle: 'RevisÃƒÂ£o e EstratÃƒÂ©gia' },
+            analysis: { title: 'Análise', subtitle: 'Revisão e Estratégia' },
             ds160: { title: 'DS-160', subtitle: 'Preenchimento Oficial' },
             payment: { title: 'Taxas', subtitle: 'Pagamento de Taxas' },
             scheduling: { title: 'Agendamento', subtitle: 'Agendar Entrevista' },
-            interview: { title: 'Entrevista', subtitle: 'PreparaÃƒÂ§ÃƒÂ£o e Entrevista' },
+            interview: { title: 'Entrevista', subtitle: 'Preparação e Entrevista' },
             outcome: { title: 'Resultado', subtitle: 'Resultado do Processo' },
             archived: { title: 'Arquivado', subtitle: 'Processo Encerrado' },
         };
-
-        PAGE_CONFIG.overview = { title: 'Dashboard', subtitle: 'VisÃ£o Geral' };
-        PAGE_CONFIG.screening = { title: 'Triagem', subtitle: 'Triagem Inicial' };
-        PAGE_CONFIG.analysis = { title: 'AnÃ¡lise', subtitle: 'RevisÃ£o e EstratÃ©gia' };
-        PAGE_CONFIG.ds160 = { title: 'DS-160', subtitle: 'Preenchimento Oficial' };
-        PAGE_CONFIG.payment = { title: 'Taxas', subtitle: 'Pagamento de Taxas' };
-        PAGE_CONFIG.scheduling = { title: 'Agendamento', subtitle: 'Agendar Entrevista' };
-        PAGE_CONFIG.interview = { title: 'Entrevista', subtitle: 'PreparaÃ§Ã£o e Entrevista' };
-        PAGE_CONFIG.outcome = { title: 'Resultado', subtitle: 'Resultado do Processo' };
-        PAGE_CONFIG.archived = { title: 'Arquivado', subtitle: 'Processo Encerrado' };
 
         function normalizeDashboardStaticCopy() {
             const problemsActionHeader = document.querySelector('#problemsTableWrap th:last-child');
@@ -371,9 +361,6 @@
         } else {
             normalizeDashboardStaticCopy();
         }
-
-        PAGE_CONFIG.analysis = { title: 'An\u00e1lise', subtitle: 'Revis\u00e3o e Estrat\u00e9gia' };
-        PAGE_CONFIG.interview = { title: 'Entrevista', subtitle: 'Prepara\u00e7\u00e3o e Entrevista' };
 
         function applyDashboardUnicodeOverrides() {
             const problemsActionHeader = document.querySelector('#problemsTableWrap th:last-child');
