@@ -737,9 +737,8 @@
                     <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anota\u00e7\u00f5es"><div class="notes-preview">${a.notes ? a.notes.substring(0, 140) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
 
                     <td><div class="row-actions">
-                        ${a.ds160_pdf_url || a.confirmation_pdf_url ? `<button class="row-btn" onclick="event.stopPropagation();openDownloadModal('${a.id}')" title="Download DS-160" style="color:#22c55e"><i class="iconoir-download"></i></button>` : ''}
-                        ${previousStage ? `<button class="row-btn row-btn-text row-btn-muted" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa">Voltar</button>` : ''}
-                        ${nextStage ? `<button class="row-btn row-btn-text row-btn-primary" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="Avan\u00e7ar etapa">Avan\u00e7ar</button>` : ''}
+                        ${previousStage ? `<button class="row-btn row-btn-icon row-btn-muted" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa" aria-label="Voltar etapa"><i class="iconoir-nav-arrow-left"></i></button>` : ''}
+                        ${nextStage ? `<button class="row-btn row-btn-icon row-btn-primary" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="Avan\u00e7ar etapa" aria-label="Avan\u00e7ar etapa"><i class="iconoir-nav-arrow-right"></i></button>` : ''}
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link do portal"><i class="iconoir-copy"></i></button>
                         <button class="row-btn row-btn-more" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais op\u00e7\u00f5es" aria-label="Mais op\u00e7\u00f5es"><i class="iconoir-more-vert"></i></button>
@@ -2771,7 +2770,7 @@
                     <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '-'}</td>
                     <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anota\u00e7\u00f5es"><div class="notes-preview">${a.notes ? a.notes.substring(0, 80) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
                     <td><div class="row-actions">
-                        <button class="row-btn row-btn-text row-btn-warning" onclick="event.stopPropagation();openResolveProblemModal('${a.id}')" title="Resolver problema">Resolver</button>
+                        <button class="row-btn row-btn-icon row-btn-warning" onclick="event.stopPropagation();openResolveProblemModal('${a.id}')" title="Resolver problema" aria-label="Resolver problema"><i class="iconoir-warning-triangle"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link"><i class="iconoir-copy"></i></button>
                         <button class="row-btn row-btn-more" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais op\u00e7\u00f5es" aria-label="Mais op\u00e7\u00f5es"><i class="iconoir-more-vert"></i></button>
