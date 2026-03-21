@@ -124,17 +124,22 @@
             <div class="nav-item" onclick="window.open(AppCore.buildUrl('docs.html'),'_blank')"><i class="iconoir-book"></i> Documentação</div>
         </div>
         <div class="sidebar-footer">
-            <div class="user-info" style="flex:1">
-                <div class="user-name" id="userDisplayName">—</div>
-                <div class="user-org" id="orgFooter">—</div>
+            <div class="sidebar-user-card">
+                <div class="user-avatar" id="userAvatar">--</div>
+                <div class="user-info">
+                    <div class="user-name" id="userDisplayName">—</div>
+                    <div class="user-org" id="orgFooter">—</div>
+                </div>
+                <div class="sidebar-footer-actions">
+                    <button class="kebab-btn hidden" id="adminNavBtn" onclick="navigateTo('admin')"
+                        title="Painel Administrativo">
+                        <i class="iconoir-reload-window"></i>
+                    </button>
+                    <button class="kebab-btn" onclick="event.stopPropagation();confirmLogout()" title="Sair">
+                        <i class="iconoir-log-out"></i>
+                    </button>
+                </div>
             </div>
-            <button class="kebab-btn hidden" id="adminNavBtn" onclick="navigateTo('admin')"
-                title="Painel Administrativo">
-                <i class="iconoir-reload-window"></i>
-            </button>
-            <button class="kebab-btn" onclick="event.stopPropagation();confirmLogout()" title="Sair">
-                <i class="iconoir-log-out"></i>
-            </button>
         </div>
     </div>
 
@@ -335,16 +340,16 @@
             </div>
             <!-- Admin: Logs -->
             <div id="adm-view-logs" style="display:none">
-                <div class="table-container" style="margin-top:0">
-                    <table style="width:100%">
+                <div class="adm-logs-summary" id="admLogsSummary"></div>
+                <div class="problems-table-wrap adm-logs-wrap" style="margin-top:0">
+                    <table class="adm-logs-table">
                         <thead>
                             <tr>
-                                <th>Solicitante</th>
-                                <th>Causa</th>
-                                <th>Página / Campo</th>
+                                <th>Status</th>
+                                <th>Organização / Solicitante</th>
+                                <th>Contexto</th>
                                 <th>Mensagem</th>
-                                <th style="text-align:center">Retry</th>
-                                <th style="text-align:center">📸</th>
+                                <th style="text-align:center">Mídia</th>
                                 <th>Data</th>
                                 <th>Ações</th>
                             </tr>

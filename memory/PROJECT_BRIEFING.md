@@ -18,7 +18,14 @@ Assessor → Formulário Clone → Banco (Supabase) → Automação Playwright �
 - `buildDynamicFieldMap(profile)` — gera array de `{pattern: /regex/, value, type}` mapeando cada campo do site oficial
 - `fillPage(page, fieldMap)` — preenche UMA página em 4 fases: postback clicks → postback selects → add-another → text/non-PB
 - O site oficial usa ASP.NET WebForms com postbacks assíncronos (UpdatePanel) — cada select/radio pode recarregar parte da página
-- Runner (`runner.js`) processa a fila: pega applicant `status=todo` → abre Playwright → preenche → marca `done/error`
+- Worker/Fila DS-160 usam um contrato explicito de status:
+  - `doing` existe somente durante execucao real
+  - `todo`, `retry` e `standby` sao os unicos estados claimaveis pela automacao
+  - `error`, `fail` e `done` nunca devem ser pegos automaticamente
+- A fila DS-160 do Fly e global: ela pega solicitantes de todas as organizacoes, em ordem de elegibilidade, sem separar por empresa
+- O unico bloqueio de concorrencia necessario e por solicitante/application: nunca pode existir duas automacoes simultaneas para o mesmo caso
+- `standby` nao dispara na hora: uma rotina agendada desperta a fila periodicamente para tentar novamente somente os casos cujo cooldown venceu
+- O runner processa a fila: claima applicant elegivel em `ds160` → claima `application` → abre Playwright → preenche → promove para `payment` ou classifica o erro
 
 ### 3. Dashboard (`dashboard.html` + Supabase RLS)
 - Multi-org com RLS (Row Level Security) — cada assessor vê só seus applicants
@@ -37,6 +44,7 @@ Assessor → Formulário Clone → Banco (Supabase) → Automação Playwright �
 - Novo membro em grupo só entra pela Triagem; o grupo só avança quando todos os membros ativos concluem a etapa atual
 - Excluir solicitante ativo arquiva primeiro; exclusão permanente só é permitida para itens já arquivados
 - `error` é erro de dados corrigível pelo assessor; `standby` é instabilidade temporária com retry automático; `fail` é falha técnica que exige revisão antes de reenfileirar
+- `doing` so pode aparecer enquanto existe worker realmente processando o caso; se a execucao morrer, o status precisa voltar para `todo`, `retry` ou `standby`
 
 ## Stack
 Node.js, Express, Playwright, Supabase (Auth + DB + Storage + Realtime), GitHub Pages (frontend), Fly.io (automação)

@@ -19,9 +19,10 @@
 
         /** Build form URL: id + tab (assessor/solicitante) with auth/org */
         function buildUrl(id, tab) {
-            const params = { id };
+            const params = {};
             if (tab) params.tab = tab;
-            return AppCore.buildUrl('ds160-form.html', params);
+            if (_orgParam) params.org = _orgParam;
+            return AppCore.buildFormUrl(id, params);
         }
 
         // ==========================================
@@ -57,17 +58,52 @@
         let sortField = 'created';
         let sortDir = 'desc';
         let expandedGroups = new Set();
+        let currentAdminSection = 'orgs';
+        let currentAdminOrgId = null;
+        let canAccessAdminPanel = false;
+        let isMasterUser = false;
         const LIST_BATCH_SIZE = 25;
         let visibleRowsCount = LIST_BATCH_SIZE;
         let _listObserver = null;
 
+        const ADMIN_SECTIONS = ['orgs', 'capmonster', 'logs', 'settings'];
+        const MASTER_EMAIL = 'bra920618@gmail.com';
+
+        function parseDashboardHash() {
+            const raw = (location.hash || '').replace('#', '').trim();
+            if (!raw) return { page: 'overview', adminSection: 'orgs', adminOrgId: null };
+            const [page, adminSection, adminOrgId] = raw.split(':');
+            return {
+                page: page || 'overview',
+                adminSection: ADMIN_SECTIONS.includes(adminSection) ? adminSection : 'orgs',
+                adminOrgId: adminOrgId || null
+            };
+        }
+
+        function replaceDashboardHash(page, adminSection = currentAdminSection, adminOrgId = currentAdminOrgId) {
+            let hash = page;
+            if (page === 'admin' && ADMIN_SECTIONS.includes(adminSection)) {
+                hash += ':' + adminSection;
+                if (adminSection === 'orgs' && adminOrgId) hash += ':' + adminOrgId;
+            }
+            try { history.replaceState(null, '', location.pathname + location.search + '#' + hash); } catch (e) { }
+        }
+
+        function setAdminUiVisibility(visible) {
+            canAccessAdminPanel = !!visible;
+            const method = visible ? 'remove' : 'add';
+            document.getElementById('adminLink')?.classList[method]('hidden');
+            document.getElementById('kebabConfigItem')?.classList[method]('hidden');
+            document.getElementById('adminNavBtn')?.classList[method]('hidden');
+        }
+
         const STATUS_CONFIG = {
             todo: { label: 'Pendente', class: 'status-pendente' },
-            doing: { label: 'Em execução', class: 'status-automacao' },
-            done: { label: 'Concluído', class: 'status-preenchido' },
+            doing: { label: 'Em execuÃ§Ã£o', class: 'status-automacao' },
+            done: { label: 'ConcluÃ­do', class: 'status-preenchido' },
             error: { label: 'Erro de dados', class: 'status-erro' },
             retry: { label: 'Repetir', class: 'status-retry' },
-            fail: { label: 'Falha técnica', class: 'status-falha' },
+            fail: { label: 'Falha tÃ©cnica', class: 'status-falha' },
             standby: { label: 'Em espera', class: 'status-standby' },
         };
 
@@ -82,7 +118,7 @@
         };
 
         const STAGE_LABELS = {
-            screening: 'Triagem', analysis: 'Análise', ds160: 'DS-160',
+            screening: 'Triagem', analysis: 'AnÃ¡lise', ds160: 'DS-160',
             payment: 'Taxas', scheduling: 'Agendamento',
             interview: 'Entrevista', outcome: 'Resultado', archived: 'Arquivado'
         };
@@ -160,12 +196,12 @@
 
         function getGroupJoinValidation(applicantStage, groupId) {
             const groupMembers = getGroupMembers(groupId);
-            if (!groupMembers.length) return { ok: false, message: 'Grupo não encontrado.' };
+            if (!groupMembers.length) return { ok: false, message: 'Grupo nÃ£o encontrado.' };
             const groupStage = groupMembers[0].stage || 'screening';
             if (groupStage !== applicantStage) {
                 return {
                     ok: false,
-                    message: `Só é possível vincular na mesma etapa. Grupo em ${STAGE_LABELS[groupStage]} e solicitante em ${STAGE_LABELS[applicantStage] || applicantStage}.`
+                    message: `SÃ³ Ã© possÃ­vel vincular na mesma etapa. Grupo em ${STAGE_LABELS[groupStage]} e solicitante em ${STAGE_LABELS[applicantStage] || applicantStage}.`
                 };
             }
             return { ok: true, groupStage };
@@ -173,7 +209,7 @@
 
         async function linkApplicantToGroup(applicantId, groupId) {
             const applicant = applicants.find(x => x.id === applicantId);
-            if (!applicant) throw new Error('Solicitante não encontrado.');
+            if (!applicant) throw new Error('Solicitante nÃ£o encontrado.');
 
             const validation = getGroupJoinValidation(applicant.stage, groupId);
             if (!validation.ok) throw new Error(validation.message);
@@ -204,13 +240,13 @@
         }
 
         const PAGE_CONFIG = {
-            overview: { title: 'Dashboard', subtitle: 'Visão Geral' },
+            overview: { title: 'Dashboard', subtitle: 'VisÃ£o Geral' },
             screening: { title: 'Triagem', subtitle: 'Triagem Inicial' },
-            analysis: { title: 'Análise', subtitle: 'Revisão e Estratégia' },
+            analysis: { title: 'AnÃ¡lise', subtitle: 'RevisÃ£o e EstratÃ©gia' },
             ds160: { title: 'DS-160', subtitle: 'Preenchimento Oficial' },
             payment: { title: 'Taxas', subtitle: 'Pagamento de Taxas' },
             scheduling: { title: 'Agendamento', subtitle: 'Agendar Entrevista' },
-            interview: { title: 'Entrevista', subtitle: 'Preparação e Entrevista' },
+            interview: { title: 'Entrevista', subtitle: 'PreparaÃ§Ã£o e Entrevista' },
             outcome: { title: 'Resultado', subtitle: 'Resultado do Processo' },
             archived: { title: 'Arquivado', subtitle: 'Processo Encerrado' },
         };
@@ -287,15 +323,15 @@
             try {
                 const data = await sbGet('companies?short_id=eq.' + encodeURIComponent(_orgParam) + '&select=id,name&limit=1');
                 if (data?.[0]) { resolvedCompanyId = data[0].id; resolvedCompanyName = data[0].name; document.getElementById('orgFooter').textContent = resolvedCompanyName; const navBtn = document.getElementById('portalLinkBtnNav'); if (navBtn) { navBtn.style.display = 'flex'; const urlInput = document.getElementById('portalUrlInput'); if (urlInput) urlInput.value = _orgParam; } }
-                else { document.getElementById('orgFooter').textContent = 'Não encontrada'; }
+                else { document.getElementById('orgFooter').textContent = 'NÃ£o encontrada'; }
             } catch (e) { document.getElementById('orgFooter').textContent = 'Erro'; }
         }
 
         function copyPortalLink() {
             if (!_orgParam) return;
-            const url = new URL('portal.html', location.href).href.split('?')[0] + '?org=' + encodeURIComponent(_orgParam);
+            const url = AppCore.buildPortalUrl(_orgParam);
             navigator.clipboard.writeText(url).then(() => {
-                // Feedback no ícone do nav bar
+                // Feedback no Ã­cone do nav bar
                 const copyIcon = document.querySelector('#portalLinkBtnNav .iconoir-copy');
                 if (copyIcon) {
                     copyIcon.className = 'iconoir-check';
@@ -343,7 +379,7 @@
                 const chips = document.getElementById('filterChips');
                 if (chips) { chips.innerHTML = ''; chips.style.display = 'none'; }
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === 'overview'));
-                try { history.replaceState(null, '', location.pathname + location.search + '#overview'); } catch(e) {}
+                replaceDashboardHash('overview');
                 renderDashboard();
                 return;
             }
@@ -354,21 +390,19 @@
                 searchQuery = '';
                 resetVisibleRows();
                 updateBulkBar();
-                // Guard: só permite acesso se o botão admin estiver visível (role verificada no showDashboard)
-                const adminBtn = document.getElementById('adminNavBtn');
-                if (adminBtn && adminBtn.classList.contains('hidden')) { navigateTo('overview'); return; }
+                // Guard: sÃ³ permite acesso se o botÃ£o admin estiver visÃ­vel (role verificada no showDashboard)
+                if (!canAccessAdminPanel) { navigateTo('overview'); return; }
                 normalEls.forEach(el => el.style.display = 'none');
                 const dashPage3 = document.getElementById('dashboardPage');
                 if (dashPage3) dashPage3.style.display = 'none';
                 const tblCont = document.getElementById('tableContainer');
                 if (tblCont) tblCont.style.display = 'none';
-                if (adminPanel) { adminPanel.style.display = 'block'; admInitPanel(); }
+                if (adminPanel) { adminPanel.style.display = 'block'; admInitPanel(); admShowSection(currentAdminSection || 'orgs'); }
                 // Show dashboard-nav for admin with proper content
                 const dashNav = document.querySelector('.dashboard-nav');
                 if (dashNav) dashNav.style.display = 'flex';
-                admUpdateNav();
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === 'admin'));
-                try { history.replaceState(null, '', location.pathname + location.search + '#admin'); } catch(e) {}
+                replaceDashboardHash('admin');
                 return;
             }
             // Hide admin panel + dashboard, show normal
@@ -379,7 +413,7 @@
             normalEls.forEach(el => el.style.display = '');
             currentPage = page; currentFilter = 'all'; selectedIds.clear(); searchQuery = ''; resetVisibleRows();
             // Persist active page in URL hash for reload
-            try { history.replaceState(null, '', location.pathname + location.search + '#' + page); } catch(e) {}
+            replaceDashboardHash(page);
             document.getElementById('searchInput').value = '';
             document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
             const pcfg = PAGE_CONFIG[page];
@@ -417,6 +451,10 @@
                     visibleRowsCount = Math.min(visibleRowsCount + LIST_BATCH_SIZE, total);
                     renderTable();
                 }, { rootMargin: '240px 0px' });
+            } else if (!eligibleGroups.length) {
+                html += `<div style="padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--bg-body);font-size:12px;color:var(--text-muted);line-height:1.5">
+                    Nenhum grupo compatÃ­vel nesta etapa. O vÃ­nculo sÃ³ aparece quando o grupo e o solicitante estÃ£o na mesma etapa.
+                </div>`;
             } else {
                 _listObserver.disconnect();
             }
@@ -427,7 +465,7 @@
         function sortBy(field) { if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc'; else { sortField = field; sortDir = 'desc'; } resetVisibleRows(); renderTable(); }
 
         // Etapas: mostra apenas trabalho ativo (retry, doing, todo)
-        // done → avançar etapa | error/failed → Processos com Problemas
+        // done â†’ avanÃ§ar etapa | error/failed â†’ Processos com Problemas
         function getFilteredByPage() { return getApplicantsForPage(currentPage); }
         function getFiltered() {
                         let items = getFilteredByPage();
@@ -453,10 +491,17 @@
 
         function titleCase(s) { return (s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); }
         function shortName(s) { const p = (s || '').trim().split(/\s+/); return p.length <= 2 ? titleCase(s) : titleCase(p[0] + ' ' + p[p.length - 1]); }
+        function getInitials(name) {
+            const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+            if (!parts.length) return '--';
+            const first = parts[0]?.[0] || '';
+            const last = (parts.length > 1 ? parts[parts.length - 1]?.[0] : parts[0]?.[1]) || '';
+            return (first + last).toUpperCase().slice(0, 2) || '--';
+        }
 
         function toggleGroup(code) { if (_wasDragging) return; expandedGroups.has(code) ? expandedGroups.delete(code) : expandedGroups.add(code); renderTable(); }
 
-        // ── Credential Modal ──
+        // â”€â”€ Credential Modal â”€â”€
         window.openCredModal = function(appId) {
             const a = applicants.find(x => x.id === appId);
             if (!a) return;
@@ -477,7 +522,7 @@
                     '3': 'What high school did you attend?',
                     '4': 'What city were your parents married?'
                 };
-                const secQLabel = SEC_QUESTIONS[secQ] || secQ || 'Não definida';
+                const secQLabel = SEC_QUESTIONS[secQ] || secQ || 'NÃ£o definida';
                 const cpBtn = (v) => `<td><button class="cred-copy-btn" title="Copiar" onclick="navigator.clipboard.writeText('${v}');this.innerHTML='<i class=\\'iconoir-check\\'></i>';setTimeout(()=>this.innerHTML='<i class=\\'iconoir-copy\\'></i>',1200)"><i class="iconoir-copy"></i></button></td>`;
                 sections += `
                     <div class="cred-card">
@@ -488,14 +533,14 @@
                         <div class="cred-card-body">
                             <table class="cred-table">
                                 <tr><td>App ID</td><td class="mono">${a.application_id}</td>${cpBtn(a.application_id)}</tr>
-                                <tr><td>Sobrenome</td><td class="mono">${surname5 || '—'}</td>${surname5 ? cpBtn(surname5) : '<td></td>'}</tr>
-                                <tr><td>Nascimento</td><td>${birthYear || '—'}</td>${birthYear ? cpBtn(birthYear) : '<td></td>'}</tr>
+                                <tr><td>Sobrenome</td><td class="mono">${surname5 || 'â€”'}</td>${surname5 ? cpBtn(surname5) : '<td></td>'}</tr>
+                                <tr><td>Nascimento</td><td>${birthYear || 'â€”'}</td>${birthYear ? cpBtn(birthYear) : '<td></td>'}</tr>
                                 <tr><td>Pergunta</td><td class="small">${secQLabel}</td><td></td></tr>
-                                <tr><td>Resposta</td><td class="mono">${a.security_answer || '—'}</td>${a.security_answer ? cpBtn(a.security_answer) : '<td></td>'}</tr>
+                                <tr><td>Resposta</td><td class="mono">${a.security_answer || 'â€”'}</td>${a.security_answer ? cpBtn(a.security_answer) : '<td></td>'}</tr>
                             </table>
                             <div class="cred-downloads">
                                 ${a.ds160_pdf_url ? `<a href="${a.ds160_pdf_url}" target="_blank" class="cred-dl-btn"><i class="iconoir-download" style="font-size:13px"></i> DS-160 Completo</a>` : `<span class="cred-dl-btn disabled"><i class="iconoir-download" style="font-size:13px"></i> DS-160 Completo</span>`}
-                                ${a.confirmation_pdf_url ? `<a href="${a.confirmation_pdf_url}" target="_blank" class="cred-dl-btn"><i class="iconoir-download" style="font-size:13px"></i> Confirmação</a>` : `<span class="cred-dl-btn disabled"><i class="iconoir-download" style="font-size:13px"></i> Confirmação</span>`}
+                                ${a.confirmation_pdf_url ? `<a href="${a.confirmation_pdf_url}" target="_blank" class="cred-dl-btn"><i class="iconoir-download" style="font-size:13px"></i> ConfirmaÃ§Ã£o</a>` : `<span class="cred-dl-btn disabled"><i class="iconoir-download" style="font-size:13px"></i> ConfirmaÃ§Ã£o</span>`}
                             </div>
                         </div>
                     </div>`;
@@ -504,7 +549,7 @@
             // AIS section
             if (a.ais_email) {
                 const statusMap = {confirmed:{l:'Confirmado',d:'confirmed'},waiting_confirmation:{l:'Aguardando',d:'pending'},confirmation_failed:{l:'Falhou',d:'fail'},email_created:{l:'Email criado',d:'pending'}};
-                const st = statusMap[a.ais_status] || {l:a.ais_status||'—',d:'pending'};
+                const st = statusMap[a.ais_status] || {l:a.ais_status||'â€”',d:'pending'};
                 if (a.ais_confirmed) { st.l = 'Confirmado'; st.d = 'confirmed'; }
                 const cpBtn = (v) => `<td><button class="cred-copy-btn" title="Copiar" onclick="navigator.clipboard.writeText('${v}');this.innerHTML='<i class=\\'iconoir-check\\'></i>';setTimeout(()=>this.innerHTML='<i class=\\'iconoir-copy\\'></i>',1200)"><i class="iconoir-copy"></i></button></td>`;
                 sections += `
@@ -527,12 +572,12 @@
                     </div>`;
             }
 
-            if (!sections) sections = '<div style="padding:12px;color:var(--text-muted);text-align:center">Nenhuma credencial disponível</div>';
+            if (!sections) sections = '<div style="padding:12px;color:var(--text-muted);text-align:center">Nenhuma credencial disponÃ­vel</div>';
 
             const html = `<div id="credModal" class="modal-overlay" onclick="document.getElementById('credModal').remove()">
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:360px;padding:16px">
                     <div class="modal-header" style="margin-bottom:12px">
-                        <h3 class="modal-title" style="font-size:14px">Credenciais — ${shortName(a.name)}</h3>
+                        <h3 class="modal-title" style="font-size:14px">Credenciais â€” ${shortName(a.name)}</h3>
                         <button class="modal-close" onclick="document.getElementById('credModal').remove()">&times;</button>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:8px">${sections}</div>
@@ -606,17 +651,17 @@
                         }
                         return `<span class="status-badge ${cfg.class}">${cfg.label}</span>`;
                     })()}</td>
-                    <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : '—'}</td>
-                    <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '—'}</td>
-                    <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotações"><div class="notes-preview">${a.notes ? a.notes.substring(0, 140) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
+                    <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : 'â€”'}</td>
+                    <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : 'â€”'}</td>
+                    <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotaÃ§Ãµes"><div class="notes-preview">${a.notes ? a.notes.substring(0, 140) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
 
                     <td><div class="row-actions">
                         ${a.ds160_pdf_url || a.confirmation_pdf_url ? `<button class="row-btn" onclick="event.stopPropagation();openDownloadModal('${a.id}')" title="Download DS-160" style="color:#22c55e"><i class="iconoir-download"></i></button>` : ''}
-                        ${previousStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#64748b">Voltar</button>` : ''}
-                        ${nextStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="Avançar etapa" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#2563eb">Avançar</button>` : ''}
-                        <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opções" aria-label="Mais opções" style="width:34px;padding:0;color:#64748b"><i class="iconoir-more-vert"></i></button>
+                        ${previousStage ? `<button class="row-btn row-btn-text row-btn-muted" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa">Voltar</button>` : ''}
+                        ${nextStage ? `<button class="row-btn row-btn-text row-btn-primary" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="AvanÃ§ar etapa">AvanÃ§ar</button>` : ''}
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link do portal"><i class="iconoir-copy"></i></button>
+                        <button class="row-btn row-btn-more" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opÃ§Ãµes" aria-label="Mais opÃ§Ãµes"><i class="iconoir-more-vert"></i></button>
                     </div></td></tr>`;
             }
 
@@ -641,14 +686,15 @@
                         <td></td>
                         <td onclick="event.stopPropagation();openGroupNotesModal('${a.group_id}')" style="cursor:pointer" title="Notas do grupo"><div class="notes-preview">${(() => { const g = _groups.find(x => x.id === a.group_id); return g && g.notes ? g.notes.substring(0, 140) : '<span class="app-placeholder">Adicionar nota</span>'; })()}</div></td>
 
-                        <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();openGroupConfig('${a.group_id}')" title="Configurações do grupo"><i class="iconoir-settings"></i></button><button class="row-btn" onclick="event.stopPropagation();openWhatsApp(null,'${a.group_id}')" title="WhatsApp do grupo"><i class="iconoir-whatsapp"></i></button><button class="row-btn" onclick="event.stopPropagation();copyGroupLink('${a.group_id}')" title="Copiar link do grupo"><i class="iconoir-copy"></i></button></div></td></tr>`;
+                        <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();openGroupConfig('${a.group_id}')" title="ConfiguraÃ§Ãµes do grupo"><i class="iconoir-settings"></i></button><button class="row-btn" onclick="event.stopPropagation();openWhatsApp(null,'${a.group_id}')" title="WhatsApp do grupo"><i class="iconoir-whatsapp"></i></button><button class="row-btn" onclick="event.stopPropagation();copyGroupLink('${a.group_id}')" title="Copiar link do grupo"><i class="iconoir-copy"></i></button></div></td></tr>`;
                     if (isOpen) {
                         members.forEach((m, idx) => { html += buildRow(m, 'sub-row', { isSubRow: true, isLast: false, memberIndex: idx }); });
                     }
                 } else { rendered.add(a.id); html += buildRow(a, ''); }
             });
             tbody.innerHTML = html; updateBulkBar();
-        }
+        }
+
         // ==========================================
         // DRAG AND DROP
         // ==========================================
@@ -710,7 +756,7 @@
             const targetIsGroup = isGroupDragId(targetId);
             const targetApplicant = !targetIsGroup ? applicants.find(a => a.id === targetId) : null;
 
-            // ─── CASE 1: Solo dropped onto group member (open) or group row (closed) → LINK ───
+            // â”€â”€â”€ CASE 1: Solo dropped onto group member (open) or group row (closed) â†’ LINK â”€â”€â”€
             if (dragApplicant && !dragApplicant.group_id) {
                 let linkGroupId = null;
                 if (targetApplicant && targetApplicant.group_id) linkGroupId = targetApplicant.group_id;
@@ -730,7 +776,7 @@
                 }
             }
 
-            // ─── CASE 2: Group member dropped onto solo area → UNLINK ───
+            // â”€â”€â”€ CASE 2: Group member dropped onto solo area â†’ UNLINK â”€â”€â”€
             if (dragApplicant && dragApplicant.group_id && targetApplicant && !targetApplicant.group_id) {
                 const gid = dragApplicant.group_id;
                 const groupMembers = applicants.filter(a => a.group_id === gid);
@@ -738,24 +784,24 @@
                 // Block unlinking the principal (lowest sort_order)
                 const sorted = [...groupMembers].sort((a, b) => (a.sort_order || 99) - (b.sort_order || 99));
                 if (sorted[0] && sorted[0].id === dragApplicant.id) {
-                    showToast('Não é possível desvincular o principal. Troque o principal nas configurações do grupo (⚙).', 'error');
+                    showToast('NÃ£o Ã© possÃ­vel desvincular o principal. Troque o principal nas configuraÃ§Ãµes do grupo (âš™).', 'error');
                     _dragId = null; return;
                 }
                 showUnlinkModal(dragApplicant);
                 _dragId = null; return;
             }
 
-            // ─── Block ALL reorder within same group (only via modal ⚙) ───
+            // â”€â”€â”€ Block ALL reorder within same group (only via modal âš™) â”€â”€â”€
             {
                 const dragGid = dragApplicant ? dragApplicant.group_id : (isGroupDragId(_dragId) ? getGroupIdFromDrag(_dragId) : null);
                 const targetGid = targetApplicant ? targetApplicant.group_id : (targetIsGroup ? targetId.replace('group_', '') : null);
                 if (dragGid && targetGid && String(dragGid) === String(targetGid)) {
-                    showToast('Use as configurações do grupo (⚙) para alterar a ordem.', 'info');
+                    showToast('Use as configuraÃ§Ãµes do grupo (âš™) para alterar a ordem.', 'info');
                     _dragId = null; return;
                 }
             }
 
-            // ─── CASE 3: Reorder — insert at position + renumber all ───
+            // â”€â”€â”€ CASE 3: Reorder â€” insert at position + renumber all â”€â”€â”€
             try {
                 // Build ordered list of "blocks" for current stage
                 // A block is either a solo applicant or a group (all members as one unit)
@@ -808,7 +854,7 @@
             _dragId = null;
         }
 
-        // ─── UNLINK MODAL (simplified) ───
+        // â”€â”€â”€ UNLINK MODAL (simplified) â”€â”€â”€
         function showUnlinkModal(applicant) {
             const hasEmail = !!applicant.email;
             const modalId = 'unlinkModal';
@@ -820,7 +866,7 @@
                 ${!hasEmail ? `<div style="margin-top:8px">
                     <label class="modal-label">E-mail do solicitante <span style="color:#ef4444">*</span></label>
                     <input type="email" id="unlinkEmailInput" class="modal-input" placeholder="Ex: solicitante@email.com" style="width:100%">
-                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Necessário para acesso individual ao portal.</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">NecessÃ¡rio para acesso individual ao portal.</div>
                 </div>` : ''}
                 <div class="modal-actions">
                     <button class="modal-btn" id="btnCancelUnlink">Cancelar</button>
@@ -836,7 +882,7 @@
                 if (!hasEmail) {
                     email = document.getElementById('unlinkEmailInput')?.value.trim();
                     if (!email || !email.includes('@')) {
-                        showToast('Informe um e-mail válido para o solicitante', 'error');
+                        showToast('Informe um e-mail vÃ¡lido para o solicitante', 'error');
                         return;
                     }
                 }
@@ -856,7 +902,7 @@
         }
 
 
-        // ─── AUTO-DISSOLVE: se grupo ficou com 1 membro, desvincular o último ───
+        // â”€â”€â”€ AUTO-DISSOLVE: se grupo ficou com 1 membro, desvincular o Ãºltimo â”€â”€â”€
         async function dissolveGroupIfNeeded(groupId) {
             const remaining = applicants.filter(a => a.group_id === groupId);
             if (remaining.length !== 1) return; // 0 = already gone, 2+ = still group
@@ -871,11 +917,11 @@
             showToast('Grupo dissolvido automaticamente (restava 1 membro)', 'info');
         }
 
-        // ─── GROUP CONFIG MODAL ───
+        // â”€â”€â”€ GROUP CONFIG MODAL â”€â”€â”€
         function openGroupConfig(groupId) {
             const members = applicants.filter(a => String(a.group_id) === String(groupId))
                 .sort((a, b) => (a.sort_order || 99) - (b.sort_order || 99));
-            if (!members.length) { showToast('Grupo não encontrado.', 'error'); return; }
+            if (!members.length) { showToast('Grupo nÃ£o encontrado.', 'error'); return; }
 
             const principal = members[0]; // sort_order = smallest = principal
             const allArchived = members.every(m => m.stage === 'archived');
@@ -891,13 +937,13 @@
 
             let html = `<div id="${modalId}" class="modal-overlay">
             <div class="modal-box" style="max-width:460px">
-                <h3 class="modal-title"><i class="iconoir-settings" style="margin-right:6px"></i> Configurações do Grupo</h3>
-                <p style="font-size:13px;color:var(--text-muted);margin:-4px 0 16px">${groupLabel} · ${members.length} membro(s)</p>
+                <h3 class="modal-title"><i class="iconoir-settings" style="margin-right:6px"></i> ConfiguraÃ§Ãµes do Grupo</h3>
+                <p style="font-size:13px;color:var(--text-muted);margin:-4px 0 16px">${groupLabel} Â· ${members.length} membro(s)</p>
 
                 <div style="margin-bottom:16px">
                     <label class="modal-label">Solicitante Principal</label>
                     <select id="gcPrincipalSelect" class="modal-input" style="width:100%">${memberOptions}</select>
-                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">O principal aparece primeiro e é o ponto de contato no portal.</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">O principal aparece primeiro e Ã© o ponto de contato no portal.</div>
                 </div>
 
                 <div style="margin-bottom:20px">
@@ -916,7 +962,7 @@
                             <i class="iconoir-trash" style="margin-right:4px"></i> Excluir Grupo
                         </button>
                     </div>
-                    ${!allArchived ? '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">Para excluir, primeiro arquive todos os membros.</div>' : '<div style="font-size:11px;color:#ef4444;margin-top:6px">⚠ Todos arquivados — exclusão só é possível manualmente.</div>'}
+                    ${!allArchived ? '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">Para excluir, primeiro arquive todos os membros.</div>' : '<div style="font-size:11px;color:#ef4444;margin-top:6px">âš  Todos arquivados â€” exclusÃ£o sÃ³ Ã© possÃ­vel manualmente.</div>'}
                 </div>
 
                 <div class="modal-actions" style="margin-top:20px">
@@ -930,13 +976,13 @@
             modalEl.addEventListener('click', (e) => { if (e.target === modalEl) modalEl.remove(); });
             document.getElementById('gcCancelBtn').addEventListener('click', () => modalEl.remove());
 
-            // ── Save: update principal + email ──
+            // â”€â”€ Save: update principal + email â”€â”€
             document.getElementById('gcSaveBtn').addEventListener('click', async () => {
                 const newPrincipalId = document.getElementById('gcPrincipalSelect').value;
                 const newEmail = document.getElementById('gcEmailInput').value.trim();
 
                 if (!newEmail || !newEmail.includes('@')) {
-                    showToast('Informe um e-mail válido.', 'error'); return;
+                    showToast('Informe um e-mail vÃ¡lido.', 'error'); return;
                 }
 
                 try {
@@ -953,7 +999,7 @@
                         newPrincipal.sort_order = oldSort;
                         newPrincipal.email = newEmail.toLowerCase();
                         oldPrincipal.sort_order = newSort;
-                        showToast(`${titleCase(newPrincipal.name)} é agora o principal!`, 'success');
+                        showToast(`${titleCase(newPrincipal.name)} Ã© agora o principal!`, 'success');
                     } else {
                         // Same principal, just update email
                         if (newEmail.toLowerCase() !== (oldPrincipal.email || '').toLowerCase()) {
@@ -961,7 +1007,7 @@
                             oldPrincipal.email = newEmail.toLowerCase();
                             showToast('Email do grupo atualizado!', 'success');
                         } else {
-                            showToast('Nenhuma alteração.', 'info');
+                            showToast('Nenhuma alteraÃ§Ã£o.', 'info');
                         }
                     }
 
@@ -972,7 +1018,7 @@
                 }
             });
 
-            // ── Archive group ──
+            // â”€â”€ Archive group â”€â”€
             document.getElementById('gcArchiveBtn').addEventListener('click', () => {
                 if (allArchived) return;
                 showConfirmModal('Arquivar Grupo',
@@ -991,11 +1037,11 @@
                     });
             });
 
-            // ── Delete group ──
+            // â”€â”€ Delete group â”€â”€
             document.getElementById('gcDeleteBtn').addEventListener('click', () => {
                 if (!allArchived) return;
                 showConfirmModal('Excluir Grupo Permanentemente',
-                    `<span style="color:#ef4444;font-weight:700">ATENÇÃO:</span> Todos os <strong>${members.length} membros</strong> e seus dados serão <strong>excluídos permanentemente</strong>. Esta ação não pode ser desfeita.`,
+                    `<span style="color:#ef4444;font-weight:700">ATENÃ‡ÃƒO:</span> Todos os <strong>${members.length} membros</strong> e seus dados serÃ£o <strong>excluÃ­dos permanentemente</strong>. Esta aÃ§Ã£o nÃ£o pode ser desfeita.`,
                     async () => {
                         try {
                             // Delete group record
@@ -1011,7 +1057,7 @@
                             });
                             modalEl.remove();
                             renderTable(); updateBadges();
-                            showToast(`Grupo ${groupLabel} excluído!`, 'success');
+                            showToast(`Grupo ${groupLabel} excluÃ­do!`, 'success');
                         } catch (err) { showToast('Erro: ' + err.message, 'error'); }
                     });
             });
@@ -1031,18 +1077,21 @@
         function clearSelection() { selectedIds.clear(); document.getElementById('checkAll').classList.remove('checked'); renderTable(); }
         function updateBulkBar() { const bar = document.getElementById('bulkBar'); if (selectedIds.size > 0) { bar.classList.remove('hidden'); document.getElementById('selectedCount').textContent = selectedIds.size; } else bar.classList.add('hidden'); }
 
-        function buildUrl(id, tab) { const params = { id }; if (tab) params.tab = tab; return AppCore.buildUrl('ds160-form.html', params); }
+        function buildUrl(id, tab) {
+            const params = {};
+            if (tab) params.tab = tab;
+            if (_orgParam) params.org = _orgParam;
+            return AppCore.buildFormUrl(id, params);
+        }
         function _formUrl(id, tab = null) {
-            let url = 'ds160-form.html?id=' + encodeURIComponent(id) + '&secure_entry=1';
-            if (tab) url += '&tab=' + encodeURIComponent(tab);
-            if (_orgParam) url += '&org=' + encodeURIComponent(_orgParam);
-            return url;
+            const params = { secure_entry: 1 };
+            if (tab) params.tab = tab;
+            if (_orgParam) params.org = _orgParam;
+            return AppCore.buildFormUrl(id, params);
         }
         function _portalUrl(id) {
-            const base = new URL('portal.html', location.href).href.split('?')[0];
-            let url = base + '?id=' + encodeURIComponent(id);
-            if (_orgParam) url += '&org=' + encodeURIComponent(_orgParam);
-            return url;
+            const params = { id };
+            return _orgParam ? AppCore.buildPortalUrl(_orgParam, params) : AppCore.buildPublicUrl('portal.html', params);
         }
         function _portalGroupUrl(groupId) {
             return _portalUrl(groupId);
@@ -1082,10 +1131,10 @@
 
             const docs = [];
             if (a.ds160_pdf_url) docs.push({ label: 'DS-160 Completo', url: a.ds160_pdf_url, icon: 'iconoir-page', color: '#3b82f6' });
-            if (a.confirmation_pdf_url) docs.push({ label: 'Confirmação', url: a.confirmation_pdf_url, icon: 'iconoir-check-circle', color: '#22c55e' });
-            if (a.confirmation_screenshot_url) docs.push({ label: 'Screenshot Confirmação', url: a.confirmation_screenshot_url, icon: 'iconoir-camera', color: '#8b5cf6' });
+            if (a.confirmation_pdf_url) docs.push({ label: 'ConfirmaÃ§Ã£o', url: a.confirmation_pdf_url, icon: 'iconoir-check-circle', color: '#22c55e' });
+            if (a.confirmation_screenshot_url) docs.push({ label: 'Screenshot ConfirmaÃ§Ã£o', url: a.confirmation_screenshot_url, icon: 'iconoir-camera', color: '#8b5cf6' });
 
-            if (!docs.length) { showToast('Nenhum documento disponível', 'info'); return; }
+            if (!docs.length) { showToast('Nenhum documento disponÃ­vel', 'info'); return; }
 
             const docItems = docs.map(d => `
                 <a href="${d.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;color:var(--text-primary);transition:all .15s ease" onmouseover="this.style.borderColor='${d.color}';this.style.boxShadow='0 2px 8px ${d.color}18'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
@@ -1103,7 +1152,7 @@
             const html = `<div id="${modalId}" class="modal-overlay">
                 <div class="modal-box" style="max-width:420px">
                     <h3 class="modal-title"><i class="iconoir-download" style="margin-right:6px"></i> Documentos DS-160</h3>
-                    <p style="font-size:13px;color:var(--text-muted);margin:-4px 0 16px">${titleCase(a.name)} · ${a.application_id || '—'}</p>
+                    <p style="font-size:13px;color:var(--text-muted);margin:-4px 0 16px">${titleCase(a.name)} Â· ${a.application_id || 'â€”'}</p>
                     <div style="display:flex;flex-direction:column;gap:8px">${docItems}</div>
                     <div class="modal-actions" style="margin-top:20px">
                         <button class="modal-btn" onclick="document.getElementById('${modalId}').remove()">Fechar</button>
@@ -1132,7 +1181,7 @@
                 return;
             }
             const portalUrl = groupId ? _portalGroupUrl(targetId || groupId) : _portalUrl(targetId || id);
-            const msg = encodeURIComponent('Olá! Segue o link para preencher seu formulário DS-160:\n' + portalUrl);
+            const msg = encodeURIComponent('OlÃ¡! Segue o link para preencher seu formulÃ¡rio DS-160:\n' + portalUrl);
             window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
         }
 
@@ -1288,16 +1337,16 @@
             if (!applicant) return;
             const defaultStage = direction === 'back' ? getPreviousStage(applicant.stage) : getNextStage(applicant.stage);
             if (!defaultStage) {
-                showToast(direction === 'back' ? 'Não há etapa anterior.' : 'Não há próxima etapa automática.', 'info');
+                showToast(direction === 'back' ? 'NÃ£o hÃ¡ etapa anterior.' : 'NÃ£o hÃ¡ prÃ³xima etapa automÃ¡tica.', 'info');
                 return;
             }
             const modalId = 'stageActionModal';
             closeActionModal(modalId);
-            const title = direction === 'back' ? 'Voltar Etapa' : 'Avançar Etapa';
+            const title = direction === 'back' ? 'Voltar Etapa' : 'AvanÃ§ar Etapa';
             const helper = direction === 'back'
-                ? 'A etapa anterior foi preselecionada. Você pode trocar se precisar.'
-                : 'A próxima etapa foi preselecionada. Você pode trocar se precisar.';
-            const confirmLabel = direction === 'back' ? 'Confirmar retorno' : 'Confirmar avanço';
+                ? 'A etapa anterior foi preselecionada. VocÃª pode trocar se precisar.'
+                : 'A prÃ³xima etapa foi preselecionada. VocÃª pode trocar se precisar.';
+            const confirmLabel = direction === 'back' ? 'Confirmar retorno' : 'Confirmar avanÃ§o';
             const html = `<div id="${modalId}" class="modal-overlay" onclick="closeActionModal('${modalId}')">
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px">
                     <div class="modal-header">
@@ -1308,7 +1357,7 @@
                     <p class="modal-body" style="margin-top:0">${helper}</p>
                     <div class="manage-section-label">Etapa de destino</div>
                     <select id="stageActionSelect" class="manage-select">${getStageOptions(defaultStage)}</select>
-                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">${direction === 'back' ? 'Use para reabrir uma etapa anterior.' : 'Use para seguir o fluxo normal com confirmação.'}</div>
+                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">${direction === 'back' ? 'Use para reabrir uma etapa anterior.' : 'Use para seguir o fluxo normal com confirmaÃ§Ã£o.'}</div>
                     <div class="modal-actions" style="margin-top:16px">
                         <button class="modal-btn" onclick="closeActionModal('${modalId}')">Cancelar</button>
                         <button class="modal-btn primary" onclick="confirmStageAction('${id}','${direction}')">${confirmLabel}</button>
@@ -1343,19 +1392,19 @@
                         <button class="modal-close" onclick="closeActionModal('${modalId}')">&times;</button>
                     </div>
                     <div class="modal-subtitle">${escapeHTML(applicant.name)}</div>
-                    <p class="modal-body" style="margin-top:0">Escolha a ação recomendada para este erro. O sistema preseleciona uma etapa, mas você pode ajustar antes de confirmar.</p>
+                    <p class="modal-body" style="margin-top:0">Escolha a aÃ§Ã£o recomendada para este erro. O sistema preseleciona uma etapa, mas vocÃª pode ajustar antes de confirmar.</p>
                     <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:12px">
-                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#2563eb" onclick="setStageActionSelection('${applicant.stage}','Retoma a etapa atual após corrigir o problema.')">${continueLabel}</button>
-                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#d97706" onclick="setStageActionSelection('analysis','Volta para revisão manual quando o erro pode esconder outros dados inconsistentes.')">Voltar para análise</button>
-                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#64748b" onclick="setStageActionSelection('screening','Reabre o processo desde o início quando a base precisa ser revisada por completo.')">Reiniciar do zero</button>
+                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#2563eb" onclick="setStageActionSelection('${applicant.stage}','Retoma a etapa atual apÃ³s corrigir o problema.')">${continueLabel}</button>
+                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#d97706" onclick="setStageActionSelection('analysis','Volta para revisÃ£o manual quando o erro pode esconder outros dados inconsistentes.')">Voltar para anÃ¡lise</button>
+                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#64748b" onclick="setStageActionSelection('screening','Reabre o processo desde o inÃ­cio quando a base precisa ser revisada por completo.')">Reiniciar do zero</button>
                         ${applicant.stage === 'ds160' ? `<button class="manage-btn" style="justify-content:center;font-weight:600;color:#8b5cf6" onclick="closeActionModal('${modalId}');confirmNewDS160('${id}','${applicant.name.replace(/'/g, "\\\&#39;")}')">Novo DS-160</button>` : ''}
                     </div>
                     <div class="manage-section-label">Etapa de destino</div>
                     <select id="stageActionSelect" class="manage-select">${getStageOptions(applicant.stage)}</select>
-                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">A etapa atual foi preselecionada para continuar após corrigir o problema.</div>
+                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">A etapa atual foi preselecionada para continuar apÃ³s corrigir o problema.</div>
                     <div class="modal-actions" style="margin-top:16px">
                         <button class="modal-btn" onclick="closeActionModal('${modalId}')">Cancelar</button>
-                        <button class="modal-btn primary" onclick="confirmProblemResolution('${id}')">Confirmar decisão</button>
+                        <button class="modal-btn primary" onclick="confirmProblemResolution('${id}')">Confirmar decisÃ£o</button>
                     </div>
                 </div>
             </div>`;
@@ -1378,9 +1427,9 @@
             const hasFilled = a && a.progress > 0;
 
             if (hasFilled) {
-                // Cannot delete — offer archive instead
+                // Cannot delete â€” offer archive instead
                 showConfirmModal('Arquivar Solicitante',
-                    `<strong>${name}</strong> já preencheu dados no formulário e não pode ser excluído.<br><small style="color:var(--text-muted)">Deseja arquivar em vez de excluir?</small>`,
+                    `<strong>${name}</strong> jÃ¡ preencheu dados no formulÃ¡rio e nÃ£o pode ser excluÃ­do.<br><small style="color:var(--text-muted)">Deseja arquivar em vez de excluir?</small>`,
                     async () => {
                         try {
                             await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { stage: 'archived', status: 'done' });
@@ -1392,14 +1441,14 @@
                 return;
             }
 
-            showConfirmModal('Excluir Solicitante', `Tem certeza que deseja excluir <strong>${name}</strong>?<br><small style="color:var(--text-muted)">Esta ação não pode ser desfeita.</small>`, async () => {
+            showConfirmModal('Excluir Solicitante', `Tem certeza que deseja excluir <strong>${name}</strong>?<br><small style="color:var(--text-muted)">Esta aÃ§Ã£o nÃ£o pode ser desfeita.</small>`, async () => {
                 try {
                     // #8 fix: if member of group, check if principal
                     if (a?.group_id) {
                         const groupMembers = applicants.filter(x => x.group_id === a.group_id).sort((x,y) => (x.sort_order??999) - (y.sort_order??999));
                         const isPrincipal = groupMembers[0]?.id === id;
                         if (isPrincipal && groupMembers.length > 1) {
-                            showToast('Não é possível excluir o solicitante principal enquanto houver outros membros no grupo. Desvincule-os primeiro.', 'error');
+                            showToast('NÃ£o Ã© possÃ­vel excluir o solicitante principal enquanto houver outros membros no grupo. Desvincule-os primeiro.', 'error');
                             return;
                         }
                     }
@@ -1407,7 +1456,7 @@
                     applicants = applicants.filter(x => x.id !== id);
                     selectedIds.delete(id);
                     renderTable(); renderFilters(); updateBadges();
-                    showToast('Solicitante excluído.', 'success');
+                    showToast('Solicitante excluÃ­do.', 'success');
                 } catch (e) { showToast('Erro ao excluir: ' + e.message, 'error'); }
             });
         }
@@ -1416,7 +1465,7 @@
                 const selectedApplicants = applicants.filter(a => selectedIds.has(a.id));
                 const filledApplicants = selectedApplicants.filter(a => a.progress > 0);
                 if (filledApplicants.length > 0) {
-                    showToast(`Não é possível excluir solicitantes com dados preenchidos: ${filledApplicants.map(a => shortName(a.name)).join(', ')}`, 'error');
+                    showToast(`NÃ£o Ã© possÃ­vel excluir solicitantes com dados preenchidos: ${filledApplicants.map(a => shortName(a.name)).join(', ')}`, 'error');
                     return;
                 }
 
@@ -1428,7 +1477,7 @@
                     return groupMembers.length > 1 && groupMembers[0]?.id === a.id;
                 });
                 if (blockedPrincipals.length > 0) {
-                    showToast(`Não é possível excluir o principal de grupos ativos: ${blockedPrincipals.map(a => shortName(a.name)).join(', ')}`, 'error');
+                    showToast(`NÃ£o Ã© possÃ­vel excluir o principal de grupos ativos: ${blockedPrincipals.map(a => shortName(a.name)).join(', ')}`, 'error');
                     return;
                 }
 
@@ -1436,7 +1485,7 @@
                 for (const id of selectedIds) { try { await sbFetch(`applicants?id=eq.${id}`, 'DELETE'); } catch (e) { errors++; } }
                 await loadApplicants(); clearSelection(); navigateTo(currentPage);
                 if (errors > 0) showToast(`Erro ao excluir ${errors} iten(s)`, 'error');
-                else showToast('Excluído(s) com sucesso!', 'success');
+                else showToast('ExcluÃ­do(s) com sucesso!', 'success');
             });
         }
 
@@ -1491,7 +1540,7 @@
 
             if (a.stage !== 'archived') {
                 showConfirmModal('Arquivar Solicitante',
-                    `Deseja arquivar <strong>${name}</strong>?<br><small style="color:var(--text-muted)">Ele sairá da operação ativa e poderá ser excluído permanentemente depois, se necessário.</small>`,
+                    `Deseja arquivar <strong>${name}</strong>?<br><small style="color:var(--text-muted)">Ele sairÃ¡ da operaÃ§Ã£o ativa e poderÃ¡ ser excluÃ­do permanentemente depois, se necessÃ¡rio.</small>`,
                     async () => {
                         try {
                             await archiveApplicantRecord(id);
@@ -1503,20 +1552,20 @@
             }
 
             showConfirmModal('Excluir Permanentemente',
-                `Deseja apagar <strong>${name}</strong> definitivamente?<br><small style="color:var(--text-muted)">Todos os dados vinculados serão removidos do banco.</small>`,
+                `Deseja apagar <strong>${name}</strong> definitivamente?<br><small style="color:var(--text-muted)">Todos os dados vinculados serÃ£o removidos do banco.</small>`,
                 async () => {
                     try {
                         if (a.group_id) {
                             const groupMembers = getGroupMembers(a.group_id, { includeArchived: true });
                             const isPrincipal = groupMembers[0]?.id === id;
                             if (isPrincipal && groupMembers.length > 1) {
-                                showToast('Não é possível excluir o principal enquanto houver outros membros vinculados ao grupo.', 'error');
+                                showToast('NÃ£o Ã© possÃ­vel excluir o principal enquanto houver outros membros vinculados ao grupo.', 'error');
                                 return;
                             }
                         }
                         await purgeApplicantData(id);
                         renderTable(); renderFilters(); updateBadges();
-                        showToast('Solicitante excluído permanentemente.', 'success');
+                        showToast('Solicitante excluÃ­do permanentemente.', 'success');
                     } catch (e) { showToast('Erro ao excluir: ' + e.message, 'error'); }
                 });
         };
@@ -1528,11 +1577,11 @@
             const activeApplicants = selectedApplicants.filter(a => a.stage !== 'archived');
             const archivedApplicants = selectedApplicants.filter(a => a.stage === 'archived');
             const activeLabel = activeApplicants.length ? `${activeApplicants.length} arquivamento(s)` : null;
-            const archivedLabel = archivedApplicants.length ? `${archivedApplicants.length} exclusão(ões) permanente(s)` : null;
+            const archivedLabel = archivedApplicants.length ? `${archivedApplicants.length} exclusÃ£o(Ãµes) permanente(s)` : null;
             const summary = [activeLabel, archivedLabel].filter(Boolean).join(' e ');
 
-            showConfirmModal('Confirmar ação',
-                `Deseja processar ${summary || `${selectedApplicants.length} solicitante(s)`}?<br><small style="color:var(--text-muted)">Ativos serão arquivados. Arquivados serão excluídos definitivamente.</small>`,
+            showConfirmModal('Confirmar aÃ§Ã£o',
+                `Deseja processar ${summary || `${selectedApplicants.length} solicitante(s)`}?<br><small style="color:var(--text-muted)">Ativos serÃ£o arquivados. Arquivados serÃ£o excluÃ­dos definitivamente.</small>`,
                 async () => {
                     try {
                         for (const applicant of activeApplicants) {
@@ -1544,7 +1593,7 @@
                                 const groupMembers = getGroupMembers(applicant.group_id, { includeArchived: true });
                                 const isPrincipal = groupMembers[0]?.id === applicant.id;
                                 if (isPrincipal && groupMembers.length > 1) {
-                                    showToast(`Não é possível excluir o principal ${shortName(applicant.name)} enquanto houver outros membros vinculados.`, 'error');
+                                    showToast(`NÃ£o Ã© possÃ­vel excluir o principal ${shortName(applicant.name)} enquanto houver outros membros vinculados.`, 'error');
                                     continue;
                                 }
                             }
@@ -1554,7 +1603,7 @@
                         await loadApplicants();
                         clearSelection();
                         navigateTo(currentPage);
-                        showToast('Ação concluída com sucesso!', 'success');
+                        showToast('AÃ§Ã£o concluÃ­da com sucesso!', 'success');
                     } catch (e) {
                         showToast('Erro: ' + e.message, 'error');
                     }
@@ -1573,6 +1622,12 @@
             const stages = ['screening', 'analysis', 'ds160', 'payment', 'scheduling', 'interview', 'outcome', 'archived'];
             const nextStage = getNextStage(a.stage);
             const previousStage = getPreviousStage(a.stage);
+            const eligibleGroups = _groups.filter(g => {
+                const members = applicants.filter(x => x.group_id === g.id);
+                if (!members.length) return false;
+                const groupStage = members[0]?.stage || 'screening';
+                return members.every(m => m.stage === groupStage) && groupStage === a.stage;
+            });
             const backActionAttrs = previousStage ? `onclick="closeManageMenu();openStageActionModal('${id}','back')"` : 'disabled';
             const backActionStyle = previousStage ? 'justify-content:center;gap:6px;font-weight:600' : 'justify-content:center;gap:6px;font-weight:600;opacity:.45;cursor:not-allowed';
             const forwardActionAttrs = nextStage ? `onclick="closeManageMenu();openStageActionModal('${id}','forward')"` : 'disabled';
@@ -1582,13 +1637,13 @@
             <div class="modal-box modal-manage" onclick="event.stopPropagation()">
                 <div class="modal-header"><h3 class="modal-title">Gerenciar Solicitante</h3><button class="modal-close" onclick="closeManageMenu()">&times;</button></div>
                 <div class="modal-subtitle">${a.name}</div>
-                <div class="manage-section-label">Ações rápidas</div>
+                <div class="manage-section-label">AÃ§Ãµes rÃ¡pidas</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
                     <button class="manage-btn" ${backActionAttrs} style="${backActionStyle}">
                         <i class="iconoir-nav-arrow-left" style="font-size:14px"></i> Voltar
                     </button>
                     <button class="manage-btn" ${forwardActionAttrs} style="${forwardActionStyle}">
-                        <i class="iconoir-nav-arrow-right" style="font-size:14px"></i> Avançar
+                        <i class="iconoir-nav-arrow-right" style="font-size:14px"></i> AvanÃ§ar
                     </button>
                 </div>
                 ${a.status === 'error' || a.status === 'fail'
@@ -1608,32 +1663,32 @@
                 html += `<div style="position:relative">
                     <input type="text" id="groupSearchInput" class="manage-select" placeholder="Buscar grupo por nome ou ID..." oninput="filterGroupResults()" onfocus="openGroupSearchResults()" autocomplete="off">
                     <div id="groupSearchResults" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:160px;overflow-y:auto;background:var(--bg-main,#fff);border:1px solid var(--border-light,#e2e8f0);border-radius:0 0 8px 8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,.1)">
-                        ${_groups.map(g => {
+                        ${eligibleGroups.map(g => {
                             const members = applicants.filter(x => x.group_id === g.id);
                             const stage = members[0]?.stage || 'screening';
                             return `<div class="group-search-item" data-gid="${g.id}" onclick="linkToSearchedGroup('${id}','${g.id}')" style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border-light,#f1f5f9);display:flex;justify-content:space-between;align-items:center">
                                 <span><i class="iconoir-group" style="margin-right:4px"></i> ${g.nickname || getGroupLabel(g.id)}</span>
-                                <span style="color:var(--text-muted);font-size:11px">${STAGE_LABELS[stage]} · ${members.length} membros</span>
+                                <span style="color:var(--text-muted);font-size:11px">${STAGE_LABELS[stage]} Â· ${members.length} membros</span>
                             </div>`;
                         }).join('')}
-                        ${_groups.length === 0 ? '<div style="padding:8px 12px;font-size:12px;color:var(--text-muted)">Nenhum grupo disponível</div>' : ''}
+                        ${_groups.length === 0 ? '<div style="padding:8px 12px;font-size:12px;color:var(--text-muted)">Nenhum grupo disponÃ­vel</div>' : ''}
                     </div>
                 </div>`;
             }
 
             html += `
                 <details style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
-                <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em">Mais opções</summary>
+                <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em">Mais opÃ§Ãµes</summary>
                 <div class="manage-section-label" style="margin-top:12px">Etapa</div>
                 <select class="manage-select" onchange="updateField('${id}','stage',this.value)">
                     ${stages.map(s => `<option value="${s}" ${a.stage === s ? 'selected' : ''}>${STAGE_LABELS[s]}</option>`).join('')}
                 </select>
 
-                
+
                 <div class="manage-section-label">Status</div>
                 ${(() => {
                     if (a.stage === 'interview') {
-                        // Interview: status manuais + select de resultado para avançar
+                        // Interview: status manuais + select de resultado para avanÃ§ar
                         const manualStatuses = ['todo', 'doing', 'retry'];
                         return `<select class="manage-select" onchange="updateField('${id}','status',this.value)">
                                 ${manualStatuses.map(k => { const v = STATUS_CONFIG[k]; return `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v.label}</option>`; }).join('')}
@@ -1644,19 +1699,19 @@
                                 ${Object.entries(RESULT_CONFIG).filter(([k]) => k !== 'pending').map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('')}
                             </select>`;
                     } else if (a.stage === 'outcome') {
-                        // Outcome: status = opções de resultado (sem pending)
+                        // Outcome: status = opÃ§Ãµes de resultado (sem pending)
                         const outcomeStatuses = { approved: 'Aprovado', denied: 'Negado', new_interview: 'Nova Entrevista', additional_documents: 'Docs. Complementares', administrative: 'Processo Adm.' };
                         return `<select class="manage-select" onchange="updateField('${id}','result',this.value)">
                             ${Object.entries(outcomeStatuses).map(([k, v]) => `<option value="${k}" ${getOutcomeValue(a) === k ? 'selected' : ''}>${v}</option>`).join('')}
                         </select>`;
                     } else if (a.stage === 'analysis') {
-                        // Analysis: conclusão manual do assessor
+                        // Analysis: conclusÃ£o manual do assessor
                         const manualStatuses = ['todo', 'doing', 'done', 'retry'];
                         return `<select class="manage-select" onchange="updateField('${id}','status',this.value)">
                             ${manualStatuses.map(k => { const v = STATUS_CONFIG[k]; return `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v.label}</option>`; }).join('')}
                         </select>`;
                     } else {
-                        // Normal stages: status manuais (error/failed/standby são controlados pela automação)
+                        // Normal stages: status manuais (error/failed/standby sÃ£o controlados pela automaÃ§Ã£o)
                         const manualStatuses = ['todo', 'doing', 'retry'];
                         return `<select class="manage-select" onchange="updateField('${id}','status',this.value)">
                             ${manualStatuses.map(k => { const v = STATUS_CONFIG[k]; return `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v.label}</option>`; }).join('')}
@@ -1692,6 +1747,10 @@
         function openGroupSearchResults() {
             const sr = document.getElementById('groupSearchResults');
             if (!sr) return;
+            if (!document.querySelector('.group-search-item')) {
+                sr.style.display = 'none';
+                return;
+            }
             sr.style.display = 'block';
             filterGroupResults();
         }
@@ -1705,6 +1764,10 @@
         function filterGroupResults() {
             const q = (document.getElementById('groupSearchInput')?.value || '').toLowerCase();
             const items = document.querySelectorAll('.group-search-item');
+            if (!items.length) {
+                closeGroupSearchResults();
+                return;
+            }
             let visibleCount = 0;
             items.forEach(el => {
                 const text = el.textContent.toLowerCase();
@@ -1756,7 +1819,7 @@
             if (!a) return;
             closeManageMenu();
             showConfirmModal('Arquivar Solicitante',
-                `Tem certeza que deseja arquivar <strong>${a.name}</strong>?<br><small style="color:var(--text-muted)">O solicitante será movido para Arquivado.</small>`,
+                `Tem certeza que deseja arquivar <strong>${a.name}</strong>?<br><small style="color:var(--text-muted)">O solicitante serÃ¡ movido para Arquivado.</small>`,
                 async () => {
                     try {
                         await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { stage: 'archived', status: 'done' });
@@ -1769,7 +1832,7 @@
 
         function closeManageMenu() { const p = document.getElementById('managePopup'); if (p) p.remove(); }
 
-        // ─── GROUP MENU ───
+        // â”€â”€â”€ GROUP MENU â”€â”€â”€
         function showGroupMenu(evt, groupId) {
             evt.stopPropagation();
             const existing = document.getElementById('groupMenu'); if (existing) existing.remove();
@@ -1792,7 +1855,7 @@
             const currentNotes = app?.notes || '';
             const html = `<div id="appNotesModal" class="modal-overlay" onclick="document.getElementById('appNotesModal').remove()">
             <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px">
-                <h3 class="modal-title">Notas — ${app ? titleCase(app.name) : 'Solicitante'}</h3>
+                <h3 class="modal-title">Notas â€” ${app ? titleCase(app.name) : 'Solicitante'}</h3>
                 <textarea id="appNotesText" style="width:100%;min-height:120px;padding:10px;border-radius:6px;border:1px solid var(--border-light);background:var(--bg-secondary);color:var(--text-primary);font-size:13px;resize:vertical;font-family:inherit;margin-bottom:12px" placeholder="Escreva uma nota...">${currentNotes}</textarea>
                 <div style="display:flex;gap:8px;justify-content:flex-end">
                     <button class="modal-btn" onclick="document.getElementById('appNotesModal').remove()">Cancelar</button>
@@ -1905,24 +1968,24 @@
                     if (isAdvancing) {
                         const allSameStage = groupMembers.every(m => m.stage === a.stage);
                         if (!allSameStage) {
-                            showToast('Grupo: todos precisam estar na mesma etapa para avançar.', 'error');
+                            showToast('Grupo: todos precisam estar na mesma etapa para avanÃ§ar.', 'error');
                             return;
                         }
 
-                        // Screening → Analysis: todos precisam ter 100% preenchido
+                        // Screening â†’ Analysis: todos precisam ter 100% preenchido
                         if (a.stage === 'screening' && value === 'analysis') {
                             const incomplete = groupMembers.filter(m => m.progress < 100);
                             if (incomplete.length > 0) {
-                                showToast(`Formulários incompletos: ${incomplete.map(m => m.name).join(', ')}`, 'error');
+                                showToast(`FormulÃ¡rios incompletos: ${incomplete.map(m => m.name).join(', ')}`, 'error');
                                 return;
                             }
                         }
 
-                        // Analysis → DS-160: todos precisam estar done
+                        // Analysis â†’ DS-160: todos precisam estar done
                         if (a.stage === 'analysis' && value === 'ds160') {
                             const notDone = groupMembers.filter(m => m.status !== 'done');
                             if (notDone.length > 0) {
-                                showToast(`Ainda não concluídos: ${notDone.map(m => m.name).join(', ')}`, 'error');
+                                showToast(`Ainda nÃ£o concluÃ­dos: ${notDone.map(m => m.name).join(', ')}`, 'error');
                                 return;
                             }
                         }
@@ -1941,18 +2004,18 @@
                     }
                 }
 
-                // Special: entering interview → status=pending, entering analysis → status=doing
+                // Special: entering interview â†’ status=pending, entering analysis â†’ status=doing
                 if (field === 'stage' && a) {
                     patch.status = getDefaultStatusForStage(value);
                     if (value === 'outcome' && !patch.result) patch.result = getOutcomeValue(a);
                 }
 
-                // AUTO-ADVANCE: status done → avança para próxima etapa com status todo
+                // AUTO-ADVANCE: status done â†’ avanÃ§a para prÃ³xima etapa com status todo
                 // Regras por etapa:
-                //   triagem → análise (form 100% auto-seta done)
-                //   análise → ds160 (assessor manual)
-                //   ds160 → taxas → agendamento → entrevista (done avança)
-                //   entrevista → resultado (via result_advance, NÃO via done)
+                //   triagem â†’ anÃ¡lise (form 100% auto-seta done)
+                //   anÃ¡lise â†’ ds160 (assessor manual)
+                //   ds160 â†’ taxas â†’ agendamento â†’ entrevista (done avanÃ§a)
+                //   entrevista â†’ resultado (via result_advance, NÃƒO via done)
                 if (field === 'status' && value === 'done' && a && a.stage !== 'interview' && a.stage !== 'outcome') {
                     const stageOrder = ['screening', 'analysis', 'ds160', 'payment', 'scheduling', 'interview'];
                     const curIdx = stageOrder.indexOf(a.stage);
@@ -1960,7 +2023,7 @@
                         const nextStage = stageOrder[curIdx + 1];
                         patch.stage = nextStage;
                         patch.status = 'todo';
-                        // Grupo: avançar todos os membros juntos
+                        // Grupo: avanÃ§ar todos os membros juntos
                         if (a.group_id) {
                             const groupMembers = applicants.filter(x => x.group_id === a.group_id && x.stage === a.stage);
                             for (const m of groupMembers) {
@@ -1973,7 +2036,7 @@
                         }
                     }
                 }
-                // === RESULT ADVANCE: interview → outcome ===
+                // === RESULT ADVANCE: interview â†’ outcome ===
                 if (field === 'result_advance' && a) {
                     patch.stage = 'outcome';
                     patch.status = 'done';
@@ -2009,10 +2072,10 @@
                 await sbFetch(`applicants?id=eq.${id}`, 'PATCH', patch);
                 const origStage = a?.stage;
                 if (a) Object.assign(a, patch);
-                const autoMsg = patch.stage && patch.stage !== origStage ? ` → ${STAGE_LABELS[patch.stage]}` : '';
+                const autoMsg = patch.stage && patch.stage !== origStage ? ` â†’ ${STAGE_LABELS[patch.stage]}` : '';
                 showToast('Atualizado!' + autoMsg, 'success');
 
-                // Keep modal open — refresh selects in place
+                // Keep modal open â€” refresh selects in place
                 renderTable(); renderFilters(); updateBadges();
                 const popup = document.getElementById('managePopup');
                 if (popup) {
@@ -2037,14 +2100,14 @@
                     if (isAdvancing) {
                         const allSameStage = groupMembers.every(m => m.stage === a.stage);
                         if (!allSameStage) {
-                            showToast('Grupo: todos precisam estar na mesma etapa para avançar.', 'error');
+                            showToast('Grupo: todos precisam estar na mesma etapa para avanÃ§ar.', 'error');
                             return;
                         }
 
                         if (a.stage === 'screening' && value === 'analysis') {
                             const incomplete = groupMembers.filter(m => m.progress < 100);
                             if (incomplete.length > 0) {
-                                showToast(`Formulários incompletos: ${incomplete.map(m => m.name).join(', ')}`, 'error');
+                                showToast(`FormulÃ¡rios incompletos: ${incomplete.map(m => m.name).join(', ')}`, 'error');
                                 return;
                             }
                         }
@@ -2052,7 +2115,7 @@
                         if (a.stage === 'analysis' && value === 'ds160') {
                             const notDone = groupMembers.filter(m => m.status !== 'done');
                             if (notDone.length > 0) {
-                                showToast(`Ainda não concluídos: ${notDone.map(m => m.name).join(', ')}`, 'error');
+                                showToast(`Ainda nÃ£o concluÃ­dos: ${notDone.map(m => m.name).join(', ')}`, 'error');
                                 return;
                             }
                         }
@@ -2095,7 +2158,7 @@
                             } else {
                                 patch.status = 'done';
                                 if (!readiness.sameStage) {
-                                    showToast('O grupo precisa estar inteiro na mesma etapa para avançar.', 'info');
+                                    showToast('O grupo precisa estar inteiro na mesma etapa para avanÃ§ar.', 'info');
                                 }
                             }
                         } else {
@@ -2141,7 +2204,7 @@
                 await sbFetch(`applicants?id=eq.${id}`, 'PATCH', patch);
                 const origStage = a?.stage;
                 if (a) Object.assign(a, patch);
-                const autoMsg = patch.stage && patch.stage !== origStage ? ` → ${STAGE_LABELS[patch.stage]}` : '';
+                const autoMsg = patch.stage && patch.stage !== origStage ? ` â†’ ${STAGE_LABELS[patch.stage]}` : '';
                 showToast('Atualizado!' + autoMsg, 'success');
 
                 renderTable(); renderFilters(); updateBadges();
@@ -2161,7 +2224,7 @@
                 await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { notes });
                 const a = applicants.find(x => x.id === id);
                 if (a) a.notes = notes;
-                showToast('Anotações salvas!', 'success');
+                showToast('AnotaÃ§Ãµes salvas!', 'success');
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
         }
 
@@ -2176,7 +2239,7 @@
                     <div class="modal-header"><h3 class="modal-title">Novo DS-160</h3><button class="modal-close" onclick="document.getElementById('confirmDS160Modal').remove()">&times;</button></div>
                     <div style="padding:16px 20px;font-size:14px;color:var(--text-secondary)">
                         <p style="margin:0 0 12px">Criar um <strong>novo DS-160</strong> para <strong>${name}</strong>?</p>
-                        <p style="margin:0;font-size:12px;color:var(--text-muted)">O application ID anterior será apagado. O solicitante voltará para a fila DS-160 .</p>
+                        <p style="margin:0;font-size:12px;color:var(--text-muted)">O application ID anterior serÃ¡ apagado. O solicitante voltarÃ¡ para a fila DS-160 .</p>
                     </div>
                     <div style="display:flex;gap:8px;padding:12px 20px;justify-content:flex-end;border-top:1px solid var(--border)">
                         <button class="manage-btn" style="padding:8px 16px" onclick="document.getElementById('confirmDS160Modal').remove()">Cancelar</button>
@@ -2217,7 +2280,7 @@
                 const a = applicants.find(x => x.id === id);
                 if (a) { a.stage = 'ds160'; a.status = 'todo'; a.application_id = null; }
 
-                showToast('Novo DS-160 criado — na fila', 'success');
+                showToast('Novo DS-160 criado â€” na fila', 'success');
                 renderTable(); renderFilters(); updateBadges();
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
         }
@@ -2229,7 +2292,7 @@
         function updateBadges() { Object.keys(PAGE_CONFIG).forEach(p => { const c = getApplicantsForPage(p).length; const el = document.getElementById('badge-' + p); if (el) el.textContent = c; }); }
 
         function formatDate(iso) {
-            if (!iso) return '—';
+            if (!iso) return 'â€”';
             const d = new Date(iso);
             const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
             return `${d.getDate().toString().padStart(2, '0')} ${months[d.getMonth()]}, ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
@@ -2267,7 +2330,7 @@
                 return;
             }
             container.innerHTML = results.map(a => {
-                const groupMeta = a.group_id ? `<span style="font-size:11px;color:var(--text-muted)"> · ${getGroupLabel(a.group_id)}</span>` : '';
+                const groupMeta = a.group_id ? `<span style="font-size:11px;color:var(--text-muted)"> Â· ${getGroupLabel(a.group_id)}</span>` : '';
                 return `<div onclick="selectSearchResult('${a.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='var(--border-light)'" onmouseout="this.style.background='transparent'">
                     <span class="applicant-icon" style="flex-shrink:0"><i class="iconoir-user"></i></span>
                     <div style="flex:1;min-width:0">
@@ -2370,7 +2433,7 @@
                 return;
             }
             const errEl = document.getElementById('loginError');
-            errEl.textContent = '📧 Link de recuperação enviado! Verifique seu e-mail.';
+            errEl.textContent = 'ðŸ“§ Link de recuperaÃ§Ã£o enviado! Verifique seu e-mail.';
             errEl.style.color = '#16a34a';
             errEl.classList.add('show');
             setTimeout(() => { errEl.style.color = ''; }, 5000);
@@ -2382,7 +2445,7 @@
             <div class="modal-box" onclick="event.stopPropagation()" style="max-width:320px;text-align:center">
                 <i class="iconoir-log-out" style="font-size:32px;color:#ef4444;margin-bottom:8px"></i>
                 <h3 class="modal-title">Deseja sair?</h3>
-                <p style="font-size:13px;color:var(--text-muted);margin:8px 0 16px">Você será desconectado da sua conta.</p>
+                <p style="font-size:13px;color:var(--text-muted);margin:8px 0 16px">VocÃª serÃ¡ desconectado da sua conta.</p>
                 <button class="modal-btn" style="background:#ef4444;color:#fff" onclick="document.getElementById('logoutConfirm').remove();handleLogout()">Sair</button>
                 <button class="modal-btn" onclick="document.getElementById('logoutConfirm').remove()">Cancelar</button>
             </div></div>`;
@@ -2391,6 +2454,10 @@
 
         async function handleLogout() {
             await supabaseClient.auth.signOut(); _currentUser = null; window._sessionToken = null; AppCore.clearSession();
+            isMasterUser = false;
+            currentAdminSection = 'orgs';
+            currentAdminOrgId = null;
+            setAdminUiVisibility(false);
             const overlay = document.getElementById('loginOverlay');
             overlay.style.display = 'flex'; overlay.classList.remove('fade-out');
             document.querySelector('.sidebar').style.display = 'none'; document.querySelector('.main').style.display = 'none';
@@ -2405,6 +2472,7 @@
             await resolveOrg(); await loadApplicants();
             setupRealtime();
             if (_currentUser?.email) {
+                isMasterUser = _currentUser.email.toLowerCase() === MASTER_EMAIL;
                 // Generate 4-digit numeric ID from user_id
                 let numId = '0001';
                 if (_currentUser.id) {
@@ -2417,11 +2485,10 @@
                 const meta = _currentUser.user_metadata || {};
                 const fullName = meta.full_name || meta.name || _currentUser.email.split('@')[0];
                 document.getElementById('userDisplayName').textContent = fullName;
+                const avatar = document.getElementById('userAvatar');
+                if (avatar) avatar.textContent = getInitials(fullName);
             }
-            // Restore saved page from URL hash (survives F5 / tab return)
-            const _savedHash = (location.hash || '').replace('#', '');
-            const _validPages = Object.keys(PAGE_CONFIG).concat(['admin']);
-            navigateTo(_validPages.includes(_savedHash) ? _savedHash : 'overview');
+            setAdminUiVisibility(isMasterUser);
             try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session?.user?.id) {
@@ -2429,12 +2496,12 @@
                     const res = await fetch(SUPABASE_URL + '/rest/v1/members?user_id=eq.' + session.user.id + '&limit=1', { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + bearer } });
                     const m = await res.json();
                     if (m && m.length > 0) {
-                        if (m[0].role === 'admin') { document.getElementById('adminLink')?.classList.remove('hidden'); document.getElementById('kebabConfigItem')?.classList.remove('hidden'); document.getElementById('adminNavBtn')?.classList.remove('hidden'); }
+                        if (isMasterUser || m[0].role === 'admin') setAdminUiVisibility(true);
                         const roleLabels = { admin: 'Administrador', assessor: 'Assessor', viewer: 'Visualizador' };
-                        const roleText = roleLabels[m[0].role] || m[0].role;
+                        const roleText = isMasterUser ? 'Administrador Master' : (roleLabels[m[0].role] || m[0].role);
                         document.getElementById('orgFooter').textContent = `${roleText} #${window._userNumId || '0001'}`;
-                        // Se não tem _orgParam, resolver pelo company_id do membro
-                        if (!_orgParam && m[0].company_id) {
+                        // Se nÃ£o tem _orgParam, resolver pelo company_id do membro
+                        if (!isMasterUser && !_orgParam && m[0].company_id) {
                             try {
                                 const cRes = await fetch(SUPABASE_URL + '/rest/v1/companies?id=eq.' + m[0].company_id + '&select=short_id,name&limit=1', { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + bearer } });
                                 const cData = await cRes.json();
@@ -2447,9 +2514,17 @@
                                 }
                             } catch { }
                         }
+                    } else if (isMasterUser) {
+                        document.getElementById('orgFooter').textContent = `Administrador Master #${window._userNumId || '0001'}`;
                     }
                 }
             } catch { }
+            // Restore saved page from URL hash after role resolution
+            const hashState = parseDashboardHash();
+            const _validPages = Object.keys(PAGE_CONFIG).concat(['admin']);
+            currentAdminSection = hashState.adminSection;
+            currentAdminOrgId = hashState.adminOrgId;
+            navigateTo(_validPages.includes(hashState.page) ? hashState.page : 'overview');
             await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
             AppCore.hideLoading();
         }
@@ -2466,9 +2541,9 @@
             const stages = ['screening', 'analysis', 'ds160', 'payment', 'scheduling', 'interview', 'outcome'];
             // 2-color: OK vs Problems
 
-            
 
-            // Chart data: 3 segments — Verde (OK), Amarelo (error), Vermelho (fail)
+
+            // Chart data: 3 segments â€” Verde (OK), Amarelo (error), Vermelho (fail)
             const okData = stages.map(st => applicants.filter(a => a.stage === st && !['error', 'fail', 'standby'].includes(a.status)).length);
             const errorData = stages.map(st => applicants.filter(a => a.stage === st && a.status === 'error').length);
             const failData = stages.map(st => applicants.filter(a => a.stage === st && a.status === 'fail').length);
@@ -2491,7 +2566,7 @@
                     borderRadius: 6,
                 },
                 {
-                    label: 'Falha técnica',
+                    label: 'Falha tÃ©cnica',
                     data: failData,
                     backgroundColor: '#ef4444',
                     borderColor: '#ef4444',
@@ -2605,29 +2680,29 @@
                 return 0;
             });
 
-            // Layout idêntico às tabelas de etapas
+            // Layout idÃªntico Ã s tabelas de etapas
             tbody.innerHTML = problems.map(a => {
                 const cfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.todo;
                 return `<tr ondblclick="openReview('${a.id}')" style="cursor:pointer">
                     <td onclick="openReview('${a.id}')"><div class="name-col"><span class="applicant-icon"><i class="iconoir-user"></i></span><div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${a.email || 'Sem email'}</div></div></div></td>
                     <td><span class="status-badge ${cfg.class}" onclick="event.stopPropagation();openErrorLogsModal('${a.id}')" style="cursor:pointer" title="Ver logs de erro">${cfg.label}</span></td>
-                    <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : '—'}</td>
-                    <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '—'}</td>
-                    <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotações"><div class="notes-preview">${a.notes ? a.notes.substring(0, 80) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
+                    <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : 'â€”'}</td>
+                    <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : 'â€”'}</td>
+                    <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotaÃ§Ãµes"><div class="notes-preview">${a.notes ? a.notes.substring(0, 80) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
                     <td><div class="row-actions">
-                        <button class="row-btn" onclick="event.stopPropagation();openResolveProblemModal('${a.id}')" title="Resolver problema" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#d97706">Resolver</button>
-                        <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opções" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#64748b">Mais</button>
+                        <button class="row-btn row-btn-text row-btn-warning" onclick="event.stopPropagation();openResolveProblemModal('${a.id}')" title="Resolver problema">Resolver</button>
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link"><i class="iconoir-copy"></i></button>
+                        <button class="row-btn row-btn-more" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opÃ§Ãµes" aria-label="Mais opÃ§Ãµes"><i class="iconoir-more-vert"></i></button>
                     </div></td>
                 </tr>`;
             }).join('');
         }
 
         // ==========================================
-        // ERROR LOGS MODAL (acessível para assessores)
+        // ERROR LOGS MODAL (acessÃ­vel para assessores)
         // ==========================================
-        const _errorCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Erro no campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'Validação DS-160', postback_stuck: 'Postback travado', page_stuck: 'Página travada', script_error: 'Erro de script', unknown: 'Desconhecido' };
+        const _errorCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Erro no campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'ValidaÃ§Ã£o DS-160', postback_stuck: 'Postback travado', page_stuck: 'PÃ¡gina travada', script_error: 'Erro de script', unknown: 'Desconhecido' };
 
         async function openErrorLogsModal(applicantId) {
             const applicant = applicants.find(x => x.id === applicantId);
@@ -2636,20 +2711,20 @@
             const fallbackError = applicant?.fill_error || null;
             const statusLabel = STATUS_CONFIG[applicant?.status]?.label || 'Problema';
             const problemGuidance = applicant?.status === 'fail'
-                ? 'Falha técnica: revise o log e a imagem. Reenvie a etapa apenas depois de corrigir a causa técnica.'
-                : 'Erro de dados: revise a página ou o campo apontado no log, corrija o formulário e retome a etapa.';
+                ? 'Falha tÃ©cnica: revise o log e a imagem. Reenvie a etapa apenas depois de corrigir a causa tÃ©cnica.'
+                : 'Erro de dados: revise a pÃ¡gina ou o campo apontado no log, corrija o formulÃ¡rio e retome a etapa.';
             const old = document.getElementById('errorLogsModal'); if (old) old.remove();
             // Show loading
             const loadingHtml = `<div id="errorLogsModal" class="modal-overlay" onclick="document.getElementById('errorLogsModal').remove()">
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:700px;width:95vw;max-height:85vh;display:flex;flex-direction:column">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
                         <h3 class="modal-title" style="margin:0"><i class="iconoir-warning-triangle" style="color:var(--warning);margin-right:6px"></i>Logs de Erro</h3>
-                        <button onclick="document.getElementById('errorLogsModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
+                        <button onclick="document.getElementById('errorLogsModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">âœ•</button>
                     </div>
-                    <p style="font-size:13px;color:var(--text-muted);margin:0 0 8px">${escapeHTML(applicantName)} · ${escapeHTML(statusLabel)}</p>
+                    <p style="font-size:13px;color:var(--text-muted);margin:0 0 8px">${escapeHTML(applicantName)} Â· ${escapeHTML(statusLabel)}</p>
                     <div style="display:grid;gap:6px;margin:0 0 14px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--bg-body)">
                         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-                            <span style="padding:3px 8px;border-radius:999px;background:#eff6ff;color:#2563eb;font-size:11px;font-weight:700">${escapeHTML(applicant?.stage || '—')}</span>
+                            <span style="padding:3px 8px;border-radius:999px;background:#eff6ff;color:#2563eb;font-size:11px;font-weight:700">${escapeHTML(applicant?.stage || 'â€”')}</span>
                             ${applicationId ? `<span style="font-size:11px;color:var(--text-muted)">App ID: <span class="mono" style="font-size:11px">${escapeHTML(applicationId)}</span></span>` : '<span style="font-size:11px;color:var(--text-muted)">Sem App ID salvo</span>'}
                         </div>
                         <div style="font-size:12px;color:var(--text-secondary);line-height:1.45">${escapeHTML(problemGuidance)}</div>
@@ -2697,24 +2772,24 @@
 
                 let listHtml = '<div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px">';
                 logs.forEach((l) => {
-                    const causeLabel = _errorCauseLabels[l.error_cause] || l.error_cause || '—';
+                    const causeLabel = _errorCauseLabels[l.error_cause] || l.error_cause || 'â€”';
                     const dt = l.created_at
                         ? new Date(l.created_at).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
-                        : 'Sem horário';
+                        : 'Sem horÃ¡rio';
                     const retryBadge = l.retry_number != null ? `<span style="background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px">#${l.retry_number}</span>` : '';
                     const screenshotBtn = l.screenshot_url
-                        ? `<button class="btn-new" onclick="event.stopPropagation();viewLogScreenshot('${l.screenshot_url.replace(/'/g,"\\'")}','${escapeHTML(causeLabel)}')" style="background:#3b82f6;font-size:10px;padding:2px 8px;margin-left:auto;flex-shrink:0">📸 Ver</button>`
+                        ? `<button class="btn-new" onclick="event.stopPropagation();viewLogScreenshot('${l.screenshot_url.replace(/'/g,"\\'")}','${escapeHTML(causeLabel)}')" style="background:#3b82f6;font-size:10px;padding:2px 8px;margin-left:auto;flex-shrink:0">ðŸ“¸ Ver</button>`
                         : '';
                     listHtml += `<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--bg-body)">
                         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
                             <span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:#fee2e2;color:#dc2626">${causeLabel}</span>
-                            ${l.page_name ? '<span style="font-size:11px;color:var(--text-muted)">Pág: ' + escapeHTML(l.page_name) + '</span>' : ''}
+                            ${l.page_name ? '<span style="font-size:11px;color:var(--text-muted)">PÃ¡g: ' + escapeHTML(l.page_name) + '</span>' : ''}
                             ${l.field_name ? '<span style="font-size:11px;color:var(--accent);font-family:monospace">' + escapeHTML(l.field_name) + '</span>' : ''}
                             ${retryBadge}
                             <span style="font-size:10px;color:var(--text-muted);margin-left:auto">${dt}</span>
                         </div>
                         <div style="display:flex;align-items:center;gap:8px">
-                            <p style="font-size:12px;color:var(--text-primary);margin:0;line-height:1.4;flex:1;word-break:break-word">${escapeHTML(l.error_message || '—')}</p>
+                            <p style="font-size:12px;color:var(--text-primary);margin:0;line-height:1.4;flex:1;word-break:break-word">${escapeHTML(l.error_message || 'â€”')}</p>
                             ${screenshotBtn}
                         </div>
                     </div>`;
@@ -2735,8 +2810,8 @@
             const old = document.getElementById('logScreenshotModal'); if (old) old.remove();
             const html = `<div id="logScreenshotModal" class="modal-overlay" onclick="document.getElementById('logScreenshotModal').remove()" style="z-index:10012;background:rgba(0,0,0,.85)">
                 <div onclick="event.stopPropagation()" style="max-width:90vw;max-height:90vh;position:relative">
-                    <button onclick="document.getElementById('logScreenshotModal').remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;z-index:1">✕</button>
-                    <img src="${url}" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)" onerror="this.outerHTML='<div style=\'color:#fff;padding:40px\'>Imagem não encontrada</div>'">
+                    <button onclick="document.getElementById('logScreenshotModal').remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;z-index:1">âœ•</button>
+                    <img src="${url}" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)" onerror="this.outerHTML='<div style=\'color:#fff;padding:40px\'>Imagem nÃ£o encontrada</div>'">
                     <div style="color:#fff;font-size:12px;text-align:center;margin-top:8px;opacity:.7">${cause}</div>
                 </div>
             </div>`;
@@ -2750,7 +2825,7 @@
         let _realtimeTimer = null;
 
         function setupRealtime() {
-            // Cleanup canal anterior para evitar duplicação
+            // Cleanup canal anterior para evitar duplicaÃ§Ã£o
             if (_realtimeChannel) {
                 try { supabaseClient.removeChannel(_realtimeChannel); } catch(e) {}
                 _realtimeChannel = null;
@@ -2788,7 +2863,7 @@
         let _admOrgs = []; let _admSelectedOrg = null; let _admEmailMap = {};
 
         function admGenShortId() { return Math.random().toString(36).substring(2, 7); }
-        function admFmtDate(d) { return d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'; }
+        function admFmtDate(d) { return d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'â€”'; }
 
         async function admFetchEmails() {
             try {
@@ -2809,22 +2884,22 @@
             document.getElementById('admOrgCount').textContent = `(${_admOrgs.length})`;
             admUpdateNav('orgs');
             const grid = document.getElementById('admOrgGrid');
-            if (_admOrgs.length === 0) { grid.innerHTML = '<p style="color:var(--text-muted)">Nenhuma organização cadastrada.</p>'; return; }
-            let h = '<div class="table-container" style="margin-top:0"><table style="width:100%"><thead><tr><th>Organização</th><th>Short ID</th><th>CNPJ</th><th style="text-align:center">Assessores</th><th style="text-align:center">Status</th><th>Criada</th></tr></thead><tbody>';
+            if (_admOrgs.length === 0) { grid.innerHTML = '<p style="color:var(--text-muted)">Nenhuma organizaÃ§Ã£o cadastrada.</p>'; return; }
+            let h = '<div class="table-container" style="margin-top:0"><table style="width:100%"><thead><tr><th>OrganizaÃ§Ã£o</th><th>Short ID</th><th>CNPJ</th><th style="text-align:center">Assessores</th><th style="text-align:center">Status</th><th>Criada</th></tr></thead><tbody>';
             _admOrgs.forEach(o => {
                 const sc = o.active ? '#22c55e' : '#ef4444', sl = o.active ? 'Ativa' : 'Inativa';
-                h += `<tr onclick="admOpenOrgDetail('${o.id}')" style="cursor:pointer"><td style="font-weight:600">${o.name}</td><td style="color:var(--text-muted);font-family:monospace;font-size:12px">${o.short_id || '—'}</td><td style="color:var(--text-muted)">${o.cnpj || '—'}</td><td style="text-align:center">${o._memberCount}</td><td style="text-align:center"><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${sc}18;color:${sc}">${sl}</span></td><td style="color:var(--text-muted);font-size:12px">${admFmtDate(o.created_at)}</td></tr>`;
+                h += `<tr onclick="admOpenOrgDetail('${o.id}')" style="cursor:pointer"><td style="font-weight:600">${o.name}</td><td style="color:var(--text-muted);font-family:monospace;font-size:12px">${o.short_id || 'â€”'}</td><td style="color:var(--text-muted)">${o.cnpj || 'â€”'}</td><td style="text-align:center">${o._memberCount}</td><td style="text-align:center"><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${sc}18;color:${sc}">${sl}</span></td><td style="color:var(--text-muted);font-size:12px">${admFmtDate(o.created_at)}</td></tr>`;
             });
             h += '</tbody></table></div>'; grid.innerHTML = h;
         }
 
         function admGetFormUrl() {
             if (!_admSelectedOrg) return '';
-            return new URL('portal.html', location.href).href.split('?')[0] + '?org=' + (_admSelectedOrg.short_id || '');
+            return AppCore.buildPortalUrl(_admSelectedOrg.short_id || '');
         }
         function admCopyFormUrl() { navigator.clipboard.writeText(admGetFormUrl()).then(() => showToast('URL copiada!', 'success')).catch(() => showToast('Erro', 'error')); }
 
-        // ---- Logo da Organização ----
+        // ---- Logo da OrganizaÃ§Ã£o ----
         function admRefreshLogoUI() {
             const preview = document.getElementById('admLogoPreview');
             const removeBtn = document.getElementById('admRemoveLogoBtn');
@@ -2865,10 +2940,10 @@
                 } catch (e) { showToast('Erro ao salvar', 'error'); }
                 return;
             }
-            // Adiciona # se não tiver
+            // Adiciona # se nÃ£o tiver
             if (!hex.startsWith('#')) hex = '#' + hex;
             // Valida formato
-            if (!/^#[0-9a-fA-F]{6}$/.test(hex)) { showToast('Formato inválido. Ex: #1a2b3c ou 1a2b3c', 'error'); return; }
+            if (!/^#[0-9a-fA-F]{6}$/.test(hex)) { showToast('Formato invÃ¡lido. Ex: #1a2b3c ou 1a2b3c', 'error'); return; }
             hex = hex.toLowerCase();
             try {
                 await sbFetch('companies?id=eq.' + _admSelectedOrg.id, 'PATCH', { [field]: hex });
@@ -2894,7 +2969,7 @@
 
         async function admUploadLogo(input) {
             const file = input.files[0]; if (!file) return;
-            if (file.size > 500 * 1024) { showToast('Arquivo muito grande (máx 500KB)', 'error'); input.value = ''; return; }
+            if (file.size > 500 * 1024) { showToast('Arquivo muito grande (mÃ¡x 500KB)', 'error'); input.value = ''; return; }
             if (!_admSelectedOrg) return;
             const orgId = _admSelectedOrg.id;
             const ext = file.name.split('.').pop().toLowerCase();
@@ -2953,6 +3028,12 @@
 
         async function admOpenOrgDetail(orgId) {
             _admSelectedOrg = _admOrgs.find(o => o.id === orgId); if (!_admSelectedOrg) return;
+            currentAdminSection = 'orgs';
+            currentAdminOrgId = orgId;
+            ['admTab-orgs', 'admTab-capmonster', 'admTab-logs', 'admTab-settings'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('active', id === 'admTab-orgs');
+            });
             document.getElementById('adm-view-list').style.display = 'none';
             document.getElementById('adm-view-detail').style.display = 'block';
             document.getElementById('admDetailOrgName').textContent = _admSelectedOrg.name;
@@ -2961,11 +3042,13 @@
             tb.style.background = _admSelectedOrg.active ? '#ef4444' : '#22c55e';
             document.getElementById('admOrgInfoCards').innerHTML = `
                 <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Nome</div><div style="font-size:14px;font-weight:600;margin-top:4px">${_admSelectedOrg.name}</div></div>
-                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Short ID</div><div style="font-size:14px;font-family:monospace;margin-top:4px">${_admSelectedOrg.short_id || '—'}</div></div>
-                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">CNPJ</div><div style="font-size:14px;margin-top:4px">${_admSelectedOrg.cnpj || '—'}</div></div>
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Short ID</div><div style="font-size:14px;font-family:monospace;margin-top:4px">${_admSelectedOrg.short_id || 'â€”'}</div></div>
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">CNPJ</div><div style="font-size:14px;margin-top:4px">${_admSelectedOrg.cnpj || 'â€”'}</div></div>
                 <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Status</div><div style="margin-top:4px"><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${_admSelectedOrg.active ? '#dcfce7' : '#fee2e2'};color:${_admSelectedOrg.active ? '#16a34a' : '#dc2626'}">${_admSelectedOrg.active ? 'Ativa' : 'Inativa'}</span></div></div>`;
             document.getElementById('admFormUrlDisplay').textContent = admGetFormUrl();
             admRefreshLogoUI();
+            admUpdateNav('orgs');
+            if (currentPage === 'admin') replaceDashboardHash('admin', 'orgs', orgId);
             await admLoadOrgUsers(orgId);
         }
 
@@ -2978,16 +3061,35 @@
             tbody.innerHTML = members.map(m => `<tr><td><strong>${m.email || m.user_id.substring(0, 12) + '...'}</strong>${m.full_name ? '<br><span style="font-size:12px;color:var(--text-muted)">' + m.full_name + '</span>' : ''}</td><td><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${m.role === 'admin' ? '#dbeafe' : '#f1f5f9'};color:${m.role === 'admin' ? '#2563eb' : '#64748b'}">${m.role}</span></td><td><button class="btn-new" onclick="event.stopPropagation();admRemoveMember('${m.user_id}','${orgId}')" style="background:#ef4444;font-size:11px;padding:4px 10px">Remover</button></td></tr>`).join('');
         }
 
-        function admShowOrgList() { _admSelectedOrg = null; document.getElementById('adm-view-detail').style.display = 'none'; document.getElementById('adm-view-list').style.display = 'block'; }
+        function admShowOrgList() {
+            _admSelectedOrg = null;
+            currentAdminSection = 'orgs';
+            currentAdminOrgId = null;
+            document.getElementById('adm-view-detail').style.display = 'none';
+            document.getElementById('adm-view-list').style.display = 'block';
+            ['admTab-orgs', 'admTab-capmonster', 'admTab-logs', 'admTab-settings'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('active', id === 'admTab-orgs');
+            });
+            admUpdateNav('orgs');
+            if (currentPage === 'admin') replaceDashboardHash('admin', 'orgs');
+        }
 
         function admShowSection(section) {
+            currentAdminSection = ADMIN_SECTIONS.includes(section) ? section : 'orgs';
+            if (currentAdminSection !== 'orgs') currentAdminOrgId = null;
             ['adm-view-list', 'adm-view-detail', 'adm-view-capmonster', 'adm-view-logs', 'adm-view-settings'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
             ['admTab-orgs', 'admTab-capmonster', 'admTab-logs', 'admTab-settings'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
-            if (section === 'orgs') { document.getElementById('adm-view-list').style.display = 'block'; document.getElementById('admTab-orgs').classList.add('active'); }
-            else if (section === 'capmonster') { document.getElementById('adm-view-capmonster').style.display = 'block'; document.getElementById('admTab-capmonster').classList.add('active'); admLoadCapmonster(); }
-            else if (section === 'logs') { document.getElementById('adm-view-logs').style.display = 'block'; document.getElementById('admTab-logs').classList.add('active'); admLoadLogs(); }
-            else if (section === 'settings') { document.getElementById('adm-view-settings').style.display = 'block'; document.getElementById('admTab-settings').classList.add('active'); admLoadSettings(); }
-            admUpdateNav(section);
+            if (currentAdminSection === 'orgs') {
+                if (_admSelectedOrg && currentAdminOrgId) document.getElementById('adm-view-detail').style.display = 'block';
+                else document.getElementById('adm-view-list').style.display = 'block';
+                document.getElementById('admTab-orgs').classList.add('active');
+            }
+            else if (currentAdminSection === 'capmonster') { document.getElementById('adm-view-capmonster').style.display = 'block'; document.getElementById('admTab-capmonster').classList.add('active'); admLoadCapmonster(); }
+            else if (currentAdminSection === 'logs') { document.getElementById('adm-view-logs').style.display = 'block'; document.getElementById('admTab-logs').classList.add('active'); admLoadLogs(); }
+            else if (currentAdminSection === 'settings') { document.getElementById('adm-view-settings').style.display = 'block'; document.getElementById('admTab-settings').classList.add('active'); admLoadSettings(); }
+            admUpdateNav(currentAdminSection);
+            if (currentPage === 'admin') replaceDashboardHash('admin', currentAdminSection);
         }
 
         // Update the dashboard-nav toolbar for admin sections
@@ -3008,7 +3110,7 @@
             }
             const admOrgCount = document.getElementById('admOrgCount');
             const admLogsCount = document.getElementById('admLogsCount');
-            const titles = { orgs: 'Organizações', capmonster: 'Integrações', logs: 'Erros', settings: 'Configurações' };
+            const titles = { orgs: 'OrganizaÃ§Ãµes', capmonster: 'IntegraÃ§Ãµes', logs: 'Erros', settings: 'ConfiguraÃ§Ãµes' };
             let subtitle = '';
             if (section === 'orgs' && admOrgCount) subtitle = ' ' + admOrgCount.textContent;
             if (section === 'logs' && admLogsCount) subtitle = ' ' + admLogsCount.textContent;
@@ -3018,7 +3120,7 @@
             if (admActions) {
                 admActions.style.display = 'flex';
                 let actionsHtml = '';
-                if (section === 'orgs') actionsHtml = '<button class="btn-new" onclick="admOpenOrgModal()">Nova Organização</button>';
+                if (section === 'orgs') actionsHtml = '<button class="btn-new" onclick="admOpenOrgModal()">Nova OrganizaÃ§Ã£o</button>';
                 else if (section === 'logs') actionsHtml = '<button class="btn-new btn-danger" onclick="admArchiveAllLogs()" style="font-size:12px">Arquivar Todos</button>';
                 admActions.innerHTML = actionsHtml;
             }
@@ -3031,7 +3133,7 @@
             if (admActions) { admActions.style.display = 'none'; admActions.innerHTML = ''; }
         }
 
-        // Integrações (CapMonster + API CPF + addy.io + Proxy)
+        // IntegraÃ§Ãµes (CapMonster + API CPF + addy.io + Proxy)
         async function admLoadCapmonster() {
             try {
                 const d = await sbGet('settings?key_name=in.(capmonster_key,cpf_api_key,addy_io_token,addy_io_domain,proxy_url)&select=key_name,key_value');
@@ -3062,13 +3164,58 @@
         }
 
         // Logs
-        const admCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Campo inválido', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'Validação DS-160', postback_stuck: 'Postback travado', page_stuck: 'Página travada', missing_data: 'Dados incompletos', missing_applicant: 'Solicitante não encontrado', system_error: 'Erro do sistema', select_mismatch: 'Opção não encontrada', invalid_field_value: 'Valor inválido', session_expired: 'Sessão expirada', unknown: 'Desconhecido' };
+        const admCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Campo invÃ¡lido', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'ValidaÃ§Ã£o DS-160', postback_stuck: 'Postback travado', page_stuck: 'PÃ¡gina travada', missing_data: 'Dados incompletos', missing_applicant: 'Solicitante nÃ£o encontrado', system_error: 'Erro do sistema', select_mismatch: 'OpÃ§Ã£o nÃ£o encontrada', invalid_field_value: 'Valor invÃ¡lido', session_expired: 'SessÃ£o expirada', challenge_detected: 'Challenge detectado', landing_dom_mismatch: 'DOM inicial divergente', recovery_dom_mismatch: 'DOM de recuperaÃ§Ã£o divergente', unknown: 'Desconhecido' };
+        const admLogStatusMeta = {
+            error: { label: 'Erro de dados', help: 'Precisa correÃ§Ã£o humana' },
+            standby: { label: 'Em espera', help: 'Retorno controlado por cooldown' },
+            fail: { label: 'Falha tÃ©cnica', help: 'Bloqueado atÃ© revisÃ£o tÃ©cnica' }
+        };
+        function admClassifyLogStatus(log) {
+            if (log._fromApp) return log._appStatus === 'fail' ? 'fail' : 'error';
+            const cause = log.error_cause || 'unknown';
+            const standbyCauses = ['timeout', 'network_error', 'page_stuck', 'postback_stuck', 'captcha_failed', 'session_expired', 'challenge_detected', 'landing_dom_mismatch', 'recovery_dom_mismatch'];
+            const failCauses = ['browser_closed', 'system_error'];
+            if (failCauses.includes(cause)) return 'fail';
+            if (standbyCauses.includes(cause)) return 'standby';
+            return 'error';
+        }
+        function admGetCompanyName(companyId) {
+            if (!companyId) return 'Sem organizaÃ§Ã£o';
+            return (_admOrgs.find(o => o.id === companyId)?.name) || 'OrganizaÃ§Ã£o desconhecida';
+        }
+        function admRenderLogsSummary(logs) {
+            const host = document.getElementById('admLogsSummary');
+            if (!host) return;
+            const counts = { total: logs.length, error: 0, standby: 0, fail: 0 };
+            logs.forEach(log => { counts[log._status] = (counts[log._status] || 0) + 1; });
+            host.innerHTML = `
+                <div class="adm-log-summary-card">
+                    <span class="adm-log-summary-label">Ativos</span>
+                    <strong class="adm-log-summary-value">${counts.total}</strong>
+                    <span class="adm-log-summary-help">Logs abertos para revisÃ£o</span>
+                </div>
+                <div class="adm-log-summary-card">
+                    <span class="adm-log-summary-label">Erro de dados</span>
+                    <strong class="adm-log-summary-value">${counts.error}</strong>
+                    <span class="adm-log-summary-help">${admLogStatusMeta.error.help}</span>
+                </div>
+                <div class="adm-log-summary-card">
+                    <span class="adm-log-summary-label">Em espera</span>
+                    <strong class="adm-log-summary-value">${counts.standby}</strong>
+                    <span class="adm-log-summary-help">${admLogStatusMeta.standby.help}</span>
+                </div>
+                <div class="adm-log-summary-card">
+                    <span class="adm-log-summary-label">Falha tÃ©cnica</span>
+                    <strong class="adm-log-summary-value">${counts.fail}</strong>
+                    <span class="adm-log-summary-help">${admLogStatusMeta.fail.help}</span>
+                </div>`;
+        }
         async function admLoadLogs() {
             try {
                 // 1. Buscar logs estruturados da tabela error_logs
-                const logs = await sbGet('error_logs?archived=eq.false&order=created_at.desc&limit=50&select=id,error_cause,page_name,field_name,error_message,applicant_name,created_at,retry_number,screenshot_url,page_html') || [];
+                const logs = await sbGet('error_logs?archived=eq.false&order=created_at.desc&limit=50&select=id,application_id,company_id,error_cause,page_name,field_name,error_message,applicant_name,created_at,retry_number,screenshot_url,page_html,video_url') || [];
 
-                // 2. Também buscar erros de applications (fill_error) que podem não ter log estruturado
+                // 2. TambÃ©m buscar erros de applications (fill_error) que podem nÃ£o ter log estruturado
                 let appErrors = [];
                 try {
                     appErrors = await sbGet('applications?fill_status=in.(error,fail)&fill_error=not.is.null&order=last_error_at.desc&limit=50&select=id,applicant_id,fill_status,fill_error,last_error_at,last_page') || [];
@@ -3076,9 +3223,12 @@
                     if (appErrors.length > 0) {
                         const appIds = [...new Set(appErrors.map(a => a.applicant_id).filter(Boolean))];
                         if (appIds.length > 0) {
-                            const names = await sbGet('applicants?id=in.(' + appIds.join(',') + ')&select=id,full_name') || [];
-                            const nameMap = {}; names.forEach(n => nameMap[n.id] = n.full_name);
-                            appErrors.forEach(a => a._applicant_name = nameMap[a.applicant_id] || '—');
+                            const names = await sbGet('applicants?id=in.(' + appIds.join(',') + ')&select=id,full_name,company_id') || [];
+                            const applicantMap = {}; names.forEach(n => applicantMap[n.id] = n);
+                            appErrors.forEach(a => {
+                                a._applicant_name = applicantMap[a.applicant_id]?.full_name || 'â€”';
+                                a._company_id = applicantMap[a.applicant_id]?.company_id || null;
+                            });
                         }
                     }
                 } catch(e2) { console.warn('Failed to load app errors:', e2); }
@@ -3087,51 +3237,109 @@
                 const loggedAppIds = new Set(logs.map(l => l.application_id).filter(Boolean));
                 const extraErrors = appErrors.filter(a => !loggedAppIds.has(a.id)).map(a => ({
                     id: 'app_' + a.id,
+                    application_id: a.id,
+                    company_id: a._company_id || null,
                     error_cause: a.fill_status === 'fail' ? 'system_error' : 'field_error',
                     page_name: a.last_page || null,
                     field_name: null,
                     error_message: a.fill_error,
-                    applicant_name: a._applicant_name || '—',
+                    applicant_name: a._applicant_name || 'â€”',
                     created_at: a.last_error_at,
                     retry_number: null,
                     screenshot_url: null,
                     page_html: null,
+                    video_url: null,
+                    _appStatus: a.fill_status,
                     _fromApp: true
                 }));
-                const allLogs = [...logs, ...extraErrors].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+                const allLogs = [...logs, ...extraErrors]
+                    .map((log) => ({
+                        ...log,
+                        _status: admClassifyLogStatus(log),
+                        _companyName: admGetCompanyName(log.company_id),
+                        _causeLabel: admCauseLabels[log.error_cause] || log.error_cause || 'â€”'
+                    }))
+                    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
                 const ce = document.getElementById('admLogsCount'); if (ce) ce.textContent = `(${allLogs.length})`;
                 const be = document.getElementById('admLogsBadge'); if (be) { be.textContent = allLogs.length; be.style.display = allLogs.length > 0 ? 'inline' : 'none'; }
                 admUpdateNav('logs');
+                admRenderLogsSummary(allLogs);
                 const tb = document.getElementById('admLogsTable');
-                if (allLogs.length === 0) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Nenhum erro ativo 🎉</td></tr>'; return; }
+                if (allLogs.length === 0) { tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">Nenhum log ativo no momento.</td></tr>'; return; }
                 // Store logs for modal access
                 window._admLogs = allLogs;
                 tb.innerHTML = allLogs.map((l, idx) => {
-                    const lb = admCauseLabels[l.error_cause] || l.error_cause || '—';
-                    const ds = l.created_at ? new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
-                    const who = l.applicant_name ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">' + escapeHTML(l.applicant_name) + '</div>' : '';
-                    const retryBadge = l.retry_number != null ? `<span style="background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">#${l.retry_number}</span>` : '—';
+                    const ds = l.created_at ? new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'â€”';
+                    const retryBadge = l.retry_number != null ? `<span class="adm-log-source">Tentativa #${l.retry_number}</span>` : `<span class="adm-log-source">${l._fromApp ? 'applications.fill_error' : 'error_logs'}</span>`;
                     const screenshotBtn = l.screenshot_url
-                        ? `<button class="btn-new" onclick="admViewScreenshot(${idx})" style="background:#3b82f6;font-size:11px;padding:3px 6px" title="Ver screenshot">📸</button>`
-                        : '<span style="color:var(--text-muted);font-size:11px">—</span>';
+                        ? `<button class="btn-new" onclick="admViewScreenshot(${idx})" style="background:#3b82f6;font-size:11px;padding:3px 6px" title="Ver screenshot">Imagem</button>`
+                        : '<span style="color:var(--text-muted);font-size:11px">â€”</span>';
                     const htmlBtn = l.page_html
-                        ? `<button class="btn-new" onclick="admViewHtml(${idx})" style="background:#8b5cf6;font-size:11px;padding:3px 6px" title="Ver HTML da página">🔍</button>`
+                        ? `<button class="btn-new" onclick="admViewHtml(${idx})" style="background:#8b5cf6;font-size:11px;padding:3px 6px" title="Ver HTML da pÃ¡gina">HTML</button>`
+                        : '';
+                    const videoBtn = l.video_url
+                        ? `<a class="btn-new" href="${l.video_url}" target="_blank" rel="noopener" style="background:#0f766e;font-size:11px;padding:3px 6px">VÃ­deo</a>`
                         : '';
                     const archiveBtn = l._fromApp
-                        ? '<span style="color:var(--text-muted);font-size:11px">fill_error</span>'
+                        ? '<span style="color:var(--text-muted);font-size:11px">Manual</span>'
                         : `<button class="btn-new" onclick="admArchiveLog('${l.id}')" style="background:#ef4444;font-size:11px;padding:4px 8px">Arquivar</button>`;
                     return `<tr>
-                        <td><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:#fee2e2;color:#dc2626">${lb}</span>${who}</td>
-                        <td>${escapeHTML(l.page_name || '—')}${l.field_name ? ' <span style="color:var(--accent);font-family:monospace;font-size:12px">' + escapeHTML(l.field_name) + '</span>' : ''}</td>
-                        <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHTML(l.error_message || '')}">${escapeHTML(l.error_message || '—')}</td>
-                        <td style="text-align:center">${retryBadge}</td>
-                        <td style="text-align:center">${screenshotBtn}${htmlBtn ? ' ' + htmlBtn : ''}</td>
+                        <td><span class="adm-log-status" data-status="${l._status}">${admLogStatusMeta[l._status]?.label || l._status}</span></td>
+                        <td>
+                            <div class="adm-log-name">
+                                <strong>${escapeHTML(l._companyName)}</strong>
+                                <span>${escapeHTML(l.applicant_name || 'â€”')}</span>
+                                ${retryBadge}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="adm-log-context">
+                                <span class="adm-log-context-main">${escapeHTML(l._causeLabel)}</span>
+                                <span class="adm-log-context-sub">${escapeHTML(l.page_name || 'Sem pÃ¡gina')}${l.field_name ? ' Â· ' + escapeHTML(l.field_name) : ''}</span>
+                            </div>
+                        </td>
+                        <td><div class="adm-log-message" title="${escapeHTML(l.error_message || '')}">${escapeHTML(l.error_message || 'â€”')}</div></td>
+                        <td><div class="adm-log-media">${screenshotBtn}${htmlBtn ? ' ' + htmlBtn : ''}${videoBtn ? ' ' + videoBtn : ''}</div></td>
                         <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${ds}</td>
-                        <td>${archiveBtn}</td>
+                        <td><div class="adm-log-actions"><button class="btn-new" onclick="admOpenLogDetail(${idx})" style="font-size:11px;padding:4px 8px">Detalhes</button>${archiveBtn}</div></td>
                     </tr>`;
                 }).join('');
-            } catch (e) { document.getElementById('admLogsTable').innerHTML = '<tr><td colspan="8" style="color:#ef4444">' + e.message + '</td></tr>'; }
+            } catch (e) { document.getElementById('admLogsTable').innerHTML = '<tr><td colspan="7" style="color:#ef4444">' + e.message + '</td></tr>'; }
+        }
+
+        function admOpenLogDetail(idx) {
+            const log = window._admLogs?.[idx]; if (!log) return;
+            const old = document.getElementById('admLogDetailModal'); if (old) old.remove();
+            const statusLabel = admLogStatusMeta[log._status]?.label || log._status;
+            const html = `<div id="admLogDetailModal" class="modal-overlay" onclick="document.getElementById('admLogDetailModal').remove()">
+                <div class="modal-box" onclick="event.stopPropagation()" style="max-width:760px">
+                    <div class="modal-header">
+                        <div>
+                            <h3 class="modal-title">Log de automaÃ§Ã£o</h3>
+                            <div class="modal-subtitle">${escapeHTML(log._companyName)} Â· ${escapeHTML(log.applicant_name || 'â€”')}</div>
+                        </div>
+                        <button class="modal-close" onclick="document.getElementById('admLogDetailModal').remove()">Ã—</button>
+                    </div>
+                    <div class="adm-info-grid" style="margin-top:8px">
+                        <div class="adm-card"><div class="adm-label">Status</div><div style="margin-top:6px"><span class="adm-log-status" data-status="${log._status}">${statusLabel}</span></div></div>
+                        <div class="adm-card"><div class="adm-label">Causa</div><div style="margin-top:6px;font-weight:600">${escapeHTML(log._causeLabel)}</div></div>
+                        <div class="adm-card"><div class="adm-label">PÃ¡gina / Campo</div><div style="margin-top:6px">${escapeHTML(log.page_name || 'â€”')}${log.field_name ? ' Â· <span style="font-family:monospace">' + escapeHTML(log.field_name) + '</span>' : ''}</div></div>
+                        <div class="adm-card"><div class="adm-label">Quando</div><div style="margin-top:6px">${log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : 'â€”'}</div></div>
+                    </div>
+                    <div class="adm-card" style="margin-top:14px">
+                        <div class="adm-label">Mensagem</div>
+                        <div style="margin-top:8px;font-size:13px;line-height:1.6;color:var(--text-primary)">${escapeHTML(log.error_message || 'â€”')}</div>
+                    </div>
+                    <div class="modal-actions" style="margin-top:16px">
+                        ${log.screenshot_url ? `<button class="btn-new" onclick="admViewScreenshot(${idx})">Ver imagem</button>` : ''}
+                        ${log.page_html ? `<button class="btn-new" onclick="admViewHtml(${idx})" style="background:#8b5cf6">Ver HTML</button>` : ''}
+                        ${log.video_url ? `<a class="btn-new" href="${log.video_url}" target="_blank" rel="noopener" style="background:#0f766e">Ver vÃ­deo</a>` : ''}
+                        ${log._fromApp ? '' : `<button class="btn-new btn-danger" onclick="admArchiveLog('${log.id}');document.getElementById('admLogDetailModal').remove()">Arquivar</button>`}
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
         }
 
         function admViewScreenshot(idx) {
@@ -3139,9 +3347,9 @@
             const old = document.getElementById('screenshotModal'); if (old) old.remove();
             const html = `<div id="screenshotModal" class="modal-overlay" onclick="document.getElementById('screenshotModal').remove()" style="z-index:10010;background:rgba(0,0,0,.85)">
                 <div onclick="event.stopPropagation()" style="max-width:90vw;max-height:90vh;position:relative">
-                    <button onclick="document.getElementById('screenshotModal').remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;z-index:1">✕</button>
-                    <img src="${log.screenshot_url}" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)" onerror="this.outerHTML='<div style=\\'color:#fff;padding:40px\\'>Imagem não encontrada</div>'">
-                    <div style="color:#fff;font-size:12px;text-align:center;margin-top:8px;opacity:.7">${escapeHTML(log.applicant_name || '—')} · ${escapeHTML(log.page_name || '—')} · ${escapeHTML(log.error_cause || '')}</div>
+                    <button onclick="document.getElementById('screenshotModal').remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;z-index:1">âœ•</button>
+                    <img src="${log.screenshot_url}" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)" onerror="this.outerHTML='<div style=\\'color:#fff;padding:40px\\'>Imagem nÃ£o encontrada</div>'">
+                    <div style="color:#fff;font-size:12px;text-align:center;margin-top:8px;opacity:.7">${escapeHTML(log.applicant_name || 'â€”')} Â· ${escapeHTML(log.page_name || 'â€”')} Â· ${escapeHTML(log.error_cause || '')}</div>
                 </div>
             </div>`;
             document.body.insertAdjacentHTML('beforeend', html);
@@ -3153,11 +3361,11 @@
             const html = `<div id="htmlModal" class="modal-overlay" onclick="document.getElementById('htmlModal').remove()" style="z-index:10010">
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:900px;width:95vw;max-height:90vh;display:flex;flex-direction:column;padding:0">
                     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)">
-                        <h3 style="margin:0;font-size:14px">HTML da Página — ${escapeHTML(log.page_name || '—')}</h3>
+                        <h3 style="margin:0;font-size:14px">HTML da PÃ¡gina â€” ${escapeHTML(log.page_name || 'â€”')}</h3>
                         <div style="display:flex;gap:8px">
-                            <button class="btn-new" onclick="admCopyHtml(${idx})" style="font-size:11px;padding:4px 10px">📋 Copiar</button>
-                            <button class="btn-new" onclick="admRenderHtml(${idx})" style="font-size:11px;padding:4px 10px;background:#8b5cf6">👁 Renderizar</button>
-                            <button onclick="document.getElementById('htmlModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
+                            <button class="btn-new" onclick="admCopyHtml(${idx})" style="font-size:11px;padding:4px 10px">ðŸ“‹ Copiar</button>
+                            <button class="btn-new" onclick="admRenderHtml(${idx})" style="font-size:11px;padding:4px 10px;background:#8b5cf6">ðŸ‘ Renderizar</button>
+                            <button onclick="document.getElementById('htmlModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">âœ•</button>
                         </div>
                     </div>
                     <div id="htmlModalContent" style="flex:1;overflow:auto;padding:16px">
@@ -3177,7 +3385,7 @@
             const log = window._admLogs?.[idx]; if (!log?.page_html) return;
             const container = document.getElementById('htmlModalContent');
             if (!container) return;
-            // Toggle: se já tem iframe, volta pra pre
+            // Toggle: se jÃ¡ tem iframe, volta pra pre
             if (container.querySelector('iframe')) {
                 container.innerHTML = `<pre style="white-space:pre-wrap;word-break:break-all;font-size:12px;font-family:'Fira Code',monospace;line-height:1.5;margin:0;color:var(--text-primary)">${escapeHTML(log.page_html)}</pre>`;
                 return;
@@ -3192,18 +3400,18 @@
             iframe.contentDocument.close();
         }
 
-        async function admArchiveLog(id) { await sbFetch('error_logs?id=eq.' + id, 'PATCH', { archived: true }); showToast('Erro arquivado', 'success'); admLoadLogs(); }
-        async function admArchiveAllLogs() { if (!confirm('Arquivar todos os erros?')) return; await sbFetch('error_logs?archived=eq.false', 'PATCH', { archived: true }); showToast('Todos arquivados', 'success'); admLoadLogs(); }
+        async function admArchiveLog(id) { await sbFetch('error_logs?id=eq.' + id, 'PATCH', { archived: true }); showToast('Log arquivado', 'success'); admLoadLogs(); }
+        async function admArchiveAllLogs() { if (!confirm('Arquivar todos os logs estruturados?')) return; await sbFetch('error_logs?archived=eq.false', 'PATCH', { archived: true }); showToast('Logs estruturados arquivados', 'success'); admLoadLogs(); }
 
         // Settings
         async function admLoadSettings() { try { const d = await sbGet('settings?key_name=in.(security_question,security_answer)&select=key_name,key_value'); (d || []).forEach(s => { if (s.key_name === 'security_question') { const el = document.getElementById('admSecurityQuestion'); if (el) el.value = s.key_value || '0'; } if (s.key_name === 'security_answer') { const el = document.getElementById('admSecurityAnswer'); if (el) el.value = s.key_value || ''; } }); } catch { } }
-        async function admSaveSettings() { const q = document.getElementById('admSecurityQuestion').value, a = document.getElementById('admSecurityAnswer').value.trim(); try { await sbFetch('settings?key_name=eq.security_question', 'PATCH', { key_value: q }); await sbFetch('settings?key_name=eq.security_answer', 'PATCH', { key_value: a }); showToast('Configurações salvas!', 'success'); } catch (e) { showToast('Erro: ' + e.message, 'error'); } }
+        async function admSaveSettings() { const q = document.getElementById('admSecurityQuestion').value, a = document.getElementById('admSecurityAnswer').value.trim(); try { await sbFetch('settings?key_name=eq.security_question', 'PATCH', { key_value: q }); await sbFetch('settings?key_name=eq.security_answer', 'PATCH', { key_value: a }); showToast('ConfiguraÃ§Ãµes salvas!', 'success'); } catch (e) { showToast('Erro: ' + e.message, 'error'); } }
 
         // Org CRUD
         function admOpenOrgModal(editId = null) {
             const id = 'admOrgModal'; const ex = document.getElementById(id); if (ex) ex.remove();
             const org = editId ? _admOrgs.find(o => o.id === editId) : null;
-            const html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()"><div class="modal-box" onclick="event.stopPropagation()"><h3 class="modal-title">${editId ? 'Editar' : 'Nova'} Organização</h3>
+            const html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()"><div class="modal-box" onclick="event.stopPropagation()"><h3 class="modal-title">${editId ? 'Editar' : 'Nova'} OrganizaÃ§Ã£o</h3>
                 <label class="modal-label">Nome</label><input type="text" id="admOrgName" class="modal-input" value="${org?.name || ''}" placeholder="Ex: Empresa ABC">
                 <label class="modal-label">Short ID</label><input type="text" id="admOrgShortId" class="modal-input" value="${org?.short_id || admGenShortId()}" maxlength="10">
                 <label class="modal-label">CNPJ (opcional)</label><input type="text" id="admOrgCnpj" class="modal-input" value="${org?.cnpj || ''}" placeholder="00.000.000/0001-00">
@@ -3214,10 +3422,10 @@
 
         async function admSaveOrg(editId) {
             const name = document.getElementById('admOrgName').value.trim(), short_id = document.getElementById('admOrgShortId').value.trim(), cnpj = document.getElementById('admOrgCnpj').value.trim();
-            if (!name) { showToast('Nome é obrigatório', 'error'); return; }
+            if (!name) { showToast('Nome Ã© obrigatÃ³rio', 'error'); return; }
             try {
-                if (editId) { await sbFetch(`companies?id=eq.${editId}`, 'PATCH', { name, short_id, cnpj }); showToast('Organização atualizada', 'success'); }
-                else { await sbFetch('companies', 'POST', { name, short_id: short_id || admGenShortId(), cnpj, active: true }); showToast('Organização criada', 'success'); }
+                if (editId) { await sbFetch(`companies?id=eq.${editId}`, 'PATCH', { name, short_id, cnpj }); showToast('OrganizaÃ§Ã£o atualizada', 'success'); }
+                else { await sbFetch('companies', 'POST', { name, short_id: short_id || admGenShortId(), cnpj, active: true }); showToast('OrganizaÃ§Ã£o criada', 'success'); }
                 const m = document.getElementById('admOrgModal'); if (m) m.remove();
                 await admLoadOrgs(); if (_admSelectedOrg && editId) await admOpenOrgDetail(editId);
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
@@ -3231,7 +3439,7 @@
         async function admDeleteOrg(orgId) {
             const m = await sbGet('members?company_id=eq.' + orgId + '&select=user_id'); if (m && m.length > 0) { showToast('Existem ' + m.length + ' assessor(es) vinculado(s)', 'error'); return; }
             const apps = await sbGet('applicants?company_id=eq.' + orgId + '&select=id&limit=1'); if (apps && apps.length > 0) { showToast('Existem solicitantes vinculados. Remova ou transfira-os primeiro.', 'error'); return; }
-            if (!confirm('Excluir organização?')) return; await sbFetch('companies?id=eq.' + orgId, 'DELETE', null); showToast('Excluída!', 'success'); await admLoadOrgs(); admShowOrgList();
+            if (!confirm('Excluir organizaÃ§Ã£o?')) return; await sbFetch('companies?id=eq.' + orgId, 'DELETE', null); showToast('ExcluÃ­da!', 'success'); await admLoadOrgs(); admShowOrgList();
         }
 
         // User CRUD
@@ -3239,7 +3447,7 @@
             const id = 'admUserModal'; const ex = document.getElementById(id); if (ex) ex.remove();
             const html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()"><div class="modal-box" onclick="event.stopPropagation()"><h3 class="modal-title">Adicionar Assessor</h3>
                 <label class="modal-label">E-mail</label><input type="email" id="admUserEmail" class="modal-input" placeholder="assessor@empresa.com">
-                <label class="modal-label">Senha</label><input type="password" id="admUserPassword" class="modal-input" placeholder="Mínimo 6 caracteres">
+                <label class="modal-label">Senha</label><input type="password" id="admUserPassword" class="modal-input" placeholder="MÃ­nimo 6 caracteres">
                 <label class="modal-label">Perfil</label><select id="admUserRole" class="modal-input"><option value="assessor">Assessor</option><option value="admin">Administrador</option></select>
                 <div class="modal-actions" style="margin-top:14px"><button class="modal-btn" onclick="document.getElementById('${id}').remove()">Cancelar</button><button class="modal-btn primary" id="admUserSaveBtn" onclick="admCreateUser()">Criar</button></div>
             </div></div>`;
@@ -3249,7 +3457,7 @@
         async function admCreateUser() {
             const email = document.getElementById('admUserEmail').value.trim(), pw = document.getElementById('admUserPassword').value, role = document.getElementById('admUserRole').value;
             if (!email || !pw) { showToast('Preencha todos os campos', 'error'); return; }
-            if (pw.length < 6) { showToast('Senha: mínimo 6 caracteres', 'error'); return; }
+            if (pw.length < 6) { showToast('Senha: mÃ­nimo 6 caracteres', 'error'); return; }
             const btn = document.getElementById('admUserSaveBtn'); btn.disabled = true; btn.textContent = 'Criando...';
             try {
                 const tok = window._sessionToken || SUPABASE_KEY;
@@ -3263,15 +3471,25 @@
         async function admRemoveMember(userId, companyId) {
             if (!confirm('Remover assessor?')) return;
             try {
-                // Verificar se é o último admin da organização
+                // Verificar se Ã© o Ãºltimo admin da organizaÃ§Ã£o
                 const admins = await sbGet(`members?company_id=eq.${companyId}&role=eq.admin&select=user_id`) || [];
                 const isAdmin = admins.some(m => m.user_id === userId);
-                if (isAdmin && admins.length <= 1) { showToast('Não é possível remover o último administrador da organização.', 'error'); return; }
+                if (isAdmin && admins.length <= 1) { showToast('NÃ£o Ã© possÃ­vel remover o Ãºltimo administrador da organizaÃ§Ã£o.', 'error'); return; }
                 await sbFetch(`members?user_id=eq.${userId}&company_id=eq.${companyId}`, 'DELETE'); showToast('Removido', 'success'); await admLoadOrgs(); await admLoadOrgUsers(companyId);
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
         }
 
-        async function admInitPanel() { await admLoadOrgs(); try { const d = await sbGet('error_logs?archived=eq.false&select=id&limit=100'); const be = document.getElementById('admLogsBadge'); if (be && d && d.length > 0) { be.textContent = d.length; be.style.display = 'inline'; } } catch { } }
+        async function admInitPanel() {
+            await admLoadOrgs();
+            if (currentAdminSection === 'orgs' && currentAdminOrgId) {
+                await admOpenOrgDetail(currentAdminOrgId);
+            }
+            try {
+                const d = await sbGet('error_logs?archived=eq.false&select=id&limit=100');
+                const be = document.getElementById('admLogsBadge');
+                if (be && d && d.length > 0) { be.textContent = d.length; be.style.display = 'inline'; }
+            } catch { }
+        }
 
         // ==========================================
         // INIT
@@ -3288,7 +3506,7 @@
                     else { try { const payload = JSON.parse(atob(_authToken.split('.')[1])); _currentUser = { email: payload.email || payload.sub || '' }; } catch { } }
                     await showDashboard(); return;
                 } catch (err) {
-                    // Token from URL may be expired — try Supabase session refresh before giving up
+                    // Token from URL may be expired â€” try Supabase session refresh before giving up
                     console.warn('[Dashboard] URL token failed, trying session refresh:', err.message);
                     window._sessionToken = null;
                     AppCore.clearSession();

@@ -5,11 +5,15 @@
 // Optional batch envs remain available for controlled test runs
 // ============================================================
 const { createClient } = require('@supabase/supabase-js');
+const {
+    APPLICANT_ACTIVE_STATUS,
+    APPLICANT_CLAIMABLE_STATUSES,
+    isStandbyEligible,
+} = require('./status-contract');
 
 // -- ENV --
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
-const COMPANY_ID = process.env.COMPANY_ID;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
     console.error('SUPABASE_URL e SUPABASE_KEY sao obrigatorios');
@@ -59,6 +63,7 @@ async function main() {
 
     // -- PICK APPLICANT --
     let target;
+    let previousApplicantStatus = 'todo';
 
     if (TARGET_APPLICANT_ID) {
         const { data: row, error: qErr } = await supabase
@@ -72,29 +77,39 @@ async function main() {
             process.exit(0);
         }
         target = row;
+        previousApplicantStatus = row.status || previousApplicantStatus;
     } else {
         let query = supabase
             .from('applicants')
-            .select('id, full_name, status')
+            .select('id, full_name, status, updated_at')
             .eq('stage', 'ds160')
-            .order('sort_order', { ascending: true });
+            .in('status', APPLICANT_CLAIMABLE_STATUSES)
+            .order('sort_order', { ascending: true })
+            .order('updated_at', { ascending: true });
 
-        if (COMPANY_ID) query = query.eq('company_id', COMPANY_ID);
-        query = query.range(TASK_INDEX, TASK_INDEX);
+        query = query.limit(Math.max(TASK_INDEX + 25, 50));
 
         const { data: rows, error: qErr } = await query;
+        const eligibleRows = (rows || []).filter((row) => {
+            if (row.status !== 'standby') return true;
+            return isStandbyEligible(row.updated_at);
+        });
 
-        if (qErr || !rows || rows.length === 0) {
+        if (qErr || eligibleRows.length === 0) {
             console.log(`Fila vazia para a posicao ${TASK_INDEX}`);
             process.exit(0);
         }
-        target = rows[0];
+        target = eligibleRows[TASK_INDEX];
+        if (!target) {
+            console.log(`Fila processavel insuficiente para a posicao ${TASK_INDEX}`);
+            process.exit(0);
+        }
+        previousApplicantStatus = target.status || previousApplicantStatus;
     }
 
     console.log(`Meu applicant: ${target.full_name} (status: ${target.status})`);
 
-    const PROCESSABLE_STATUSES = ['todo', 'retry', 'doing', 'standby'];
-    if (!PROCESSABLE_STATUSES.includes(target.status)) {
+    if (!APPLICANT_CLAIMABLE_STATUSES.includes(target.status)) {
         console.log(`Ja processado (${target.status}) - saindo`);
         process.exit(0);
     }
@@ -102,9 +117,9 @@ async function main() {
     // -- ATOMIC CLAIM --
     const { data: claimed, error: claimErr } = await supabase
         .from('applicants')
-        .update({ status: 'doing', updated_at: new Date().toISOString() })
+        .update({ status: APPLICANT_ACTIVE_STATUS, updated_at: new Date().toISOString() })
         .eq('id', target.id)
-        .in('status', PROCESSABLE_STATUSES)
+        .in('status', APPLICANT_CLAIMABLE_STATUSES)
         .select('id')
         .single();
 
@@ -119,16 +134,16 @@ async function main() {
     const gracefulShutdown = async (signal) => {
         if (shuttingDown) return;
         shuttingDown = true;
-        console.log(`\n${signal} recebido - resetando status de ${target.full_name} para 'todo'`);
+        console.log(`\n${signal} recebido - resetando status de ${target.full_name} para '${previousApplicantStatus}'`);
         try {
             await supabase.from('applicants').update({
-                status: 'todo',
+                status: previousApplicantStatus,
                 updated_at: new Date().toISOString()
-            }).eq('id', target.id).eq('status', 'doing');
+            }).eq('id', target.id).eq('status', APPLICANT_ACTIVE_STATUS);
             await supabase.from('applications').update({
                 fill_status: 'todo',
                 fill_worker_id: null
-            }).eq('applicant_id', target.id).eq('fill_status', 'filling');
+            }).eq('applicant_id', target.id).eq('fill_status', APPLICANT_ACTIVE_STATUS);
             console.log('Status resetado - applicant sera reprocessado na proxima trigger');
         } catch (e) {
             console.error('Falha ao resetar status:', e.message);
@@ -141,7 +156,6 @@ async function main() {
     // -- PROCESS --
     const { QueueRunner } = require('./queue');
     const runner = new QueueRunner(supabase, 'capmonster');
-    runner.companyId = COMPANY_ID;
     runner.running = true;
 
     try {
@@ -159,25 +173,14 @@ async function main() {
             process.exit(1);
         }
 
-        let { data: app } = await supabase
-            .from('applications')
-            .select('*')
-            .eq('applicant_id', target.id)
-            .single();
-
+        const app = await runner._ensureAndClaimApp(target.id);
         if (!app) {
-            console.log('Nenhuma application encontrada - criando');
-            const { data: newApp, error: insertErr } = await supabase
-                .from('applications')
-                .insert({ applicant_id: target.id, fill_status: 'todo' })
-                .select('*')
-                .single();
-            if (insertErr || !newApp) {
-                console.error('Falha ao criar application:', insertErr?.message);
-                await supabase.from('applicants').update({ status: 'error' }).eq('id', target.id);
-                process.exit(1);
-            }
-            app = newApp;
+            console.error('Falha ao claimar application para execucao');
+            await supabase.from('applicants').update({
+                status: previousApplicantStatus,
+                updated_at: new Date().toISOString()
+            }).eq('id', target.id).eq('status', APPLICANT_ACTIVE_STATUS);
+            process.exit(1);
         }
 
         const { resolveProxyUrl, resolveProxyCountries } = require('./helpers/proxy-helper');
@@ -218,7 +221,10 @@ async function main() {
         await runner._fillWithRetry(app, fullApplicant, config);
     } catch (e) {
         console.error(`Erro fatal: ${e.message}`);
-        await supabase.from('applicants').update({ status: 'error' }).eq('id', target.id);
+        await supabase.from('applicants').update({
+            status: 'error',
+            updated_at: new Date().toISOString()
+        }).eq('id', target.id);
         process.exit(1);
     }
 

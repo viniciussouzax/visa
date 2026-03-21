@@ -22,6 +22,8 @@ type DispatchResult = {
     app: string;
     machineId: string | null;
     reason: string;
+    runningCount: number;
+    startableCount: number;
 };
 
 async function flyFetch(path: string, init: RequestInit = {}) {
@@ -77,47 +79,51 @@ async function dispatchFlyApp(appName: string, preferredMachineId?: string | nul
             app: appName,
             machineId: null,
             reason: "no_machines_found",
+            runningCount: 0,
+            startableCount: 0,
         };
     }
 
-    const running = machines.find((machine) => isRunningState(machine.state));
-    if (running) {
+    const runningMachines = machines.filter((machine) => isRunningState(machine.state));
+    const startableMachines = machines.filter((machine) => isStartableState(machine.state));
+    const preferredMachine = preferredMachineId
+        ? startableMachines.find((machine) => machine.id === preferredMachineId)
+        : null;
+    const fallbackMachine = startableMachines.find((machine) => machine.id !== preferredMachineId);
+    const candidate = preferredMachine || fallbackMachine || null;
+
+    if (candidate) {
+        const started = await startMachine(appName, candidate.id);
         return {
-            dispatched: true,
+            dispatched: started,
             app: appName,
-            machineId: running.id,
-            reason: "worker_already_running",
+            machineId: candidate.id,
+            reason: started
+                ? (candidate.id === preferredMachineId ? "preferred_machine_started" : "machine_started")
+                : "machine_start_failed",
+            runningCount: runningMachines.length,
+            startableCount: startableMachines.length,
         };
     }
 
-    if (preferredMachineId) {
-        const started = await startMachine(appName, preferredMachineId);
-        if (started) {
-            return {
-                dispatched: true,
-                app: appName,
-                machineId: preferredMachineId,
-                reason: "preferred_machine_started",
-            };
-        }
-    }
-
-    const candidate = machines.find((machine) => machine.id !== preferredMachineId && isStartableState(machine.state));
-    if (!candidate) {
+    if (!runningMachines.length) {
         return {
             dispatched: false,
             app: appName,
             machineId: preferredMachineId || null,
-            reason: preferredMachineId ? "preferred_machine_failed_no_fallback" : "no_startable_machine_available",
+            reason: "no_startable_machine_available",
+            runningCount: 0,
+            startableCount: 0,
         };
     }
 
-    const started = await startMachine(appName, candidate.id);
     return {
-        dispatched: started,
+        dispatched: true,
         app: appName,
-        machineId: candidate.id,
-        reason: started ? "machine_started" : "machine_start_failed",
+        machineId: runningMachines[0].id,
+        reason: "all_workers_already_running",
+        runningCount: runningMachines.length,
+        startableCount: 0,
     };
 }
 

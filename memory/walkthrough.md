@@ -12,6 +12,14 @@
 | [error](file:///c:/Users/azuos/Desktop/DS160%20IA/public/ds160-form.html#794-809) | Erro de dados | 🟠 Laranja | Assessor | Processos com Problemas |
 | `fail` | Falha técnica | 🔴 Vermelho | Desenvolvedor | Processos com Problemas |
 
+Regra operacional: `doing` so pode existir enquanto o worker esta executando de verdade. Fora de execucao, o solicitante deve estar em `todo`, `retry`, `standby`, `error`, `fail` ou `done`.
+Regras de disparo:
+- `todo` -> dispara imediatamente
+- `retry` -> dispara imediatamente
+- `standby` -> volta por rotina agendada apos cooldown
+- `error` -> manual apos correcao de dados
+- `fail` -> manual ate a futura camada de correcao por IA
+
 ## 2. Classificação de Erros
 
 ```mermaid
@@ -77,8 +85,8 @@ graph TD
 
 | Mecanismo | Timeout | Ação |
 |---|---|---|
-| Stale Detection | >10min em `filling` | Reseta para `todo` |
-| Orphan Recovery | `filling` sem `started_at` | Reseta para `todo` |
+| Stale Detection | >10min em `doing` | Reseta para `todo` |
+| Orphan Recovery | `doing` sem `started_at` | Reseta para `todo` |
 | Safety Net | Loop termina sem resolver | Marca `retry` |
 | Catch no Loop | Exception inesperada | Marca `fail` |
 | Standby Cooldown | 30min após `standby` | Auto-retry |
@@ -94,6 +102,7 @@ O gráfico stacked mostra 4 segmentos:
 
 - O assessor visualiza logs por `application_id`, com screenshot da falha quando disponível
 - `error` é correção de dados; `standby` é espera com retry automático; `fail` para o fluxo até revisão técnica
+- O entrypoint one-shot do Fly e o QueueRunner usam o mesmo contrato: so claima `todo`, `retry` e `standby` elegivel; `error`, `fail`, `done` e `doing` nao entram na fila normal
 - O isolamento multi-tenant precisa ser garantido no banco: assessor autenticado só lê dados da própria `company_id`, e o portal deve anexar `company_id` sempre que a `org` já estiver resolvida
 - Grupos só aceitam vínculo na mesma etapa e só andam quando todos concluem juntos
 - Exclusão permanente só existe para processos já arquivados

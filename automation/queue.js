@@ -11,6 +11,11 @@ function getFiller() {
 const path = require('path');
 // New: session hygiene helpers
 const { shouldDiscardSession } = require('./helpers/failure-context');
+const {
+    APPLICANT_ACTIVE_STATUS,
+    APPLICANT_CLAIMABLE_STATUSES,
+    STANDBY_COOLDOWN_SECONDS,
+} = require('./status-contract');
 
 const POLL_INTERVAL = 30; // 30 seconds fallback (Realtime handles instant detection)
 const MAX_RETRIES = 3;
@@ -18,14 +23,14 @@ const BACKOFF_DELAYS = [2 * 60, 4 * 60, 6 * 60, 8 * 60]; // 2min, 4min, 6min, 8m
 const GLOBAL_PAUSE = 15 * 60; // 15min pause after 3 consecutive global errors
 const STALE_FILLING_TIMEOUT = 10 * 60; // 10min  if filling for longer, consider stale
 const RE_QUEUE_DELAY = 15 * 60; // 15min  wait before retrying after max retries exhausted
-const STANDBY_COOLDOWN = 30 * 60; // 30min  wait before retrying standby (site-side issue)
+const STANDBY_COOLDOWN = STANDBY_COOLDOWN_SECONDS; // 30min  wait before retrying standby (site-side issue)
 
 class QueueRunner {
     constructor(supabase, captchaMode) {
         this.supabase = supabase;
         this.captchaMode = captchaMode || 'capmonster';
         this.running = false;
-        this.companyId = null; // loaded on start  filters by organization
+        this.companyId = null; // reserved for diagnostics; DS-160 queue runs globally
         this.workerId = `worker_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         this._emitter = null;
         this._countdownTimer = null;
@@ -38,20 +43,7 @@ class QueueRunner {
     async start(emitter) {
         this._emitter = emitter;
         this.running = true;
-
-        // Load the company_id for the logged-in user
-        const { data: { user } } = await this.supabase.auth.getUser();
-        if (user) {
-            const { data: member } = await this.supabase
-                .from('members')
-                .select('company_id')
-                .eq('user_id', user.id)
-                .single();
-            if (member) {
-                this.companyId = member.company_id;
-                console.log('[Queue] Filtering by organization:', this.companyId);
-            }
-        }
+        console.log('[Queue] Global DS-160 queue enabled (all organizations)');
 
         // Realtime: instant detection when applicant moves to ds160 + todo
         this._realtimeChannel = this.supabase
@@ -215,7 +207,7 @@ class QueueRunner {
 
                 // 4. Mark applicant as 'doing' (syncs with dashboard)
                 await this.supabase.from('applicants').update({
-                    status: 'doing',
+                    status: APPLICANT_ACTIVE_STATUS,
                     updated_at: new Date().toISOString()
                 }).eq('id', app.applicant_id);
 
@@ -831,33 +823,21 @@ class QueueRunner {
         return config;
     }
 
-    // CLAIM / QUERY (filtered by organization)
+    // CLAIM / QUERY (global queue across all organizations)
     // Order: sort_order ASC (drag & drop backlog)
     // Resume-first: applicants with existing application_id come first
     // Auto-reset: if application is 'done', reset to 'pending'
     // Auto-create: if no application exists, create one
     // ==============================================================
     async _claimNext() {
-        // Get applicant IDs belonging to this organization
-        let applicantIds = null;
-        if (this.companyId) {
-            const { data: orgApplicants } = await this.supabase
-                .from('applicants')
-                .select('id')
-                .eq('company_id', this.companyId);
-            applicantIds = (orgApplicants || []).map(a => a.id);
-            if (applicantIds.length === 0) return null;
-        }
-
         // 0. Recovery: reset stale fills (>10min, stuck from crashes)
         const staleThreshold = new Date(Date.now() - STALE_FILLING_TIMEOUT * 1000).toISOString();
         let staleQuery = this.supabase
             .from('applications')
             .select('id, applicant_id')
-            .eq('fill_status', 'doing')
+            .eq('fill_status', APPLICANT_ACTIVE_STATUS)
             .neq('fill_worker_id', this.workerId)
             .lt('fill_started_at', staleThreshold);
-        if (applicantIds) staleQuery = staleQuery.in('applicant_id', applicantIds);
         const { data: stale } = await staleQuery;
         if (stale && stale.length > 0) {
             for (const s of stale) {
@@ -870,7 +850,7 @@ class QueueRunner {
                     await this.supabase.from('applicants').update({
                         status: 'todo',
                         updated_at: new Date().toISOString()
-                    }).eq('id', s.applicant_id).eq('status', 'doing');
+                    }).eq('id', s.applicant_id).eq('status', APPLICANT_ACTIVE_STATUS);
                 }
                 console.log(`[Queue] Recovered stale: ${s.id} (applicant reset to todo)`);
             }
@@ -880,9 +860,8 @@ class QueueRunner {
         let orphanQuery = this.supabase
             .from('applications')
             .select('id, applicant_id')
-            .eq('fill_status', 'doing')
+            .eq('fill_status', APPLICANT_ACTIVE_STATUS)
             .is('fill_started_at', null);
-        if (applicantIds) orphanQuery = orphanQuery.in('applicant_id', applicantIds);
         const { data: orphans } = await orphanQuery;
         if (orphans && orphans.length > 0) {
             for (const o of orphans) {
@@ -895,7 +874,7 @@ class QueueRunner {
                     await this.supabase.from('applicants').update({
                         status: 'todo',
                         updated_at: new Date().toISOString()
-                    }).eq('id', o.applicant_id).eq('status', 'doing');
+                    }).eq('id', o.applicant_id).eq('status', APPLICANT_ACTIVE_STATUS);
                 }
                 console.log(`[Queue] Recovered orphan: ${o.id} (applicant reset to todo)`);
             }
@@ -907,8 +886,7 @@ class QueueRunner {
             .from('applicants')
             .select('id')
             .eq('stage', 'ds160')
-            .in('status', ['todo', 'doing']);
-        if (applicantIds) resumeQuery = resumeQuery.in('id', applicantIds);
+            .in('status', ['todo', APPLICANT_ACTIVE_STATUS]);
         const { data: resumeApplicants } = await resumeQuery;
 
         if (resumeApplicants && resumeApplicants.length > 0) {
@@ -918,17 +896,17 @@ class QueueRunner {
                 .select('*')
                 .in('applicant_id', resumeIds)
                 .in('fill_status', ['doing', 'error', 'todo'])
-                .limit(1);
+                .order('updated_at', { ascending: true })
+                .limit(20);
 
             if (resumeApps && resumeApps.length > 0) {
-                const app = resumeApps[0];
-                await this.supabase.from('applications').update({
-                    fill_status: 'doing',
-                    fill_started_at: new Date().toISOString(),
-                    fill_worker_id: this.workerId
-                }).eq('id', app.id);
-                console.log('[Queue] Resuming:', app.id);
-                return { ...app, fill_status: 'doing' };
+                for (const app of resumeApps) {
+                    const claimedResume = await this._ensureAndClaimApp(app.applicant_id);
+                    if (claimedResume) {
+                        console.log('[Queue] Resuming:', claimedResume.id);
+                        return claimedResume;
+                    }
+                }
             }
         }
 
@@ -938,10 +916,9 @@ class QueueRunner {
             .from('applicants')
             .select('id, sort_order')
             .eq('stage', 'ds160')
-            .in('status', ['todo', 'retry'])
+            .in('status', APPLICANT_CLAIMABLE_STATUSES.filter(status => status !== 'standby'))
             .order('sort_order', { ascending: true })
             .order('updated_at', { ascending: true });
-        if (applicantIds) approvedQuery = approvedQuery.in('id', applicantIds);
         const { data: approvedApplicants, error: approvedErr } = await approvedQuery.limit(20);
 
         // 2b. STANDBY: include standby applicants whose cooldown expired
@@ -953,7 +930,6 @@ class QueueRunner {
             .eq('status', 'standby')
             .lt('updated_at', standbyCutoff)
             .order('sort_order', { ascending: true });
-        if (applicantIds) standbyQuery = standbyQuery.in('id', applicantIds);
         const { data: standbyApplicants } = await standbyQuery.limit(10);
 
         // Merge: approved first, then standby (lower priority)
