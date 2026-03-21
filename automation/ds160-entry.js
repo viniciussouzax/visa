@@ -63,6 +63,7 @@ async function main() {
 
     // -- PICK APPLICANT --
     let target;
+    let claimedApp = null;
     let previousApplicantStatus = 'todo';
 
     if (TARGET_APPLICANT_ID) {
@@ -157,6 +158,17 @@ async function main() {
     const { QueueRunner } = require('./queue');
     const runner = new QueueRunner(supabase, 'capmonster');
     runner.running = true;
+    const markFatalFailure = async (message) => {
+        if (!target?.id) return;
+        if (claimedApp?.id) {
+            await runner._markSystemError(claimedApp.id, message, target.id);
+            return;
+        }
+        await supabase.from('applicants').update({
+            status: 'fail',
+            updated_at: new Date().toISOString()
+        }).eq('id', target.id).eq('status', APPLICANT_ACTIVE_STATUS);
+    };
 
     try {
         const config = await runner._getConfig();
@@ -169,12 +181,12 @@ async function main() {
 
         if (!fullApplicant) {
             console.error('Applicant nao encontrado no banco');
-            await supabase.from('applicants').update({ status: 'error' }).eq('id', target.id);
+            await markFatalFailure('Applicant nao encontrado no banco apos claim');
             process.exit(1);
         }
 
-        const app = await runner._ensureAndClaimApp(target.id);
-        if (!app) {
+        claimedApp = await runner._ensureAndClaimApp(target.id);
+        if (!claimedApp) {
             console.error('Falha ao claimar application para execucao');
             await supabase.from('applicants').update({
                 status: previousApplicantStatus,
@@ -216,15 +228,12 @@ async function main() {
         if (proxyUrl) config.proxy_url = proxyUrl;
         config.proxy_countries = proxyCountries;
 
-        console.log(`Application: ${app.id} (status: ${app.fill_status})`);
+        console.log(`Application: ${claimedApp.id} (status: ${claimedApp.fill_status})`);
 
-        await runner._fillWithRetry(app, fullApplicant, config);
+        await runner._fillWithRetry(claimedApp, fullApplicant, config);
     } catch (e) {
         console.error(`Erro fatal: ${e.message}`);
-        await supabase.from('applicants').update({
-            status: 'error',
-            updated_at: new Date().toISOString()
-        }).eq('id', target.id);
+        await markFatalFailure(e.message);
         process.exit(1);
     }
 

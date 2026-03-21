@@ -13,6 +13,7 @@ const path = require('path');
 const { shouldDiscardSession } = require('./helpers/failure-context');
 const {
     APPLICANT_ACTIVE_STATUS,
+    APPLICANT_IMMEDIATE_DISPATCH_STATUSES,
     APPLICANT_CLAIMABLE_STATUSES,
     STANDBY_COOLDOWN_SECONDS,
 } = require('./status-contract');
@@ -45,14 +46,14 @@ class QueueRunner {
         this.running = true;
         console.log('[Queue] Global DS-160 queue enabled (all organizations)');
 
-        // Realtime: instant detection when applicant moves to ds160 + todo
+        // Realtime: instant detection when applicant moves to ds160 + todo/retry
         this._realtimeChannel = this.supabase
             .channel('queue-trigger')
             .on('postgres_changes',
                 { event: 'UPDATE', schema: 'public', table: 'applicants', filter: 'stage=eq.ds160' },
                 (payload) => {
-                    if (payload.new?.status === 'todo') {
-                        console.log(`[DS160]  Realtime: nova solicitacao  ${payload.new?.full_name || payload.new?.id}`);
+                    if (APPLICANT_IMMEDIATE_DISPATCH_STATUSES.includes(payload.new?.status)) {
+                        console.log(`[DS160]  Realtime: ${payload.new?.status}  ${payload.new?.full_name || payload.new?.id}`);
                         this.triggerNow();
                     }
                 }
@@ -224,10 +225,7 @@ class QueueRunner {
                 // Sem isso o solicitante ficava preso em 'doing' para sempre
                 if (app?.applicant_id) {
                     try {
-                        await this.supabase.from('applicants').update({
-                            status: 'fail',
-                            updated_at: new Date().toISOString()
-                        }).eq('id', app.applicant_id);
+                        await this._markSystemError(app.id, e.message, app.applicant_id);
                         console.log(`[Queue]  Applicant ${app.applicant_id} marcado como failed (exception no loop)`);
                     } catch {
                         // Preserve the original queue error even if the fail-sync also breaks.
@@ -1153,6 +1151,8 @@ class QueueRunner {
             .update({
                 fill_status: 'error',
                 fill_error: errMsg,
+                fill_worker_id: null,
+                fill_finished_at: new Date().toISOString(),
                 last_error_at: new Date().toISOString()
             })
             .eq('id', appId);
@@ -1172,18 +1172,22 @@ class QueueRunner {
             .update({
                 fill_status: 'error',
                 fill_error: errMsg,
+                fill_worker_id: null,
+                fill_finished_at: new Date().toISOString(),
                 last_error_at: new Date().toISOString()
             })
             .eq('id', appId);
     }
 
     // System error  requires dev fix, software will NOT retry until manually released
-        async _markSystemError(appId, errMsg, applicantId) {
+    async _markSystemError(appId, errMsg, applicantId) {
         await this.supabase
             .from('applications')
             .update({
                 fill_status: 'fail',
                 fill_error: errMsg,
+                fill_worker_id: null,
+                fill_finished_at: new Date().toISOString(),
                 last_error_at: new Date().toISOString()
             })
             .eq('id', appId);
@@ -1195,7 +1199,7 @@ class QueueRunner {
                 updated_at: new Date().toISOString()
             }).eq('id', applicantId);
         }
-        console.log(`[DS160]  FAIL: ${appId}  priority set to retry, awaiting dev fix`);
+        console.log(`[DS160]  FAIL: ${appId}  aguardando liberacao manual para retry`);
     }
 
     // Re-queue: reset application + set applicant status to 'retry'

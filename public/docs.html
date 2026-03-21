@@ -458,8 +458,8 @@
                 <p>A IA trabalha continuamente em segundo plano durante toda a produção:</p>
                 <ul>
                     <li><strong>Status em tempo real</strong> — Cada etapa da automação é monitorada. O dashboard atualiza o status sem refresh manual</li>
-                    <li><strong>Detecção de falhas</strong> — A IA identifica padrões de erro e ajusta a estratégia de retry automaticamente</li>
-                    <li><strong>Retry inteligente</strong> — Em vez de simplesmente repetir, a IA analisa o erro e adapta a tentativa (ex: ajustar formatação de campo, aguardar mais tempo em postbacks lentos)</li>
+                    <li><strong>Detecção de falhas</strong> — O sistema classifica erros entre dados, espera temporária e falha técnica, registrando log, contexto e evidências</li>
+                    <li><strong>Retry inteligente</strong> — O worker aplica regras de retry, cooldown e retomada com base na causa; falhas técnicas continuam manuais por enquanto</li>
                     <li><strong>Monitoramento de sites externos</strong> — Acompanha em tempo quase real o status no CEAC e CASV, detectando mudanças e atualizando a plataforma automaticamente</li>
                     <li><strong>Auto-recuperação</strong> — Se o sistema detecta uma falha sistêmica (site fora do ar, mudança de layout), pausa a fila e notifica a equipe em vez de gerar erros em massa</li>
                 </ul>

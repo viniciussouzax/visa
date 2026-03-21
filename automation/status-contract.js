@@ -1,4 +1,5 @@
 const APPLICANT_ACTIVE_STATUS = 'doing';
+const APPLICANT_IMMEDIATE_DISPATCH_STATUSES = Object.freeze(['todo', 'retry']);
 const APPLICANT_CLAIMABLE_STATUSES = Object.freeze(['todo', 'retry', 'standby']);
 const APPLICANT_BLOCKING_STATUSES = Object.freeze(['error', 'fail', 'done']);
 const STANDBY_COOLDOWN_SECONDS = 30 * 60;
@@ -13,6 +14,7 @@ function isStandbyEligible(updatedAt, now = Date.now()) {
 
 module.exports = {
     APPLICANT_ACTIVE_STATUS,
+    APPLICANT_IMMEDIATE_DISPATCH_STATUSES,
     APPLICANT_CLAIMABLE_STATUSES,
     APPLICANT_BLOCKING_STATUSES,
     STANDBY_COOLDOWN_SECONDS,

@@ -12,10 +12,19 @@ on:
 jobs:
   wake_queue:
     runs-on: ubuntu-latest
+    env:
+      SUPABASE_FUNCTION_URL: https://zcpvknzktfmotvrybxdf.supabase.co/functions/v1/dispatch-job
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - name: Wake DS-160 queue
         run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "SUPABASE_SERVICE_ROLE_KEY is not configured"
+            exit 1
+          fi
           curl --fail-with-body --silent --show-error \
-            -X POST "https://zcpvknzktfmotvrybxdf.supabase.co/functions/v1/dispatch-job" \
+            -X POST "$SUPABASE_FUNCTION_URL" \
             -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
             --data '{"record":{"stage":"ds160","status":"retry","source":"standby-cron"}}'

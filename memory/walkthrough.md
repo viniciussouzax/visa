@@ -19,6 +19,7 @@ Regras de disparo:
 - `standby` -> volta por rotina agendada apos cooldown
 - `error` -> manual apos correcao de dados
 - `fail` -> manual ate a futura camada de correcao por IA
+- a rotina agendada de `standby` chama a Edge Function com `SUPABASE_SERVICE_ROLE_KEY` via GitHub Actions
 
 ## 2. Classificação de Erros
 
