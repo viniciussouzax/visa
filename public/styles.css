@@ -7172,3 +7172,92 @@ tr.drag-over {
         align-items: stretch;
     }
 }
+
+/* ==========================================
+   ORG LIST STANDARDIZATION
+   ========================================== */
+
+.adm-org-list-wrap {
+    overflow: hidden;
+    border-radius: 18px;
+}
+
+.adm-org-list-table {
+    table-layout: fixed;
+}
+
+.adm-org-list-table th:nth-child(1),
+.adm-org-list-table td:nth-child(1) {
+    width: 34%;
+}
+
+.adm-org-list-table th:nth-child(2),
+.adm-org-list-table td:nth-child(2) {
+    width: 13%;
+}
+
+.adm-org-list-table th:nth-child(3),
+.adm-org-list-table td:nth-child(3) {
+    width: 18%;
+}
+
+.adm-org-list-table th:nth-child(4),
+.adm-org-list-table td:nth-child(4) {
+    width: 11%;
+}
+
+.adm-org-list-table th:nth-child(5),
+.adm-org-list-table td:nth-child(5) {
+    width: 12%;
+}
+
+.adm-org-list-table th:nth-child(6),
+.adm-org-list-table td:nth-child(6) {
+    width: 12%;
+}
+
+.adm-org-list-row td {
+    vertical-align: middle;
+}
+
+.adm-org-avatar {
+    background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+}
+
+.adm-org-shortid {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.adm-org-muted {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.adm-org-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--bg-body);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+@media (max-width: 1180px) {
+    .adm-org-list-table {
+        min-width: 980px;
+    }
+}

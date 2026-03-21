@@ -3140,11 +3140,31 @@
             document.getElementById('admOrgCount').textContent = `(${_admOrgs.length})`;
             admUpdateNav('orgs');
             const grid = document.getElementById('admOrgGrid');
-            if (_admOrgs.length === 0) { grid.innerHTML = '<p style="color:var(--text-muted)">Nenhuma organizaÃƒÂ§ÃƒÂ£o cadastrada.</p>'; return; }
-            let h = '<div class="table-container" style="margin-top:0"><table style="width:100%"><thead><tr><th>OrganizaÃ§Ã£o</th><th>Short ID</th><th>CNPJ</th><th style="text-align:center">Assessores</th><th style="text-align:center">Status</th><th>Criada</th></tr></thead><tbody>';
+            if (_admOrgs.length === 0) {
+                grid.innerHTML = '<div class="table-container adm-org-list-wrap" style="margin-top:0"><div class="empty-state" style="padding:28px 20px"><h3 style="margin-bottom:6px">Nenhuma organização cadastrada</h3><p style="margin:0">Crie a primeira organização para começar a separar assessores, branding e portal.</p></div></div>';
+                return;
+            }
+            let h = '<div class="table-container adm-org-list-wrap" style="margin-top:0"><table class="data-table adm-org-list-table" style="width:100%"><thead><tr><th>Organização</th><th>Short ID</th><th>CNPJ</th><th style="text-align:center">Assessores</th><th style="text-align:center">Status</th><th>Criada</th></tr></thead><tbody>';
             _admOrgs.forEach(o => {
-                const sc = o.active ? '#22c55e' : '#ef4444', sl = o.active ? 'Ativa' : 'Inativa';
-                h += `<tr onclick="admOpenOrgDetail('${o.id}')" style="cursor:pointer"><td style="font-weight:600">${o.name}</td><td style="color:var(--text-muted);font-family:monospace;font-size:12px">${o.short_id || '-'}</td><td style="color:var(--text-muted)">${o.cnpj || '-'}</td><td style="text-align:center">${o._memberCount}</td><td style="text-align:center"><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${sc}18;color:${sc}">${sl}</span></td><td style="color:var(--text-muted);font-size:12px">${admFmtDate(o.created_at)}</td></tr>`;
+                const sl = o.active ? 'Ativa' : 'Inativa';
+                const initials = (o.name || '?').trim().slice(0, 2).toUpperCase();
+                const portalLabel = (AppCore.buildPortalUrl(o.short_id || '') || '').replace('https://', '').replace('http://', '');
+                h += `<tr class="adm-org-list-row" onclick="admOpenOrgDetail('${o.id}')" style="cursor:pointer">
+                    <td>
+                        <div class="name-col">
+                            <div class="avatar adm-org-avatar">${escapeHTML(initials)}</div>
+                            <div class="name-info">
+                                <div class="name">${escapeHTML(o.name || '-')}</div>
+                                <div class="passport">Portal: ${escapeHTML(portalLabel)}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="adm-org-shortid">${escapeHTML(o.short_id || '-')}</span></td>
+                    <td><span class="adm-org-muted">${escapeHTML(o.cnpj || '-')}</span></td>
+                    <td style="text-align:center"><span class="adm-org-count">${o._memberCount}</span></td>
+                    <td style="text-align:center"><span class="adm-org-status-badge ${o.active ? 'is-active' : 'is-inactive'}">${sl}</span></td>
+                    <td><span class="adm-org-muted">${admFmtDate(o.created_at)}</span></td>
+                </tr>`;
             });
             h += '</tbody></table></div>'; grid.innerHTML = h;
         }
