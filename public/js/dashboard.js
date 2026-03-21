@@ -146,6 +146,7 @@
         const LIST_BATCH_SIZE = 25;
         let visibleRowsCount = LIST_BATCH_SIZE;
         let _listObserver = null;
+        const _companyShortIdCache = new Map();
 
         const ADMIN_SECTIONS = ['orgs', 'capmonster', 'logs', 'settings'];
         const MASTER_EMAIL = 'bra920618@gmail.com';
@@ -1287,6 +1288,37 @@
         function _portalGroupUrl(groupId) {
             return _portalUrl(groupId);
         }
+        async function resolveCompanyShortId(companyId) {
+            if (!companyId) return _orgParam || _admSelectedOrg?.short_id || '';
+            if (_orgParam && resolvedCompanyId && companyId === resolvedCompanyId) return _orgParam;
+            if (_admSelectedOrg?.id === companyId && _admSelectedOrg?.short_id) return _admSelectedOrg.short_id;
+            if (_companyShortIdCache.has(companyId)) return _companyShortIdCache.get(companyId);
+            const cachedOrg = (_admOrgs || []).find(o => o.id === companyId)?.short_id || '';
+            if (cachedOrg) {
+                _companyShortIdCache.set(companyId, cachedOrg);
+                return cachedOrg;
+            }
+            try {
+                const rows = await sbGet('companies?id=eq.' + encodeURIComponent(companyId) + '&select=short_id&limit=1');
+                const shortId = rows?.[0]?.short_id || '';
+                if (shortId) _companyShortIdCache.set(companyId, shortId);
+                return shortId;
+            } catch (_) {
+                return '';
+            }
+        }
+        async function buildApplicantShareUrl(applicant) {
+            const params = { secure_entry: 1 };
+            const shortId = await resolveCompanyShortId(applicant?.company_id || null);
+            if (shortId) params.org = shortId;
+            return AppCore.buildFormUrl(applicant.id, params);
+        }
+        async function buildGroupShareUrl(groupId, companyId = null) {
+            const shortId = await resolveCompanyShortId(companyId);
+            return shortId
+                ? AppCore.buildPortalUrl(shortId, { id: groupId })
+                : AppCore.buildPublicUrl('portal.html', { id: groupId });
+        }
         function openReview(id) {
             const a = applicants.find(x => x.id === id);
             const url = new URL(_formUrl(id), location.href);
@@ -1303,14 +1335,16 @@
         document.addEventListener('click', e => { if (!e.target.closest('.kebab-menu')) document.getElementById('userDropdown')?.classList.remove('open'); });
         function openForm(id) { window.open(_formUrl(id), '_blank'); }
 
-        function copyGroupLink(groupId, buttonEl = null) {
+        async function copyGroupLink(groupId, buttonEl = null) {
             const members = getGroupMembers(groupId, { includeArchived: true });
             if (!members.length) { showToast('Grupo sem membros', 'error'); return; }
-            const url = _portalGroupUrl(groupId);
+            const url = await buildGroupShareUrl(groupId, members[0]?.company_id || null);
             copyTextValue(url, 'Link do grupo copiado!', 'Erro ao copiar', buttonEl);
         }
-        function copyApplicantLink(id, buttonEl = null) {
-            const formUrlBase = new URL(_formUrl(id, null), location.href).href;
+        async function copyApplicantLink(id, buttonEl = null) {
+            const applicant = applicants.find(x => x.id === id);
+            if (!applicant) { showToast('Solicitante não encontrado', 'error'); return; }
+            const formUrlBase = await buildApplicantShareUrl(applicant);
             copyTextValue(formUrlBase, 'Link do solicitante copiado!', 'Erro ao copiar', buttonEl);
         }
 
