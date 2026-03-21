@@ -843,9 +843,9 @@
                 const isPrincipal = isSubRow && treeOpts.memberIndex === 0;
                 const nameIcon = `<span class="applicant-icon"><i class="iconoir-${isPrincipal ? 'user-star' : 'user'}"></i></span>`;
                 const treeBranch = treeOpts.isSubRow ? `<span class="tree-branch ${treeOpts.isLast ? 'tree-last' : ''}"></span>` : '';
-                                return `<tr class="${extraClass || ''} ${sel ? 'selected' : ''}" draggable="true" data-id="${a.id}" onclick="openReview('${a.id}')" ondblclick="openReview('${a.id}')" style="cursor:pointer" ondragstart="handleDragStart(event,'${a.id}')" ondragover="handleDragOver(event)" ondragleave="event.currentTarget.classList.remove('drag-over','drag-above','drag-below')" ondrop="handleDrop(event,'${a.id}')">
+                                return `<tr class="${extraClass || ''} ${sel ? 'selected' : ''}" draggable="true" data-id="${a.id}" ondblclick="openReview('${a.id}')" ondragstart="handleDragStart(event,'${a.id}')" ondragover="handleDragOver(event)" ondragleave="event.currentTarget.classList.remove('drag-over','drag-above','drag-below')" ondrop="handleDrop(event,'${a.id}')">
                     <td class="check-col"><div class="custom-check ${sel ? 'checked' : ''}" onclick="event.stopPropagation();toggleSelect('${a.id}')"><i class="iconoir-check"></i></div></td>
-                    <td><div class="name-col">${treeBranch}${nameIcon}<div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${isSubRow ? (a.data?.relation || a.passport || '') : (a.email || 'Sem email')}</div></div></div></td>
+                    <td onclick="openReview('${a.id}')" style="cursor:pointer"><div class="name-col">${treeBranch}${nameIcon}<div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${isSubRow ? (a.data?.relation || a.passport || '') : (a.email || 'Sem email')}</div></div></div></td>
                     <td>${(() => {
                         if (a.stage === 'interview') {
                             return '<span class="status-badge status-pendente">Pendente</span>';
@@ -864,7 +864,7 @@
                         ${previousStage ? `<button class="row-btn row-btn-icon row-btn-muted" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa" aria-label="Voltar etapa"><i class="iconoir-nav-arrow-left"></i></button>` : ''}
                         ${nextStage ? `<button class="row-btn row-btn-icon row-btn-primary" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="Avan\u00e7ar etapa" aria-label="Avan\u00e7ar etapa"><i class="iconoir-nav-arrow-right"></i></button>` : ''}
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
-                        <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}', this)" title="Copiar link do portal"><i class="iconoir-copy"></i></button>
+                        <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}', this)" title="Copiar link do formulário"><i class="iconoir-copy"></i></button>
                         <button class="row-btn row-btn-more" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais op\u00e7\u00f5es" aria-label="Mais op\u00e7\u00f5es"><i class="iconoir-more-vert"></i></button>
                     </div></td></tr>`;
             }
@@ -2939,8 +2939,8 @@
             // Layout idÃƒÂªntico ÃƒÂ s tabelas de etapas
             tbody.innerHTML = problems.map(a => {
                 const cfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.todo;
-                return `<tr onclick="openReview('${a.id}')" ondblclick="openReview('${a.id}')" style="cursor:pointer">
-                    <td><div class="name-col"><span class="applicant-icon"><i class="iconoir-user"></i></span><div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${a.email || 'Sem email'}</div></div></div></td>
+                return `<tr ondblclick="openReview('${a.id}')">
+                    <td onclick="openReview('${a.id}')" style="cursor:pointer"><div class="name-col"><span class="applicant-icon"><i class="iconoir-user"></i></span><div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${a.email || 'Sem email'}</div></div></div></td>
                     <td><span class="status-badge ${cfg.class}" onclick="event.stopPropagation();openErrorLogsModal('${a.id}')" style="cursor:pointer" title="Ver logs de erro">${cfg.label}</span></td>
                     <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : '-'}</td>
                     <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '-'}</td>
@@ -2948,7 +2948,7 @@
                     <td><div class="row-actions">
                         <button class="row-btn row-btn-icon row-btn-warning" onclick="event.stopPropagation();openResolveProblemModal('${a.id}')" title="Resolver problema" aria-label="Resolver problema"><i class="iconoir-warning-triangle"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
-                        <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}', this)" title="Copiar link"><i class="iconoir-copy"></i></button>
+                        <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}', this)" title="Copiar link do formulário"><i class="iconoir-copy"></i></button>
                         <button class="row-btn row-btn-more" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais op\u00e7\u00f5es" aria-label="Mais op\u00e7\u00f5es"><i class="iconoir-more-vert"></i></button>
                     </div></td>
                 </tr>`;
