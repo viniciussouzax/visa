@@ -1,4 +1,4 @@
-        // ==========================================
+﻿        // ==========================================
         // THEME
         // ==========================================
         function toggleTheme() { }
@@ -278,12 +278,12 @@
 
         function getGroupJoinValidation(applicantStage, groupId) {
             const groupMembers = getGroupMembers(groupId);
-            if (!groupMembers.length) return { ok: false, message: 'Grupo nÃ£o encontrado.' };
+            if (!groupMembers.length) return { ok: false, message: 'Grupo nÃƒÂ£o encontrado.' };
             const groupStage = groupMembers[0].stage || 'screening';
             if (groupStage !== applicantStage) {
                 return {
                     ok: false,
-                    message: `SÃ³ Ã© possÃ­vel vincular na mesma etapa. Grupo em ${STAGE_LABELS[groupStage]} e solicitante em ${STAGE_LABELS[applicantStage] || applicantStage}.`
+                    message: `SÃƒÂ³ ÃƒÂ© possÃƒÂ­vel vincular na mesma etapa. Grupo em ${STAGE_LABELS[groupStage]} e solicitante em ${STAGE_LABELS[applicantStage] || applicantStage}.`
                 };
             }
             return { ok: true, groupStage };
@@ -291,7 +291,7 @@
 
         async function linkApplicantToGroup(applicantId, groupId) {
             const applicant = applicants.find(x => x.id === applicantId);
-            if (!applicant) throw new Error('Solicitante nÃ£o encontrado.');
+            if (!applicant) throw new Error('Solicitante nÃƒÂ£o encontrado.');
 
             const validation = getGroupJoinValidation(applicant.stage, groupId);
             if (!validation.ok) throw new Error(validation.message);
@@ -322,48 +322,48 @@
         }
 
         const PAGE_CONFIG = {
-            overview: { title: 'Dashboard', subtitle: 'VisÃ£o Geral' },
+            overview: { title: 'Dashboard', subtitle: 'VisÃƒÂ£o Geral' },
             screening: { title: 'Triagem', subtitle: 'Triagem Inicial' },
-            analysis: { title: 'AnÃ¡lise', subtitle: 'RevisÃ£o e EstratÃ©gia' },
+            analysis: { title: 'AnÃƒÂ¡lise', subtitle: 'RevisÃƒÂ£o e EstratÃƒÂ©gia' },
             ds160: { title: 'DS-160', subtitle: 'Preenchimento Oficial' },
             payment: { title: 'Taxas', subtitle: 'Pagamento de Taxas' },
             scheduling: { title: 'Agendamento', subtitle: 'Agendar Entrevista' },
-            interview: { title: 'Entrevista', subtitle: 'PreparaÃ§Ã£o e Entrevista' },
+            interview: { title: 'Entrevista', subtitle: 'PreparaÃƒÂ§ÃƒÂ£o e Entrevista' },
             outcome: { title: 'Resultado', subtitle: 'Resultado do Processo' },
             archived: { title: 'Arquivado', subtitle: 'Processo Encerrado' },
         };
 
-        PAGE_CONFIG.overview = { title: 'Dashboard', subtitle: 'Visão Geral' };
+        PAGE_CONFIG.overview = { title: 'Dashboard', subtitle: 'VisÃ£o Geral' };
         PAGE_CONFIG.screening = { title: 'Triagem', subtitle: 'Triagem Inicial' };
-        PAGE_CONFIG.analysis = { title: 'Análise', subtitle: 'Revisão e Estratégia' };
+        PAGE_CONFIG.analysis = { title: 'AnÃ¡lise', subtitle: 'RevisÃ£o e EstratÃ©gia' };
         PAGE_CONFIG.ds160 = { title: 'DS-160', subtitle: 'Preenchimento Oficial' };
         PAGE_CONFIG.payment = { title: 'Taxas', subtitle: 'Pagamento de Taxas' };
         PAGE_CONFIG.scheduling = { title: 'Agendamento', subtitle: 'Agendar Entrevista' };
-        PAGE_CONFIG.interview = { title: 'Entrevista', subtitle: 'Preparação e Entrevista' };
+        PAGE_CONFIG.interview = { title: 'Entrevista', subtitle: 'PreparaÃ§Ã£o e Entrevista' };
         PAGE_CONFIG.outcome = { title: 'Resultado', subtitle: 'Resultado do Processo' };
         PAGE_CONFIG.archived = { title: 'Arquivado', subtitle: 'Processo Encerrado' };
 
         function normalizeDashboardStaticCopy() {
             const problemsActionHeader = document.querySelector('#problemsTableWrap th:last-child');
-            if (problemsActionHeader) problemsActionHeader.textContent = 'Ação';
+            if (problemsActionHeader) problemsActionHeader.textContent = 'AÃ§Ã£o';
 
             const analysisNavItem = document.querySelector('.nav-item[data-page="analysis"]');
-            if (analysisNavItem) analysisNavItem.innerHTML = '<i class="iconoir-strategy"></i> Análise';
+            if (analysisNavItem) analysisNavItem.innerHTML = '<i class="iconoir-strategy"></i> AnÃ¡lise';
 
             const docsNavItem = document.querySelector('.sidebar-bottom .nav-item:last-child');
-            if (docsNavItem && !docsNavItem.id) docsNavItem.innerHTML = '<i class="iconoir-book"></i> Documentação';
+            if (docsNavItem && !docsNavItem.id) docsNavItem.innerHTML = '<i class="iconoir-book"></i> DocumentaÃ§Ã£o';
 
             const adminNavItem = document.getElementById('adminNavItem');
             if (adminNavItem) adminNavItem.innerHTML = '<i class="iconoir-reload-window"></i> Painel Master';
 
             const admTabOrgs = document.getElementById('admTab-orgs');
-            if (admTabOrgs) admTabOrgs.textContent = 'Organizações';
+            if (admTabOrgs) admTabOrgs.textContent = 'OrganizaÃ§Ãµes';
 
             const admTabCapmonster = document.getElementById('admTab-capmonster');
-            if (admTabCapmonster) admTabCapmonster.textContent = 'Integrações';
+            if (admTabCapmonster) admTabCapmonster.textContent = 'IntegraÃ§Ãµes';
 
             const admTabSettings = document.getElementById('admTab-settings');
-            if (admTabSettings) admTabSettings.textContent = 'Configurações';
+            if (admTabSettings) admTabSettings.textContent = 'ConfiguraÃ§Ãµes';
         }
 
         if (document.readyState === 'loading') {
@@ -530,7 +530,7 @@
             } catch (e) { document.getElementById('orgFooter').textContent = 'Erro'; }
         }
 
-        function copyPortalLink() {
+        function copyPortalLink(buttonEl = null) {
             const activeShortId = getActivePortalShortId();
             if (!activeShortId) {
                 showToast(isMasterUser ? 'Selecione uma organiza??o para copiar o portal.' : 'Portal indispon?vel neste contexto.', 'info');
@@ -538,8 +538,8 @@
             }
             const url = AppCore.buildPortalUrl(activeShortId);
             writeClipboardText(url).then(() => {
-                // Feedback no Ã­cone do nav bar
-                const copyButton = document.querySelector('#portalLinkBtnNav .portal-link-copy-btn');
+                // Feedback no ÃƒÂ­cone do nav bar
+                const copyButton = buttonEl || document.querySelector('#portalLinkBtnNav .portal-link-copy-btn');
                 if (copyButton) {
                     const previous = copyButton.innerHTML;
                     copyButton.innerHTML = '<i class="iconoir-check"></i>';
@@ -599,7 +599,7 @@
                 searchQuery = '';
                 resetVisibleRows();
                 updateBulkBar();
-                // Guard: sÃ³ permite acesso se o botÃ£o admin estiver visÃ­vel (role verificada no showDashboard)
+                // Guard: sÃƒÂ³ permite acesso se o botÃƒÂ£o admin estiver visÃƒÂ­vel (role verificada no showDashboard)
                 if (!canAccessAdminPanel) { navigateTo('overview'); return; }
                 normalEls.forEach(el => el.style.display = 'none');
                 const dashPage3 = document.getElementById('dashboardPage');
@@ -670,7 +670,7 @@
         function sortBy(field) { if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc'; else { sortField = field; sortDir = 'desc'; } resetVisibleRows(); renderTable(); }
 
         // Etapas: mostra apenas trabalho ativo (retry, doing, todo)
-        // done â†’ avanÃ§ar etapa | error/failed â†’ Processos com Problemas
+        // done Ã¢â€ â€™ avanÃƒÂ§ar etapa | error/failed Ã¢â€ â€™ Processos com Problemas
         function getFilteredByPage() { return getApplicantsForPage(currentPage); }
         function getFiltered() {
                         let items = getFilteredByPage();
@@ -706,7 +706,7 @@
 
         function toggleGroup(code) { if (_wasDragging) return; expandedGroups.has(code) ? expandedGroups.delete(code) : expandedGroups.add(code); renderTable(); }
 
-        // â”€â”€ Credential Modal â”€â”€
+        // Ã¢â€â‚¬Ã¢â€â‚¬ Credential Modal Ã¢â€â‚¬Ã¢â€â‚¬
         window.openCredModal = function(appId) {
             const a = applicants.find(x => x.id === appId);
             if (!a) return;
@@ -727,7 +727,7 @@
                     '3': 'What high school did you attend?',
                     '4': 'What city were your parents married?'
                 };
-                const secQLabel = SEC_QUESTIONS[secQ] || secQ || 'NÃ£o definida';
+                const secQLabel = SEC_QUESTIONS[secQ] || secQ || 'NÃƒÂ£o definida';
                 const cpBtn = (v) => `<td><button class="cred-copy-btn" title="Copiar" onclick="copyInlineValue('${encodeURIComponent(v || '')}', this)"><i class="iconoir-copy"></i></button></td>`;
                 sections += `
                     <div class="cred-card">
@@ -777,7 +777,7 @@
                     </div>`;
             }
 
-            if (!sections) sections = '<div style="padding:12px;color:var(--text-muted);text-align:center">Nenhuma credencial disponÃ­vel</div>';
+            if (!sections) sections = '<div style="padding:12px;color:var(--text-muted);text-align:center">Nenhuma credencial disponÃƒÂ­vel</div>';
 
             const html = `<div id="credModal" class="modal-overlay" onclick="document.getElementById('credModal').remove()">
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:360px;padding:16px">
@@ -864,7 +864,7 @@
                         ${previousStage ? `<button class="row-btn row-btn-icon row-btn-muted" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa" aria-label="Voltar etapa"><i class="iconoir-nav-arrow-left"></i></button>` : ''}
                         ${nextStage ? `<button class="row-btn row-btn-icon row-btn-primary" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="Avan\u00e7ar etapa" aria-label="Avan\u00e7ar etapa"><i class="iconoir-nav-arrow-right"></i></button>` : ''}
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
-                        <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link do portal"><i class="iconoir-copy"></i></button>
+                        <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}', this)" title="Copiar link do portal"><i class="iconoir-copy"></i></button>
                         <button class="row-btn row-btn-more" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais op\u00e7\u00f5es" aria-label="Mais op\u00e7\u00f5es"><i class="iconoir-more-vert"></i></button>
                     </div></td></tr>`;
             }
@@ -890,7 +890,7 @@
                         <td></td>
                         <td onclick="event.stopPropagation();openGroupNotesModal('${a.group_id}')" style="cursor:pointer" title="Notas do grupo"><div class="notes-preview">${(() => { const g = _groups.find(x => x.id === a.group_id); return g && g.notes ? g.notes.substring(0, 96) : '<span class="app-placeholder">Adicionar nota</span>'; })()}</div></td>
 
-                        <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();openGroupConfig('${a.group_id}')" title="ConfiguraÃ§Ãµes do grupo"><i class="iconoir-settings"></i></button><button class="row-btn" onclick="event.stopPropagation();openWhatsApp(null,'${a.group_id}')" title="WhatsApp do grupo"><i class="iconoir-whatsapp"></i></button><button class="row-btn" onclick="event.stopPropagation();copyGroupLink('${a.group_id}')" title="Copiar link do grupo"><i class="iconoir-copy"></i></button></div></td></tr>`;
+                        <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();openGroupConfig('${a.group_id}')" title="ConfiguraÃƒÂ§ÃƒÂµes do grupo"><i class="iconoir-settings"></i></button><button class="row-btn" onclick="event.stopPropagation();openWhatsApp(null,'${a.group_id}')" title="WhatsApp do grupo"><i class="iconoir-whatsapp"></i></button><button class="row-btn" onclick="event.stopPropagation();copyGroupLink('${a.group_id}', this)" title="Copiar link do grupo"><i class="iconoir-copy"></i></button></div></td></tr>`;
                     if (isOpen) {
                         members.forEach((m, idx) => { html += buildRow(m, 'sub-row', { isSubRow: true, isLast: false, memberIndex: idx }); });
                     }
@@ -960,7 +960,7 @@
             const targetIsGroup = isGroupDragId(targetId);
             const targetApplicant = !targetIsGroup ? applicants.find(a => a.id === targetId) : null;
 
-            // â”€â”€â”€ CASE 1: Solo dropped onto group member (open) or group row (closed) â†’ LINK â”€â”€â”€
+            // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ CASE 1: Solo dropped onto group member (open) or group row (closed) Ã¢â€ â€™ LINK Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
             if (dragApplicant && !dragApplicant.group_id) {
                 let linkGroupId = null;
                 if (targetApplicant && targetApplicant.group_id) linkGroupId = targetApplicant.group_id;
@@ -980,7 +980,7 @@
                 }
             }
 
-            // â”€â”€â”€ CASE 2: Group member dropped onto solo area â†’ UNLINK â”€â”€â”€
+            // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ CASE 2: Group member dropped onto solo area Ã¢â€ â€™ UNLINK Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
             if (dragApplicant && dragApplicant.group_id && targetApplicant && !targetApplicant.group_id) {
                 const gid = dragApplicant.group_id;
                 const groupMembers = applicants.filter(a => a.group_id === gid);
@@ -988,24 +988,24 @@
                 // Block unlinking the principal (lowest sort_order)
                 const sorted = [...groupMembers].sort((a, b) => (a.sort_order || 99) - (b.sort_order || 99));
                 if (sorted[0] && sorted[0].id === dragApplicant.id) {
-                    showToast('NÃ£o Ã© possÃ­vel desvincular o principal. Troque o principal nas configuraÃ§Ãµes do grupo (âš™).', 'error');
+                    showToast('NÃƒÂ£o ÃƒÂ© possÃƒÂ­vel desvincular o principal. Troque o principal nas configuraÃƒÂ§ÃƒÂµes do grupo (Ã¢Å¡â„¢).', 'error');
                     _dragId = null; return;
                 }
                 showUnlinkModal(dragApplicant);
                 _dragId = null; return;
             }
 
-            // â”€â”€â”€ Block ALL reorder within same group (only via modal âš™) â”€â”€â”€
+            // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Block ALL reorder within same group (only via modal Ã¢Å¡â„¢) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
             {
                 const dragGid = dragApplicant ? dragApplicant.group_id : (isGroupDragId(_dragId) ? getGroupIdFromDrag(_dragId) : null);
                 const targetGid = targetApplicant ? targetApplicant.group_id : (targetIsGroup ? targetId.replace('group_', '') : null);
                 if (dragGid && targetGid && String(dragGid) === String(targetGid)) {
-                    showToast('Use as configuraÃ§Ãµes do grupo (âš™) para alterar a ordem.', 'info');
+                    showToast('Use as configuraÃƒÂ§ÃƒÂµes do grupo (Ã¢Å¡â„¢) para alterar a ordem.', 'info');
                     _dragId = null; return;
                 }
             }
 
-            // â”€â”€â”€ CASE 3: Reorder â€” insert at position + renumber all â”€â”€â”€
+            // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ CASE 3: Reorder Ã¢â‚¬â€ insert at position + renumber all Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
             try {
                 // Build ordered list of "blocks" for current stage
                 // A block is either a solo applicant or a group (all members as one unit)
@@ -1058,7 +1058,7 @@
             _dragId = null;
         }
 
-        // â”€â”€â”€ UNLINK MODAL (simplified) â”€â”€â”€
+        // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ UNLINK MODAL (simplified) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         function showUnlinkModal(applicant) {
             const hasEmail = !!applicant.email;
             const modalId = 'unlinkModal';
@@ -1070,7 +1070,7 @@
                 ${!hasEmail ? `<div style="margin-top:8px">
                     <label class="modal-label">E-mail do solicitante <span style="color:#ef4444">*</span></label>
                     <input type="email" id="unlinkEmailInput" class="modal-input" placeholder="Ex: solicitante@email.com" style="width:100%">
-                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">NecessÃ¡rio para acesso individual ao portal.</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">NecessÃƒÂ¡rio para acesso individual ao portal.</div>
                 </div>` : ''}
                 <div class="modal-actions">
                     <button class="modal-btn" id="btnCancelUnlink">Cancelar</button>
@@ -1086,7 +1086,7 @@
                 if (!hasEmail) {
                     email = document.getElementById('unlinkEmailInput')?.value.trim();
                     if (!email || !email.includes('@')) {
-                        showToast('Informe um e-mail vÃ¡lido para o solicitante', 'error');
+                        showToast('Informe um e-mail vÃƒÂ¡lido para o solicitante', 'error');
                         return;
                     }
                 }
@@ -1106,7 +1106,7 @@
         }
 
 
-        // â”€â”€â”€ AUTO-DISSOLVE: se grupo ficou com 1 membro, desvincular o Ãºltimo â”€â”€â”€
+        // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ AUTO-DISSOLVE: se grupo ficou com 1 membro, desvincular o ÃƒÂºltimo Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         async function dissolveGroupIfNeeded(groupId) {
             const remaining = applicants.filter(a => a.group_id === groupId);
             if (remaining.length !== 1) return; // 0 = already gone, 2+ = still group
@@ -1121,11 +1121,11 @@
             showToast('Grupo dissolvido automaticamente (restava 1 membro)', 'info');
         }
 
-        // â”€â”€â”€ GROUP CONFIG MODAL â”€â”€â”€
+        // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ GROUP CONFIG MODAL Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         function openGroupConfig(groupId) {
             const members = applicants.filter(a => String(a.group_id) === String(groupId))
                 .sort((a, b) => (a.sort_order || 99) - (b.sort_order || 99));
-            if (!members.length) { showToast('Grupo nÃ£o encontrado.', 'error'); return; }
+            if (!members.length) { showToast('Grupo nÃƒÂ£o encontrado.', 'error'); return; }
 
             const principal = members[0]; // sort_order = smallest = principal
             const allArchived = members.every(m => m.stage === 'archived');
@@ -1141,13 +1141,13 @@
 
             let html = `<div id="${modalId}" class="modal-overlay">
             <div class="modal-box" style="max-width:460px">
-                <h3 class="modal-title"><i class="iconoir-settings" style="margin-right:6px"></i> ConfiguraÃ§Ãµes do Grupo</h3>
+                <h3 class="modal-title"><i class="iconoir-settings" style="margin-right:6px"></i> ConfiguraÃƒÂ§ÃƒÂµes do Grupo</h3>
                 <p style="font-size:13px;color:var(--text-muted);margin:-4px 0 16px">${groupLabel} &middot; ${members.length} membro(s)</p>
 
                 <div style="margin-bottom:16px">
                     <label class="modal-label">Solicitante Principal</label>
                     <select id="gcPrincipalSelect" class="modal-input" style="width:100%">${memberOptions}</select>
-                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">O principal aparece primeiro e Ã© o ponto de contato no portal.</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">O principal aparece primeiro e ÃƒÂ© o ponto de contato no portal.</div>
                 </div>
 
                 <div style="margin-bottom:20px">
@@ -1180,13 +1180,13 @@
             modalEl.addEventListener('click', (e) => { if (e.target === modalEl) modalEl.remove(); });
             document.getElementById('gcCancelBtn').addEventListener('click', () => modalEl.remove());
 
-            // â”€â”€ Save: update principal + email â”€â”€
+            // Ã¢â€â‚¬Ã¢â€â‚¬ Save: update principal + email Ã¢â€â‚¬Ã¢â€â‚¬
             document.getElementById('gcSaveBtn').addEventListener('click', async () => {
                 const newPrincipalId = document.getElementById('gcPrincipalSelect').value;
                 const newEmail = document.getElementById('gcEmailInput').value.trim();
 
                 if (!newEmail || !newEmail.includes('@')) {
-                    showToast('Informe um e-mail vÃ¡lido.', 'error'); return;
+                    showToast('Informe um e-mail vÃƒÂ¡lido.', 'error'); return;
                 }
 
                 try {
@@ -1203,7 +1203,7 @@
                         newPrincipal.sort_order = oldSort;
                         newPrincipal.email = newEmail.toLowerCase();
                         oldPrincipal.sort_order = newSort;
-                        showToast(`${titleCase(newPrincipal.name)} Ã© agora o principal!`, 'success');
+                        showToast(`${titleCase(newPrincipal.name)} ÃƒÂ© agora o principal!`, 'success');
                     } else {
                         // Same principal, just update email
                         if (newEmail.toLowerCase() !== (oldPrincipal.email || '').toLowerCase()) {
@@ -1211,7 +1211,7 @@
                             oldPrincipal.email = newEmail.toLowerCase();
                             showToast('Email do grupo atualizado!', 'success');
                         } else {
-                            showToast('Nenhuma alteraÃ§Ã£o.', 'info');
+                            showToast('Nenhuma alteraÃƒÂ§ÃƒÂ£o.', 'info');
                         }
                     }
 
@@ -1222,7 +1222,7 @@
                 }
             });
 
-            // â”€â”€ Archive group â”€â”€
+            // Ã¢â€â‚¬Ã¢â€â‚¬ Archive group Ã¢â€â‚¬Ã¢â€â‚¬
             document.getElementById('gcArchiveBtn').addEventListener('click', () => {
                 if (allArchived) return;
                 showConfirmModal('Arquivar Grupo',
@@ -1241,11 +1241,11 @@
                     });
             });
 
-            // â”€â”€ Delete group â”€â”€
+            // Ã¢â€â‚¬Ã¢â€â‚¬ Delete group Ã¢â€â‚¬Ã¢â€â‚¬
             document.getElementById('gcDeleteBtn').addEventListener('click', () => {
                 if (!allArchived) return;
                 showConfirmModal('Excluir Grupo Permanentemente',
-                    `<span style="color:#ef4444;font-weight:700">ATENÃ‡ÃƒO:</span> Todos os <strong>${members.length} membros</strong> e seus dados serÃ£o <strong>excluÃ­dos permanentemente</strong>. Esta aÃ§Ã£o nÃ£o pode ser desfeita.`,
+                    `<span style="color:#ef4444;font-weight:700">ATENÃƒâ€¡ÃƒÆ’O:</span> Todos os <strong>${members.length} membros</strong> e seus dados serÃƒÂ£o <strong>excluÃƒÂ­dos permanentemente</strong>. Esta aÃƒÂ§ÃƒÂ£o nÃƒÂ£o pode ser desfeita.`,
                     async () => {
                         try {
                             // Delete group record
@@ -1261,7 +1261,7 @@
                             });
                             modalEl.remove();
                             renderTable(); updateBadges();
-                            showToast(`Grupo ${groupLabel} excluÃ­do!`, 'success');
+                            showToast(`Grupo ${groupLabel} excluÃƒÂ­do!`, 'success');
                         } catch (err) { showToast('Erro: ' + err.message, 'error'); }
                     });
             });
@@ -1316,15 +1316,15 @@
         document.addEventListener('click', e => { if (!e.target.closest('.kebab-menu')) document.getElementById('userDropdown')?.classList.remove('open'); });
         function openForm(id) { window.open(_formUrl(id), '_blank'); }
 
-        function copyGroupLink(groupId) {
+        function copyGroupLink(groupId, buttonEl = null) {
             const members = getGroupMembers(groupId, { includeArchived: true });
             if (!members.length) { showToast('Grupo sem membros', 'error'); return; }
             const url = _portalGroupUrl(groupId);
-            copyTextValue(url, 'Link do grupo copiado!', 'Erro ao copiar');
+            copyTextValue(url, 'Link do grupo copiado!', 'Erro ao copiar', buttonEl);
         }
-        function copyApplicantLink(id) {
+        function copyApplicantLink(id, buttonEl = null) {
             const formUrlBase = new URL(_formUrl(id, null), location.href).href;
-            copyTextValue(formUrlBase, 'Link do solicitante copiado!', 'Erro ao copiar');
+            copyTextValue(formUrlBase, 'Link do solicitante copiado!', 'Erro ao copiar', buttonEl);
         }
 
         function openDownloadModal(id) {
@@ -1335,10 +1335,10 @@
 
             const docs = [];
             if (a.ds160_pdf_url) docs.push({ label: 'DS-160 Completo', url: a.ds160_pdf_url, icon: 'iconoir-page', color: '#3b82f6' });
-            if (a.confirmation_pdf_url) docs.push({ label: 'ConfirmaÃ§Ã£o', url: a.confirmation_pdf_url, icon: 'iconoir-check-circle', color: '#22c55e' });
-            if (a.confirmation_screenshot_url) docs.push({ label: 'Screenshot ConfirmaÃ§Ã£o', url: a.confirmation_screenshot_url, icon: 'iconoir-camera', color: '#8b5cf6' });
+            if (a.confirmation_pdf_url) docs.push({ label: 'ConfirmaÃƒÂ§ÃƒÂ£o', url: a.confirmation_pdf_url, icon: 'iconoir-check-circle', color: '#22c55e' });
+            if (a.confirmation_screenshot_url) docs.push({ label: 'Screenshot ConfirmaÃƒÂ§ÃƒÂ£o', url: a.confirmation_screenshot_url, icon: 'iconoir-camera', color: '#8b5cf6' });
 
-            if (!docs.length) { showToast('Nenhum documento disponÃ­vel', 'info'); return; }
+            if (!docs.length) { showToast('Nenhum documento disponÃƒÂ­vel', 'info'); return; }
 
             const docItems = docs.map(d => `
                 <a href="${d.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;color:var(--text-primary);transition:all .15s ease" onmouseover="this.style.borderColor='${d.color}';this.style.boxShadow='0 2px 8px ${d.color}18'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
@@ -1385,7 +1385,7 @@
                 return;
             }
             const portalUrl = groupId ? _portalGroupUrl(targetId || groupId) : _portalUrl(targetId || id);
-            const msg = encodeURIComponent('OlÃ¡! Segue o link para preencher seu formulÃ¡rio DS-160:\n' + portalUrl);
+            const msg = encodeURIComponent('OlÃƒÂ¡! Segue o link para preencher seu formulÃƒÂ¡rio DS-160:\n' + portalUrl);
             window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
         }
 
@@ -1631,7 +1631,7 @@
             const hasFilled = a && a.progress > 0;
 
             if (hasFilled) {
-                // Cannot delete â€” offer archive instead
+                // Cannot delete Ã¢â‚¬â€ offer archive instead
                 showConfirmModal('Arquivar Solicitante',
                     `<strong>${name}</strong> j\u00e1 preencheu dados no formul\u00e1rio e n\u00e3o pode ser exclu\u00eddo.<br><small style="color:var(--text-muted)">Deseja arquivar em vez de excluir?</small>`,
                     async () => {
@@ -1652,7 +1652,7 @@
                         const groupMembers = applicants.filter(x => x.group_id === a.group_id).sort((x,y) => (x.sort_order??999) - (y.sort_order??999));
                         const isPrincipal = groupMembers[0]?.id === id;
                         if (isPrincipal && groupMembers.length > 1) {
-                            showToast('NÃ£o Ã© possÃ­vel excluir o solicitante principal enquanto houver outros membros no grupo. Desvincule-os primeiro.', 'error');
+                            showToast('NÃƒÂ£o ÃƒÂ© possÃƒÂ­vel excluir o solicitante principal enquanto houver outros membros no grupo. Desvincule-os primeiro.', 'error');
                             return;
                         }
                     }
@@ -1660,7 +1660,7 @@
                     applicants = applicants.filter(x => x.id !== id);
                     selectedIds.delete(id);
                     renderTable(); renderFilters(); updateBadges();
-                    showToast('Solicitante excluÃ­do.', 'success');
+                    showToast('Solicitante excluÃƒÂ­do.', 'success');
                 } catch (e) { showToast('Erro ao excluir: ' + e.message, 'error'); }
             });
         }
@@ -1669,7 +1669,7 @@
                 const selectedApplicants = applicants.filter(a => selectedIds.has(a.id));
                 const filledApplicants = selectedApplicants.filter(a => a.progress > 0);
                 if (filledApplicants.length > 0) {
-                    showToast(`NÃ£o Ã© possÃ­vel excluir solicitantes com dados preenchidos: ${filledApplicants.map(a => shortName(a.name)).join(', ')}`, 'error');
+                    showToast(`NÃƒÂ£o ÃƒÂ© possÃƒÂ­vel excluir solicitantes com dados preenchidos: ${filledApplicants.map(a => shortName(a.name)).join(', ')}`, 'error');
                     return;
                 }
 
@@ -1681,7 +1681,7 @@
                     return groupMembers.length > 1 && groupMembers[0]?.id === a.id;
                 });
                 if (blockedPrincipals.length > 0) {
-                    showToast(`NÃ£o Ã© possÃ­vel excluir o principal de grupos ativos: ${blockedPrincipals.map(a => shortName(a.name)).join(', ')}`, 'error');
+                    showToast(`NÃƒÂ£o ÃƒÂ© possÃƒÂ­vel excluir o principal de grupos ativos: ${blockedPrincipals.map(a => shortName(a.name)).join(', ')}`, 'error');
                     return;
                 }
 
@@ -1689,7 +1689,7 @@
                 for (const id of selectedIds) { try { await sbFetch(`applicants?id=eq.${id}`, 'DELETE'); } catch (e) { errors++; } }
                 await loadApplicants(); clearSelection(); navigateTo(currentPage);
                 if (errors > 0) showToast(`Erro ao excluir ${errors} iten(s)`, 'error');
-                else showToast('ExcluÃ­do(s) com sucesso!', 'success');
+                else showToast('ExcluÃƒÂ­do(s) com sucesso!', 'success');
             });
         }
 
@@ -1744,7 +1744,7 @@
 
             if (a.stage !== 'archived') {
                 showConfirmModal('Arquivar Solicitante',
-                    `Deseja arquivar <strong>${name}</strong>?<br><small style="color:var(--text-muted)">Ele sairÃ¡ da operaÃ§Ã£o ativa e poderÃ¡ ser excluÃ­do permanentemente depois, se necessÃ¡rio.</small>`,
+                    `Deseja arquivar <strong>${name}</strong>?<br><small style="color:var(--text-muted)">Ele sairÃƒÂ¡ da operaÃƒÂ§ÃƒÂ£o ativa e poderÃƒÂ¡ ser excluÃƒÂ­do permanentemente depois, se necessÃƒÂ¡rio.</small>`,
                     async () => {
                         try {
                             await archiveApplicantRecord(id);
@@ -1756,20 +1756,20 @@
             }
 
             showConfirmModal('Excluir Permanentemente',
-                `Deseja apagar <strong>${name}</strong> definitivamente?<br><small style="color:var(--text-muted)">Todos os dados vinculados serÃ£o removidos do banco.</small>`,
+                `Deseja apagar <strong>${name}</strong> definitivamente?<br><small style="color:var(--text-muted)">Todos os dados vinculados serÃƒÂ£o removidos do banco.</small>`,
                 async () => {
                     try {
                         if (a.group_id) {
                             const groupMembers = getGroupMembers(a.group_id, { includeArchived: true });
                             const isPrincipal = groupMembers[0]?.id === id;
                             if (isPrincipal && groupMembers.length > 1) {
-                                showToast('NÃ£o Ã© possÃ­vel excluir o principal enquanto houver outros membros vinculados ao grupo.', 'error');
+                                showToast('NÃƒÂ£o ÃƒÂ© possÃƒÂ­vel excluir o principal enquanto houver outros membros vinculados ao grupo.', 'error');
                                 return;
                             }
                         }
                         await purgeApplicantData(id);
                         renderTable(); renderFilters(); updateBadges();
-                        showToast('Solicitante excluÃ­do permanentemente.', 'success');
+                        showToast('Solicitante excluÃƒÂ­do permanentemente.', 'success');
                     } catch (e) { showToast('Erro ao excluir: ' + e.message, 'error'); }
                 });
         };
@@ -1781,11 +1781,11 @@
             const activeApplicants = selectedApplicants.filter(a => a.stage !== 'archived');
             const archivedApplicants = selectedApplicants.filter(a => a.stage === 'archived');
             const activeLabel = activeApplicants.length ? `${activeApplicants.length} arquivamento(s)` : null;
-            const archivedLabel = archivedApplicants.length ? `${archivedApplicants.length} exclusÃ£o(Ãµes) permanente(s)` : null;
+            const archivedLabel = archivedApplicants.length ? `${archivedApplicants.length} exclusÃƒÂ£o(ÃƒÂµes) permanente(s)` : null;
             const summary = [activeLabel, archivedLabel].filter(Boolean).join(' e ');
 
-            showConfirmModal('Confirmar aÃ§Ã£o',
-                `Deseja processar ${summary || `${selectedApplicants.length} solicitante(s)`}?<br><small style="color:var(--text-muted)">Ativos serÃ£o arquivados. Arquivados serÃ£o excluÃ­dos definitivamente.</small>`,
+            showConfirmModal('Confirmar aÃƒÂ§ÃƒÂ£o',
+                `Deseja processar ${summary || `${selectedApplicants.length} solicitante(s)`}?<br><small style="color:var(--text-muted)">Ativos serÃƒÂ£o arquivados. Arquivados serÃƒÂ£o excluÃƒÂ­dos definitivamente.</small>`,
                 async () => {
                     try {
                         for (const applicant of activeApplicants) {
@@ -1797,7 +1797,7 @@
                                 const groupMembers = getGroupMembers(applicant.group_id, { includeArchived: true });
                                 const isPrincipal = groupMembers[0]?.id === applicant.id;
                                 if (isPrincipal && groupMembers.length > 1) {
-                                    showToast(`NÃ£o Ã© possÃ­vel excluir o principal ${shortName(applicant.name)} enquanto houver outros membros vinculados.`, 'error');
+                                    showToast(`NÃƒÂ£o ÃƒÂ© possÃƒÂ­vel excluir o principal ${shortName(applicant.name)} enquanto houver outros membros vinculados.`, 'error');
                                     continue;
                                 }
                             }
@@ -1807,7 +1807,7 @@
                         await loadApplicants();
                         clearSelection();
                         navigateTo(currentPage);
-                        showToast('AÃ§Ã£o concluÃ­da com sucesso!', 'success');
+                        showToast('AÃƒÂ§ÃƒÂ£o concluÃƒÂ­da com sucesso!', 'success');
                     } catch (e) {
                         showToast('Erro: ' + e.message, 'error');
                     }
@@ -1892,7 +1892,7 @@
                 <div class="manage-section-label">Status</div>
                 ${(() => {
                     if (a.stage === 'interview') {
-                        // Interview: status manuais + select de resultado para avanÃ§ar
+                        // Interview: status manuais + select de resultado para avanÃƒÂ§ar
                         const manualStatuses = ['todo', 'doing', 'retry'];
                         return `<select class="manage-select" onchange="updateField('${id}','status',this.value)">
                                 ${manualStatuses.map(k => { const v = STATUS_CONFIG[k]; return `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v.label}</option>`; }).join('')}
@@ -1903,19 +1903,19 @@
                                 ${Object.entries(RESULT_CONFIG).filter(([k]) => k !== 'pending').map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('')}
                             </select>`;
                     } else if (a.stage === 'outcome') {
-                        // Outcome: status = opÃ§Ãµes de resultado (sem pending)
+                        // Outcome: status = opÃƒÂ§ÃƒÂµes de resultado (sem pending)
                         const outcomeStatuses = { approved: 'Aprovado', denied: 'Negado', new_interview: 'Nova Entrevista', additional_documents: 'Docs. Complementares', administrative: 'Processo Adm.' };
                         return `<select class="manage-select" onchange="updateField('${id}','result',this.value)">
                             ${Object.entries(outcomeStatuses).map(([k, v]) => `<option value="${k}" ${getOutcomeValue(a) === k ? 'selected' : ''}>${v}</option>`).join('')}
                         </select>`;
                     } else if (a.stage === 'analysis') {
-                        // Analysis: conclusÃ£o manual do assessor
+                        // Analysis: conclusÃƒÂ£o manual do assessor
                         const manualStatuses = ['todo', 'doing', 'done', 'retry'];
                         return `<select class="manage-select" onchange="updateField('${id}','status',this.value)">
                             ${manualStatuses.map(k => { const v = STATUS_CONFIG[k]; return `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v.label}</option>`; }).join('')}
                         </select>`;
                     } else {
-                        // Normal stages: status manuais (error/failed/standby sÃ£o controlados pela automaÃ§Ã£o)
+                        // Normal stages: status manuais (error/failed/standby sÃƒÂ£o controlados pela automaÃƒÂ§ÃƒÂ£o)
                         const manualStatuses = ['todo', 'doing', 'retry'];
                         return `<select class="manage-select" onchange="updateField('${id}','status',this.value)">
                             ${manualStatuses.map(k => { const v = STATUS_CONFIG[k]; return `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v.label}</option>`; }).join('')}
@@ -2023,7 +2023,7 @@
             if (!a) return;
             closeManageMenu();
             showConfirmModal('Arquivar Solicitante',
-                `Tem certeza que deseja arquivar <strong>${a.name}</strong>?<br><small style="color:var(--text-muted)">O solicitante serÃ¡ movido para Arquivado.</small>`,
+                `Tem certeza que deseja arquivar <strong>${a.name}</strong>?<br><small style="color:var(--text-muted)">O solicitante serÃƒÂ¡ movido para Arquivado.</small>`,
                 async () => {
                     try {
                         await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { stage: 'archived', status: 'done' });
@@ -2036,7 +2036,7 @@
 
         function closeManageMenu() { const p = document.getElementById('managePopup'); if (p) p.remove(); }
 
-        // â”€â”€â”€ GROUP MENU â”€â”€â”€
+        // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ GROUP MENU Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         function showGroupMenu(evt, groupId) {
             evt.stopPropagation();
             const existing = document.getElementById('groupMenu'); if (existing) existing.remove();
@@ -2172,24 +2172,24 @@
                     if (isAdvancing) {
                         const allSameStage = groupMembers.every(m => m.stage === a.stage);
                         if (!allSameStage) {
-                            showToast('Grupo: todos precisam estar na mesma etapa para avanÃ§ar.', 'error');
+                            showToast('Grupo: todos precisam estar na mesma etapa para avanÃƒÂ§ar.', 'error');
                             return;
                         }
 
-                        // Screening â†’ Analysis: todos precisam ter 100% preenchido
+                        // Screening Ã¢â€ â€™ Analysis: todos precisam ter 100% preenchido
                         if (a.stage === 'screening' && value === 'analysis') {
                             const incomplete = groupMembers.filter(m => m.progress < 100);
                             if (incomplete.length > 0) {
-                                showToast(`FormulÃ¡rios incompletos: ${incomplete.map(m => m.name).join(', ')}`, 'error');
+                                showToast(`FormulÃƒÂ¡rios incompletos: ${incomplete.map(m => m.name).join(', ')}`, 'error');
                                 return;
                             }
                         }
 
-                        // Analysis â†’ DS-160: todos precisam estar done
+                        // Analysis Ã¢â€ â€™ DS-160: todos precisam estar done
                         if (a.stage === 'analysis' && value === 'ds160') {
                             const notDone = groupMembers.filter(m => m.status !== 'done');
                             if (notDone.length > 0) {
-                                showToast(`Ainda nÃ£o concluÃ­dos: ${notDone.map(m => m.name).join(', ')}`, 'error');
+                                showToast(`Ainda nÃƒÂ£o concluÃƒÂ­dos: ${notDone.map(m => m.name).join(', ')}`, 'error');
                                 return;
                             }
                         }
@@ -2208,18 +2208,18 @@
                     }
                 }
 
-                // Special: entering interview â†’ status=pending, entering analysis â†’ status=doing
+                // Special: entering interview Ã¢â€ â€™ status=pending, entering analysis Ã¢â€ â€™ status=doing
                 if (field === 'stage' && a) {
                     patch.status = getDefaultStatusForStage(value);
                     if (value === 'outcome' && !patch.result) patch.result = getOutcomeValue(a);
                 }
 
-                // AUTO-ADVANCE: status done â†’ avanÃ§a para prÃ³xima etapa com status todo
+                // AUTO-ADVANCE: status done Ã¢â€ â€™ avanÃƒÂ§a para prÃƒÂ³xima etapa com status todo
                 // Regras por etapa:
-                //   triagem â†’ anÃ¡lise (form 100% auto-seta done)
-                //   anÃ¡lise â†’ ds160 (assessor manual)
-                //   ds160 â†’ taxas â†’ agendamento â†’ entrevista (done avanÃ§a)
-                //   entrevista â†’ resultado (via result_advance, NÃƒO via done)
+                //   triagem Ã¢â€ â€™ anÃƒÂ¡lise (form 100% auto-seta done)
+                //   anÃƒÂ¡lise Ã¢â€ â€™ ds160 (assessor manual)
+                //   ds160 Ã¢â€ â€™ taxas Ã¢â€ â€™ agendamento Ã¢â€ â€™ entrevista (done avanÃƒÂ§a)
+                //   entrevista Ã¢â€ â€™ resultado (via result_advance, NÃƒÆ’O via done)
                 if (field === 'status' && value === 'done' && a && a.stage !== 'interview' && a.stage !== 'outcome') {
                     const stageOrder = ['screening', 'analysis', 'ds160', 'payment', 'scheduling', 'interview'];
                     const curIdx = stageOrder.indexOf(a.stage);
@@ -2227,7 +2227,7 @@
                         const nextStage = stageOrder[curIdx + 1];
                         patch.stage = nextStage;
                         patch.status = 'todo';
-                        // Grupo: avanÃ§ar todos os membros juntos
+                        // Grupo: avanÃƒÂ§ar todos os membros juntos
                         if (a.group_id) {
                             const groupMembers = applicants.filter(x => x.group_id === a.group_id && x.stage === a.stage);
                             for (const m of groupMembers) {
@@ -2240,7 +2240,7 @@
                         }
                     }
                 }
-                // === RESULT ADVANCE: interview â†’ outcome ===
+                // === RESULT ADVANCE: interview Ã¢â€ â€™ outcome ===
                 if (field === 'result_advance' && a) {
                     patch.stage = 'outcome';
                     patch.status = 'done';
@@ -2276,10 +2276,10 @@
                 await sbFetch(`applicants?id=eq.${id}`, 'PATCH', patch);
                 const origStage = a?.stage;
                 if (a) Object.assign(a, patch);
-                const autoMsg = patch.stage && patch.stage !== origStage ? ` â†’ ${STAGE_LABELS[patch.stage]}` : '';
+                const autoMsg = patch.stage && patch.stage !== origStage ? ` Ã¢â€ â€™ ${STAGE_LABELS[patch.stage]}` : '';
                 showToast('Atualizado!' + autoMsg, 'success');
 
-                // Keep modal open â€” refresh selects in place
+                // Keep modal open Ã¢â‚¬â€ refresh selects in place
                 renderTable(); renderFilters(); updateBadges();
                 const popup = document.getElementById('managePopup');
                 if (popup) {
@@ -2304,14 +2304,14 @@
                     if (isAdvancing) {
                         const allSameStage = groupMembers.every(m => m.stage === a.stage);
                         if (!allSameStage) {
-                            showToast('Grupo: todos precisam estar na mesma etapa para avanÃ§ar.', 'error');
+                            showToast('Grupo: todos precisam estar na mesma etapa para avanÃƒÂ§ar.', 'error');
                             return;
                         }
 
                         if (a.stage === 'screening' && value === 'analysis') {
                             const incomplete = groupMembers.filter(m => m.progress < 100);
                             if (incomplete.length > 0) {
-                                showToast(`FormulÃ¡rios incompletos: ${incomplete.map(m => m.name).join(', ')}`, 'error');
+                                showToast(`FormulÃƒÂ¡rios incompletos: ${incomplete.map(m => m.name).join(', ')}`, 'error');
                                 return;
                             }
                         }
@@ -2319,7 +2319,7 @@
                         if (a.stage === 'analysis' && value === 'ds160') {
                             const notDone = groupMembers.filter(m => m.status !== 'done');
                             if (notDone.length > 0) {
-                                showToast(`Ainda nÃ£o concluÃ­dos: ${notDone.map(m => m.name).join(', ')}`, 'error');
+                                showToast(`Ainda nÃƒÂ£o concluÃƒÂ­dos: ${notDone.map(m => m.name).join(', ')}`, 'error');
                                 return;
                             }
                         }
@@ -2362,7 +2362,7 @@
                             } else {
                                 patch.status = 'done';
                                 if (!readiness.sameStage) {
-                                    showToast('O grupo precisa estar inteiro na mesma etapa para avanÃ§ar.', 'info');
+                                    showToast('O grupo precisa estar inteiro na mesma etapa para avanÃƒÂ§ar.', 'info');
                                 }
                             }
                         } else {
@@ -2408,7 +2408,7 @@
                 await sbFetch(`applicants?id=eq.${id}`, 'PATCH', patch);
                 const origStage = a?.stage;
                 if (a) Object.assign(a, patch);
-                const autoMsg = patch.stage && patch.stage !== origStage ? ` â†’ ${STAGE_LABELS[patch.stage]}` : '';
+                const autoMsg = patch.stage && patch.stage !== origStage ? ` Ã¢â€ â€™ ${STAGE_LABELS[patch.stage]}` : '';
                 showToast('Atualizado!' + autoMsg, 'success');
 
                 renderTable(); renderFilters(); updateBadges();
@@ -2428,7 +2428,7 @@
                 await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { notes });
                 const a = applicants.find(x => x.id === id);
                 if (a) a.notes = notes;
-                showToast('AnotaÃ§Ãµes salvas!', 'success');
+                showToast('AnotaÃƒÂ§ÃƒÂµes salvas!', 'success');
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
         }
 
@@ -2443,7 +2443,7 @@
                     <div class="modal-header"><h3 class="modal-title">Novo DS-160</h3><button class="modal-close" onclick="document.getElementById('confirmDS160Modal').remove()">&times;</button></div>
                     <div style="padding:16px 20px;font-size:14px;color:var(--text-secondary)">
                         <p style="margin:0 0 12px">Criar um <strong>novo DS-160</strong> para <strong>${name}</strong>?</p>
-                        <p style="margin:0;font-size:12px;color:var(--text-muted)">O application ID anterior serÃ¡ apagado. O solicitante voltarÃ¡ para a fila DS-160 .</p>
+                        <p style="margin:0;font-size:12px;color:var(--text-muted)">O application ID anterior serÃƒÂ¡ apagado. O solicitante voltarÃƒÂ¡ para a fila DS-160 .</p>
                     </div>
                     <div style="display:flex;gap:8px;padding:12px 20px;justify-content:flex-end;border-top:1px solid var(--border)">
                         <button class="manage-btn" style="padding:8px 16px" onclick="document.getElementById('confirmDS160Modal').remove()">Cancelar</button>
@@ -2688,7 +2688,7 @@
                 return;
             }
             const errEl = document.getElementById('loginError');
-            errEl.textContent = 'ðŸ“§ Link de recuperaÃ§Ã£o enviado! Verifique seu e-mail.';
+            errEl.textContent = 'Ã°Å¸â€œÂ§ Link de recuperaÃƒÂ§ÃƒÂ£o enviado! Verifique seu e-mail.';
             errEl.style.color = '#16a34a';
             errEl.classList.add('show');
             setTimeout(() => { errEl.style.color = ''; }, 5000);
@@ -2700,7 +2700,7 @@
             <div class="modal-box" onclick="event.stopPropagation()" style="max-width:320px;text-align:center">
                 <i class="iconoir-log-out" style="font-size:32px;color:#ef4444;margin-bottom:8px"></i>
                 <h3 class="modal-title">Deseja sair?</h3>
-                <p style="font-size:13px;color:var(--text-muted);margin:8px 0 16px">VocÃª serÃ¡ desconectado da sua conta.</p>
+                <p style="font-size:13px;color:var(--text-muted);margin:8px 0 16px">VocÃƒÂª serÃƒÂ¡ desconectado da sua conta.</p>
                 <button class="modal-btn" style="background:#ef4444;color:#fff" onclick="document.getElementById('logoutConfirm').remove();handleLogout()">Sair</button>
                 <button class="modal-btn" onclick="document.getElementById('logoutConfirm').remove()">Cancelar</button>
             </div></div>`;
@@ -2755,7 +2755,7 @@
                         const roleLabels = { admin: 'Administrador', assessor: 'Assessor', viewer: 'Visualizador' };
                         const roleText = isMasterUser ? 'Administrador Master' : (roleLabels[m[0].role] || m[0].role);
                         document.getElementById('orgFooter').textContent = `${roleText} #${window._userNumId || '0001'}`;
-                        // Se nÃ£o tem _orgParam, resolver pelo company_id do membro
+                        // Se nÃƒÂ£o tem _orgParam, resolver pelo company_id do membro
                         if (!isMasterUser && !_orgParam && m[0].company_id) {
                             try {
                                 const cRes = await fetch(SUPABASE_URL + '/rest/v1/companies?id=eq.' + m[0].company_id + '&select=short_id,name&limit=1', { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + bearer } });
@@ -2799,7 +2799,7 @@
 
 
 
-            // Chart data: 3 segments â€” Verde (OK), Amarelo (error), Vermelho (fail)
+            // Chart data: 3 segments Ã¢â‚¬â€ Verde (OK), Amarelo (error), Vermelho (fail)
             const okData = stages.map(st => applicants.filter(a => a.stage === st && !['error', 'fail', 'standby'].includes(a.status)).length);
             const errorData = stages.map(st => applicants.filter(a => a.stage === st && a.status === 'error').length);
             const failData = stages.map(st => applicants.filter(a => a.stage === st && a.status === 'fail').length);
@@ -2936,7 +2936,7 @@
                 return 0;
             });
 
-            // Layout idÃªntico Ã s tabelas de etapas
+            // Layout idÃƒÂªntico ÃƒÂ s tabelas de etapas
             tbody.innerHTML = problems.map(a => {
                 const cfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.todo;
                 return `<tr onclick="openReview('${a.id}')" ondblclick="openReview('${a.id}')" style="cursor:pointer">
@@ -2948,7 +2948,7 @@
                     <td><div class="row-actions">
                         <button class="row-btn row-btn-icon row-btn-warning" onclick="event.stopPropagation();openResolveProblemModal('${a.id}')" title="Resolver problema" aria-label="Resolver problema"><i class="iconoir-warning-triangle"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
-                        <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link"><i class="iconoir-copy"></i></button>
+                        <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}', this)" title="Copiar link"><i class="iconoir-copy"></i></button>
                         <button class="row-btn row-btn-more" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais op\u00e7\u00f5es" aria-label="Mais op\u00e7\u00f5es"><i class="iconoir-more-vert"></i></button>
                     </div></td>
                 </tr>`;
@@ -2956,9 +2956,9 @@
         }
 
         // ==========================================
-        // ERROR LOGS MODAL (acessÃ­vel para assessores)
+        // ERROR LOGS MODAL (acessÃƒÂ­vel para assessores)
         // ==========================================
-        const _errorCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Erro no campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'Validação DS-160', postback_stuck: 'Postback travado', page_stuck: 'Página travada', script_error: 'Erro de script', unknown: 'Desconhecido' };
+        const _errorCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Erro no campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'ValidaÃ§Ã£o DS-160', postback_stuck: 'Postback travado', page_stuck: 'PÃ¡gina travada', script_error: 'Erro de script', unknown: 'Desconhecido' };
 
         async function openErrorLogsModal(applicantId) {
             const applicant = applicants.find(x => x.id === applicantId);
@@ -3067,7 +3067,7 @@
             const html = `<div id="logScreenshotModal" class="modal-overlay" onclick="document.getElementById('logScreenshotModal').remove()" style="z-index:10012;background:rgba(0,0,0,.85)">
                 <div onclick="event.stopPropagation()" style="max-width:90vw;max-height:90vh;position:relative">
                     <button onclick="document.getElementById('logScreenshotModal').remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;z-index:1">&times;</button>
-                    <img src="${url}" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)" onerror="this.outerHTML='<div style=\'color:#fff;padding:40px\'>Imagem nÃ£o encontrada</div>'">
+                    <img src="${url}" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)" onerror="this.outerHTML='<div style=\'color:#fff;padding:40px\'>Imagem nÃƒÂ£o encontrada</div>'">
                     <div style="color:#fff;font-size:12px;text-align:center;margin-top:8px;opacity:.7">${cause}</div>
                 </div>
             </div>`;
@@ -3081,7 +3081,7 @@
         let _realtimeTimer = null;
 
         function setupRealtime() {
-            // Cleanup canal anterior para evitar duplicaÃ§Ã£o
+            // Cleanup canal anterior para evitar duplicaÃƒÂ§ÃƒÂ£o
             if (_realtimeChannel) {
                 try { supabaseClient.removeChannel(_realtimeChannel); } catch(e) {}
                 _realtimeChannel = null;
@@ -3140,8 +3140,8 @@
             document.getElementById('admOrgCount').textContent = `(${_admOrgs.length})`;
             admUpdateNav('orgs');
             const grid = document.getElementById('admOrgGrid');
-            if (_admOrgs.length === 0) { grid.innerHTML = '<p style="color:var(--text-muted)">Nenhuma organizaÃ§Ã£o cadastrada.</p>'; return; }
-            let h = '<div class="table-container" style="margin-top:0"><table style="width:100%"><thead><tr><th>Organização</th><th>Short ID</th><th>CNPJ</th><th style="text-align:center">Assessores</th><th style="text-align:center">Status</th><th>Criada</th></tr></thead><tbody>';
+            if (_admOrgs.length === 0) { grid.innerHTML = '<p style="color:var(--text-muted)">Nenhuma organizaÃƒÂ§ÃƒÂ£o cadastrada.</p>'; return; }
+            let h = '<div class="table-container" style="margin-top:0"><table style="width:100%"><thead><tr><th>OrganizaÃ§Ã£o</th><th>Short ID</th><th>CNPJ</th><th style="text-align:center">Assessores</th><th style="text-align:center">Status</th><th>Criada</th></tr></thead><tbody>';
             _admOrgs.forEach(o => {
                 const sc = o.active ? '#22c55e' : '#ef4444', sl = o.active ? 'Ativa' : 'Inativa';
                 h += `<tr onclick="admOpenOrgDetail('${o.id}')" style="cursor:pointer"><td style="font-weight:600">${o.name}</td><td style="color:var(--text-muted);font-family:monospace;font-size:12px">${o.short_id || '-'}</td><td style="color:var(--text-muted)">${o.cnpj || '-'}</td><td style="text-align:center">${o._memberCount}</td><td style="text-align:center"><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${sc}18;color:${sc}">${sl}</span></td><td style="color:var(--text-muted);font-size:12px">${admFmtDate(o.created_at)}</td></tr>`;
@@ -3153,9 +3153,9 @@
             if (!_admSelectedOrg) return '';
             return AppCore.buildPortalUrl(_admSelectedOrg.short_id || '');
         }
-        function admCopyFormUrl() { copyTextValue(admGetFormUrl(), 'URL copiada!', 'Erro ao copiar'); }
+        function admCopyFormUrl(buttonEl = null) { copyTextValue(admGetFormUrl(), 'URL copiada!', 'Erro ao copiar', buttonEl); }
 
-        // ---- Logo da OrganizaÃ§Ã£o ----
+        // ---- Logo da OrganizaÃƒÂ§ÃƒÂ£o ----
         function admRefreshLogoUI() {
             const preview = document.getElementById('admLogoPreview');
             const removeBtn = document.getElementById('admRemoveLogoBtn');
@@ -3196,10 +3196,10 @@
                 } catch (e) { showToast('Erro ao salvar', 'error'); }
                 return;
             }
-            // Adiciona # se nÃ£o tiver
+            // Adiciona # se nÃƒÂ£o tiver
             if (!hex.startsWith('#')) hex = '#' + hex;
             // Valida formato
-            if (!/^#[0-9a-fA-F]{6}$/.test(hex)) { showToast('Formato invÃ¡lido. Ex: #1a2b3c ou 1a2b3c', 'error'); return; }
+            if (!/^#[0-9a-fA-F]{6}$/.test(hex)) { showToast('Formato invÃƒÂ¡lido. Ex: #1a2b3c ou 1a2b3c', 'error'); return; }
             hex = hex.toLowerCase();
             try {
                 await sbFetch('companies?id=eq.' + _admSelectedOrg.id, 'PATCH', { [field]: hex });
@@ -3225,7 +3225,7 @@
 
         async function admUploadLogo(input) {
             const file = input.files[0]; if (!file) return;
-            if (file.size > 500 * 1024) { showToast('Arquivo muito grande (mÃ¡x 500KB)', 'error'); input.value = ''; return; }
+            if (file.size > 500 * 1024) { showToast('Arquivo muito grande (mÃƒÂ¡x 500KB)', 'error'); input.value = ''; return; }
             if (!_admSelectedOrg) return;
             const orgId = _admSelectedOrg.id;
             const ext = file.name.split('.').pop().toLowerCase();
@@ -3368,14 +3368,14 @@
             }
             const admOrgCount = document.getElementById('admOrgCount');
             const admLogsCount = document.getElementById('admLogsCount');
-            const titles = { orgs: 'OrganizaÃ§Ãµes', capmonster: 'IntegraÃ§Ãµes', logs: 'Erros', settings: 'ConfiguraÃ§Ãµes' };
+            const titles = { orgs: 'OrganizaÃƒÂ§ÃƒÂµes', capmonster: 'IntegraÃƒÂ§ÃƒÂµes', logs: 'Erros', settings: 'ConfiguraÃƒÂ§ÃƒÂµes' };
             let subtitle = '';
             if (section === 'orgs' && admOrgCount) subtitle = ' ' + admOrgCount.textContent;
             if (section === 'logs' && admLogsCount) subtitle = ' ' + admLogsCount.textContent;
             if (titleEl) titleEl.innerHTML = (titles[section] || 'Admin') + (subtitle ? '<span class="nav-count">' + subtitle + '</span>' : '');
-            if (titleEl && section === 'orgs') titleEl.innerHTML = 'Organizações' + (subtitle ? '<span class="nav-count">' + subtitle + '</span>' : '');
-            if (titleEl && section === 'capmonster') titleEl.innerHTML = 'Integrações';
-            if (titleEl && section === 'settings') titleEl.innerHTML = 'Configurações';
+            if (titleEl && section === 'orgs') titleEl.innerHTML = 'OrganizaÃ§Ãµes' + (subtitle ? '<span class="nav-count">' + subtitle + '</span>' : '');
+            if (titleEl && section === 'capmonster') titleEl.innerHTML = 'IntegraÃ§Ãµes';
+            if (titleEl && section === 'settings') titleEl.innerHTML = 'ConfiguraÃ§Ãµes';
             if (titleEl && section === 'orgs') titleEl.innerHTML = 'Organiza\u00e7\u00f5es' + (subtitle ? '<span class="nav-count">' + subtitle + '</span>' : '');
             if (titleEl && section === 'capmonster') titleEl.innerHTML = 'Integra\u00e7\u00f5es';
             if (titleEl && section === 'settings') titleEl.innerHTML = 'Configura\u00e7\u00f5es';
@@ -3384,7 +3384,7 @@
             if (admActions) {
                 admActions.style.display = 'flex';
                 let actionsHtml = '';
-                if (section === 'orgs') actionsHtml = '<button class="btn-new" onclick="admOpenOrgModal()">Nova Organização</button>';
+                if (section === 'orgs') actionsHtml = '<button class="btn-new" onclick="admOpenOrgModal()">Nova OrganizaÃ§Ã£o</button>';
                 else if (section === 'logs') actionsHtml = '<button class="btn-new btn-danger" onclick="admArchiveAllLogs()" style="font-size:12px">Arquivar Todos</button>';
                 admActions.innerHTML = actionsHtml;
             }
@@ -3397,7 +3397,7 @@
             if (admActions) { admActions.style.display = 'none'; admActions.innerHTML = ''; }
         }
 
-        // IntegraÃ§Ãµes (CapMonster + API CPF + addy.io + Proxy)
+        // IntegraÃƒÂ§ÃƒÂµes (CapMonster + API CPF + addy.io + Proxy)
         async function admLoadCapmonster() {
             try {
                 const d = await sbGet('settings?key_name=in.(capmonster_key,cpf_api_key,addy_io_token,addy_io_domain,proxy_url)&select=key_name,key_value');
@@ -3479,7 +3479,7 @@
                 // 1. Buscar logs estruturados da tabela error_logs
                 const logs = await sbGet('error_logs?archived=eq.false&order=created_at.desc&limit=50&select=id,application_id,company_id,error_cause,page_name,field_name,error_message,applicant_name,created_at,retry_number,screenshot_url,page_html,video_url') || [];
 
-                // 2. TambÃ©m buscar erros de applications (fill_error) que podem nÃ£o ter log estruturado
+                // 2. TambÃƒÂ©m buscar erros de applications (fill_error) que podem nÃƒÂ£o ter log estruturado
                 let appErrors = [];
                 try {
                     appErrors = await sbGet('applications?fill_status=in.(error,fail)&fill_error=not.is.null&order=last_error_at.desc&limit=50&select=id,applicant_id,fill_status,fill_error,last_error_at,last_page') || [];
@@ -3543,7 +3543,7 @@
                         ? `<button class="btn-new" onclick="admViewHtml(${idx})" style="background:#8b5cf6;font-size:11px;padding:3px 6px" title="Ver HTML da p\u00e1gina">HTML</button>`
                         : '';
                     const videoBtn = l.video_url
-                        ? `<a class="btn-new" href="${l.video_url}" target="_blank" rel="noopener" style="background:#0f766e;font-size:11px;padding:3px 6px">Vídeo</a>`
+                        ? `<a class="btn-new" href="${l.video_url}" target="_blank" rel="noopener" style="background:#0f766e;font-size:11px;padding:3px 6px">VÃ­deo</a>`
                         : '';
                     const archiveBtn = l._fromApp
                         ? '<span style="color:var(--text-muted);font-size:11px">Manual</span>'
@@ -3560,7 +3560,7 @@
                         <td>
                             <div class="adm-log-context">
                                 <span class="adm-log-context-main">${escapeHTML(l._causeLabel)}</span>
-                                <span class="adm-log-context-sub">${escapeHTML(l.page_name || 'Sem página')}${l.field_name ? ' &middot; ' + escapeHTML(l.field_name) : ''}</span>
+                                <span class="adm-log-context-sub">${escapeHTML(l.page_name || 'Sem pÃ¡gina')}${l.field_name ? ' &middot; ' + escapeHTML(l.field_name) : ''}</span>
                             </div>
                         </td>
                         <td><div class="adm-log-message" title="${escapeHTML(l.error_message || '')}">${escapeHTML(l.error_message || '-')}</div></td>
@@ -3580,7 +3580,7 @@
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:760px">
                     <div class="modal-header">
                         <div>
-                            <h3 class="modal-title">Log de automação</h3>
+                            <h3 class="modal-title">Log de automaÃ§Ã£o</h3>
                             <div class="modal-subtitle">${escapeHTML(log._companyName)} &middot; ${escapeHTML(log.applicant_name || '-')}</div>
                         </div>
                         <button class="modal-close" onclick="document.getElementById('admLogDetailModal').remove()">&times;</button>
@@ -3588,7 +3588,7 @@
                     <div class="adm-info-grid" style="margin-top:8px">
                         <div class="adm-card"><div class="adm-label">Status</div><div style="margin-top:6px"><span class="adm-log-status" data-status="${log._status}">${statusLabel}</span></div></div>
                         <div class="adm-card"><div class="adm-label">Causa</div><div style="margin-top:6px;font-weight:600">${escapeHTML(log._causeLabel)}</div></div>
-                        <div class="adm-card"><div class="adm-label">Página / Campo</div><div style="margin-top:6px">${escapeHTML(log.page_name || '-')}${log.field_name ? ' &middot; <span style="font-family:monospace">' + escapeHTML(log.field_name) + '</span>' : ''}</div></div>
+                        <div class="adm-card"><div class="adm-label">PÃ¡gina / Campo</div><div style="margin-top:6px">${escapeHTML(log.page_name || '-')}${log.field_name ? ' &middot; <span style="font-family:monospace">' + escapeHTML(log.field_name) + '</span>' : ''}</div></div>
                         <div class="adm-card"><div class="adm-label">Quando</div><div style="margin-top:6px">${log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : '-'}</div></div>
                     </div>
                     <div class="adm-card" style="margin-top:14px">
@@ -3598,7 +3598,7 @@
                     <div class="modal-actions" style="margin-top:16px">
                         ${log.screenshot_url ? `<button class="btn-new" onclick="admViewScreenshot(${idx})">Ver imagem</button>` : ''}
                         ${log.page_html ? `<button class="btn-new" onclick="admViewHtml(${idx})" style="background:#8b5cf6">Ver HTML</button>` : ''}
-                        ${log.video_url ? `<a class="btn-new" href="${log.video_url}" target="_blank" rel="noopener" style="background:#0f766e">Ver vídeo</a>` : ''}
+                        ${log.video_url ? `<a class="btn-new" href="${log.video_url}" target="_blank" rel="noopener" style="background:#0f766e">Ver vÃ­deo</a>` : ''}
                         ${log._fromApp ? '' : `<button class="btn-new btn-danger" onclick="admArchiveLog('${log.id}');document.getElementById('admLogDetailModal').remove()">Arquivar</button>`}
                     </div>
                 </div>
@@ -3612,7 +3612,7 @@
             const html = `<div id="screenshotModal" class="modal-overlay" onclick="document.getElementById('screenshotModal').remove()" style="z-index:10010;background:rgba(0,0,0,.85)">
                 <div onclick="event.stopPropagation()" style="max-width:90vw;max-height:90vh;position:relative">
                     <button onclick="document.getElementById('screenshotModal').remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;z-index:1">&times;</button>
-                    <img src="${log.screenshot_url}" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)" onerror="this.outerHTML='<div style=\\'color:#fff;padding:40px\\'>Imagem nÃ£o encontrada</div>'">
+                    <img src="${log.screenshot_url}" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)" onerror="this.outerHTML='<div style=\\'color:#fff;padding:40px\\'>Imagem nÃƒÂ£o encontrada</div>'">
                     <div style="color:#fff;font-size:12px;text-align:center;margin-top:8px;opacity:.7">${escapeHTML(log.applicant_name || '-')} &middot; ${escapeHTML(log.page_name || '-')} &middot; ${escapeHTML(log.error_cause || '')}</div>
                 </div>
             </div>`;
@@ -3625,10 +3625,10 @@
             const html = `<div id="htmlModal" class="modal-overlay" onclick="document.getElementById('htmlModal').remove()" style="z-index:10010">
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:900px;width:95vw;max-height:90vh;display:flex;flex-direction:column;padding:0">
                     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)">
-                        <h3 style="margin:0;font-size:14px">HTML da Página - ${escapeHTML(log.page_name || '-')}</h3>
+                        <h3 style="margin:0;font-size:14px">HTML da PÃ¡gina - ${escapeHTML(log.page_name || '-')}</h3>
                         <div style="display:flex;gap:8px">
-                            <button class="btn-new" onclick="admCopyHtml(${idx})" style="font-size:11px;padding:4px 10px">ðŸ“‹ Copiar</button>
-                            <button class="btn-new" onclick="admRenderHtml(${idx})" style="font-size:11px;padding:4px 10px;background:#8b5cf6">ðŸ‘ Renderizar</button>
+                            <button class="btn-new" onclick="admCopyHtml(${idx}, this)" style="font-size:11px;padding:4px 10px">Ã°Å¸â€œâ€¹ Copiar</button>
+                            <button class="btn-new" onclick="admRenderHtml(${idx})" style="font-size:11px;padding:4px 10px;background:#8b5cf6">Ã°Å¸â€˜Â Renderizar</button>
                             <button onclick="document.getElementById('htmlModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">&times;</button>
                         </div>
                     </div>
@@ -3640,16 +3640,16 @@
             document.body.insertAdjacentHTML('beforeend', html);
         }
 
-        function admCopyHtml(idx) {
+        function admCopyHtml(idx, buttonEl = null) {
             const log = window._admLogs?.[idx]; if (!log?.page_html) return;
-            copyTextValue(log.page_html, 'HTML copiado!', 'Erro ao copiar');
+            copyTextValue(log.page_html, 'HTML copiado!', 'Erro ao copiar', buttonEl);
         }
 
         function admRenderHtml(idx) {
             const log = window._admLogs?.[idx]; if (!log?.page_html) return;
             const container = document.getElementById('htmlModalContent');
             if (!container) return;
-            // Toggle: se jÃ¡ tem iframe, volta pra pre
+            // Toggle: se jÃƒÂ¡ tem iframe, volta pra pre
             if (container.querySelector('iframe')) {
                 container.innerHTML = `<pre style="white-space:pre-wrap;word-break:break-all;font-size:12px;font-family:'Fira Code',monospace;line-height:1.5;margin:0;color:var(--text-primary)">${escapeHTML(log.page_html)}</pre>`;
                 return;
@@ -3669,13 +3669,13 @@
 
         // Settings
         async function admLoadSettings() { try { const d = await sbGet('settings?key_name=in.(security_question,security_answer)&select=key_name,key_value'); (d || []).forEach(s => { if (s.key_name === 'security_question') { const el = document.getElementById('admSecurityQuestion'); if (el) el.value = s.key_value || '0'; } if (s.key_name === 'security_answer') { const el = document.getElementById('admSecurityAnswer'); if (el) el.value = s.key_value || ''; } }); } catch { } }
-        async function admSaveSettings() { const q = document.getElementById('admSecurityQuestion').value, a = document.getElementById('admSecurityAnswer').value.trim(); try { await sbFetch('settings?key_name=eq.security_question', 'PATCH', { key_value: q }); await sbFetch('settings?key_name=eq.security_answer', 'PATCH', { key_value: a }); showToast('Configurações salvas!', 'success'); } catch (e) { showToast('Erro: ' + e.message, 'error'); } }
+        async function admSaveSettings() { const q = document.getElementById('admSecurityQuestion').value, a = document.getElementById('admSecurityAnswer').value.trim(); try { await sbFetch('settings?key_name=eq.security_question', 'PATCH', { key_value: q }); await sbFetch('settings?key_name=eq.security_answer', 'PATCH', { key_value: a }); showToast('ConfiguraÃ§Ãµes salvas!', 'success'); } catch (e) { showToast('Erro: ' + e.message, 'error'); } }
 
         // Org CRUD
         function admOpenOrgModal(editId = null) {
             const id = 'admOrgModal'; const ex = document.getElementById(id); if (ex) ex.remove();
             const org = editId ? _admOrgs.find(o => o.id === editId) : null;
-            const html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()"><div class="modal-box" onclick="event.stopPropagation()"><h3 class="modal-title">${editId ? 'Editar' : 'Nova'} Organização</h3>
+            const html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()"><div class="modal-box" onclick="event.stopPropagation()"><h3 class="modal-title">${editId ? 'Editar' : 'Nova'} OrganizaÃ§Ã£o</h3>
                 <label class="modal-label">Nome</label><input type="text" id="admOrgName" class="modal-input" value="${org?.name || ''}" placeholder="Ex: Empresa ABC">
                 <label class="modal-label">Short ID</label><input type="text" id="admOrgShortId" class="modal-input" value="${org?.short_id || admGenShortId()}" maxlength="10">
                 <label class="modal-label">CNPJ (opcional)</label><input type="text" id="admOrgCnpj" class="modal-input" value="${org?.cnpj || ''}" placeholder="00.000.000/0001-00">
@@ -3686,10 +3686,10 @@
 
         async function admSaveOrg(editId) {
             const name = document.getElementById('admOrgName').value.trim(), short_id = document.getElementById('admOrgShortId').value.trim(), cnpj = document.getElementById('admOrgCnpj').value.trim();
-            if (!name) { showToast('Nome é obrigatório', 'error'); return; }
+            if (!name) { showToast('Nome Ã© obrigatÃ³rio', 'error'); return; }
             try {
-                if (editId) { await sbFetch(`companies?id=eq.${editId}`, 'PATCH', { name, short_id, cnpj }); showToast('Organização atualizada', 'success'); }
-                else { await sbFetch('companies', 'POST', { name, short_id: short_id || admGenShortId(), cnpj, active: true }); showToast('Organização criada', 'success'); }
+                if (editId) { await sbFetch(`companies?id=eq.${editId}`, 'PATCH', { name, short_id, cnpj }); showToast('OrganizaÃ§Ã£o atualizada', 'success'); }
+                else { await sbFetch('companies', 'POST', { name, short_id: short_id || admGenShortId(), cnpj, active: true }); showToast('OrganizaÃ§Ã£o criada', 'success'); }
                 const m = document.getElementById('admOrgModal'); if (m) m.remove();
                 await admLoadOrgs(); if (_admSelectedOrg && editId) await admOpenOrgDetail(editId);
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
@@ -3703,7 +3703,7 @@
         async function admDeleteOrg(orgId) {
             const m = await sbGet('members?company_id=eq.' + orgId + '&select=user_id'); if (m && m.length > 0) { showToast('Existem ' + m.length + ' assessor(es) vinculado(s)', 'error'); return; }
             const apps = await sbGet('applicants?company_id=eq.' + orgId + '&select=id&limit=1'); if (apps && apps.length > 0) { showToast('Existem solicitantes vinculados. Remova ou transfira-os primeiro.', 'error'); return; }
-            if (!confirm('Excluir organização?')) return; await sbFetch('companies?id=eq.' + orgId, 'DELETE', null); showToast('Excluída!', 'success'); await admLoadOrgs(); admShowOrgList();
+            if (!confirm('Excluir organizaÃ§Ã£o?')) return; await sbFetch('companies?id=eq.' + orgId, 'DELETE', null); showToast('ExcluÃ­da!', 'success'); await admLoadOrgs(); admShowOrgList();
         }
 
         // User CRUD
@@ -3711,7 +3711,7 @@
             const id = 'admUserModal'; const ex = document.getElementById(id); if (ex) ex.remove();
             const html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()"><div class="modal-box" onclick="event.stopPropagation()"><h3 class="modal-title">Adicionar Assessor</h3>
                 <label class="modal-label">E-mail</label><input type="email" id="admUserEmail" class="modal-input" placeholder="assessor@empresa.com">
-                <label class="modal-label">Senha</label><input type="password" id="admUserPassword" class="modal-input" placeholder="MÃ­nimo 6 caracteres">
+                <label class="modal-label">Senha</label><input type="password" id="admUserPassword" class="modal-input" placeholder="MÃƒÂ­nimo 6 caracteres">
                 <label class="modal-label">Perfil</label><select id="admUserRole" class="modal-input"><option value="assessor">Assessor</option><option value="admin">Administrador</option></select>
                 <div class="modal-actions" style="margin-top:14px"><button class="modal-btn" onclick="document.getElementById('${id}').remove()">Cancelar</button><button class="modal-btn primary" id="admUserSaveBtn" onclick="admCreateUser()">Criar</button></div>
             </div></div>`;
@@ -3721,7 +3721,7 @@
         async function admCreateUser() {
             const email = document.getElementById('admUserEmail').value.trim(), pw = document.getElementById('admUserPassword').value, role = document.getElementById('admUserRole').value;
             if (!email || !pw) { showToast('Preencha todos os campos', 'error'); return; }
-            if (pw.length < 6) { showToast('Senha: mÃ­nimo 6 caracteres', 'error'); return; }
+            if (pw.length < 6) { showToast('Senha: mÃƒÂ­nimo 6 caracteres', 'error'); return; }
             const btn = document.getElementById('admUserSaveBtn'); btn.disabled = true; btn.textContent = 'Criando...';
             try {
                 const tok = window._sessionToken || SUPABASE_KEY;
@@ -3735,10 +3735,10 @@
         async function admRemoveMember(userId, companyId) {
             if (!confirm('Remover assessor?')) return;
             try {
-                // Verificar se Ã© o Ãºltimo admin da organizaÃ§Ã£o
+                // Verificar se ÃƒÂ© o ÃƒÂºltimo admin da organizaÃƒÂ§ÃƒÂ£o
                 const admins = await sbGet(`members?company_id=eq.${companyId}&role=eq.admin&select=user_id`) || [];
                 const isAdmin = admins.some(m => m.user_id === userId);
-                if (isAdmin && admins.length <= 1) { showToast('NÃ£o Ã© possÃ­vel remover o Ãºltimo administrador da organizaÃ§Ã£o.', 'error'); return; }
+                if (isAdmin && admins.length <= 1) { showToast('NÃƒÂ£o ÃƒÂ© possÃƒÂ­vel remover o ÃƒÂºltimo administrador da organizaÃƒÂ§ÃƒÂ£o.', 'error'); return; }
                 await sbFetch(`members?user_id=eq.${userId}&company_id=eq.${companyId}`, 'DELETE'); showToast('Removido', 'success'); await admLoadOrgs(); await admLoadOrgUsers(companyId);
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
         }
@@ -3770,7 +3770,7 @@
                     else { try { const payload = JSON.parse(atob(_authToken.split('.')[1])); _currentUser = { email: payload.email || payload.sub || '' }; } catch { } }
                     await showDashboard(); return;
                 } catch (err) {
-                    // Token from URL may be expired â€” try Supabase session refresh before giving up
+                    // Token from URL may be expired Ã¢â‚¬â€ try Supabase session refresh before giving up
                     console.warn('[Dashboard] URL token failed, trying session refresh:', err.message);
                     window._sessionToken = null;
                     AppCore.clearSession();
@@ -3782,3 +3782,5 @@
             const loginOv = document.getElementById('loginOverlay');
             if (loginOv) loginOv.style.display = 'flex';
         })();
+
+
