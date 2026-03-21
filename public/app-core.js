@@ -181,7 +181,9 @@
 
     function buildFormUrl(id, options = {}) {
         const { hash = '', ...params } = options || {};
-        return _buildCleanUrl(`form/${encodeURIComponent(id)}`, params, hash);
+        const url = new URL(buildUrl('ds160-form.html', { id, ...params }), getPublicBaseUrl());
+        if (hash) url.hash = hash.startsWith('#') ? hash : '#' + hash;
+        return url.toString();
     }
 
     function buildResetPasswordUrl(params = {}) {
