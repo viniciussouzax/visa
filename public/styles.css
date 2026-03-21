@@ -6292,6 +6292,8 @@ tr.drag-over {
    DASHBOARD HOTFIXES
    ========================================== */
 .sidebar {
+    width: 248px;
+    min-width: 248px;
     overflow: hidden;
     overflow-x: hidden;
 }
@@ -6300,11 +6302,19 @@ tr.drag-over {
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    padding: 8px 10px;
+}
+
+.nav-item {
+    min-height: 40px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar-bottom {
     flex-shrink: 0;
-    padding: 6px 12px 0;
+    padding: 8px 12px 0;
 }
 
 .sidebar-bottom .nav-item {
@@ -6315,7 +6325,7 @@ tr.drag-over {
 .sidebar-footer {
     flex-shrink: 0;
     margin-top: 0;
-    padding: 14px 16px 18px;
+    padding: 16px;
     box-sizing: border-box;
     overflow: hidden;
     background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, .18) 28%, rgba(15, 23, 42, .4) 100%);
@@ -6325,7 +6335,7 @@ tr.drag-over {
     width: 100%;
     min-width: 0;
     display: grid;
-    grid-template-columns: 42px minmax(96px, 1fr) auto;
+    grid-template-columns: 42px minmax(120px, 1fr) auto;
     align-items: center;
     column-gap: 12px;
 }
@@ -6346,7 +6356,7 @@ tr.drag-over {
 .user-org {
     white-space: normal;
     word-break: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
 }
 
 .sidebar-footer-actions {
@@ -6360,6 +6370,10 @@ tr.drag-over {
 .main {
     min-width: 0;
     overflow: auto;
+}
+
+.dashboard-nav {
+    left: 248px;
 }
 
 #tableContainer {
