@@ -23,7 +23,7 @@ Assessor → Formulário Clone → Banco (Supabase) → Automação Playwright �
 ### 3. Dashboard (`dashboard.html` + Supabase RLS)
 - Multi-org com RLS (Row Level Security) — cada assessor vê só seus applicants
 - Admin master gerencia organizações, usuários, configurações (API keys de captcha, etc.)
-- Logs de erro com screenshots e HTML da página onde falhou
+- Logs de erro com screenshot, vídeo opcional, HTML da página e ligação por `application_id` para o assessor localizar o erro com precisão
 
 ## Regras críticas
 - **NUNCA remover config existente** do schema/field-maps — apenas ADICIONAR
@@ -31,6 +31,10 @@ Assessor → Formulário Clone → Banco (Supabase) → Automação Playwright �
 - Postback IDs são hardcoded em `automation/field-maps/shared.js` — mudá-los quebra tudo
 - O `ds160map/` contém HTMLs salvos do site oficial — fonte de verdade para IDs de campos
 - Captchas resolvidos via CapMonster API
+- Grupos só aceitam vínculo quando grupo e solicitante estão na mesma etapa
+- Novo membro em grupo só entra pela Triagem; o grupo só avança quando todos os membros ativos concluem a etapa atual
+- Excluir solicitante ativo arquiva primeiro; exclusão permanente só é permitida para itens já arquivados
+- `error` é erro de dados corrigível pelo assessor; `standby` é instabilidade temporária com retry automático; `fail` é falha técnica que exige revisão antes de reenfileirar
 
 ## Stack
 Node.js, Express, Playwright, Supabase (Auth + DB + Storage + Realtime), GitHub Pages (frontend), Fly.io (automação)

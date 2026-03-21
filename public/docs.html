@@ -548,7 +548,7 @@
                 </div>
 
                 <h3>Retry inteligente e tratamento de erros</h3>
-                <p>O sistema diferencia dois tipos de erro e age de forma diferente para cada um:</p>
+                <p>O sistema diferencia três situações de problema e age de forma diferente em cada uma:</p>
 
                 <table class="s-table">
                     <thead><tr><th>Tipo</th><th>Causa</th><th>Comportamento do retry</th><th>Ação do assessor</th></tr></thead>
@@ -556,17 +556,27 @@
                         <tr>
                             <td><span class="chip chip-yellow">Erro de dados</span></td>
                             <td>Campo inválido, dado inconsistente, formato incorreto</td>
-                            <td><strong>Não retenta automaticamente.</strong> O solicitante volta para a fila de Análise para correção</td>
-                            <td>Abrir formulário, corrigir o campo apontado no log de erro, e reenviar para automação</td>
+                            <td><strong>Não retenta automaticamente.</strong> O caso fica em Processos com Problemas até a correção</td>
+                            <td>Abrir o log, corrigir o campo apontado e reenviar para automação</td>
+                        </tr>
+                        <tr>
+                            <td><span class="chip chip-indigo">Em espera</span></td>
+                            <td>Site lento, timeout, CAPTCHA ou instabilidade externa</td>
+                            <td><strong>Retenta sozinho após cooldown.</strong> A fila segura a etapa e tenta de novo quando a janela de espera expira</td>
+                            <td>Aguardar. Só intervir se o caso permanecer muito tempo em espera</td>
                         </tr>
                         <tr>
                             <td><span class="chip chip-red">Falha técnica</span></td>
-                            <td>Timeout, queda de conexão, site indisponível, CAPTCHA falhou</td>
-                            <td><strong>Retenta automaticamente</strong> até 3 vezes com intervalos progressivos (1min → 5min → 15min). A IA ajusta a estratégia a cada tentativa</td>
-                            <td>Nenhuma — o sistema resolve sozinho. Se todas as tentativas falharem, o assessor é notificado</td>
+                            <td>Bug no worker, browser crash, erro estrutural da automação</td>
+                            <td><strong>Não retenta sozinho depois de marcar falha.</strong> O caso fica bloqueado até revisão técnica e novo envio manual</td>
+                            <td>Consultar log e screenshot, alinhar com o time técnico e só então reenfileirar</td>
                         </tr>
                     </tbody>
                 </table>
+
+                <div class="info-box">
+                    <strong>Logs para o assessor:</strong> em <strong>Processos com Problemas</strong>, clicar no status abre o log com causa, página, campo, mensagem e screenshot da falha quando disponível.
+                </div>
 
                 <h3>Referência rápida de status</h3>
                 <table class="s-table">
@@ -576,7 +586,8 @@
                         <tr><td><span class="chip chip-blue">Em execução</span></td><td>Automação processando agora</td><td>Aguardar</td></tr>
                         <tr><td><span class="chip chip-green">Concluído</span></td><td>Etapa concluída com sucesso</td><td>Sistema avança automaticamente</td></tr>
                         <tr><td><span class="chip chip-yellow">Erro de dados</span></td><td>Dados inválidos detectados</td><td>Corrigir na Análise e reenviar</td></tr>
-                        <tr><td><span class="chip chip-red">Falha técnica</span></td><td>Problema no sistema</td><td>Retenta sozinho (até 3x)</td></tr>
+                        <tr><td><span class="chip chip-indigo">Em espera</span></td><td>Instabilidade temporária do site oficial</td><td>Aguardar o retry automático</td></tr>
+                        <tr><td><span class="chip chip-red">Falha técnica</span></td><td>Problema técnico do worker</td><td>Revisar log e screenshot antes de reenfileirar</td></tr>
                     </tbody>
                 </table>
 
@@ -604,7 +615,7 @@
                 </div>
 
                 <div class="info-box">
-                    <strong>Regra de grupos:</strong> Ao mudar a etapa de um solicitante que pertence a um grupo, <strong>todos os membros avançam juntos</strong>. O status individual de cada membro é resetado conforme a nova etapa.
+                    <strong>Regra de grupos:</strong> grupos andam juntos. Só avançam quando <strong>todos os membros ativos</strong> concluem a etapa atual. Vínculo novo só é permitido na <strong>mesma etapa</strong>, e inclusão de novo membro no grupo só acontece na <strong>Triagem</strong>.
                 </div>
             </div>
 

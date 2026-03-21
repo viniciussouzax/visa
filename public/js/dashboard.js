@@ -238,7 +238,7 @@
                 await loadGroups();
                 // Load security question from settings
                 try { const sq = await sbGet('settings?key_name=eq.security_question&select=key_value&limit=1'); window._securityQuestion = sq?.[0]?.key_value || ''; } catch(e) { window._securityQuestion = ''; }
-                let q = 'applicants?select=id,full_name,passport_number,data,stage,status,result,sort_order,created_at,company_id,group_id,notes,email&order=sort_order.asc,created_at.desc';
+                let q = 'applicants?select=id,full_name,passport_number,data,stage,status,result,sort_order,created_at,updated_at,company_id,group_id,notes,email&order=sort_order.asc,created_at.desc';
                 if (resolvedCompanyId) q += '&company_id=eq.' + resolvedCompanyId;
                 const rows = await sbGet(q);
                 if (!rows || !rows.length) { applicants = []; return; }
@@ -266,7 +266,7 @@
                         ? row.result
                         : ((row.stage === 'outcome' && RESULT_CONFIG[row.status]) ? row.status : (row.result || 'pending')),
                     sort_order: row.sort_order || 0, progress: calcProgress(row.data),
-                    created: row.created_at, data: row.data, group_id: row.group_id || null, notes: row.notes || '', email: row.email || '',
+                    created: row.created_at, updated_at: row.updated_at || row.created_at, data: row.data, group_id: row.group_id || null, notes: row.notes || '', email: row.email || '',
                     application_id: appMap[row.id]?.application_id || null,
                     fill_status: appMap[row.id]?.fill_status || null,
                     security_answer: appMap[row.id]?.security_answer || null,
@@ -2610,7 +2610,7 @@
                 const cfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.todo;
                 return `<tr ondblclick="openReview('${a.id}')" style="cursor:pointer">
                     <td onclick="openReview('${a.id}')"><div class="name-col"><span class="applicant-icon"><i class="iconoir-user"></i></span><div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${a.email || 'Sem email'}</div></div></div></td>
-                    <td><span class="status-badge ${cfg.class}" onclick="event.stopPropagation();openErrorLogsModal('${a.id}','${shortName(a.name).replace(/'/g,"\\'")}')" style="cursor:pointer" title="Ver logs de erro">${cfg.label}</span></td>
+                    <td><span class="status-badge ${cfg.class}" onclick="event.stopPropagation();openErrorLogsModal('${a.id}')" style="cursor:pointer" title="Ver logs de erro">${cfg.label}</span></td>
                     <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : '—'}</td>
                     <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '—'}</td>
                     <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotações"><div class="notes-preview">${a.notes ? a.notes.substring(0, 80) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
@@ -2629,7 +2629,15 @@
         // ==========================================
         const _errorCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Erro no campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'Validação DS-160', postback_stuck: 'Postback travado', page_stuck: 'Página travada', script_error: 'Erro de script', unknown: 'Desconhecido' };
 
-        async function openErrorLogsModal(applicantId, applicantName) {
+        async function openErrorLogsModal(applicantId) {
+            const applicant = applicants.find(x => x.id === applicantId);
+            const applicantName = applicant?.name || 'Solicitante';
+            const applicationId = applicant?.application_id || null;
+            const fallbackError = applicant?.fill_error || null;
+            const statusLabel = STATUS_CONFIG[applicant?.status]?.label || 'Problema';
+            const problemGuidance = applicant?.status === 'fail'
+                ? 'Falha técnica: revise o log e a imagem. Reenvie a etapa apenas depois de corrigir a causa técnica.'
+                : 'Erro de dados: revise a página ou o campo apontado no log, corrija o formulário e retome a etapa.';
             const old = document.getElementById('errorLogsModal'); if (old) old.remove();
             // Show loading
             const loadingHtml = `<div id="errorLogsModal" class="modal-overlay" onclick="document.getElementById('errorLogsModal').remove()">
@@ -2638,14 +2646,43 @@
                         <h3 class="modal-title" style="margin:0"><i class="iconoir-warning-triangle" style="color:var(--warning);margin-right:6px"></i>Logs de Erro</h3>
                         <button onclick="document.getElementById('errorLogsModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
                     </div>
-                    <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px">${escapeHTML(applicantName)}</p>
+                    <p style="font-size:13px;color:var(--text-muted);margin:0 0 8px">${escapeHTML(applicantName)} · ${escapeHTML(statusLabel)}</p>
+                    <div style="display:grid;gap:6px;margin:0 0 14px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--bg-body)">
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+                            <span style="padding:3px 8px;border-radius:999px;background:#eff6ff;color:#2563eb;font-size:11px;font-weight:700">${escapeHTML(applicant?.stage || '—')}</span>
+                            ${applicationId ? `<span style="font-size:11px;color:var(--text-muted)">App ID: <span class="mono" style="font-size:11px">${escapeHTML(applicationId)}</span></span>` : '<span style="font-size:11px;color:var(--text-muted)">Sem App ID salvo</span>'}
+                        </div>
+                        <div style="font-size:12px;color:var(--text-secondary);line-height:1.45">${escapeHTML(problemGuidance)}</div>
+                    </div>
                     <div style="text-align:center;padding:30px;color:var(--text-muted)"><div class="spinner"></div> Carregando logs...</div>
                 </div>
             </div>`;
             document.body.insertAdjacentHTML('beforeend', loadingHtml);
 
             try {
-                const logs = await sbGet(`error_logs?applicant_name=ilike.*${encodeURIComponent(applicantName.replace(/[\[\]]/g,''))}*&archived=eq.false&order=created_at.desc&limit=10&select=id,error_cause,page_name,field_name,error_message,created_at,retry_number,screenshot_url`) || [];
+                let logs = [];
+                if (applicationId) {
+                    logs = await sbGet(`error_logs?application_id=eq.${encodeURIComponent(applicationId)}&archived=eq.false&order=created_at.desc&limit=10&select=id,application_id,error_cause,page_name,field_name,error_message,created_at,retry_number,screenshot_url,video_url,validation_errors`) || [];
+                }
+                if ((!logs || logs.length === 0) && applicantName) {
+                    logs = await sbGet(`error_logs?applicant_name=ilike.*${encodeURIComponent(applicantName.replace(/[\[\]]/g,''))}*&archived=eq.false&order=created_at.desc&limit=10&select=id,application_id,error_cause,page_name,field_name,error_message,created_at,retry_number,screenshot_url,video_url,validation_errors`) || [];
+                }
+                if ((!logs || logs.length === 0) && fallbackError) {
+                    logs = [{
+                        id: `fallback-${applicantId}`,
+                        application_id: applicationId,
+                        error_cause: applicant?.status === 'fail' ? 'system_error' : 'field_error',
+                        page_name: null,
+                        field_name: null,
+                        error_message: fallbackError,
+                        created_at: applicant?.updated_at || applicant?.created || null,
+                        retry_number: null,
+                        screenshot_url: null,
+                        video_url: null,
+                        validation_errors: null,
+                        _source: 'fill_error'
+                    }];
+                }
                 const modal = document.getElementById('errorLogsModal');
                 if (!modal) return;
                 const content = modal.querySelector('.modal-box');
@@ -2654,14 +2691,16 @@
                 if (spinner) spinner.remove();
 
                 if (logs.length === 0) {
-                    content.insertAdjacentHTML('beforeend', '<div style="text-align:center;padding:20px;color:var(--text-muted)"><i class="iconoir-check-circle" style="font-size:24px;color:var(--success)"></i><p>Nenhum log de erro encontrado</p></div>');
+                    content.insertAdjacentHTML('beforeend', '<div style="text-align:center;padding:20px;color:var(--text-muted)"><i class="iconoir-check-circle" style="font-size:24px;color:var(--success)"></i><p>Nenhum log estruturado encontrado para este solicitante.</p><p style="font-size:12px">Se o problema persistir, reenfileire a etapa e acompanhe a nova tentativa.</p></div>');
                     return;
                 }
 
                 let listHtml = '<div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px">';
-                logs.forEach((l, idx) => {
+                logs.forEach((l) => {
                     const causeLabel = _errorCauseLabels[l.error_cause] || l.error_cause || '—';
-                    const dt = new Date(l.created_at).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+                    const dt = l.created_at
+                        ? new Date(l.created_at).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
+                        : 'Sem horário';
                     const retryBadge = l.retry_number != null ? `<span style="background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px">#${l.retry_number}</span>` : '';
                     const screenshotBtn = l.screenshot_url
                         ? `<button class="btn-new" onclick="event.stopPropagation();viewLogScreenshot('${l.screenshot_url.replace(/'/g,"\\'")}','${escapeHTML(causeLabel)}')" style="background:#3b82f6;font-size:10px;padding:2px 8px;margin-left:auto;flex-shrink:0">📸 Ver</button>`

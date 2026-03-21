@@ -10,7 +10,7 @@
 | `retry` | Repetir | 🟡 Amarelo | Automação | Lista da etapa (topo) |
 | `standby` | Em espera | 🔵 Índigo pulsante | Site do governo | Lista da etapa |
 | [error](file:///c:/Users/azuos/Desktop/DS160%20IA/public/ds160-form.html#794-809) | Erro de dados | 🟠 Laranja | Assessor | Processos com Problemas |
-| `failed` | Falha técnica | 🔴 Vermelho | Desenvolvedor | Processos com Problemas |
+| `fail` | Falha técnica | 🔴 Vermelho | Desenvolvedor | Processos com Problemas |
 
 ## 2. Classificação de Erros
 
@@ -19,7 +19,7 @@ graph TD
     A["Erro na automação"] --> B{Causa?}
     B -->|"Dados incorretos<br/>select_mismatch<br/>validation_error"| C["🟠 error<br/>Assessor corrige dados"]
     B -->|"Timeout, rede,<br/>captcha, site travou"| D["🔵 standby<br/>Auto-retry em 30min"]
-    B -->|"Browser crash<br/>bug no código"| E["🔴 failed<br/>Dev corrige código"]
+    B -->|"Browser crash<br/>bug no código"| E["🔴 fail<br/>Dev corrige código"]
     B -->|"Outra causa<br/>MAX_RETRIES"| F["🟡 retry<br/>Re-entra na fila"]
 
     style C fill:#fef3c7,stroke:#d97706
@@ -34,7 +34,7 @@ graph TD
 |---|---|---|
 | **Dados** | `missing_data`, `validation_error`, `select_mismatch`, `invalid_field_value` | [error](file:///c:/Users/azuos/Desktop/DS160%20IA/public/ds160-form.html#794-809) |
 | **Site** | `timeout`, `network_error`, `page_stuck`, `postback_stuck`, `captcha_failed`, `session_expired` | `standby` |
-| **Técnica** | `browser_closed` | `failed` |
+| **Técnica** | `browser_closed` | `fail` |
 | **Outra** | Qualquer causa não classificada | `retry` |
 
 ## 3. Fluxo de Etapas
@@ -67,11 +67,11 @@ graph TD
 | Prioridade | Status | Descrição |
 |---|---|---|
 | 🟠 1° | [error](file:///c:/Users/azuos/Desktop/DS160%20IA/public/ds160-form.html#794-809) | Erro de dados (assessor) |
-| 🔴 2° | `failed` | Falha técnica (dev) |
+| 🔴 2° | `fail` | Falha técnica (dev) |
 
 ### Não aparece nas listas
 - `done` → auto-avança para próxima etapa
-- [error](file:///c:/Users/azuos/Desktop/DS160%20IA/public/ds160-form.html#794-809)/`failed` → Processos com Problemas
+- [error](file:///c:/Users/azuos/Desktop/DS160%20IA/public/ds160-form.html#794-809)/`fail` → Processos com Problemas
 
 ## 5. Proteções Anti-Zumbi
 
@@ -80,7 +80,7 @@ graph TD
 | Stale Detection | >10min em `filling` | Reseta para `todo` |
 | Orphan Recovery | `filling` sem `started_at` | Reseta para `todo` |
 | Safety Net | Loop termina sem resolver | Marca `retry` |
-| Catch no Loop | Exception inesperada | Marca `failed` |
+| Catch no Loop | Exception inesperada | Marca `fail` |
 | Standby Cooldown | 30min após `standby` | Auto-retry |
 
 ## 6. Gráfico do Dashboard
@@ -88,5 +88,12 @@ graph TD
 O gráfico stacked mostra 4 segmentos:
 - 🟢 **Sob controle** — todo, doing, retry, done
 - 🟠 **Erro de dados** — error
-- 🔴 **Falha técnica** — failed
+- 🔴 **Falha técnica** — fail
+
+## 7. Regras recentes de operação
+
+- O assessor visualiza logs por `application_id`, com screenshot da falha quando disponível
+- `error` é correção de dados; `standby` é espera com retry automático; `fail` para o fluxo até revisão técnica
+- Grupos só aceitam vínculo na mesma etapa e só andam quando todos concluem juntos
+- Exclusão permanente só existe para processos já arquivados
 - 🔵 **Em espera** — standby
