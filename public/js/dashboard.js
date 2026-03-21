@@ -1876,8 +1876,7 @@
                 errEl.classList.add('show');
                 return;
             }
-            const base = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
-            const redirectTo = base + 'update-password.html';
+            const redirectTo = AppCore.buildPublicUrl('update-password.html');
             const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
             if (error) {
                 const errEl = document.getElementById('loginError');

@@ -10,6 +10,7 @@
     // ==========================================
     const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
+    const PUBLIC_APP_BASE_URL = 'https://viniciussouzax.github.io/visa/';
 
     // ==========================================
     // SESSION MANAGEMENT (sessionStorage)
@@ -72,6 +73,23 @@
             return org ? 'portal.html?org=' + encodeURIComponent(org) : 'portal.html';
         }
         return org ? 'dashboard.html?org=' + encodeURIComponent(org) : 'dashboard.html';
+    }
+
+    function _isLocalhostHost(hostname) {
+        return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+    }
+
+    function getPublicBaseUrl() {
+        const hostname = (location.hostname || '').toLowerCase();
+        if (_isLocalhostHost(hostname)) return PUBLIC_APP_BASE_URL;
+
+        const pathname = location.pathname || '/';
+        const basePath = pathname.endsWith('/') ? pathname : pathname.replace(/\/[^/]*$/, '/');
+        return new URL(basePath, location.origin).toString();
+    }
+
+    function buildPublicUrl(page, params = {}) {
+        return new URL(buildUrl(page, params), getPublicBaseUrl()).toString();
     }
 
     function handleAuthFailure(reason = 'unauthorized') {
@@ -261,6 +279,7 @@
 
         // Navigation
         buildUrl,
+        buildPublicUrl,
         navigate,
         goToDashboard,
         goToForm,
