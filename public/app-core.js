@@ -113,6 +113,13 @@
         }
     }
 
+    function shouldRedirectOnAuthFailure() {
+        const path = (location.pathname || '').toLowerCase();
+        if (path.endsWith('dashboard.html')) return true;
+        if (_isAssessorForm()) return true;
+        return false;
+    }
+
     // ==========================================
     // CRUD HELPERS
     // ==========================================
@@ -133,7 +140,7 @@
             body: body ? JSON.stringify(body) : undefined,
         });
         if (res.status === 401 || res.status === 403) {
-            handleAuthFailure('rest:' + res.status);
+            if (shouldRedirectOnAuthFailure()) handleAuthFailure('rest:' + res.status);
             throw new Error(res.status + ': auth required');
         }
         if (!res.ok) {
@@ -153,7 +160,7 @@
             },
         });
         if (res.status === 401 || res.status === 403) {
-            handleAuthFailure('rest:' + res.status);
+            if (shouldRedirectOnAuthFailure()) handleAuthFailure('rest:' + res.status);
             throw new Error(res.status + ': auth required');
         }
         if (!res.ok) return [];
@@ -304,7 +311,7 @@
             body: JSON.stringify(body)
         });
         if (res.status === 401 || res.status === 403) {
-            handleAuthFailure('edge:' + res.status);
+            if (shouldRedirectOnAuthFailure()) handleAuthFailure('edge:' + res.status);
             throw new Error(res.status + ': auth required');
         }
         if (!res.ok) {
