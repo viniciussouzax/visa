@@ -490,11 +490,30 @@
         }
 
         async function resolveOrg() {
-            if (!_orgParam) { document.getElementById('orgFooter').textContent = 'Admin'; return; }
+            const navBtn = document.getElementById('portalLinkBtnNav');
+            const urlInput = document.getElementById('portalUrlInput');
+            if (!_orgParam) {
+                document.getElementById('orgFooter').textContent = 'Admin';
+                if (navBtn) {
+                    navBtn.style.display = 'flex';
+                    navBtn.classList.add('is-disabled');
+                }
+                if (urlInput) urlInput.value = isMasterUser ? 'Selecione uma organiza??o' : 'Portal indispon?vel';
+                return;
+            }
             try {
                 const data = await sbGet('companies?short_id=eq.' + encodeURIComponent(_orgParam) + '&select=id,name&limit=1');
-                if (data?.[0]) { resolvedCompanyId = data[0].id; resolvedCompanyName = data[0].name; document.getElementById('orgFooter').textContent = resolvedCompanyName; const navBtn = document.getElementById('portalLinkBtnNav'); if (navBtn) { navBtn.style.display = 'flex'; const urlInput = document.getElementById('portalUrlInput'); if (urlInput) urlInput.value = _orgParam; } }
-                else { document.getElementById('orgFooter').textContent = 'NÃ£o encontrada'; }
+                if (data?.[0]) {
+                    resolvedCompanyId = data[0].id;
+                    resolvedCompanyName = data[0].name;
+                    document.getElementById('orgFooter').textContent = resolvedCompanyName;
+                    if (navBtn) {
+                        navBtn.style.display = 'flex';
+                        navBtn.classList.remove('is-disabled');
+                    }
+                    if (urlInput) urlInput.value = AppCore.buildPortalUrl(_orgParam);
+                }
+                else { document.getElementById('orgFooter').textContent = 'N????o encontrada'; }
             } catch (e) { document.getElementById('orgFooter').textContent = 'Erro'; }
         }
 
