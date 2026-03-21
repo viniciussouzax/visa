@@ -121,6 +121,7 @@
 
         </div>
         <div class="sidebar-bottom">
+            <div class="nav-item hidden" id="adminNavItem" onclick="navigateTo('admin')"><i class="iconoir-reload-window"></i> Painel Master</div>
             <div class="nav-item" onclick="window.open(AppCore.buildUrl('docs.html'),'_blank')"><i class="iconoir-book"></i> Documenta&#231;&#227;o</div>
         </div>
         <div class="sidebar-footer">
@@ -131,10 +132,6 @@
                     <div class="user-org" id="orgFooter">-</div>
                 </div>
                 <div class="sidebar-footer-actions">
-                    <button class="kebab-btn hidden" id="adminNavBtn" onclick="navigateTo('admin')"
-                        title="Painel Administrativo">
-                        <i class="iconoir-reload-window"></i>
-                    </button>
                     <button class="kebab-btn" onclick="event.stopPropagation();confirmLogout()" title="Sair">
                         <i class="iconoir-log-out"></i>
                     </button>
@@ -180,11 +177,11 @@
             <span id="admLogsCount" style="display:none"></span>
             <!-- Admin sub-nav tabs (inside admin panel, shown at top) -->
             <div class="adm-subnav" id="admSubNav">
-                <button class="chip active" id="admTab-orgs" onclick="admShowSection('orgs')" style="font-size:12px">Organiza&#231;&#245;es</button>
-                <button class="chip" id="admTab-capmonster" onclick="admShowSection('capmonster')" style="font-size:12px">Integra&#231;&#245;es</button>
+                <button class="chip active" id="admTab-orgs" onclick="admShowSection('orgs')" style="font-size:12px">Organizações</button>
+                <button class="chip" id="admTab-capmonster" onclick="admShowSection('capmonster')" style="font-size:12px">Integrações</button>
                 <button class="chip" id="admTab-logs" onclick="admShowSection('logs')" style="font-size:12px">Erros
                     <span id="admLogsBadge" style="display:none;margin-left:4px;background:#ef4444;color:#fff;padding:0 5px;border-radius:99px;font-size:10px">0</span></button>
-                <button class="chip" id="admTab-settings" onclick="admShowSection('settings')" style="font-size:12px">Configura&#231;&#245;es</button>
+                <button class="chip" id="admTab-settings" onclick="admShowSection('settings')" style="font-size:12px">Configurações</button>
             </div>
             <!-- Admin: Org List -->
             <div id="adm-view-list">

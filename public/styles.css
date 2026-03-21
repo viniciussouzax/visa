@@ -6313,6 +6313,9 @@ tr.drag-over {
 }
 
 .sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     flex-shrink: 0;
     padding: 8px 12px 0;
 }
@@ -6335,25 +6338,35 @@ tr.drag-over {
     width: 100%;
     min-width: 0;
     display: grid;
-    grid-template-columns: 42px minmax(120px, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     column-gap: 12px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
 }
 
 .user-info {
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
 }
 
 .user-name {
+    font-size: 14px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+.user-avatar {
+    display: none;
+}
+
 .user-org {
+    font-size: 12px;
     white-space: normal;
     word-break: normal;
     overflow-wrap: break-word;
@@ -6385,11 +6398,44 @@ tr.drag-over {
     min-width: 1280px;
 }
 
+#tableContainer th:nth-child(6),
+#tableContainer td:nth-child(6) {
+    width: 28%;
+    max-width: 360px;
+}
+
+#tableContainer th:nth-child(7),
+#tableContainer td:nth-child(7) {
+    width: 164px;
+}
+
 #tableContainer td:last-child {
     overflow: visible;
 }
 
+#tableContainer .notes-preview {
+    -webkit-line-clamp: 1;
+}
+
 #tableContainer .row-actions {
-    min-width: 180px;
-    gap: 8px;
+    min-width: 148px;
+    gap: 6px;
+}
+
+#tableContainer .row-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 17px;
+}
+
+#tableContainer .row-btn-more {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+}
+
+#tableContainer .row-btn .iconoir-copy {
+    font-size: 18px;
 }

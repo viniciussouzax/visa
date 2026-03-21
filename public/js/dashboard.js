@@ -176,6 +176,7 @@
             document.getElementById('adminLink')?.classList[method]('hidden');
             document.getElementById('kebabConfigItem')?.classList[method]('hidden');
             document.getElementById('adminNavBtn')?.classList[method]('hidden');
+            document.getElementById('adminNavItem')?.classList[method]('hidden');
         }
 
         const STATUS_CONFIG = {
@@ -331,6 +332,45 @@
             outcome: { title: 'Resultado', subtitle: 'Resultado do Processo' },
             archived: { title: 'Arquivado', subtitle: 'Processo Encerrado' },
         };
+
+        PAGE_CONFIG.overview = { title: 'Dashboard', subtitle: 'Visão Geral' };
+        PAGE_CONFIG.screening = { title: 'Triagem', subtitle: 'Triagem Inicial' };
+        PAGE_CONFIG.analysis = { title: 'Análise', subtitle: 'Revisão e Estratégia' };
+        PAGE_CONFIG.ds160 = { title: 'DS-160', subtitle: 'Preenchimento Oficial' };
+        PAGE_CONFIG.payment = { title: 'Taxas', subtitle: 'Pagamento de Taxas' };
+        PAGE_CONFIG.scheduling = { title: 'Agendamento', subtitle: 'Agendar Entrevista' };
+        PAGE_CONFIG.interview = { title: 'Entrevista', subtitle: 'Preparação e Entrevista' };
+        PAGE_CONFIG.outcome = { title: 'Resultado', subtitle: 'Resultado do Processo' };
+        PAGE_CONFIG.archived = { title: 'Arquivado', subtitle: 'Processo Encerrado' };
+
+        function normalizeDashboardStaticCopy() {
+            const problemsActionHeader = document.querySelector('#problemsTableWrap th:last-child');
+            if (problemsActionHeader) problemsActionHeader.textContent = 'Ação';
+
+            const analysisNavItem = document.querySelector('.nav-item[data-page="analysis"]');
+            if (analysisNavItem) analysisNavItem.innerHTML = '<i class="iconoir-strategy"></i> Análise';
+
+            const docsNavItem = document.querySelector('.sidebar-bottom .nav-item:last-child');
+            if (docsNavItem && !docsNavItem.id) docsNavItem.innerHTML = '<i class="iconoir-book"></i> Documentação';
+
+            const adminNavItem = document.getElementById('adminNavItem');
+            if (adminNavItem) adminNavItem.innerHTML = '<i class="iconoir-reload-window"></i> Painel Master';
+
+            const admTabOrgs = document.getElementById('admTab-orgs');
+            if (admTabOrgs) admTabOrgs.textContent = 'Organizações';
+
+            const admTabCapmonster = document.getElementById('admTab-capmonster');
+            if (admTabCapmonster) admTabCapmonster.textContent = 'Integrações';
+
+            const admTabSettings = document.getElementById('admTab-settings');
+            if (admTabSettings) admTabSettings.textContent = 'Configurações';
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', normalizeDashboardStaticCopy);
+        } else {
+            normalizeDashboardStaticCopy();
+        }
 
         // ==========================================
         // DATA LOADING
@@ -734,7 +774,7 @@
                     })()}</td>
                     <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : '-'}</td>
                     <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '-'}</td>
-                    <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anota\u00e7\u00f5es"><div class="notes-preview">${a.notes ? a.notes.substring(0, 140) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
+                    <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anota\u00e7\u00f5es"><div class="notes-preview">${a.notes ? a.notes.substring(0, 96) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
 
                     <td><div class="row-actions">
                         ${previousStage ? `<button class="row-btn row-btn-icon row-btn-muted" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa" aria-label="Voltar etapa"><i class="iconoir-nav-arrow-left"></i></button>` : ''}
@@ -764,7 +804,7 @@
                         <td><span class="status-badge" style="background:#f1f5f9;color:#64748b">${members.length} ${members.length === 1 ? 'membro' : 'membros'}</span></td>
                         <td></td>
                         <td></td>
-                        <td onclick="event.stopPropagation();openGroupNotesModal('${a.group_id}')" style="cursor:pointer" title="Notas do grupo"><div class="notes-preview">${(() => { const g = _groups.find(x => x.id === a.group_id); return g && g.notes ? g.notes.substring(0, 140) : '<span class="app-placeholder">Adicionar nota</span>'; })()}</div></td>
+                        <td onclick="event.stopPropagation();openGroupNotesModal('${a.group_id}')" style="cursor:pointer" title="Notas do grupo"><div class="notes-preview">${(() => { const g = _groups.find(x => x.id === a.group_id); return g && g.notes ? g.notes.substring(0, 96) : '<span class="app-placeholder">Adicionar nota</span>'; })()}</div></td>
 
                         <td><div class="row-actions"><button class="row-btn" onclick="event.stopPropagation();openGroupConfig('${a.group_id}')" title="ConfiguraÃ§Ãµes do grupo"><i class="iconoir-settings"></i></button><button class="row-btn" onclick="event.stopPropagation();openWhatsApp(null,'${a.group_id}')" title="WhatsApp do grupo"><i class="iconoir-whatsapp"></i></button><button class="row-btn" onclick="event.stopPropagation();copyGroupLink('${a.group_id}')" title="Copiar link do grupo"><i class="iconoir-copy"></i></button></div></td></tr>`;
                     if (isOpen) {
@@ -3195,6 +3235,9 @@
             if (section === 'orgs' && admOrgCount) subtitle = ' ' + admOrgCount.textContent;
             if (section === 'logs' && admLogsCount) subtitle = ' ' + admLogsCount.textContent;
             if (titleEl) titleEl.innerHTML = (titles[section] || 'Admin') + (subtitle ? '<span class="nav-count">' + subtitle + '</span>' : '');
+            if (titleEl && section === 'orgs') titleEl.innerHTML = 'Organizações' + (subtitle ? '<span class="nav-count">' + subtitle + '</span>' : '');
+            if (titleEl && section === 'capmonster') titleEl.innerHTML = 'Integrações';
+            if (titleEl && section === 'settings') titleEl.innerHTML = 'Configurações';
             // Toggle stage vs admin action buttons
             if (stageItems) stageItems.style.display = 'none';
             if (admActions) {
