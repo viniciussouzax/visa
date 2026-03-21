@@ -17,6 +17,13 @@ type FlyMachine = {
     state?: string;
 };
 
+type DispatchResult = {
+    dispatched: boolean;
+    app: string;
+    machineId: string | null;
+    reason: string;
+};
+
 async function flyFetch(path: string, init: RequestInit = {}) {
     if (!FLY_API_TOKEN) throw new Error("FLY_API_TOKEN not set");
 
@@ -54,17 +61,15 @@ async function startMachine(appName: string, machineId: string): Promise<boolean
     }
 }
 
-async function dispatchFlyApp(appName: string, preferredMachineId?: string | null) {
-    if (preferredMachineId) {
-        const started = await startMachine(appName, preferredMachineId);
-        return {
-            dispatched: started,
-            app: appName,
-            machineId: preferredMachineId,
-            reason: started ? "preferred_machine_started" : "preferred_machine_failed",
-        };
-    }
+function isRunningState(state?: string) {
+    return state === "started" || state === "starting";
+}
 
+function isStartableState(state?: string) {
+    return state === "stopped" || state === "suspended" || state === "created";
+}
+
+async function dispatchFlyApp(appName: string, preferredMachineId?: string | null): Promise<DispatchResult> {
     const machines = await listMachines(appName);
     if (!machines.length) {
         return {
@@ -75,13 +80,35 @@ async function dispatchFlyApp(appName: string, preferredMachineId?: string | nul
         };
     }
 
-    const candidate = machines.find((machine) => machine.state === "stopped" || machine.state === "suspended");
+    const running = machines.find((machine) => isRunningState(machine.state));
+    if (running) {
+        return {
+            dispatched: true,
+            app: appName,
+            machineId: running.id,
+            reason: "worker_already_running",
+        };
+    }
+
+    if (preferredMachineId) {
+        const started = await startMachine(appName, preferredMachineId);
+        if (started) {
+            return {
+                dispatched: true,
+                app: appName,
+                machineId: preferredMachineId,
+                reason: "preferred_machine_started",
+            };
+        }
+    }
+
+    const candidate = machines.find((machine) => machine.id !== preferredMachineId && isStartableState(machine.state));
     if (!candidate) {
         return {
             dispatched: false,
             app: appName,
-            machineId: null,
-            reason: "no_stopped_machine_available",
+            machineId: preferredMachineId || null,
+            reason: preferredMachineId ? "preferred_machine_failed_no_fallback" : "no_startable_machine_available",
         };
     }
 
@@ -122,7 +149,10 @@ Deno.serve(async (req: Request) => {
         }
 
         const result = await dispatchFlyApp(appName, machineId);
+        const status = result.dispatched ? 200 : 500;
+        console.log("dispatch-job result", JSON.stringify(result));
         return new Response(JSON.stringify(result), {
+            status,
             headers: { "Content-Type": "application/json" },
         });
     } catch (e) {
