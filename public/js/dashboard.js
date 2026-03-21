@@ -950,7 +950,7 @@
         function updateBulkBar() { const bar = document.getElementById('bulkBar'); if (selectedIds.size > 0) { bar.classList.remove('hidden'); document.getElementById('selectedCount').textContent = selectedIds.size; } else bar.classList.add('hidden'); }
 
         function buildUrl(id, tab) { const params = { id }; if (tab) params.tab = tab; return AppCore.buildUrl('ds160-form.html', params); }
-        function _formUrl(id, tab = 'editar') {
+        function _formUrl(id, tab = null) {
             let url = 'ds160-form.html?id=' + encodeURIComponent(id) + '&secure_entry=1';
             if (tab) url += '&tab=' + encodeURIComponent(tab);
             if (_orgParam) url += '&org=' + encodeURIComponent(_orgParam);
@@ -964,7 +964,7 @@
         }
         function openReview(id) {
             const a = applicants.find(x => x.id === id);
-            let url = _formUrl(id, 'editar');
+            let url = _formUrl(id);
             if (a?.stage) url += '&from=' + encodeURIComponent(a.stage);
             window.open(url, '_blank');
         }
@@ -976,7 +976,7 @@
             }
         });
         document.addEventListener('click', e => { if (!e.target.closest('.kebab-menu')) document.getElementById('userDropdown')?.classList.remove('open'); });
-        function openForm(id) { window.open(_formUrl(id, 'editar'), '_blank'); }
+        function openForm(id) { window.open(_formUrl(id), '_blank'); }
 
         function copyGroupLink(groupId) {
             const members = applicants.filter(a => String(a.group_id) === String(groupId)).sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));

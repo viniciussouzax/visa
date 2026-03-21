@@ -29,7 +29,7 @@
             padding-top: 12px;
         }
 
-        /* ======== Assessor Mode (new tab) ======== */
+        /* ======== Assessor Mode ======== */
         body.role-assessor .tabs,
         body.role-assessor .btn-bar,
         body.role-assessor .header {
@@ -38,18 +38,9 @@
         body.role-assessor .container.form-wrapper {
             padding-top: 24px;
         }
-        /* Assessor: hide checks, progress, section nav — clean flat view */
-        body.role-assessor .section-status,
-        body.role-assessor .progress-container,
-        body.role-assessor .section-nav {
-            display: none !important;
-        }
         .assessor-conclude {
             display: none;
             padding: 0 16px 60px;
-        }
-        body.role-assessor .assessor-conclude {
-            display: block;
         }
         .assessor-conclude .btn-conclude {
             display: block;
@@ -391,34 +382,7 @@
         let _companyId = null;
         let _applicantStage = null; // stage do applicant — controla auto-transition de status
 
-        // Detect role: assessor ONLY when tab=editar or tab=assessor
-        let _isAssessor = (_tabParam === 'editar' || _tabParam === 'assessor');
-
-        // Security Gate Block
-        if (_isAssessor) {
-            document.body.classList.add('role-assessor');
-        } else {
-            document.body.classList.add('role-solicitante');
-        }
-        // Show body after roles applied (prevents FOUC)
-        document.body.classList.add('ready');
-
-        // Solicitante session management
-        if (!_isAssessor) {
-            const sessionAppId = sessionStorage.getItem('client_app_id');
-
-            if (sessionAppId) {
-                _applicantId = sessionAppId;
-            } else if (_applicantId) {
-                sessionStorage.setItem('client_app_id', _applicantId);
-            } else {
-                let portalUrl = 'portal.html';
-                const orgSlug = AppCore.getOrg();
-                if (orgSlug) portalUrl += '?org=' + encodeURIComponent(orgSlug);
-                alert('Sessão expirada ou inválida. Faça login novamente.');
-                window.location.href = portalUrl;
-            }
-        }
+        let _isAssessor = false;
 
         // Resolve org short_id to company_id
         async function resolveCompanyId() {
@@ -433,23 +397,76 @@
         const sbGet = AppCore.sbGet;
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function ensureAssessorAuth() {
-            if (!_isAssessor) return true;
+        function applyRoleClasses() {
+            document.body.classList.remove('role-assessor', 'role-solicitante');
+            document.body.classList.add(_isAssessor ? 'role-assessor' : 'role-solicitante');
+            document.body.classList.add('ready');
+        }
 
+        async function getAssessorSessionToken() {
             try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session?.access_token) {
-                    window._sessionToken = session.access_token;
-                    AppCore.setSession(session.access_token, null);
-                    return true;
-                }
+                if (session?.access_token) return session.access_token;
             } catch (e) {
                 console.warn('[Form] Failed to read Supabase session:', e);
             }
 
             const token = AppCore.getAuth();
-            if (token && token !== SUPABASE_KEY) {
+            if (token && token !== SUPABASE_KEY) return token;
+            return null;
+        }
+
+        async function initializeAccessContext() {
+            const assessorRequested = (_tabParam === 'editar' || _tabParam === 'assessor');
+            const sessionToken = await getAssessorSessionToken();
+
+            if (assessorRequested) {
+                if (!sessionToken) {
+                    AppCore.handleAuthFailure('missing_assessor_session');
+                    return false;
+                }
+                _isAssessor = true;
+                window._sessionToken = sessionToken;
+                AppCore.setSession(sessionToken, null);
+                applyRoleClasses();
+                return true;
+            }
+
+            if (sessionToken) {
+                _isAssessor = true;
+                window._sessionToken = sessionToken;
+                AppCore.setSession(sessionToken, null);
+                applyRoleClasses();
+                return true;
+            }
+
+            _isAssessor = false;
+            applyRoleClasses();
+
+            const sessionAppId = sessionStorage.getItem('client_app_id');
+            if (sessionAppId) {
+                _applicantId = sessionAppId;
+            } else if (_applicantId) {
+                sessionStorage.setItem('client_app_id', _applicantId);
+            } else {
+                let portalUrl = 'portal.html';
+                const orgSlug = AppCore.getOrg();
+                if (orgSlug) portalUrl += '?org=' + encodeURIComponent(orgSlug);
+                alert('Sessão expirada ou inválida. Faça login novamente.');
+                window.location.href = portalUrl;
+                return false;
+            }
+
+            return true;
+        }
+
+        async function ensureAssessorAuth() {
+            if (!_isAssessor) return true;
+
+            const token = await getAssessorSessionToken();
+            if (token) {
                 window._sessionToken = token;
+                AppCore.setSession(token, null);
                 return true;
             }
 
@@ -462,11 +479,8 @@
         // ==========================================
         const engine = new FormEngine(DS160_SCHEMA, 'view-form');
         engine.init();
-        // Solicitante: pages mode (uma seção por vez, step-bar)
-        // Assessor: accordion mode (visão completa)
-        if (!_isAssessor) {
-            engine.setRenderMode('pages');
-        }
+        // Assessor e solicitante usam o mesmo fluxo de páginas e auto-save.
+        engine.setRenderMode('pages');
         engine.onSave = saveData; // Auto-save on Próximo
 
         // ==========================================
@@ -483,16 +497,10 @@
         }
         engine.onChange = markUnsaved;
 
-        // Update conclude button: assessors always enabled, solicitantes check section completion
+        // Update conclude button visibility/state for legacy assessor footer.
         function updateConcludeButton() {
             const btn = document.querySelector('.btn-conclude');
             if (!btn) return;
-            // Assessor: always enabled — they take responsibility for reviewing
-            if (document.body.classList.contains('role-assessor')) {
-                btn.disabled = false;
-                btn.title = 'Concluir e marcar como done';
-                return;
-            }
             let allComplete = true;
             engine.schema.sections.forEach((sec, idx) => {
                 // Skip sections hidden by schema conditionals (not pages mode)
@@ -1024,6 +1032,9 @@
         // ==========================================
         (async function startup() {
             try {
+                const accessReady = await initializeAccessContext();
+                if (!accessReady) return;
+
                 const canContinue = await ensureAssessorAuth();
                 if (!canContinue) return;
 
