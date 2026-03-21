@@ -25,7 +25,7 @@ Assessor → Formulário Clone → Banco (Supabase) → Automação Playwright �
 - A fila DS-160 do Fly e global: ela pega solicitantes de todas as organizacoes, em ordem de elegibilidade, sem separar por empresa
 - O unico bloqueio de concorrencia necessario e por solicitante/application: nunca pode existir duas automacoes simultaneas para o mesmo caso
 - `standby` nao dispara na hora: uma rotina agendada desperta a fila periodicamente para tentar novamente somente os casos cujo cooldown venceu
-- A rotina agendada de `standby` depende do secret `SUPABASE_SERVICE_ROLE_KEY` no GitHub Actions para invocar a Edge Function `dispatch-job`
+- A rotina agendada de `standby` depende do secret `SUPABASE_SERVICE_ROLE_KEY` no GitHub Actions para invocar a Edge Function `dispatch-job` e pode disparar multiplas machines por rodada conforme a quantidade elegivel
 - O runner processa a fila: claima applicant elegivel em `ds160` → claima `application` → abre Playwright → preenche → promove para `payment` ou classifica o erro
 
 ### 3. Dashboard (`dashboard.html` + Supabase RLS)

@@ -14,7 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SUPABASE_FUNCTION_URL: https://zcpvknzktfmotvrybxdf.supabase.co/functions/v1/dispatch-job
+      SUPABASE_REST_URL: https://zcpvknzktfmotvrybxdf.supabase.co/rest/v1
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      MAX_STANDBY_WAKEUPS: 5
     steps:
       - name: Wake DS-160 queue
         run: |
@@ -22,9 +24,23 @@ jobs:
             echo "SUPABASE_SERVICE_ROLE_KEY is not configured"
             exit 1
           fi
-          curl --fail-with-body --silent --show-error \
-            -X POST "$SUPABASE_FUNCTION_URL" \
-            -H "Content-Type: application/json" \
+          standby_cutoff=$(date -u -d '30 minutes ago' +%Y-%m-%dT%H:%M:%SZ)
+          eligible=$(curl --fail-with-body --silent --show-error \
+            "$SUPABASE_REST_URL/applicants?select=id&stage=eq.ds160&status=eq.standby&updated_at=lt.$standby_cutoff&limit=$MAX_STANDBY_WAKEUPS" \
             -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-            --data '{"record":{"stage":"ds160","status":"retry","source":"standby-cron"}}'
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY")
+          eligible_count=$(printf '%s' "$eligible" | python -c "import json,sys; print(len(json.loads(sys.stdin.read() or '[]')))")
+          if [ "$eligible_count" -eq 0 ]; then
+            echo "No standby applicants eligible for retry"
+            exit 0
+          fi
+          echo "Dispatching standby sweep for $eligible_count eligible applicant(s)"
+          for i in $(seq 1 "$eligible_count"); do
+            curl --fail-with-body --silent --show-error \
+              -X POST "$SUPABASE_FUNCTION_URL" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+              --data '{"record":{"stage":"ds160","status":"retry","source":"standby-cron"}}'
+            echo ""
+          done
