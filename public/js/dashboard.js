@@ -504,10 +504,12 @@
             if (activeShortId) {
                 navBtn.classList.remove('is-disabled');
                 urlInput.value = activeShortId;
+                urlInput.placeholder = '';
                 return;
             }
             navBtn.classList.add('is-disabled');
-            urlInput.value = isMasterUser ? 'Escolher org' : '';
+            urlInput.value = '';
+            urlInput.placeholder = isMasterUser ? 'Escolher org' : 'Sem org';
         }
 
         async function resolveOrg() {
