@@ -86,11 +86,36 @@
             interview: 'Entrevista', outcome: 'Resultado', archived: 'Arquivado'
         };
 
+        const STAGE_ORDER = ['screening', 'analysis', 'ds160', 'payment', 'scheduling', 'interview', 'outcome', 'archived'];
+
         function getOutcomeValue(applicant) {
             if (!applicant) return 'pending';
             if (applicant.result && applicant.result !== 'pending') return applicant.result;
             if (applicant.stage === 'outcome' && RESULT_CONFIG[applicant.status]) return applicant.status;
             return applicant.result || 'pending';
+        }
+
+        function getStageIndex(stage) {
+            return STAGE_ORDER.indexOf(stage);
+        }
+
+        function getNextStage(stage) {
+            const idx = getStageIndex(stage);
+            if (idx < 0 || idx >= STAGE_ORDER.length - 1) return null;
+            if (stage === 'interview') return null;
+            return STAGE_ORDER[idx + 1];
+        }
+
+        function getPreviousStage(stage) {
+            const idx = getStageIndex(stage);
+            if (idx <= 0) return null;
+            return STAGE_ORDER[idx - 1];
+        }
+
+        function getStageOptions(selectedStage) {
+            return STAGE_ORDER
+                .map(stage => `<option value="${stage}" ${stage === selectedStage ? 'selected' : ''}>${STAGE_LABELS[stage]}</option>`)
+                .join('');
         }
 
         function getDefaultStatusForStage(stage) {
@@ -497,7 +522,8 @@
             function buildRow(a, extraClass, treeOpts) {
                 treeOpts = treeOpts || {};
                 const cfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.todo;
-                                const rcfg = RESULT_CONFIG[a.result] || RESULT_CONFIG.pending;
+                const nextStage = getNextStage(a.stage);
+                const previousStage = getPreviousStage(a.stage);
                 const sel = selectedIds.has(a.id);
                 const pc = a.progress >= 100 ? '#22c55e' : a.progress > 50 ? '#3b82f6' : '#f59e0b';
                 const isSubRow = (extraClass || '').includes('sub-row');
@@ -523,6 +549,8 @@
 
                     <td><div class="row-actions">
                         ${a.ds160_pdf_url || a.confirmation_pdf_url ? `<button class="row-btn" onclick="event.stopPropagation();openDownloadModal('${a.id}')" title="Download DS-160" style="color:#22c55e"><i class="iconoir-download"></i></button>` : ''}
+                        ${previousStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa"><i class="iconoir-nav-arrow-left"></i></button>` : ''}
+                        ${nextStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="AvanÃ§ar etapa"><i class="iconoir-nav-arrow-right"></i></button>` : ''}
                         <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Gerenciar"><i class="iconoir-settings"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link do portal"><i class="iconoir-copy"></i></button>
@@ -1190,6 +1218,103 @@
             document.getElementById('btnOkConfirm').addEventListener('click', async () => { modalEl.remove(); if (onConfirm) await onConfirm(); });
         }
 
+        function closeActionModal(id = 'stageActionModal') {
+            document.getElementById(id)?.remove();
+        }
+
+        function setStageActionSelection(stage, label) {
+            const select = document.getElementById('stageActionSelect');
+            const hint = document.getElementById('stageActionHint');
+            if (select) select.value = stage;
+            if (hint) hint.textContent = label || '';
+        }
+
+        function openStageActionModal(id, direction) {
+            const applicant = applicants.find(x => x.id === id);
+            if (!applicant) return;
+            const defaultStage = direction === 'back' ? getPreviousStage(applicant.stage) : getNextStage(applicant.stage);
+            if (!defaultStage) {
+                showToast(direction === 'back' ? 'NÃ£o hÃ¡ etapa anterior.' : 'NÃ£o hÃ¡ prÃ³xima etapa automÃ¡tica.', 'info');
+                return;
+            }
+            const modalId = 'stageActionModal';
+            closeActionModal(modalId);
+            const title = direction === 'back' ? 'Voltar Etapa' : 'AvanÃ§ar Etapa';
+            const helper = direction === 'back'
+                ? 'A etapa anterior foi preselecionada. VocÃª pode trocar se precisar.'
+                : 'A prÃ³xima etapa foi preselecionada. VocÃª pode trocar se precisar.';
+            const confirmLabel = direction === 'back' ? 'Confirmar retorno' : 'Confirmar avanÃ§o';
+            const html = `<div id="${modalId}" class="modal-overlay" onclick="closeActionModal('${modalId}')">
+                <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px">
+                    <div class="modal-header">
+                        <h3 class="modal-title">${title}</h3>
+                        <button class="modal-close" onclick="closeActionModal('${modalId}')">&times;</button>
+                    </div>
+                    <div class="modal-subtitle">${escapeHTML(applicant.name)}</div>
+                    <p class="modal-body" style="margin-top:0">${helper}</p>
+                    <div class="manage-section-label">Etapa de destino</div>
+                    <select id="stageActionSelect" class="manage-select">${getStageOptions(defaultStage)}</select>
+                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">${direction === 'back' ? 'Use para reabrir uma etapa anterior.' : 'Use para seguir o fluxo normal com confirmaÃ§Ã£o.'}</div>
+                    <div class="modal-actions" style="margin-top:16px">
+                        <button class="modal-btn" onclick="closeActionModal('${modalId}')">Cancelar</button>
+                        <button class="modal-btn primary" onclick="confirmStageAction('${id}','${direction}')">${confirmLabel}</button>
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        async function confirmStageAction(id, direction) {
+            const applicant = applicants.find(x => x.id === id);
+            const select = document.getElementById('stageActionSelect');
+            if (!applicant || !select) return;
+            const targetStage = select.value;
+            closeActionModal('stageActionModal');
+            if (!targetStage) return;
+            await updateField(id, 'stage', targetStage);
+        }
+
+        function openResolveProblemModal(id) {
+            const applicant = applicants.find(x => x.id === id);
+            if (!applicant) return;
+            const modalId = 'resolveProblemModal';
+            closeActionModal(modalId);
+            const continueLabel = applicant.status === 'fail'
+                ? 'Tentar novamente nesta etapa'
+                : 'Continuar desta etapa';
+            const html = `<div id="${modalId}" class="modal-overlay" onclick="closeActionModal('${modalId}')">
+                <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Resolver Problema</h3>
+                        <button class="modal-close" onclick="closeActionModal('${modalId}')">&times;</button>
+                    </div>
+                    <div class="modal-subtitle">${escapeHTML(applicant.name)}</div>
+                    <p class="modal-body" style="margin-top:0">Escolha a aÃ§Ã£o recomendada para este erro. O sistema preseleciona uma etapa, mas vocÃª pode ajustar antes de confirmar.</p>
+                    <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:12px">
+                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#2563eb" onclick="setStageActionSelection('${applicant.stage}','Retoma a etapa atual apÃ³s corrigir o problema.')">${continueLabel}</button>
+                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#d97706" onclick="setStageActionSelection('analysis','Volta para revisÃ£o manual quando o erro pode esconder outros dados inconsistentes.')">Voltar para anÃ¡lise</button>
+                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#64748b" onclick="setStageActionSelection('screening','Reabre o processo desde o inÃ­cio quando a base precisa ser revisada por completo.')">Reiniciar do zero</button>
+                        ${applicant.stage === 'ds160' ? `<button class="manage-btn" style="justify-content:center;font-weight:600;color:#8b5cf6" onclick="closeActionModal('${modalId}');confirmNewDS160('${id}','${applicant.name.replace(/'/g, "\\\&#39;")}')">Novo DS-160</button>` : ''}
+                    </div>
+                    <div class="manage-section-label">Etapa de destino</div>
+                    <select id="stageActionSelect" class="manage-select">${getStageOptions(applicant.stage)}</select>
+                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">A etapa atual foi preselecionada para continuar apÃ³s corrigir o problema.</div>
+                    <div class="modal-actions" style="margin-top:16px">
+                        <button class="modal-btn" onclick="closeActionModal('${modalId}')">Cancelar</button>
+                        <button class="modal-btn primary" onclick="confirmProblemResolution('${id}')">Confirmar decisÃ£o</button>
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        async function confirmProblemResolution(id) {
+            const targetStage = document.getElementById('stageActionSelect')?.value;
+            closeActionModal('resolveProblemModal');
+            if (!targetStage) return;
+            await updateField(id, 'stage', targetStage);
+        }
+
         function viewJSON(id) { const a = applicants.find(x => x.id === id); if (a?.data) { navigator.clipboard.writeText(JSON.stringify(a.data, null, 2)); showToast('JSON copiado!', 'success'); } else showToast('Sem dados', 'error'); }
         function bulkExport() { const d = applicants.filter(a => selectedIds.has(a.id)).map(a => a.data || {}); navigator.clipboard.writeText(JSON.stringify(d, null, 2)); showToast('Exportado!', 'success'); }
 
@@ -1271,12 +1396,31 @@
             const a = applicants.find(x => x.id === id); if (!a) return;
             const existing = document.getElementById('managePopup'); if (existing) existing.remove();
             const stages = ['screening', 'analysis', 'ds160', 'payment', 'scheduling', 'interview', 'outcome', 'archived'];
-            const results = Object.keys(RESULT_CONFIG);
+            const nextStage = getNextStage(a.stage);
+            const previousStage = getPreviousStage(a.stage);
+            const backActionAttrs = previousStage ? `onclick="closeManageMenu();openStageActionModal('${id}','back')"` : 'disabled';
+            const backActionStyle = previousStage ? 'justify-content:center;gap:6px;font-weight:600' : 'justify-content:center;gap:6px;font-weight:600;opacity:.45;cursor:not-allowed';
+            const forwardActionAttrs = nextStage ? `onclick="closeManageMenu();openStageActionModal('${id}','forward')"` : 'disabled';
+            const forwardActionStyle = nextStage ? 'justify-content:center;gap:6px;font-weight:600;color:#2563eb' : 'justify-content:center;gap:6px;font-weight:600;color:#2563eb;opacity:.45;cursor:not-allowed';
 
             let html = `<div id="managePopup" class="modal-overlay" onclick="closeManageMenu()">
             <div class="modal-box modal-manage" onclick="event.stopPropagation()">
                 <div class="modal-header"><h3 class="modal-title">Gerenciar Solicitante</h3><button class="modal-close" onclick="closeManageMenu()">&times;</button></div>
                 <div class="modal-subtitle">${a.name}</div>
+                <div class="manage-section-label">Ações rápidas</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+                    <button class="manage-btn" ${backActionAttrs} style="${backActionStyle}">
+                        <i class="iconoir-nav-arrow-left" style="font-size:14px"></i> Voltar
+                    </button>
+                    <button class="manage-btn" ${forwardActionAttrs} style="${forwardActionStyle}">
+                        <i class="iconoir-nav-arrow-right" style="font-size:14px"></i> Avançar
+                    </button>
+                </div>
+                ${a.status === 'error' || a.status === 'fail'
+                    ? `<button class="manage-btn" style="width:100%;justify-content:center;gap:6px;font-weight:600;color:#d97706;margin-bottom:12px" onclick="closeManageMenu();openResolveProblemModal('${id}')">
+                        <i class="iconoir-warning-triangle" style="font-size:14px"></i> Resolver problema
+                      </button>`
+                    : ''}
 
                 <div class="manage-section-label">Grupo</div>`;
 
@@ -1303,7 +1447,9 @@
             }
 
             html += `
-                <div class="manage-section-label">Etapa</div>
+                <details style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+                <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em">Mais opções</summary>
+                <div class="manage-section-label" style="margin-top:12px">Etapa</div>
                 <select class="manage-select" onchange="updateField('${id}','stage',this.value)">
                     ${stages.map(s => `<option value="${s}" ${a.stage === s ? 'selected' : ''}>${STAGE_LABELS[s]}</option>`).join('')}
                 </select>
@@ -1356,6 +1502,7 @@
                           </button>`
                     }
                 </div>
+                </details>
             </div></div>`;
             document.body.insertAdjacentHTML('beforeend', html);
 
@@ -2133,7 +2280,8 @@
                     <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '—'}</td>
                     <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotações"><div class="notes-preview">${a.notes ? a.notes.substring(0, 80) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
                     <td><div class="row-actions">
-                        <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Gerenciar"><i class="iconoir-settings"></i></button>
+                        <button class="row-btn" onclick="event.stopPropagation();openResolveProblemModal('${a.id}')" title="Resolver problema" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#d97706">Resolver</button>
+                        <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opções"><i class="iconoir-settings"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link"><i class="iconoir-copy"></i></button>
                     </div></td>
