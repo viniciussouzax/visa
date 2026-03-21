@@ -372,6 +372,39 @@
             normalizeDashboardStaticCopy();
         }
 
+        PAGE_CONFIG.analysis = { title: 'An\u00e1lise', subtitle: 'Revis\u00e3o e Estrat\u00e9gia' };
+        PAGE_CONFIG.interview = { title: 'Entrevista', subtitle: 'Prepara\u00e7\u00e3o e Entrevista' };
+
+        function applyDashboardUnicodeOverrides() {
+            const problemsActionHeader = document.querySelector('#problemsTableWrap th:last-child');
+            if (problemsActionHeader) problemsActionHeader.textContent = 'A\u00e7\u00e3o';
+
+            const analysisNavItem = document.querySelector('.nav-item[data-page="analysis"]');
+            if (analysisNavItem) analysisNavItem.innerHTML = '<i class="iconoir-strategy"></i> An\u00e1lise';
+
+            const docsNavItems = document.querySelectorAll('.sidebar-bottom .nav-item');
+            const docsNavItem = docsNavItems[docsNavItems.length - 1];
+            if (docsNavItem) docsNavItem.innerHTML = '<i class="iconoir-book"></i> Documenta\u00e7\u00e3o';
+
+            const adminNavItem = document.getElementById('adminNavItem');
+            if (adminNavItem) adminNavItem.innerHTML = '<i class="iconoir-reload-window"></i> Painel Master';
+
+            const admTabOrgs = document.getElementById('admTab-orgs');
+            if (admTabOrgs) admTabOrgs.textContent = 'Organiza\u00e7\u00f5es';
+
+            const admTabCapmonster = document.getElementById('admTab-capmonster');
+            if (admTabCapmonster) admTabCapmonster.textContent = 'Integra\u00e7\u00f5es';
+
+            const admTabSettings = document.getElementById('admTab-settings');
+            if (admTabSettings) admTabSettings.textContent = 'Configura\u00e7\u00f5es';
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyDashboardUnicodeOverrides);
+        } else {
+            applyDashboardUnicodeOverrides();
+        }
+
         // ==========================================
         // DATA LOADING
         // ==========================================
@@ -3238,6 +3271,9 @@
             if (titleEl && section === 'orgs') titleEl.innerHTML = 'Organizações' + (subtitle ? '<span class="nav-count">' + subtitle + '</span>' : '');
             if (titleEl && section === 'capmonster') titleEl.innerHTML = 'Integrações';
             if (titleEl && section === 'settings') titleEl.innerHTML = 'Configurações';
+            if (titleEl && section === 'orgs') titleEl.innerHTML = 'Organiza\u00e7\u00f5es' + (subtitle ? '<span class="nav-count">' + subtitle + '</span>' : '');
+            if (titleEl && section === 'capmonster') titleEl.innerHTML = 'Integra\u00e7\u00f5es';
+            if (titleEl && section === 'settings') titleEl.innerHTML = 'Configura\u00e7\u00f5es';
             // Toggle stage vs admin action buttons
             if (stageItems) stageItems.style.display = 'none';
             if (admActions) {
