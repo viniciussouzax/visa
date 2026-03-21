@@ -388,8 +388,12 @@
         async function resolveCompanyId() {
             if (!_orgParam) return;
             try {
+                AppCore.setPortalContext(_orgParam, null);
                 const rows = await sbGet('companies?short_id=eq.' + _orgParam + '&select=id&limit=1');
-                if (rows && rows[0]) _companyId = rows[0].id;
+                if (rows && rows[0]) {
+                    _companyId = rows[0].id;
+                    AppCore.setPortalContext(_orgParam, _companyId);
+                }
             } catch { }
         }
 

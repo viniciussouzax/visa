@@ -17,6 +17,8 @@
     // ==========================================
     const STORAGE_AUTH = 'ds160_auth';
     const STORAGE_ORG = 'ds160_org';
+    const STORAGE_PORTAL_ORG = 'portal_org';
+    const STORAGE_PORTAL_COMPANY = 'portal_company_id';
 
     function _readParam(key) {
         const params = new URLSearchParams(location.search);
@@ -47,6 +49,16 @@
     function setSession(auth, org) {
         if (auth) sessionStorage.setItem(STORAGE_AUTH, auth);
         if (org) sessionStorage.setItem(STORAGE_ORG, org);
+    }
+
+    function setPortalContext(org, companyId) {
+        if (org) sessionStorage.setItem(STORAGE_PORTAL_ORG, org);
+        if (companyId) sessionStorage.setItem(STORAGE_PORTAL_COMPANY, companyId);
+    }
+
+    function clearPortalContext() {
+        sessionStorage.removeItem(STORAGE_PORTAL_ORG);
+        sessionStorage.removeItem(STORAGE_PORTAL_COMPANY);
     }
 
     /** Clear session (logout) */
@@ -128,15 +140,27 @@
         return window._sessionToken || getAuth() || SUPABASE_KEY;
     }
 
+    function _restHeaders(extra = {}) {
+        const headers = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + _bearer(),
+            ...extra
+        };
+
+        const portalOrg = sessionStorage.getItem(STORAGE_PORTAL_ORG) || getOrg();
+        const portalCompanyId = sessionStorage.getItem(STORAGE_PORTAL_COMPANY);
+        if (portalOrg) headers['X-Portal-Org'] = portalOrg;
+        if (portalCompanyId) headers['X-Portal-Company-Id'] = portalCompanyId;
+        return headers;
+    }
+
     async function sbFetch(path, method, body) {
         const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
             method,
-            headers: {
+            headers: _restHeaders({
                 'Content-Type': 'application/json',
-                'apikey': SUPABASE_KEY,
-                'Authorization': 'Bearer ' + _bearer(),
                 'Prefer': 'return=representation'
-            },
+            }),
             body: body ? JSON.stringify(body) : undefined,
         });
         if (res.status === 401 || res.status === 403) {
@@ -154,10 +178,7 @@
 
     async function sbGet(path) {
         const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
-            headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': 'Bearer ' + _bearer()
-            },
+            headers: _restHeaders(),
         });
         if (res.status === 401 || res.status === 403) {
             if (shouldRedirectOnAuthFailure()) handleAuthFailure('rest:' + res.status);
@@ -287,6 +308,8 @@
         getOrg,
         setSession,
         clearSession,
+        setPortalContext,
+        clearPortalContext,
         isLoggedIn,
         handleAuthFailure,
 

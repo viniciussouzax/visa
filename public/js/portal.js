@@ -2,6 +2,7 @@
             const _params = new URLSearchParams(location.search);
             const _idParam = _params.get('id');
             const _orgParam = _params.get('org');
+            if (_orgParam) AppCore.setPortalContext(_orgParam, null);
 
             let _companyId = null;
             let _orgName = '';
@@ -43,6 +44,7 @@
 
                             if (app.company_id) {
                                 _companyId = app.company_id;
+                                AppCore.setPortalContext(_orgParam, _companyId);
                                 const orgs = await sbGet('companies?id=eq.' + app.company_id + '&select=short_id,name,logo_url,use_custom_logo,portal_bg_color,portal_btn_color,logo_max_width&limit=1');
                                 if (orgs?.[0]) applyBranding(orgs[0]);
                             }
@@ -70,6 +72,7 @@
 
                             if (first.company_id) {
                                 _companyId = first.company_id;
+                                AppCore.setPortalContext(_orgParam, _companyId);
                                 const orgs = await sbGet('companies?id=eq.' + first.company_id + '&select=short_id,name,logo_url,use_custom_logo,portal_bg_color,portal_btn_color,logo_max_width&limit=1');
                                 if (orgs?.[0]) applyBranding(orgs[0]);
                             }
@@ -117,6 +120,7 @@
                     }
                     _companyId = rows[0].id;
                     _orgName = rows[0].name || _orgParam;
+                    AppCore.setPortalContext(_orgParam, _companyId);
                     applyBranding(rows[0]);
                 } catch (e) {
                     console.error('[Portal] Org resolve error:', e);
