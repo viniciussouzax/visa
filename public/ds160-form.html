@@ -630,14 +630,16 @@
                 // Apply org branding
                 if (_orgParam) {
                     try {
-                        const orgs = await sbGet('companies?short_id=eq.' + _orgParam + '&select=logo_url,use_custom_logo,portal_bg_color,portal_btn_color,logo_max_width&limit=1');
+                        const orgs = await sbGet('companies?short_id=eq.' + _orgParam + '&select=name,short_id,logo_url,use_custom_logo,portal_bg_color,portal_btn_color,logo_max_width&limit=1');
                         if (orgs && orgs[0]) {
                             const org = orgs[0];
                             document.querySelectorAll('#portalFormLogo, #portalFooterLogo').forEach(logo => {
                                 if (!logo.dataset.defaultSrc) logo.dataset.defaultSrc = logo.getAttribute('src') || 'logo-azul.png';
                                 if (!logo.dataset.defaultMaxWidth) logo.dataset.defaultMaxWidth = logo.style.maxWidth || '120px';
+                                if (!logo.dataset.defaultAlt) logo.dataset.defaultAlt = logo.getAttribute('alt') || 'SENDS160';
                                 logo.src = logo.dataset.defaultSrc;
                                 logo.style.maxWidth = logo.dataset.defaultMaxWidth;
+                                logo.alt = logo.dataset.defaultAlt;
                             });
                             document.body.style.backgroundColor = '';
                             document.body.style.backgroundImage = '';
@@ -648,6 +650,7 @@
                                 document.querySelectorAll('#portalFormLogo, #portalFooterLogo').forEach(logo => {
                                     logo.src = org.logo_url;
                                     logo.style.maxWidth = (org.logo_max_width || 150) + 'px';
+                                    logo.alt = org.name || org.short_id || 'Logo da organização';
                                 });
                             }
                             if (org.portal_bg_color) {

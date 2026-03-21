@@ -172,8 +172,10 @@
                 document.querySelectorAll('#brandLogo, #navLogo').forEach(img => {
                     if (!img.dataset.defaultSrc) img.dataset.defaultSrc = img.getAttribute('src') || 'logo-azul.png';
                     if (!img.dataset.defaultMaxWidth) img.dataset.defaultMaxWidth = img.style.maxWidth || '120px';
+                    if (!img.dataset.defaultAlt) img.dataset.defaultAlt = img.getAttribute('alt') || 'SENDS160';
                     img.src = img.dataset.defaultSrc;
                     img.style.maxWidth = img.dataset.defaultMaxWidth;
+                    img.alt = img.dataset.defaultAlt;
                 });
                 document.body.style.backgroundColor = '';
                 document.body.style.backgroundImage = '';
@@ -186,6 +188,7 @@
                     document.querySelectorAll('#brandLogo, #navLogo').forEach(img => {
                         img.src = org.logo_url;
                         img.style.maxWidth = logoMaxW + 'px';
+                        img.alt = org.name || org.short_id || 'Logo da organização';
                     });
                 }
                 if (org.portal_bg_color) {
