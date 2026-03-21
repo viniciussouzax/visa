@@ -1888,7 +1888,7 @@
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
         }
 
-        async function updateField(id, field, value) {
+        async function legacyUpdateField(id, field, value) {
             try {
                 const patch = { [field]: value };
                 const a = applicants.find(x => x.id === id);
@@ -2023,7 +2023,7 @@
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
         }
 
-        updateField = async function(id, field, value) {
+        async function updateField(id, field, value) {
             try {
                 const patch = { [field]: value };
                 const a = applicants.find(x => x.id === id);
@@ -2153,7 +2153,7 @@
             } catch (e) {
                 showToast('Erro: ' + e.message, 'error');
             }
-        };
+        }
 
         async function saveNotes(id) {
             try {
