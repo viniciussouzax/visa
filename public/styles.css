@@ -6279,3 +6279,87 @@ tr.drag-over {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* ==========================================
+   DASHBOARD HOTFIXES
+   ========================================== */
+.sidebar {
+    overflow: hidden;
+    overflow-x: hidden;
+}
+
+.sidebar-nav {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar-bottom {
+    flex-shrink: 0;
+    padding: 6px 12px 0;
+}
+
+.sidebar-bottom .nav-item {
+    opacity: .72;
+    padding: 8px 12px;
+}
+
+.sidebar-footer {
+    flex-shrink: 0;
+    margin-top: 0;
+    padding: 14px 16px 18px;
+    box-sizing: border-box;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, .18) 28%, rgba(15, 23, 42, .4) 100%);
+}
+
+.sidebar-user-card {
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    align-items: center;
+}
+
+.user-info {
+    min-width: 0;
+}
+
+.user-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-org {
+    white-space: normal;
+    word-break: break-word;
+}
+
+.sidebar-footer-actions {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.main {
+    min-width: 0;
+    overflow: auto;
+}
+
+#tableContainer {
+    overflow-x: auto;
+}
+
+#tableContainer table {
+    table-layout: fixed;
+    min-width: 1280px;
+}
+
+#tableContainer td:last-child {
+    overflow: visible;
+}
+
+#tableContainer .row-actions {
+    min-width: 240px;
+    gap: 8px;
+}

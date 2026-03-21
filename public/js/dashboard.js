@@ -47,6 +47,87 @@
         // #10 fix: XSS sanitization helper
         function escapeHTML(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
 
+        const MOJIBAKE_RE = /(?:[\u00c2\u00c3\u00e2\u00f0][\u0080-\u00ff]|\u00fffd)/;
+        let _isNormalizingMojibake = false;
+        let _mojibakeObserver = null;
+
+        function decodeMojibakeText(input) {
+            if (!input || typeof input !== 'string' || !MOJIBAKE_RE.test(input)) return input;
+            let output = input;
+            for (let i = 0; i < 4; i++) {
+                try {
+                    const bytes = Uint8Array.from([...output].map((ch) => ch.charCodeAt(0) & 0xff));
+                    const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+                    if (!decoded || decoded === output) break;
+                    output = decoded;
+                } catch (_) {
+                    break;
+                }
+            }
+            return output
+                .replace(/\u00c2\u00a0/g, ' ')
+                .replace(/\u00e2\u0080\u0093/g, '\u2013')
+                .replace(/\u00e2\u0080\u0094/g, '\u2014')
+                .replace(/\u00e2\u0080\u00a6/g, '\u2026')
+                .replace(/\u00e2\u0080\u0098/g, "'")
+                .replace(/\u00e2\u0080\u0099/g, "'")
+                .replace(/\u00e2\u0080\u009c/g, '"')
+                .replace(/\u00e2\u0080\u009d/g, '"')
+                .replace(/\u00e2\u0086\u0090/g, '\u2190')
+                .replace(/\u00e2\u0086\u0092/g, '\u2192');
+        }
+
+        function normalizeDashboardText(root = document.body) {
+            if (!root || _isNormalizingMojibake) return;
+            _isNormalizingMojibake = true;
+            try {
+                const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+                const textNodes = [];
+                while (walker.nextNode()) textNodes.push(walker.currentNode);
+                textNodes.forEach((node) => {
+                    const current = node.nodeValue || '';
+                    const fixed = decodeMojibakeText(current);
+                    if (fixed !== current) node.nodeValue = fixed;
+                });
+                const elements = root.nodeType === 1 ? [root, ...root.querySelectorAll('*')] : [];
+                elements.forEach((el) => {
+                    ['title', 'aria-label', 'placeholder', 'alt'].forEach((attr) => {
+                        const value = el.getAttribute && el.getAttribute(attr);
+                        if (!value) return;
+                        const fixed = decodeMojibakeText(value);
+                        if (fixed !== value) el.setAttribute(attr, fixed);
+                    });
+                });
+            } finally {
+                _isNormalizingMojibake = false;
+            }
+        }
+
+        function installDashboardTextNormalizer() {
+            if (!document.body || _mojibakeObserver) return;
+            normalizeDashboardText(document.body);
+            _mojibakeObserver = new MutationObserver((mutations) => {
+                if (_isNormalizingMojibake) return;
+                for (const mutation of mutations) {
+                    if (mutation.type === 'characterData' && mutation.target?.parentElement) {
+                        normalizeDashboardText(mutation.target.parentElement);
+                        continue;
+                    }
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === Node.ELEMENT_NODE) normalizeDashboardText(node);
+                        if (node.nodeType === Node.TEXT_NODE && node.parentElement) normalizeDashboardText(node.parentElement);
+                    });
+                }
+            });
+            _mojibakeObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', installDashboardTextNormalizer, { once: true });
+        } else {
+            installDashboardTextNormalizer();
+        }
+
         // ==========================================
         // STATE
         // ==========================================
@@ -99,11 +180,11 @@
 
         const STATUS_CONFIG = {
             todo: { label: 'Pendente', class: 'status-pendente' },
-            doing: { label: 'Em execuÃ§Ã£o', class: 'status-automacao' },
-            done: { label: 'ConcluÃ­do', class: 'status-preenchido' },
+            doing: { label: 'Em execu\u00e7\u00e3o', class: 'status-automacao' },
+            done: { label: 'Conclu\u00eddo', class: 'status-preenchido' },
             error: { label: 'Erro de dados', class: 'status-erro' },
             retry: { label: 'Repetir', class: 'status-retry' },
-            fail: { label: 'Falha tÃ©cnica', class: 'status-falha' },
+            fail: { label: 'Falha t\u00e9cnica', class: 'status-falha' },
             standby: { label: 'Em espera', class: 'status-standby' },
         };
 
@@ -118,7 +199,7 @@
         };
 
         const STAGE_LABELS = {
-            screening: 'Triagem', analysis: 'AnÃ¡lise', ds160: 'DS-160',
+            screening: 'Triagem', analysis: 'An\u00e1lise', ds160: 'DS-160',
             payment: 'Taxas', scheduling: 'Agendamento',
             interview: 'Entrevista', outcome: 'Resultado', archived: 'Arquivado'
         };
@@ -533,14 +614,14 @@
                         <div class="cred-card-body">
                             <table class="cred-table">
                                 <tr><td>App ID</td><td class="mono">${a.application_id}</td>${cpBtn(a.application_id)}</tr>
-                                <tr><td>Sobrenome</td><td class="mono">${surname5 || 'â€”'}</td>${surname5 ? cpBtn(surname5) : '<td></td>'}</tr>
-                                <tr><td>Nascimento</td><td>${birthYear || 'â€”'}</td>${birthYear ? cpBtn(birthYear) : '<td></td>'}</tr>
+                                <tr><td>Sobrenome</td><td class="mono">${surname5 || '-'}</td>${surname5 ? cpBtn(surname5) : '<td></td>'}</tr>
+                                <tr><td>Nascimento</td><td>${birthYear || '-'}</td>${birthYear ? cpBtn(birthYear) : '<td></td>'}</tr>
                                 <tr><td>Pergunta</td><td class="small">${secQLabel}</td><td></td></tr>
-                                <tr><td>Resposta</td><td class="mono">${a.security_answer || 'â€”'}</td>${a.security_answer ? cpBtn(a.security_answer) : '<td></td>'}</tr>
+                                <tr><td>Resposta</td><td class="mono">${a.security_answer || '-'}</td>${a.security_answer ? cpBtn(a.security_answer) : '<td></td>'}</tr>
                             </table>
                             <div class="cred-downloads">
                                 ${a.ds160_pdf_url ? `<a href="${a.ds160_pdf_url}" target="_blank" class="cred-dl-btn"><i class="iconoir-download" style="font-size:13px"></i> DS-160 Completo</a>` : `<span class="cred-dl-btn disabled"><i class="iconoir-download" style="font-size:13px"></i> DS-160 Completo</span>`}
-                                ${a.confirmation_pdf_url ? `<a href="${a.confirmation_pdf_url}" target="_blank" class="cred-dl-btn"><i class="iconoir-download" style="font-size:13px"></i> ConfirmaÃ§Ã£o</a>` : `<span class="cred-dl-btn disabled"><i class="iconoir-download" style="font-size:13px"></i> ConfirmaÃ§Ã£o</span>`}
+                                ${a.confirmation_pdf_url ? `<a href="${a.confirmation_pdf_url}" target="_blank" class="cred-dl-btn"><i class="iconoir-download" style="font-size:13px"></i> Confirma\u00e7\u00e3o</a>` : `<span class="cred-dl-btn disabled"><i class="iconoir-download" style="font-size:13px"></i> Confirma\u00e7\u00e3o</span>`}
                             </div>
                         </div>
                     </div>`;
@@ -549,7 +630,7 @@
             // AIS section
             if (a.ais_email) {
                 const statusMap = {confirmed:{l:'Confirmado',d:'confirmed'},waiting_confirmation:{l:'Aguardando',d:'pending'},confirmation_failed:{l:'Falhou',d:'fail'},email_created:{l:'Email criado',d:'pending'}};
-                const st = statusMap[a.ais_status] || {l:a.ais_status||'â€”',d:'pending'};
+                const st = statusMap[a.ais_status] || {l:a.ais_status||'-',d:'pending'};
                 if (a.ais_confirmed) { st.l = 'Confirmado'; st.d = 'confirmed'; }
                 const cpBtn = (v) => `<td><button class="cred-copy-btn" title="Copiar" onclick="navigator.clipboard.writeText('${v}');this.innerHTML='<i class=\\'iconoir-check\\'></i>';setTimeout(()=>this.innerHTML='<i class=\\'iconoir-copy\\'></i>',1200)"><i class="iconoir-copy"></i></button></td>`;
                 sections += `
@@ -577,7 +658,7 @@
             const html = `<div id="credModal" class="modal-overlay" onclick="document.getElementById('credModal').remove()">
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:360px;padding:16px">
                     <div class="modal-header" style="margin-bottom:12px">
-                        <h3 class="modal-title" style="font-size:14px">Credenciais â€” ${shortName(a.name)}</h3>
+                        <h3 class="modal-title" style="font-size:14px">Credenciais - ${shortName(a.name)}</h3>
                         <button class="modal-close" onclick="document.getElementById('credModal').remove()">&times;</button>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:8px">${sections}</div>
@@ -651,17 +732,17 @@
                         }
                         return `<span class="status-badge ${cfg.class}">${cfg.label}</span>`;
                     })()}</td>
-                    <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : 'â€”'}</td>
-                    <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : 'â€”'}</td>
-                    <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotaÃ§Ãµes"><div class="notes-preview">${a.notes ? a.notes.substring(0, 140) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
+                    <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : '-'}</td>
+                    <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '-'}</td>
+                    <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anota\u00e7\u00f5es"><div class="notes-preview">${a.notes ? a.notes.substring(0, 140) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
 
                     <td><div class="row-actions">
                         ${a.ds160_pdf_url || a.confirmation_pdf_url ? `<button class="row-btn" onclick="event.stopPropagation();openDownloadModal('${a.id}')" title="Download DS-160" style="color:#22c55e"><i class="iconoir-download"></i></button>` : ''}
                         ${previousStage ? `<button class="row-btn row-btn-text row-btn-muted" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa">Voltar</button>` : ''}
-                        ${nextStage ? `<button class="row-btn row-btn-text row-btn-primary" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="AvanÃ§ar etapa">AvanÃ§ar</button>` : ''}
+                        ${nextStage ? `<button class="row-btn row-btn-text row-btn-primary" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="Avan\u00e7ar etapa">Avan\u00e7ar</button>` : ''}
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link do portal"><i class="iconoir-copy"></i></button>
-                        <button class="row-btn row-btn-more" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opÃ§Ãµes" aria-label="Mais opÃ§Ãµes"><i class="iconoir-more-vert"></i></button>
+                        <button class="row-btn row-btn-more" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais op\u00e7\u00f5es" aria-label="Mais op\u00e7\u00f5es"><i class="iconoir-more-vert"></i></button>
                     </div></td></tr>`;
             }
 
@@ -938,7 +1019,7 @@
             let html = `<div id="${modalId}" class="modal-overlay">
             <div class="modal-box" style="max-width:460px">
                 <h3 class="modal-title"><i class="iconoir-settings" style="margin-right:6px"></i> ConfiguraÃ§Ãµes do Grupo</h3>
-                <p style="font-size:13px;color:var(--text-muted);margin:-4px 0 16px">${groupLabel} Â· ${members.length} membro(s)</p>
+                <p style="font-size:13px;color:var(--text-muted);margin:-4px 0 16px">${groupLabel} &middot; ${members.length} membro(s)</p>
 
                 <div style="margin-bottom:16px">
                     <label class="modal-label">Solicitante Principal</label>
@@ -962,7 +1043,7 @@
                             <i class="iconoir-trash" style="margin-right:4px"></i> Excluir Grupo
                         </button>
                     </div>
-                    ${!allArchived ? '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">Para excluir, primeiro arquive todos os membros.</div>' : '<div style="font-size:11px;color:#ef4444;margin-top:6px">âš  Todos arquivados â€” exclusÃ£o sÃ³ Ã© possÃ­vel manualmente.</div>'}
+                    ${!allArchived ? '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">Para excluir, primeiro arquive todos os membros.</div>' : '<div style="font-size:11px;color:#ef4444;margin-top:6px">Todos arquivados - exclus\u00e3o s\u00f3 \u00e9 poss\u00edvel manualmente.</div>'}
                 </div>
 
                 <div class="modal-actions" style="margin-top:20px">
@@ -1098,9 +1179,9 @@
         }
         function openReview(id) {
             const a = applicants.find(x => x.id === id);
-            let url = _formUrl(id);
-            if (a?.stage) url += '&from=' + encodeURIComponent(a.stage);
-            window.open(url, '_blank');
+            const url = new URL(_formUrl(id), location.href);
+            if (a?.stage) url.searchParams.set('from', a.stage);
+            window.open(url.toString(), '_blank');
         }
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') {
@@ -1152,7 +1233,7 @@
             const html = `<div id="${modalId}" class="modal-overlay">
                 <div class="modal-box" style="max-width:420px">
                     <h3 class="modal-title"><i class="iconoir-download" style="margin-right:6px"></i> Documentos DS-160</h3>
-                    <p style="font-size:13px;color:var(--text-muted);margin:-4px 0 16px">${titleCase(a.name)} Â· ${a.application_id || 'â€”'}</p>
+                    <p style="font-size:13px;color:var(--text-muted);margin:-4px 0 16px">${titleCase(a.name)} &middot; ${a.application_id || '-'}</p>
                     <div style="display:flex;flex-direction:column;gap:8px">${docItems}</div>
                     <div class="modal-actions" style="margin-top:20px">
                         <button class="modal-btn" onclick="document.getElementById('${modalId}').remove()">Fechar</button>
@@ -1337,16 +1418,16 @@
             if (!applicant) return;
             const defaultStage = direction === 'back' ? getPreviousStage(applicant.stage) : getNextStage(applicant.stage);
             if (!defaultStage) {
-                showToast(direction === 'back' ? 'NÃ£o hÃ¡ etapa anterior.' : 'NÃ£o hÃ¡ prÃ³xima etapa automÃ¡tica.', 'info');
+                showToast(direction === 'back' ? 'N\u00e3o h\u00e1 etapa anterior.' : 'N\u00e3o h\u00e1 pr\u00f3xima etapa autom\u00e1tica.', 'info');
                 return;
             }
             const modalId = 'stageActionModal';
             closeActionModal(modalId);
-            const title = direction === 'back' ? 'Voltar Etapa' : 'AvanÃ§ar Etapa';
+            const title = direction === 'back' ? 'Voltar Etapa' : 'Avan\u00e7ar Etapa';
             const helper = direction === 'back'
-                ? 'A etapa anterior foi preselecionada. VocÃª pode trocar se precisar.'
-                : 'A prÃ³xima etapa foi preselecionada. VocÃª pode trocar se precisar.';
-            const confirmLabel = direction === 'back' ? 'Confirmar retorno' : 'Confirmar avanÃ§o';
+                ? 'A etapa anterior foi preselecionada. Voc\u00ea pode trocar se precisar.'
+                : 'A pr\u00f3xima etapa foi preselecionada. Voc\u00ea pode trocar se precisar.';
+            const confirmLabel = direction === 'back' ? 'Confirmar retorno' : 'Confirmar avan\u00e7o';
             const html = `<div id="${modalId}" class="modal-overlay" onclick="closeActionModal('${modalId}')">
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px">
                     <div class="modal-header">
@@ -1357,7 +1438,7 @@
                     <p class="modal-body" style="margin-top:0">${helper}</p>
                     <div class="manage-section-label">Etapa de destino</div>
                     <select id="stageActionSelect" class="manage-select">${getStageOptions(defaultStage)}</select>
-                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">${direction === 'back' ? 'Use para reabrir uma etapa anterior.' : 'Use para seguir o fluxo normal com confirmaÃ§Ã£o.'}</div>
+                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">${direction === 'back' ? 'Use para reabrir uma etapa anterior.' : 'Use para seguir o fluxo normal com confirma\u00e7\u00e3o.'}</div>
                     <div class="modal-actions" style="margin-top:16px">
                         <button class="modal-btn" onclick="closeActionModal('${modalId}')">Cancelar</button>
                         <button class="modal-btn primary" onclick="confirmStageAction('${id}','${direction}')">${confirmLabel}</button>
@@ -1429,7 +1510,7 @@
             if (hasFilled) {
                 // Cannot delete â€” offer archive instead
                 showConfirmModal('Arquivar Solicitante',
-                    `<strong>${name}</strong> jÃ¡ preencheu dados no formulÃ¡rio e nÃ£o pode ser excluÃ­do.<br><small style="color:var(--text-muted)">Deseja arquivar em vez de excluir?</small>`,
+                    `<strong>${name}</strong> j\u00e1 preencheu dados no formul\u00e1rio e n\u00e3o pode ser exclu\u00eddo.<br><small style="color:var(--text-muted)">Deseja arquivar em vez de excluir?</small>`,
                     async () => {
                         try {
                             await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { stage: 'archived', status: 'done' });
@@ -1441,7 +1522,7 @@
                 return;
             }
 
-            showConfirmModal('Excluir Solicitante', `Tem certeza que deseja excluir <strong>${name}</strong>?<br><small style="color:var(--text-muted)">Esta aÃ§Ã£o nÃ£o pode ser desfeita.</small>`, async () => {
+            showConfirmModal('Excluir Solicitante', `Tem certeza que deseja excluir <strong>${name}</strong>?<br><small style="color:var(--text-muted)">Esta a\u00e7\u00e3o n\u00e3o pode ser desfeita.</small>`, async () => {
                 try {
                     // #8 fix: if member of group, check if principal
                     if (a?.group_id) {
@@ -1668,7 +1749,7 @@
                             const stage = members[0]?.stage || 'screening';
                             return `<div class="group-search-item" data-gid="${g.id}" onclick="linkToSearchedGroup('${id}','${g.id}')" style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border-light,#f1f5f9);display:flex;justify-content:space-between;align-items:center">
                                 <span><i class="iconoir-group" style="margin-right:4px"></i> ${g.nickname || getGroupLabel(g.id)}</span>
-                                <span style="color:var(--text-muted);font-size:11px">${STAGE_LABELS[stage]} Â· ${members.length} membros</span>
+                                <span style="color:var(--text-muted);font-size:11px">${STAGE_LABELS[stage]} &middot; ${members.length} membros</span>
                             </div>`;
                         }).join('')}
                         ${_groups.length === 0 ? '<div style="padding:8px 12px;font-size:12px;color:var(--text-muted)">Nenhum grupo disponÃ­vel</div>' : ''}
@@ -1855,7 +1936,7 @@
             const currentNotes = app?.notes || '';
             const html = `<div id="appNotesModal" class="modal-overlay" onclick="document.getElementById('appNotesModal').remove()">
             <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px">
-                <h3 class="modal-title">Notas â€” ${app ? titleCase(app.name) : 'Solicitante'}</h3>
+                <h3 class="modal-title">Notas - ${app ? titleCase(app.name) : 'Solicitante'}</h3>
                 <textarea id="appNotesText" style="width:100%;min-height:120px;padding:10px;border-radius:6px;border:1px solid var(--border-light);background:var(--bg-secondary);color:var(--text-primary);font-size:13px;resize:vertical;font-family:inherit;margin-bottom:12px" placeholder="Escreva uma nota...">${currentNotes}</textarea>
                 <div style="display:flex;gap:8px;justify-content:flex-end">
                     <button class="modal-btn" onclick="document.getElementById('appNotesModal').remove()">Cancelar</button>
@@ -2280,7 +2361,7 @@
                 const a = applicants.find(x => x.id === id);
                 if (a) { a.stage = 'ds160'; a.status = 'todo'; a.application_id = null; }
 
-                showToast('Novo DS-160 criado â€” na fila', 'success');
+                showToast('Novo DS-160 criado - na fila', 'success');
                 renderTable(); renderFilters(); updateBadges();
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
         }
@@ -2292,7 +2373,7 @@
         function updateBadges() { Object.keys(PAGE_CONFIG).forEach(p => { const c = getApplicantsForPage(p).length; const el = document.getElementById('badge-' + p); if (el) el.textContent = c; }); }
 
         function formatDate(iso) {
-            if (!iso) return 'â€”';
+            if (!iso) return '-';
             const d = new Date(iso);
             const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
             return `${d.getDate().toString().padStart(2, '0')} ${months[d.getMonth()]}, ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
@@ -2330,7 +2411,7 @@
                 return;
             }
             container.innerHTML = results.map(a => {
-                const groupMeta = a.group_id ? `<span style="font-size:11px;color:var(--text-muted)"> Â· ${getGroupLabel(a.group_id)}</span>` : '';
+                const groupMeta = a.group_id ? `<span style="font-size:11px;color:var(--text-muted)"> &middot; ${getGroupLabel(a.group_id)}</span>` : '';
                 return `<div onclick="selectSearchResult('${a.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='var(--border-light)'" onmouseout="this.style.background='transparent'">
                     <span class="applicant-icon" style="flex-shrink:0"><i class="iconoir-user"></i></span>
                     <div style="flex:1;min-width:0">
@@ -2566,7 +2647,7 @@
                     borderRadius: 6,
                 },
                 {
-                    label: 'Falha tÃ©cnica',
+                    label: 'Falha t\u00e9cnica',
                     data: failData,
                     backgroundColor: '#ef4444',
                     borderColor: '#ef4444',
@@ -2686,14 +2767,14 @@
                 return `<tr ondblclick="openReview('${a.id}')" style="cursor:pointer">
                     <td onclick="openReview('${a.id}')"><div class="name-col"><span class="applicant-icon"><i class="iconoir-user"></i></span><div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${a.email || 'Sem email'}</div></div></div></td>
                     <td><span class="status-badge ${cfg.class}" onclick="event.stopPropagation();openErrorLogsModal('${a.id}')" style="cursor:pointer" title="Ver logs de erro">${cfg.label}</span></td>
-                    <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : 'â€”'}</td>
-                    <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : 'â€”'}</td>
-                    <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotaÃ§Ãµes"><div class="notes-preview">${a.notes ? a.notes.substring(0, 80) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
+                    <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : '-'}</td>
+                    <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '-'}</td>
+                    <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anota\u00e7\u00f5es"><div class="notes-preview">${a.notes ? a.notes.substring(0, 80) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
                     <td><div class="row-actions">
                         <button class="row-btn row-btn-text row-btn-warning" onclick="event.stopPropagation();openResolveProblemModal('${a.id}')" title="Resolver problema">Resolver</button>
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link"><i class="iconoir-copy"></i></button>
-                        <button class="row-btn row-btn-more" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opÃ§Ãµes" aria-label="Mais opÃ§Ãµes"><i class="iconoir-more-vert"></i></button>
+                        <button class="row-btn row-btn-more" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais op\u00e7\u00f5es" aria-label="Mais op\u00e7\u00f5es"><i class="iconoir-more-vert"></i></button>
                     </div></td>
                 </tr>`;
             }).join('');
@@ -2702,7 +2783,7 @@
         // ==========================================
         // ERROR LOGS MODAL (acessÃ­vel para assessores)
         // ==========================================
-        const _errorCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Erro no campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'ValidaÃ§Ã£o DS-160', postback_stuck: 'Postback travado', page_stuck: 'PÃ¡gina travada', script_error: 'Erro de script', unknown: 'Desconhecido' };
+        const _errorCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Erro no campo', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'Validação DS-160', postback_stuck: 'Postback travado', page_stuck: 'Página travada', script_error: 'Erro de script', unknown: 'Desconhecido' };
 
         async function openErrorLogsModal(applicantId) {
             const applicant = applicants.find(x => x.id === applicantId);
@@ -2711,20 +2792,20 @@
             const fallbackError = applicant?.fill_error || null;
             const statusLabel = STATUS_CONFIG[applicant?.status]?.label || 'Problema';
             const problemGuidance = applicant?.status === 'fail'
-                ? 'Falha tÃ©cnica: revise o log e a imagem. Reenvie a etapa apenas depois de corrigir a causa tÃ©cnica.'
-                : 'Erro de dados: revise a pÃ¡gina ou o campo apontado no log, corrija o formulÃ¡rio e retome a etapa.';
+                ? 'Falha t\u00e9cnica: revise o log e a imagem. Reenvie a etapa apenas depois de corrigir a causa t\u00e9cnica.'
+                : 'Erro de dados: revise a p\u00e1gina ou o campo apontado no log, corrija o formul\u00e1rio e retome a etapa.';
             const old = document.getElementById('errorLogsModal'); if (old) old.remove();
             // Show loading
             const loadingHtml = `<div id="errorLogsModal" class="modal-overlay" onclick="document.getElementById('errorLogsModal').remove()">
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:700px;width:95vw;max-height:85vh;display:flex;flex-direction:column">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
                         <h3 class="modal-title" style="margin:0"><i class="iconoir-warning-triangle" style="color:var(--warning);margin-right:6px"></i>Logs de Erro</h3>
-                        <button onclick="document.getElementById('errorLogsModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">âœ•</button>
+                        <button onclick="document.getElementById('errorLogsModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">&times;</button>
                     </div>
-                    <p style="font-size:13px;color:var(--text-muted);margin:0 0 8px">${escapeHTML(applicantName)} Â· ${escapeHTML(statusLabel)}</p>
+                    <p style="font-size:13px;color:var(--text-muted);margin:0 0 8px">${escapeHTML(applicantName)} &middot; ${escapeHTML(statusLabel)}</p>
                     <div style="display:grid;gap:6px;margin:0 0 14px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--bg-body)">
                         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-                            <span style="padding:3px 8px;border-radius:999px;background:#eff6ff;color:#2563eb;font-size:11px;font-weight:700">${escapeHTML(applicant?.stage || 'â€”')}</span>
+                            <span style="padding:3px 8px;border-radius:999px;background:#eff6ff;color:#2563eb;font-size:11px;font-weight:700">${escapeHTML(applicant?.stage || '-')}</span>
                             ${applicationId ? `<span style="font-size:11px;color:var(--text-muted)">App ID: <span class="mono" style="font-size:11px">${escapeHTML(applicationId)}</span></span>` : '<span style="font-size:11px;color:var(--text-muted)">Sem App ID salvo</span>'}
                         </div>
                         <div style="font-size:12px;color:var(--text-secondary);line-height:1.45">${escapeHTML(problemGuidance)}</div>
@@ -2772,24 +2853,24 @@
 
                 let listHtml = '<div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px">';
                 logs.forEach((l) => {
-                    const causeLabel = _errorCauseLabels[l.error_cause] || l.error_cause || 'â€”';
+                    const causeLabel = _errorCauseLabels[l.error_cause] || l.error_cause || '-';
                     const dt = l.created_at
                         ? new Date(l.created_at).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
-                        : 'Sem horÃ¡rio';
+                        : 'Sem hor\u00e1rio';
                     const retryBadge = l.retry_number != null ? `<span style="background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px">#${l.retry_number}</span>` : '';
                     const screenshotBtn = l.screenshot_url
-                        ? `<button class="btn-new" onclick="event.stopPropagation();viewLogScreenshot('${l.screenshot_url.replace(/'/g,"\\'")}','${escapeHTML(causeLabel)}')" style="background:#3b82f6;font-size:10px;padding:2px 8px;margin-left:auto;flex-shrink:0">ðŸ“¸ Ver</button>`
+                        ? `<button class="btn-new" onclick="event.stopPropagation();viewLogScreenshot('${l.screenshot_url.replace(/'/g,"\\'")}','${escapeHTML(causeLabel)}')" style="background:#3b82f6;font-size:10px;padding:2px 8px;margin-left:auto;flex-shrink:0">Imagem</button>`
                         : '';
                     listHtml += `<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--bg-body)">
                         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
                             <span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:#fee2e2;color:#dc2626">${causeLabel}</span>
-                            ${l.page_name ? '<span style="font-size:11px;color:var(--text-muted)">PÃ¡g: ' + escapeHTML(l.page_name) + '</span>' : ''}
+                            ${l.page_name ? '<span style="font-size:11px;color:var(--text-muted)">P\u00e1g: ' + escapeHTML(l.page_name) + '</span>' : ''}
                             ${l.field_name ? '<span style="font-size:11px;color:var(--accent);font-family:monospace">' + escapeHTML(l.field_name) + '</span>' : ''}
                             ${retryBadge}
                             <span style="font-size:10px;color:var(--text-muted);margin-left:auto">${dt}</span>
                         </div>
                         <div style="display:flex;align-items:center;gap:8px">
-                            <p style="font-size:12px;color:var(--text-primary);margin:0;line-height:1.4;flex:1;word-break:break-word">${escapeHTML(l.error_message || 'â€”')}</p>
+                            <p style="font-size:12px;color:var(--text-primary);margin:0;line-height:1.4;flex:1;word-break:break-word">${escapeHTML(l.error_message || '-')}</p>
                             ${screenshotBtn}
                         </div>
                     </div>`;
@@ -2810,7 +2891,7 @@
             const old = document.getElementById('logScreenshotModal'); if (old) old.remove();
             const html = `<div id="logScreenshotModal" class="modal-overlay" onclick="document.getElementById('logScreenshotModal').remove()" style="z-index:10012;background:rgba(0,0,0,.85)">
                 <div onclick="event.stopPropagation()" style="max-width:90vw;max-height:90vh;position:relative">
-                    <button onclick="document.getElementById('logScreenshotModal').remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;z-index:1">âœ•</button>
+                    <button onclick="document.getElementById('logScreenshotModal').remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;z-index:1">&times;</button>
                     <img src="${url}" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)" onerror="this.outerHTML='<div style=\'color:#fff;padding:40px\'>Imagem nÃ£o encontrada</div>'">
                     <div style="color:#fff;font-size:12px;text-align:center;margin-top:8px;opacity:.7">${cause}</div>
                 </div>
@@ -2863,7 +2944,7 @@
         let _admOrgs = []; let _admSelectedOrg = null; let _admEmailMap = {};
 
         function admGenShortId() { return Math.random().toString(36).substring(2, 7); }
-        function admFmtDate(d) { return d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'â€”'; }
+        function admFmtDate(d) { return d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'; }
 
         async function admFetchEmails() {
             try {
@@ -2885,10 +2966,10 @@
             admUpdateNav('orgs');
             const grid = document.getElementById('admOrgGrid');
             if (_admOrgs.length === 0) { grid.innerHTML = '<p style="color:var(--text-muted)">Nenhuma organizaÃ§Ã£o cadastrada.</p>'; return; }
-            let h = '<div class="table-container" style="margin-top:0"><table style="width:100%"><thead><tr><th>OrganizaÃ§Ã£o</th><th>Short ID</th><th>CNPJ</th><th style="text-align:center">Assessores</th><th style="text-align:center">Status</th><th>Criada</th></tr></thead><tbody>';
+            let h = '<div class="table-container" style="margin-top:0"><table style="width:100%"><thead><tr><th>Organização</th><th>Short ID</th><th>CNPJ</th><th style="text-align:center">Assessores</th><th style="text-align:center">Status</th><th>Criada</th></tr></thead><tbody>';
             _admOrgs.forEach(o => {
                 const sc = o.active ? '#22c55e' : '#ef4444', sl = o.active ? 'Ativa' : 'Inativa';
-                h += `<tr onclick="admOpenOrgDetail('${o.id}')" style="cursor:pointer"><td style="font-weight:600">${o.name}</td><td style="color:var(--text-muted);font-family:monospace;font-size:12px">${o.short_id || 'â€”'}</td><td style="color:var(--text-muted)">${o.cnpj || 'â€”'}</td><td style="text-align:center">${o._memberCount}</td><td style="text-align:center"><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${sc}18;color:${sc}">${sl}</span></td><td style="color:var(--text-muted);font-size:12px">${admFmtDate(o.created_at)}</td></tr>`;
+                h += `<tr onclick="admOpenOrgDetail('${o.id}')" style="cursor:pointer"><td style="font-weight:600">${o.name}</td><td style="color:var(--text-muted);font-family:monospace;font-size:12px">${o.short_id || '-'}</td><td style="color:var(--text-muted)">${o.cnpj || '-'}</td><td style="text-align:center">${o._memberCount}</td><td style="text-align:center"><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${sc}18;color:${sc}">${sl}</span></td><td style="color:var(--text-muted);font-size:12px">${admFmtDate(o.created_at)}</td></tr>`;
             });
             h += '</tbody></table></div>'; grid.innerHTML = h;
         }
@@ -3042,8 +3123,8 @@
             tb.style.background = _admSelectedOrg.active ? '#ef4444' : '#22c55e';
             document.getElementById('admOrgInfoCards').innerHTML = `
                 <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Nome</div><div style="font-size:14px;font-weight:600;margin-top:4px">${_admSelectedOrg.name}</div></div>
-                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Short ID</div><div style="font-size:14px;font-family:monospace;margin-top:4px">${_admSelectedOrg.short_id || 'â€”'}</div></div>
-                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">CNPJ</div><div style="font-size:14px;margin-top:4px">${_admSelectedOrg.cnpj || 'â€”'}</div></div>
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Short ID</div><div style="font-size:14px;font-family:monospace;margin-top:4px">${_admSelectedOrg.short_id || '-'}</div></div>
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">CNPJ</div><div style="font-size:14px;margin-top:4px">${_admSelectedOrg.cnpj || '-'}</div></div>
                 <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Status</div><div style="margin-top:4px"><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${_admSelectedOrg.active ? '#dcfce7' : '#fee2e2'};color:${_admSelectedOrg.active ? '#16a34a' : '#dc2626'}">${_admSelectedOrg.active ? 'Ativa' : 'Inativa'}</span></div></div>`;
             document.getElementById('admFormUrlDisplay').textContent = admGetFormUrl();
             admRefreshLogoUI();
@@ -3120,7 +3201,7 @@
             if (admActions) {
                 admActions.style.display = 'flex';
                 let actionsHtml = '';
-                if (section === 'orgs') actionsHtml = '<button class="btn-new" onclick="admOpenOrgModal()">Nova OrganizaÃ§Ã£o</button>';
+                if (section === 'orgs') actionsHtml = '<button class="btn-new" onclick="admOpenOrgModal()">Nova Organização</button>';
                 else if (section === 'logs') actionsHtml = '<button class="btn-new btn-danger" onclick="admArchiveAllLogs()" style="font-size:12px">Arquivar Todos</button>';
                 admActions.innerHTML = actionsHtml;
             }
@@ -3164,11 +3245,11 @@
         }
 
         // Logs
-        const admCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Campo invÃ¡lido', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'ValidaÃ§Ã£o DS-160', postback_stuck: 'Postback travado', page_stuck: 'PÃ¡gina travada', missing_data: 'Dados incompletos', missing_applicant: 'Solicitante nÃ£o encontrado', system_error: 'Erro do sistema', select_mismatch: 'OpÃ§Ã£o nÃ£o encontrada', invalid_field_value: 'Valor invÃ¡lido', session_expired: 'SessÃ£o expirada', challenge_detected: 'Challenge detectado', landing_dom_mismatch: 'DOM inicial divergente', recovery_dom_mismatch: 'DOM de recuperaÃ§Ã£o divergente', unknown: 'Desconhecido' };
+        const admCauseLabels = { browser_closed: 'Browser fechado', network_error: 'Erro de rede', timeout: 'Timeout', field_error: 'Campo inv\u00e1lido', 'field_error:select': 'Select vazio', 'field_error:missing': 'Dado ausente', captcha_failed: 'Captcha falhou', validation_error: 'Valida\u00e7\u00e3o DS-160', postback_stuck: 'Postback travado', page_stuck: 'P\u00e1gina travada', missing_data: 'Dados incompletos', missing_applicant: 'Solicitante n\u00e3o encontrado', system_error: 'Erro do sistema', select_mismatch: 'Op\u00e7\u00e3o n\u00e3o encontrada', invalid_field_value: 'Valor inv\u00e1lido', session_expired: 'Sess\u00e3o expirada', challenge_detected: 'Challenge detectado', landing_dom_mismatch: 'DOM inicial divergente', recovery_dom_mismatch: 'DOM de recupera\u00e7\u00e3o divergente', unknown: 'Desconhecido' };
         const admLogStatusMeta = {
-            error: { label: 'Erro de dados', help: 'Precisa correÃ§Ã£o humana' },
+            error: { label: 'Erro de dados', help: 'Precisa corre\u00e7\u00e3o humana' },
             standby: { label: 'Em espera', help: 'Retorno controlado por cooldown' },
-            fail: { label: 'Falha tÃ©cnica', help: 'Bloqueado atÃ© revisÃ£o tÃ©cnica' }
+            fail: { label: 'Falha t\u00e9cnica', help: 'Bloqueado at\u00e9 revis\u00e3o t\u00e9cnica' }
         };
         function admClassifyLogStatus(log) {
             if (log._fromApp) return log._appStatus === 'fail' ? 'fail' : 'error';
@@ -3180,8 +3261,8 @@
             return 'error';
         }
         function admGetCompanyName(companyId) {
-            if (!companyId) return 'Sem organizaÃ§Ã£o';
-            return (_admOrgs.find(o => o.id === companyId)?.name) || 'OrganizaÃ§Ã£o desconhecida';
+            if (!companyId) return 'Sem organiza\u00e7\u00e3o';
+            return (_admOrgs.find(o => o.id === companyId)?.name) || 'Organiza\u00e7\u00e3o desconhecida';
         }
         function admRenderLogsSummary(logs) {
             const host = document.getElementById('admLogsSummary');
@@ -3192,7 +3273,7 @@
                 <div class="adm-log-summary-card">
                     <span class="adm-log-summary-label">Ativos</span>
                     <strong class="adm-log-summary-value">${counts.total}</strong>
-                    <span class="adm-log-summary-help">Logs abertos para revisÃ£o</span>
+                    <span class="adm-log-summary-help">Logs abertos para revis\u00e3o</span>
                 </div>
                 <div class="adm-log-summary-card">
                     <span class="adm-log-summary-label">Erro de dados</span>
@@ -3205,7 +3286,7 @@
                     <span class="adm-log-summary-help">${admLogStatusMeta.standby.help}</span>
                 </div>
                 <div class="adm-log-summary-card">
-                    <span class="adm-log-summary-label">Falha tÃ©cnica</span>
+                    <span class="adm-log-summary-label">Falha t\u00e9cnica</span>
                     <strong class="adm-log-summary-value">${counts.fail}</strong>
                     <span class="adm-log-summary-help">${admLogStatusMeta.fail.help}</span>
                 </div>`;
@@ -3226,7 +3307,7 @@
                             const names = await sbGet('applicants?id=in.(' + appIds.join(',') + ')&select=id,full_name,company_id') || [];
                             const applicantMap = {}; names.forEach(n => applicantMap[n.id] = n);
                             appErrors.forEach(a => {
-                                a._applicant_name = applicantMap[a.applicant_id]?.full_name || 'â€”';
+                                a._applicant_name = applicantMap[a.applicant_id]?.full_name || '-';
                                 a._company_id = applicantMap[a.applicant_id]?.company_id || null;
                             });
                         }
@@ -3243,7 +3324,7 @@
                     page_name: a.last_page || null,
                     field_name: null,
                     error_message: a.fill_error,
-                    applicant_name: a._applicant_name || 'â€”',
+                    applicant_name: a._applicant_name || '-',
                     created_at: a.last_error_at,
                     retry_number: null,
                     screenshot_url: null,
@@ -3257,7 +3338,7 @@
                         ...log,
                         _status: admClassifyLogStatus(log),
                         _companyName: admGetCompanyName(log.company_id),
-                        _causeLabel: admCauseLabels[log.error_cause] || log.error_cause || 'â€”'
+                        _causeLabel: admCauseLabels[log.error_cause] || log.error_cause || '-'
                     }))
                     .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
@@ -3270,16 +3351,16 @@
                 // Store logs for modal access
                 window._admLogs = allLogs;
                 tb.innerHTML = allLogs.map((l, idx) => {
-                    const ds = l.created_at ? new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'â€”';
+                    const ds = l.created_at ? new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
                     const retryBadge = l.retry_number != null ? `<span class="adm-log-source">Tentativa #${l.retry_number}</span>` : `<span class="adm-log-source">${l._fromApp ? 'applications.fill_error' : 'error_logs'}</span>`;
                     const screenshotBtn = l.screenshot_url
                         ? `<button class="btn-new" onclick="admViewScreenshot(${idx})" style="background:#3b82f6;font-size:11px;padding:3px 6px" title="Ver screenshot">Imagem</button>`
-                        : '<span style="color:var(--text-muted);font-size:11px">â€”</span>';
+                        : '<span style="color:var(--text-muted);font-size:11px">-</span>';
                     const htmlBtn = l.page_html
-                        ? `<button class="btn-new" onclick="admViewHtml(${idx})" style="background:#8b5cf6;font-size:11px;padding:3px 6px" title="Ver HTML da pÃ¡gina">HTML</button>`
+                        ? `<button class="btn-new" onclick="admViewHtml(${idx})" style="background:#8b5cf6;font-size:11px;padding:3px 6px" title="Ver HTML da p\u00e1gina">HTML</button>`
                         : '';
                     const videoBtn = l.video_url
-                        ? `<a class="btn-new" href="${l.video_url}" target="_blank" rel="noopener" style="background:#0f766e;font-size:11px;padding:3px 6px">VÃ­deo</a>`
+                        ? `<a class="btn-new" href="${l.video_url}" target="_blank" rel="noopener" style="background:#0f766e;font-size:11px;padding:3px 6px">Vídeo</a>`
                         : '';
                     const archiveBtn = l._fromApp
                         ? '<span style="color:var(--text-muted);font-size:11px">Manual</span>'
@@ -3289,17 +3370,17 @@
                         <td>
                             <div class="adm-log-name">
                                 <strong>${escapeHTML(l._companyName)}</strong>
-                                <span>${escapeHTML(l.applicant_name || 'â€”')}</span>
+                                <span>${escapeHTML(l.applicant_name || '-')}</span>
                                 ${retryBadge}
                             </div>
                         </td>
                         <td>
                             <div class="adm-log-context">
                                 <span class="adm-log-context-main">${escapeHTML(l._causeLabel)}</span>
-                                <span class="adm-log-context-sub">${escapeHTML(l.page_name || 'Sem pÃ¡gina')}${l.field_name ? ' Â· ' + escapeHTML(l.field_name) : ''}</span>
+                                <span class="adm-log-context-sub">${escapeHTML(l.page_name || 'Sem página')}${l.field_name ? ' &middot; ' + escapeHTML(l.field_name) : ''}</span>
                             </div>
                         </td>
-                        <td><div class="adm-log-message" title="${escapeHTML(l.error_message || '')}">${escapeHTML(l.error_message || 'â€”')}</div></td>
+                        <td><div class="adm-log-message" title="${escapeHTML(l.error_message || '')}">${escapeHTML(l.error_message || '-')}</div></td>
                         <td><div class="adm-log-media">${screenshotBtn}${htmlBtn ? ' ' + htmlBtn : ''}${videoBtn ? ' ' + videoBtn : ''}</div></td>
                         <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${ds}</td>
                         <td><div class="adm-log-actions"><button class="btn-new" onclick="admOpenLogDetail(${idx})" style="font-size:11px;padding:4px 8px">Detalhes</button>${archiveBtn}</div></td>
@@ -3316,25 +3397,25 @@
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:760px">
                     <div class="modal-header">
                         <div>
-                            <h3 class="modal-title">Log de automaÃ§Ã£o</h3>
-                            <div class="modal-subtitle">${escapeHTML(log._companyName)} Â· ${escapeHTML(log.applicant_name || 'â€”')}</div>
+                            <h3 class="modal-title">Log de automação</h3>
+                            <div class="modal-subtitle">${escapeHTML(log._companyName)} &middot; ${escapeHTML(log.applicant_name || '-')}</div>
                         </div>
-                        <button class="modal-close" onclick="document.getElementById('admLogDetailModal').remove()">Ã—</button>
+                        <button class="modal-close" onclick="document.getElementById('admLogDetailModal').remove()">&times;</button>
                     </div>
                     <div class="adm-info-grid" style="margin-top:8px">
                         <div class="adm-card"><div class="adm-label">Status</div><div style="margin-top:6px"><span class="adm-log-status" data-status="${log._status}">${statusLabel}</span></div></div>
                         <div class="adm-card"><div class="adm-label">Causa</div><div style="margin-top:6px;font-weight:600">${escapeHTML(log._causeLabel)}</div></div>
-                        <div class="adm-card"><div class="adm-label">PÃ¡gina / Campo</div><div style="margin-top:6px">${escapeHTML(log.page_name || 'â€”')}${log.field_name ? ' Â· <span style="font-family:monospace">' + escapeHTML(log.field_name) + '</span>' : ''}</div></div>
-                        <div class="adm-card"><div class="adm-label">Quando</div><div style="margin-top:6px">${log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : 'â€”'}</div></div>
+                        <div class="adm-card"><div class="adm-label">Página / Campo</div><div style="margin-top:6px">${escapeHTML(log.page_name || '-')}${log.field_name ? ' &middot; <span style="font-family:monospace">' + escapeHTML(log.field_name) + '</span>' : ''}</div></div>
+                        <div class="adm-card"><div class="adm-label">Quando</div><div style="margin-top:6px">${log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : '-'}</div></div>
                     </div>
                     <div class="adm-card" style="margin-top:14px">
                         <div class="adm-label">Mensagem</div>
-                        <div style="margin-top:8px;font-size:13px;line-height:1.6;color:var(--text-primary)">${escapeHTML(log.error_message || 'â€”')}</div>
+                        <div style="margin-top:8px;font-size:13px;line-height:1.6;color:var(--text-primary)">${escapeHTML(log.error_message || '-')}</div>
                     </div>
                     <div class="modal-actions" style="margin-top:16px">
                         ${log.screenshot_url ? `<button class="btn-new" onclick="admViewScreenshot(${idx})">Ver imagem</button>` : ''}
                         ${log.page_html ? `<button class="btn-new" onclick="admViewHtml(${idx})" style="background:#8b5cf6">Ver HTML</button>` : ''}
-                        ${log.video_url ? `<a class="btn-new" href="${log.video_url}" target="_blank" rel="noopener" style="background:#0f766e">Ver vÃ­deo</a>` : ''}
+                        ${log.video_url ? `<a class="btn-new" href="${log.video_url}" target="_blank" rel="noopener" style="background:#0f766e">Ver vídeo</a>` : ''}
                         ${log._fromApp ? '' : `<button class="btn-new btn-danger" onclick="admArchiveLog('${log.id}');document.getElementById('admLogDetailModal').remove()">Arquivar</button>`}
                     </div>
                 </div>
@@ -3347,9 +3428,9 @@
             const old = document.getElementById('screenshotModal'); if (old) old.remove();
             const html = `<div id="screenshotModal" class="modal-overlay" onclick="document.getElementById('screenshotModal').remove()" style="z-index:10010;background:rgba(0,0,0,.85)">
                 <div onclick="event.stopPropagation()" style="max-width:90vw;max-height:90vh;position:relative">
-                    <button onclick="document.getElementById('screenshotModal').remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;z-index:1">âœ•</button>
+                    <button onclick="document.getElementById('screenshotModal').remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;z-index:1">&times;</button>
                     <img src="${log.screenshot_url}" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)" onerror="this.outerHTML='<div style=\\'color:#fff;padding:40px\\'>Imagem nÃ£o encontrada</div>'">
-                    <div style="color:#fff;font-size:12px;text-align:center;margin-top:8px;opacity:.7">${escapeHTML(log.applicant_name || 'â€”')} Â· ${escapeHTML(log.page_name || 'â€”')} Â· ${escapeHTML(log.error_cause || '')}</div>
+                    <div style="color:#fff;font-size:12px;text-align:center;margin-top:8px;opacity:.7">${escapeHTML(log.applicant_name || '-')} &middot; ${escapeHTML(log.page_name || '-')} &middot; ${escapeHTML(log.error_cause || '')}</div>
                 </div>
             </div>`;
             document.body.insertAdjacentHTML('beforeend', html);
@@ -3361,11 +3442,11 @@
             const html = `<div id="htmlModal" class="modal-overlay" onclick="document.getElementById('htmlModal').remove()" style="z-index:10010">
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:900px;width:95vw;max-height:90vh;display:flex;flex-direction:column;padding:0">
                     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)">
-                        <h3 style="margin:0;font-size:14px">HTML da PÃ¡gina â€” ${escapeHTML(log.page_name || 'â€”')}</h3>
+                        <h3 style="margin:0;font-size:14px">HTML da Página - ${escapeHTML(log.page_name || '-')}</h3>
                         <div style="display:flex;gap:8px">
                             <button class="btn-new" onclick="admCopyHtml(${idx})" style="font-size:11px;padding:4px 10px">ðŸ“‹ Copiar</button>
                             <button class="btn-new" onclick="admRenderHtml(${idx})" style="font-size:11px;padding:4px 10px;background:#8b5cf6">ðŸ‘ Renderizar</button>
-                            <button onclick="document.getElementById('htmlModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">âœ•</button>
+                            <button onclick="document.getElementById('htmlModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">&times;</button>
                         </div>
                     </div>
                     <div id="htmlModalContent" style="flex:1;overflow:auto;padding:16px">
@@ -3405,13 +3486,13 @@
 
         // Settings
         async function admLoadSettings() { try { const d = await sbGet('settings?key_name=in.(security_question,security_answer)&select=key_name,key_value'); (d || []).forEach(s => { if (s.key_name === 'security_question') { const el = document.getElementById('admSecurityQuestion'); if (el) el.value = s.key_value || '0'; } if (s.key_name === 'security_answer') { const el = document.getElementById('admSecurityAnswer'); if (el) el.value = s.key_value || ''; } }); } catch { } }
-        async function admSaveSettings() { const q = document.getElementById('admSecurityQuestion').value, a = document.getElementById('admSecurityAnswer').value.trim(); try { await sbFetch('settings?key_name=eq.security_question', 'PATCH', { key_value: q }); await sbFetch('settings?key_name=eq.security_answer', 'PATCH', { key_value: a }); showToast('ConfiguraÃ§Ãµes salvas!', 'success'); } catch (e) { showToast('Erro: ' + e.message, 'error'); } }
+        async function admSaveSettings() { const q = document.getElementById('admSecurityQuestion').value, a = document.getElementById('admSecurityAnswer').value.trim(); try { await sbFetch('settings?key_name=eq.security_question', 'PATCH', { key_value: q }); await sbFetch('settings?key_name=eq.security_answer', 'PATCH', { key_value: a }); showToast('Configurações salvas!', 'success'); } catch (e) { showToast('Erro: ' + e.message, 'error'); } }
 
         // Org CRUD
         function admOpenOrgModal(editId = null) {
             const id = 'admOrgModal'; const ex = document.getElementById(id); if (ex) ex.remove();
             const org = editId ? _admOrgs.find(o => o.id === editId) : null;
-            const html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()"><div class="modal-box" onclick="event.stopPropagation()"><h3 class="modal-title">${editId ? 'Editar' : 'Nova'} OrganizaÃ§Ã£o</h3>
+            const html = `<div id="${id}" class="modal-overlay" onclick="document.getElementById('${id}').remove()"><div class="modal-box" onclick="event.stopPropagation()"><h3 class="modal-title">${editId ? 'Editar' : 'Nova'} Organização</h3>
                 <label class="modal-label">Nome</label><input type="text" id="admOrgName" class="modal-input" value="${org?.name || ''}" placeholder="Ex: Empresa ABC">
                 <label class="modal-label">Short ID</label><input type="text" id="admOrgShortId" class="modal-input" value="${org?.short_id || admGenShortId()}" maxlength="10">
                 <label class="modal-label">CNPJ (opcional)</label><input type="text" id="admOrgCnpj" class="modal-input" value="${org?.cnpj || ''}" placeholder="00.000.000/0001-00">
@@ -3422,10 +3503,10 @@
 
         async function admSaveOrg(editId) {
             const name = document.getElementById('admOrgName').value.trim(), short_id = document.getElementById('admOrgShortId').value.trim(), cnpj = document.getElementById('admOrgCnpj').value.trim();
-            if (!name) { showToast('Nome Ã© obrigatÃ³rio', 'error'); return; }
+            if (!name) { showToast('Nome é obrigatório', 'error'); return; }
             try {
-                if (editId) { await sbFetch(`companies?id=eq.${editId}`, 'PATCH', { name, short_id, cnpj }); showToast('OrganizaÃ§Ã£o atualizada', 'success'); }
-                else { await sbFetch('companies', 'POST', { name, short_id: short_id || admGenShortId(), cnpj, active: true }); showToast('OrganizaÃ§Ã£o criada', 'success'); }
+                if (editId) { await sbFetch(`companies?id=eq.${editId}`, 'PATCH', { name, short_id, cnpj }); showToast('Organização atualizada', 'success'); }
+                else { await sbFetch('companies', 'POST', { name, short_id: short_id || admGenShortId(), cnpj, active: true }); showToast('Organização criada', 'success'); }
                 const m = document.getElementById('admOrgModal'); if (m) m.remove();
                 await admLoadOrgs(); if (_admSelectedOrg && editId) await admOpenOrgDetail(editId);
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
@@ -3439,7 +3520,7 @@
         async function admDeleteOrg(orgId) {
             const m = await sbGet('members?company_id=eq.' + orgId + '&select=user_id'); if (m && m.length > 0) { showToast('Existem ' + m.length + ' assessor(es) vinculado(s)', 'error'); return; }
             const apps = await sbGet('applicants?company_id=eq.' + orgId + '&select=id&limit=1'); if (apps && apps.length > 0) { showToast('Existem solicitantes vinculados. Remova ou transfira-os primeiro.', 'error'); return; }
-            if (!confirm('Excluir organizaÃ§Ã£o?')) return; await sbFetch('companies?id=eq.' + orgId, 'DELETE', null); showToast('ExcluÃ­da!', 'success'); await admLoadOrgs(); admShowOrgList();
+            if (!confirm('Excluir organização?')) return; await sbFetch('companies?id=eq.' + orgId, 'DELETE', null); showToast('Excluída!', 'success'); await admLoadOrgs(); admShowOrgList();
         }
 
         // User CRUD
