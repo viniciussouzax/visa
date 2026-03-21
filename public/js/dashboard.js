@@ -498,7 +498,7 @@
                     navBtn.style.display = 'flex';
                     navBtn.classList.add('is-disabled');
                 }
-                if (urlInput) urlInput.value = isMasterUser ? 'Selecione uma organiza??o' : 'Portal indispon?vel';
+                if (urlInput) urlInput.value = isMasterUser ? 'Escolher org' : '';
                 return;
             }
             try {
@@ -511,7 +511,7 @@
                         navBtn.style.display = 'flex';
                         navBtn.classList.remove('is-disabled');
                     }
-                    if (urlInput) urlInput.value = AppCore.buildPortalUrl(_orgParam);
+                    if (urlInput) urlInput.value = _orgParam;
                 }
                 else { document.getElementById('orgFooter').textContent = 'N????o encontrada'; }
             } catch (e) { document.getElementById('orgFooter').textContent = 'Erro'; }
@@ -2702,7 +2702,7 @@
                                         navBtn.style.display = 'flex';
                                         navBtn.classList.remove('is-disabled');
                                         const urlInput = document.getElementById('portalUrlInput');
-                                        if (urlInput) urlInput.value = AppCore.buildPortalUrl(_orgParam);
+                                        if (urlInput) urlInput.value = _orgParam;
                                     }
                                 }
                             } catch { }
@@ -2715,7 +2715,7 @@
                             navBtn.style.display = 'flex';
                             navBtn.classList.add('is-disabled');
                         }
-                        if (urlInput) urlInput.value = 'Selecione uma organiza??o';
+                        if (urlInput) urlInput.value = 'Escolher org';
                     }
                 }
             } catch { }
