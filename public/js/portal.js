@@ -1,7 +1,7 @@
             const sbGet = AppCore.sbGet;
             const _params = new URLSearchParams(location.search);
             const _idParam = _params.get('id');
-            const _orgParam = _params.get('org');
+            const _orgParam = AppCore.getOrg();
             if (_orgParam) AppCore.setPortalContext(_orgParam, null);
 
             let _companyId = null;
@@ -431,11 +431,10 @@
             // ── Open form ──
             function openForm(id) {
                 sessionStorage.setItem('client_app_id', id);
-                let url = 'ds160-form.html?id=' + id + '&secure_entry=1';
-                if (_orgParam) url += '&org=' + encodeURIComponent(_orgParam);
-                // If accessed via direct link (?id=), mark as direct so form hides back button
-                if (_idParam) url += '&direct=1';
-                window.location.href = url;
+                const params = { secure_entry: 1 };
+                if (_orgParam) params.org = _orgParam;
+                if (_idParam) params.direct = 1;
+                window.location.href = AppCore.buildFormUrl(id, params);
             }
 
             // ── Create new ──

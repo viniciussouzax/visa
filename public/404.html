@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SENDS160</title>
+    <script>
+        (async function () {
+            const segments = location.pathname.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+            const first = (segments[0] || '').toLowerCase();
+            let target = null;
+
+            if (first === 'form' && segments[1]) {
+                target = '/ds160-form.html';
+            } else if (first === 'dashboard') {
+                target = '/dashboard.html';
+            } else if (first === 'update-password') {
+                target = '/update-password.html';
+            } else if (first && !first.includes('.')) {
+                target = '/portal.html';
+            }
+
+            if (!target) {
+                location.replace('/');
+                return;
+            }
+
+            try {
+                const res = await fetch(target, { cache: 'no-store' });
+                if (!res.ok) throw new Error(target);
+                let html = await res.text();
+                html = html.replace(/<head([^>]*)>/i, '<head$1><base href="/">');
+                document.open();
+                document.write(html);
+                document.close();
+            } catch (e) {
+                document.body.innerHTML = '<main style="font-family:Inter,system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8fafc;color:#0f172a"><div><h1 style="margin:0 0 8px">Página não encontrada</h1><p style="margin:0;color:#64748b">Não foi possível carregar a rota solicitada.</p></div></main>';
+            }
+        })();
+    </script>
+</head>
+<body></body>
+</html>

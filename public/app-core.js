@@ -11,6 +11,10 @@
     const SUPABASE_URL = 'https://zcpvknzktfmotvrybxdf.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcHZrbnprdGZtb3R2cnlieGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MDk2MjIsImV4cCI6MjA4NjM4NTYyMn0.XaJG4V6NsQTYoU8I_wxHLyDEkVdPosqfJNm8nRHVjxg';
     const PUBLIC_APP_BASE_URL = 'https://sends160.site/';
+    const RESERVED_PUBLIC_SEGMENTS = new Set([
+        '', 'dashboard', 'update-password', 'form', 'docs', 'js', 'css', 'assets', 'images',
+        'dashboard.html', 'portal.html', 'ds160-form.html', 'update-password.html', 'docs.html', 'index.html'
+    ]);
 
     // ==========================================
     // SESSION MANAGEMENT (sessionStorage)
@@ -39,9 +43,37 @@
         return sessionStorage.getItem(STORAGE_AUTH);
     }
 
-    /** Get org: URL param > sessionStorage > null */
+    function _getPathSegments() {
+        return (location.pathname || '/')
+            .replace(/^\/+|\/+$/g, '')
+            .split('/')
+            .filter(Boolean)
+            .map(segment => {
+                try { return decodeURIComponent(segment); } catch { return segment; }
+            });
+    }
+
+    function getPathOrg() {
+        const segments = _getPathSegments();
+        const first = segments[0] || '';
+        if (!first || RESERVED_PUBLIC_SEGMENTS.has(first) || first.includes('.')) return null;
+        return first;
+    }
+
+    function getPathFormId() {
+        const segments = _getPathSegments();
+        if ((segments[0] || '').toLowerCase() !== 'form') return null;
+        return segments[1] || null;
+    }
+
+    /** Get org: URL param > clean path > sessionStorage > null */
     function getOrg() {
         let org = _readParam('org');
+        if (org) {
+            sessionStorage.setItem(STORAGE_ORG, org);
+            return org;
+        }
+        org = getPathOrg();
         if (org) {
             sessionStorage.setItem(STORAGE_ORG, org);
             return org;
@@ -110,9 +142,9 @@
         const org = getOrg();
         const path = (location.pathname || '').toLowerCase();
         if (path.endsWith('ds160-form.html') && !_isAssessorForm()) {
-            return org ? 'portal.html?org=' + encodeURIComponent(org) : 'portal.html';
+            return org ? buildPortalUrl(org) : buildPublicUrl('portal.html');
         }
-        return org ? 'dashboard.html?org=' + encodeURIComponent(org) : 'dashboard.html';
+        return buildDashboardUrl();
     }
 
     function _isLocalhostHost(hostname) {
@@ -120,15 +152,58 @@
     }
 
     function getPublicBaseUrl() {
-        const hostname = (location.hostname || '').toLowerCase();
-        if (_isLocalhostHost(hostname)) return PUBLIC_APP_BASE_URL;
+        return new URL(PUBLIC_APP_BASE_URL).toString();
+    }
 
-        const pathname = location.pathname || '/';
-        const basePath = pathname.endsWith('/') ? pathname : pathname.replace(/\/[^/]*$/, '/');
-        return new URL(basePath, location.origin).toString();
+    function _buildCleanUrl(pathname, params = {}, hash = '') {
+        const url = new URL(pathname.replace(/^\//, ''), getPublicBaseUrl());
+        Object.entries(params || {}).forEach(([key, value]) => {
+            if (value == null || value === '') return;
+            url.searchParams.set(key, value);
+        });
+        if (hash) url.hash = hash.startsWith('#') ? hash : '#' + hash;
+        return url.toString();
+    }
+
+    function buildDashboardUrl(hashPage = '') {
+        const url = new URL(buildUrl('dashboard.html', {}), getPublicBaseUrl());
+        if (hashPage) url.hash = hashPage.startsWith('#') ? hashPage : '#' + hashPage;
+        return url.toString();
+    }
+
+    function buildPortalUrl(org, params = {}) {
+        const slug = org || getOrg();
+        const allParams = { ...(params || {}) };
+        delete allParams.org;
+        if (slug) return _buildCleanUrl(slug, allParams);
+        return new URL(buildUrl('portal.html', allParams), getPublicBaseUrl()).toString();
+    }
+
+    function buildFormUrl(id, options = {}) {
+        const { hash = '', ...params } = options || {};
+        return _buildCleanUrl(`form/${encodeURIComponent(id)}`, params, hash);
+    }
+
+    function buildResetPasswordUrl(params = {}) {
+        return new URL(buildUrl('update-password.html', params), getPublicBaseUrl()).toString();
     }
 
     function buildPublicUrl(page, params = {}) {
+        if (page === 'dashboard.html') {
+            const hashPage = params.hash || params.page || '';
+            return buildDashboardUrl(hashPage);
+        }
+        if (page === 'portal.html') {
+            const { org, ...rest } = params || {};
+            return buildPortalUrl(org, rest);
+        }
+        if (page === 'ds160-form.html' && params?.id) {
+            const { id, ...rest } = params;
+            return buildFormUrl(id, rest);
+        }
+        if (page === 'update-password.html') {
+            return buildResetPasswordUrl(params);
+        }
         return new URL(buildUrl(page, params), getPublicBaseUrl()).toString();
     }
 
@@ -237,15 +312,13 @@
     }
 
     function goToDashboard(page) {
-        let url = buildUrl('dashboard.html');
-        if (page) url += '#' + page;
-        window.location.href = url;
+        window.location.href = buildDashboardUrl(page || '');
     }
 
     function goToForm(id, tab) {
-        const params = { id };
+        const params = {};
         if (tab) params.tab = tab;
-        navigate('ds160-form.html', params);
+        window.location.href = buildFormUrl(id, params);
     }
 
 
@@ -354,7 +427,13 @@
 
         // Navigation
         buildUrl,
+        getPathOrg,
+        getPathFormId,
         buildPublicUrl,
+        buildDashboardUrl,
+        buildPortalUrl,
+        buildFormUrl,
+        buildResetPasswordUrl,
         navigate,
         goToDashboard,
         goToForm,
