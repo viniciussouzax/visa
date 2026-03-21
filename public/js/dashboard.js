@@ -843,9 +843,9 @@
                 const isPrincipal = isSubRow && treeOpts.memberIndex === 0;
                 const nameIcon = `<span class="applicant-icon"><i class="iconoir-${isPrincipal ? 'user-star' : 'user'}"></i></span>`;
                 const treeBranch = treeOpts.isSubRow ? `<span class="tree-branch ${treeOpts.isLast ? 'tree-last' : ''}"></span>` : '';
-                                return `<tr class="${extraClass || ''} ${sel ? 'selected' : ''}" draggable="true" data-id="${a.id}" ondblclick="openReview('${a.id}')" ondragstart="handleDragStart(event,'${a.id}')" ondragover="handleDragOver(event)" ondragleave="event.currentTarget.classList.remove('drag-over','drag-above','drag-below')" ondrop="handleDrop(event,'${a.id}')">
+                                return `<tr class="${extraClass || ''} ${sel ? 'selected' : ''}" draggable="true" data-id="${a.id}" onclick="openReview('${a.id}')" ondblclick="openReview('${a.id}')" style="cursor:pointer" ondragstart="handleDragStart(event,'${a.id}')" ondragover="handleDragOver(event)" ondragleave="event.currentTarget.classList.remove('drag-over','drag-above','drag-below')" ondrop="handleDrop(event,'${a.id}')">
                     <td class="check-col"><div class="custom-check ${sel ? 'checked' : ''}" onclick="event.stopPropagation();toggleSelect('${a.id}')"><i class="iconoir-check"></i></div></td>
-                    <td onclick="openReview('${a.id}')"><div class="name-col">${treeBranch}${nameIcon}<div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${isSubRow ? (a.data?.relation || a.passport || '') : (a.email || 'Sem email')}</div></div></div></td>
+                    <td><div class="name-col">${treeBranch}${nameIcon}<div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${isSubRow ? (a.data?.relation || a.passport || '') : (a.email || 'Sem email')}</div></div></div></td>
                     <td>${(() => {
                         if (a.stage === 'interview') {
                             return '<span class="status-badge status-pendente">Pendente</span>';
@@ -2939,8 +2939,8 @@
             // Layout idÃªntico Ã s tabelas de etapas
             tbody.innerHTML = problems.map(a => {
                 const cfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.todo;
-                return `<tr ondblclick="openReview('${a.id}')" style="cursor:pointer">
-                    <td onclick="openReview('${a.id}')"><div class="name-col"><span class="applicant-icon"><i class="iconoir-user"></i></span><div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${a.email || 'Sem email'}</div></div></div></td>
+                return `<tr onclick="openReview('${a.id}')" ondblclick="openReview('${a.id}')" style="cursor:pointer">
+                    <td><div class="name-col"><span class="applicant-icon"><i class="iconoir-user"></i></span><div class="name-info"><div class="name">${shortName(a.name)}</div><div class="passport">${a.email || 'Sem email'}</div></div></div></td>
                     <td><span class="status-badge ${cfg.class}" onclick="event.stopPropagation();openErrorLogsModal('${a.id}')" style="cursor:pointer" title="Ver logs de erro">${cfg.label}</span></td>
                     <td>${a.application_id ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')">${(a.application_id||'').substring(0,12)}</span>` : '-'}</td>
                     <td>${a.ais_email ? `<span class="cred-chip" onclick="event.stopPropagation();openCredModal('${a.id}')"><span class="cred-dot ${a.ais_confirmed?'confirmed':a.ais_status==='confirmation_failed'?'fail':'pending'}"></span>${a.ais_email.split('@')[0]}</span>` : '-'}</td>
