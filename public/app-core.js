@@ -203,6 +203,13 @@
     // ==========================================
     // LOADING SCREEN
     // ==========================================
+    let _loadingSafetyTimer = null;
+
+    function _scheduleLoadingSafety() {
+        clearTimeout(_loadingSafetyTimer);
+        _loadingSafetyTimer = setTimeout(hideLoading, 15000);
+    }
+
     function _injectLoading() {
         if (document.getElementById('appLoadingScreen')) return;
         // Use org branding from sessionStorage if available
@@ -231,15 +238,18 @@
             document.head.appendChild(style);
         }
         document.body.insertBefore(div, document.body.firstChild);
+        _scheduleLoadingSafety();
     }
 
     function showLoading() {
         _injectLoading();
         const el = document.getElementById('appLoadingScreen');
         if (el) { el.style.display = 'flex'; el.style.opacity = '1'; }
+        _scheduleLoadingSafety();
     }
 
     function hideLoading() {
+        clearTimeout(_loadingSafetyTimer);
         const el = document.getElementById('appLoadingScreen');
         if (el) {
             el.style.opacity = '0';
@@ -328,7 +338,7 @@
         _injectLoading();
     }
 
-    // Safety timeout: auto-hide loading after 4s in case startup fails
-    setTimeout(hideLoading, 4000);
+    // Safety timeout: auto-hide loading after a longer window in case startup fails
+    _scheduleLoadingSafety();
 
 })();

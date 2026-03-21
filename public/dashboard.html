@@ -22,20 +22,6 @@
             height: auto;
         }
 
-        @keyframes pulse-logo {
-
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: .5;
-                transform: scale(.97);
-            }
-        }
-
         /* Status badges */
         .status-badge {
             display: inline-block;
@@ -79,13 +65,6 @@
             background: var(--bg-secondary, #f1f5f9);
         }
     </style>
-
-    <!-- SPLASH SCREEN -->
-    <div id="splashScreen"
-        style="position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:#fff;transition:opacity .4s">
-        <img src="logo-azul.png" alt="SENDS160" class="site-logo"
-            style="animation:pulse-logo 1.5s ease-in-out infinite">
-    </div>
 
     <!-- LOGIN OVERLAY -->
     <div class="login-overlay" id="loginOverlay" style="display:none">
@@ -442,11 +421,6 @@
             <button class="bulk-btn" onclick="clearSelection()">✕</button>
         </div>
 
-        <div id="loadingState" class="loading-overlay">
-            <div class="spinner"></div>
-            <span>Carregando solicitantes...</span>
-        </div>
-
         <div class="table-container" id="tableContainer" style="display:none">
             <table>
                 <thead>
@@ -471,10 +445,8 @@
             </div>
         </div>
 
-        <div class="pagination" id="pagination" style="display:none">
-            <button class="pagination-btn" id="paginationPrev" onclick="prevPage()" disabled>← Anterior</button>
-            <span id="paginationInfo"></span>
-            <button class="pagination-btn" id="paginationNext" onclick="nextPage()">Próximo →</button>
+        <div class="list-sentinel hidden" id="listSentinel" aria-live="polite">
+            <span id="listSentinelText">Role para carregar mais</span>
         </div>
     </div>
 

@@ -57,8 +57,9 @@
         let sortField = 'created';
         let sortDir = 'desc';
         let expandedGroups = new Set();
-        let paginationPage = 1;
-        const PAGE_SIZE = 25;
+        const LIST_BATCH_SIZE = 25;
+        let visibleRowsCount = LIST_BATCH_SIZE;
+        let _listObserver = null;
 
         const STATUS_CONFIG = {
             todo: { label: 'Pendente', class: 'status-pendente' },
@@ -246,13 +247,13 @@
         function navigateTo(page) {
             // Toggle admin panel vs normal content
             const adminPanel = document.getElementById('adminPanel');
-            const normalEls = document.querySelectorAll('.main > .dashboard-nav, .main > .bulk-bar, .main > .table-container, .main > .pagination');
+            const normalEls = document.querySelectorAll('.main > .dashboard-nav, .main > .bulk-bar, .main > .table-container, .main > .list-sentinel');
             if (page === 'overview') {
                 currentPage = 'overview';
                 currentFilter = 'all';
                 selectedIds.clear();
                 searchQuery = '';
-                paginationPage = 1;
+                resetVisibleRows();
                 updateBulkBar();
                 const searchInput = document.getElementById('searchInput');
                 if (searchInput) searchInput.value = '';
@@ -260,8 +261,6 @@
                 normalEls.forEach(el => el.style.display = 'none');
                 if (adminPanel) adminPanel.style.display = 'none';
                 admRestoreNav();
-                const loadSt = document.getElementById('loadingState');
-                if (loadSt) loadSt.style.display = 'none';
                 const tblCont = document.getElementById('tableContainer');
                 if (tblCont) tblCont.style.display = 'none';
                 // Show dashboard page
@@ -284,7 +283,7 @@
                 currentFilter = 'all';
                 selectedIds.clear();
                 searchQuery = '';
-                paginationPage = 1;
+                resetVisibleRows();
                 updateBulkBar();
                 // Guard: só permite acesso se o botão admin estiver visível (role verificada no showDashboard)
                 const adminBtn = document.getElementById('adminNavBtn');
@@ -292,8 +291,6 @@
                 normalEls.forEach(el => el.style.display = 'none');
                 const dashPage3 = document.getElementById('dashboardPage');
                 if (dashPage3) dashPage3.style.display = 'none';
-                const loadSt2 = document.getElementById('loadingState');
-                if (loadSt2) loadSt2.style.display = 'none';
                 const tblCont = document.getElementById('tableContainer');
                 if (tblCont) tblCont.style.display = 'none';
                 if (adminPanel) { adminPanel.style.display = 'block'; admInitPanel(); }
@@ -310,10 +307,8 @@
             admRestoreNav();
             const dashPage2 = document.getElementById('dashboardPage');
             if (dashPage2) dashPage2.style.display = 'none';
-            const loadSt3 = document.getElementById('loadingState');
-            if (loadSt3) loadSt3.style.display = applicants.length > 0 ? 'none' : '';
             normalEls.forEach(el => el.style.display = '');
-            currentPage = page; currentFilter = 'all'; selectedIds.clear(); searchQuery = ''; paginationPage = 1;
+            currentPage = page; currentFilter = 'all'; selectedIds.clear(); searchQuery = ''; resetVisibleRows();
             // Persist active page in URL hash for reload
             try { history.replaceState(null, '', location.pathname + location.search + '#' + page); } catch(e) {}
             document.getElementById('searchInput').value = '';
@@ -336,9 +331,31 @@
             el.style.display = 'none';
         }
 
-        function setFilter(f) { currentFilter = f; renderFilters(); renderTable(); }
-        function filterList() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); renderTable(); }
-        function sortBy(field) { if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc'; else { sortField = field; sortDir = 'desc'; } renderTable(); }
+        function resetVisibleRows() { visibleRowsCount = LIST_BATCH_SIZE; }
+        function setupListObserver(hasMore) {
+            const sentinel = document.getElementById('listSentinel');
+            if (!sentinel) return;
+            sentinel.classList.toggle('hidden', !hasMore);
+            if (!hasMore) {
+                if (_listObserver) _listObserver.disconnect();
+                return;
+            }
+            if (!_listObserver) {
+                _listObserver = new IntersectionObserver((entries) => {
+                    if (!entries[0]?.isIntersecting) return;
+                    const total = getFiltered().length;
+                    if (visibleRowsCount >= total) return;
+                    visibleRowsCount = Math.min(visibleRowsCount + LIST_BATCH_SIZE, total);
+                    renderTable();
+                }, { rootMargin: '240px 0px' });
+            } else {
+                _listObserver.disconnect();
+            }
+            _listObserver.observe(sentinel);
+        }
+        function setFilter(f) { currentFilter = f; resetVisibleRows(); renderFilters(); renderTable(); }
+        function filterList() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); resetVisibleRows(); renderTable(); }
+        function sortBy(field) { if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc'; else { sortField = field; sortDir = 'desc'; } resetVisibleRows(); renderTable(); }
 
         // Etapas: mostra apenas trabalho ativo (retry, doing, todo)
         // done → avançar etapa | error/failed → Processos com Problemas
@@ -460,36 +477,25 @@
             const allItems = getFiltered();
             const tbody = document.getElementById('tableBody');
             const empty = document.getElementById('emptyState');
-            const loading = document.getElementById('loadingState');
             const tableContainer = document.getElementById('tableContainer');
-            const paginationEl = document.getElementById('pagination');
-            if (loading) loading.style.display = 'none';
-            // Guard: na overview ou admin, tableContainer e pagination devem ficar ocultos
+            const sentinel = document.getElementById('listSentinel');
+            // Guard: na overview ou admin, tableContainer e sentinela devem ficar ocultos
             if (currentPage === 'overview' || document.getElementById('adminPanel')?.style.display === 'block') {
                 if (tableContainer) tableContainer.style.display = 'none';
-                if (paginationEl) paginationEl.style.display = 'none';
+                if (sentinel) sentinel.classList.add('hidden');
+                if (_listObserver) _listObserver.disconnect();
                 return;
             }
             if (tableContainer) tableContainer.style.display = '';
-            if (paginationEl) paginationEl.style.display = '';
 
 
 
-            if (!allItems.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); document.getElementById('paginationInfo').textContent = ''; return; }
+            if (!allItems.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); setupListObserver(false); return; }
             empty.classList.add('hidden');
 
-            // Pagination
-            const totalPages = Math.ceil(allItems.length / PAGE_SIZE);
-            if (paginationPage > totalPages) paginationPage = totalPages;
-            if (paginationPage < 1) paginationPage = 1;
-            const startIdx = (paginationPage - 1) * PAGE_SIZE;
-            const items = allItems.slice(startIdx, startIdx + PAGE_SIZE);
+            const items = allItems.slice(0, visibleRowsCount);
+            setupListObserver(visibleRowsCount < allItems.length);
 
-            // count removed from nav
-            document.getElementById('paginationInfo').textContent = `${startIdx + 1}–${Math.min(startIdx + PAGE_SIZE, allItems.length)} de ${allItems.length}`;
-            document.getElementById('paginationPrev').disabled = paginationPage <= 1;
-            document.getElementById('paginationNext').disabled = paginationPage >= totalPages;
-            document.getElementById('pagination').classList.toggle('hidden', allItems.length <= PAGE_SIZE);
 
             const groupMap = {}; const solos = [];
             items.forEach(a => { if (a.group_id) { if (!groupMap[a.group_id]) groupMap[a.group_id] = []; groupMap[a.group_id].push(a); } else solos.push(a); });
@@ -564,11 +570,7 @@
                 } else { rendered.add(a.id); html += buildRow(a, ''); }
             });
             tbody.innerHTML = html; updateBulkBar();
-        }
-
-        function nextPage() { paginationPage++; renderTable(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-        function prevPage() { paginationPage--; renderTable(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-
+        }
         // ==========================================
         // DRAG AND DROP
         // ==========================================
@@ -1930,6 +1932,11 @@
             const a = applicants.find(x => x.id === id);
             if (a && a.group_id && !expandedGroups.has(String(a.group_id))) {
                 expandedGroups.add(String(a.group_id));
+            }
+            const filteredItems = getFiltered();
+            const targetIndex = filteredItems.findIndex(item => item.id === id);
+            if (targetIndex >= 0) {
+                visibleRowsCount = Math.max(visibleRowsCount, targetIndex + 1);
                 renderTable();
             }
             // Select the row in the table
@@ -2040,7 +2047,7 @@
 
         async function showDashboard() {
             _authToken = AppCore.getAuth(); _orgParam = AppCore.getOrg();
-            AppCore.hideLoading();
+            AppCore.showLoading();
             const overlay = document.getElementById('loginOverlay');
             overlay.classList.add('fade-out'); setTimeout(() => overlay.style.display = 'none', 300);
             document.querySelector('.sidebar').style.display = 'flex'; document.querySelector('.main').style.display = 'block';
@@ -2092,6 +2099,8 @@
                     }
                 }
             } catch { }
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            AppCore.hideLoading();
         }
 
         // ==========================================
@@ -2887,7 +2896,7 @@
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (session?.user) _currentUser = session.user;
                     else { try { const payload = JSON.parse(atob(_authToken.split('.')[1])); _currentUser = { email: payload.email || payload.sub || '' }; } catch { } }
-                    await showDashboard(); hideSplash(); return;
+                    await showDashboard(); return;
                 } catch (err) {
                     // Token from URL may be expired — try Supabase session refresh before giving up
                     console.warn('[Dashboard] URL token failed, trying session refresh:', err.message);
@@ -2896,14 +2905,8 @@
                 }
             }
             const isAuth = await checkAuth();
-            if (isAuth) { await showDashboard(); hideSplash(); return; }
+            if (isAuth) { await showDashboard(); return; }
             AppCore.hideLoading();
-            hideSplash();
             const loginOv = document.getElementById('loginOverlay');
             if (loginOv) loginOv.style.display = 'flex';
-
-            function hideSplash() {
-                const splash = document.getElementById('splashScreen');
-                if (splash) { splash.style.opacity = '0'; setTimeout(() => splash.remove(), 400); }
-            }
         })();
