@@ -345,25 +345,25 @@
 
         function normalizeDashboardStaticCopy() {
             const problemsActionHeader = document.querySelector('#problemsTableWrap th:last-child');
-            if (problemsActionHeader) problemsActionHeader.textContent = 'AÃ§Ã£o';
+            if (problemsActionHeader) problemsActionHeader.textContent = 'Ação';
 
             const analysisNavItem = document.querySelector('.nav-item[data-page="analysis"]');
-            if (analysisNavItem) analysisNavItem.innerHTML = '<i class="iconoir-strategy"></i> AnÃ¡lise';
+            if (analysisNavItem) analysisNavItem.innerHTML = '<i class="iconoir-strategy"></i> Análise';
 
             const docsNavItem = document.querySelector('.sidebar-bottom .nav-item:last-child');
-            if (docsNavItem && !docsNavItem.id) docsNavItem.innerHTML = '<i class="iconoir-book"></i> DocumentaÃ§Ã£o';
+            if (docsNavItem && !docsNavItem.id) docsNavItem.innerHTML = '<i class="iconoir-book"></i> Documentação';
 
             const adminNavItem = document.getElementById('adminNavItem');
             if (adminNavItem) adminNavItem.innerHTML = '<i class="iconoir-reload-window"></i> Painel Master';
 
             const admTabOrgs = document.getElementById('admTab-orgs');
-            if (admTabOrgs) admTabOrgs.textContent = 'OrganizaÃ§Ãµes';
+            if (admTabOrgs) admTabOrgs.textContent = 'Organizações';
 
             const admTabCapmonster = document.getElementById('admTab-capmonster');
-            if (admTabCapmonster) admTabCapmonster.textContent = 'IntegraÃ§Ãµes';
+            if (admTabCapmonster) admTabCapmonster.textContent = 'Integrações';
 
             const admTabSettings = document.getElementById('admTab-settings');
-            if (admTabSettings) admTabSettings.textContent = 'ConfiguraÃ§Ãµes';
+            if (admTabSettings) admTabSettings.textContent = 'Configurações';
         }
 
         if (document.readyState === 'loading') {
@@ -411,7 +411,7 @@
             if (admUsersActionsHeader) admUsersActionsHeader.textContent = 'A\u00e7\u00f5es';
 
             const admLogsHeaders = document.querySelectorAll('#adm-view-logs thead th');
-            if (admLogsHeaders[1]) admLogsHeaders[1].textContent = 'Organiza\u00e7\u00e3o / Solicitante';
+            if (admLogsHeaders[1]) admLogsHeaders[1].textContent = 'Solicitante';
             if (admLogsHeaders[4]) admLogsHeaders[4].textContent = 'M\u00eddia';
             if (admLogsHeaders[6]) admLogsHeaders[6].textContent = 'A\u00e7\u00f5es';
         }
@@ -3535,38 +3535,43 @@
                 window._admLogs = allLogs;
                 tb.innerHTML = allLogs.map((l, idx) => {
                     const ds = l.created_at ? new Date(l.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
-                    const retryBadge = l.retry_number != null ? `<span class="adm-log-source">Tentativa #${l.retry_number}</span>` : `<span class="adm-log-source">${l._fromApp ? 'applications.fill_error' : 'error_logs'}</span>`;
+                    const sourceLabel = l.retry_number != null
+                        ? `Tentativa #${l.retry_number}`
+                        : (l._fromApp ? 'applications.fill_error' : 'error_logs');
                     const screenshotBtn = l.screenshot_url
-                        ? `<button class="btn-new" onclick="admViewScreenshot(${idx})" style="background:#3b82f6;font-size:11px;padding:3px 6px" title="Ver screenshot">Imagem</button>`
-                        : '<span style="color:var(--text-muted);font-size:11px">-</span>';
+                        ? `<button class="btn-new adm-chip adm-chip-image" onclick="admViewScreenshot(${idx})" title="Ver screenshot">Imagem</button>`
+                        : '';
                     const htmlBtn = l.page_html
-                        ? `<button class="btn-new" onclick="admViewHtml(${idx})" style="background:#8b5cf6;font-size:11px;padding:3px 6px" title="Ver HTML da p\u00e1gina">HTML</button>`
+                        ? `<button class="btn-new adm-chip adm-chip-html" onclick="admViewHtml(${idx})" title="Ver HTML da p\u00e1gina">HTML</button>`
                         : '';
                     const videoBtn = l.video_url
-                        ? `<a class="btn-new" href="${l.video_url}" target="_blank" rel="noopener" style="background:#0f766e;font-size:11px;padding:3px 6px">VÃ­deo</a>`
+                        ? `<a class="btn-new adm-chip adm-chip-video" href="${l.video_url}" target="_blank" rel="noopener">Vídeo</a>`
+                        : '';
+                    const mediaEmpty = (!screenshotBtn && !htmlBtn && !videoBtn)
+                        ? '<span class="adm-log-empty">Sem mídia</span>'
                         : '';
                     const archiveBtn = l._fromApp
-                        ? '<span style="color:var(--text-muted);font-size:11px">Manual</span>'
-                        : `<button class="btn-new" onclick="admArchiveLog('${l.id}')" style="background:#ef4444;font-size:11px;padding:4px 8px">Arquivar</button>`;
+                        ? '<span class="adm-log-empty">Manual</span>'
+                        : `<button class="btn-new btn-danger-soft" onclick="admArchiveLog('${l.id}')">Arquivar</button>`;
                     return `<tr>
                         <td><span class="adm-log-status" data-status="${l._status}">${admLogStatusMeta[l._status]?.label || l._status}</span></td>
                         <td>
                             <div class="adm-log-name">
-                                <strong>${escapeHTML(l._companyName)}</strong>
-                                <span>${escapeHTML(l.applicant_name || '-')}</span>
-                                ${retryBadge}
+                                <strong>${escapeHTML(l.applicant_name || '-')}</strong>
+                                <span>${escapeHTML(l._companyName)}</span>
+                                <span class="adm-log-source">${escapeHTML(sourceLabel)}</span>
                             </div>
                         </td>
                         <td>
                             <div class="adm-log-context">
                                 <span class="adm-log-context-main">${escapeHTML(l._causeLabel)}</span>
-                                <span class="adm-log-context-sub">${escapeHTML(l.page_name || 'Sem pÃ¡gina')}${l.field_name ? ' &middot; ' + escapeHTML(l.field_name) : ''}</span>
+                                <span class="adm-log-context-sub">${escapeHTML(l.page_name || 'Sem página')}${l.field_name ? ' · ' + escapeHTML(l.field_name) : ''}</span>
                             </div>
                         </td>
                         <td><div class="adm-log-message" title="${escapeHTML(l.error_message || '')}">${escapeHTML(l.error_message || '-')}</div></td>
-                        <td><div class="adm-log-media">${screenshotBtn}${htmlBtn ? ' ' + htmlBtn : ''}${videoBtn ? ' ' + videoBtn : ''}</div></td>
-                        <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${ds}</td>
-                        <td><div class="adm-log-actions"><button class="btn-new" onclick="admOpenLogDetail(${idx})" style="font-size:11px;padding:4px 8px">Detalhes</button>${archiveBtn}</div></td>
+                        <td><div class="adm-log-media">${mediaEmpty}${screenshotBtn}${htmlBtn}${videoBtn}</div></td>
+                        <td><div class="adm-log-date">${ds}</div></td>
+                        <td><div class="adm-log-actions"><button class="btn-new btn-neutral-soft" onclick="admOpenLogDetail(${idx})">Detalhes</button>${archiveBtn}</div></td>
                     </tr>`;
                 }).join('');
             } catch (e) { document.getElementById('admLogsTable').innerHTML = '<tr><td colspan="7" style="color:#ef4444">' + e.message + '</td></tr>'; }

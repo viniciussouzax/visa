@@ -6661,3 +6661,240 @@ tr.drag-over {
 #tableContainer .row-btn .iconoir-copy {
     font-size: 18px;
 }
+
+/* ==========================================
+   FINAL OVERRIDES - MASTER LOGS + SIDEBAR
+   ========================================== */
+
+.sidebar-bottom {
+    padding: 10px 12px 0;
+    gap: 8px;
+}
+
+.sidebar-bottom .nav-item {
+    min-height: 42px;
+    padding: 10px 12px;
+    border-radius: 12px;
+}
+
+.sidebar-footer {
+    padding: 14px 12px 16px;
+    border-top: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(15, 23, 42, 0.22);
+}
+
+.sidebar-user-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+}
+
+.sidebar-user-card .user-avatar {
+    display: none !important;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: #f8fafc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-org {
+    font-size: 12px;
+    line-height: 1.45;
+    color: #cbd5e1;
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+
+.sidebar-footer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.sidebar-footer-actions .kebab-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.3);
+}
+
+.adm-logs-summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.adm-log-summary-card {
+    min-height: 116px;
+    justify-content: center;
+    padding: 16px 18px;
+}
+
+.adm-logs-wrap {
+    overflow-x: auto;
+}
+
+.adm-logs-wrap table {
+    width: 100%;
+    min-width: 1180px;
+    table-layout: fixed;
+}
+
+.adm-logs-wrap th,
+.adm-logs-wrap td {
+    vertical-align: top;
+}
+
+.adm-logs-wrap th:nth-child(1),
+.adm-logs-wrap td:nth-child(1) { width: 128px; }
+
+.adm-logs-wrap th:nth-child(2),
+.adm-logs-wrap td:nth-child(2) { width: 260px; }
+
+.adm-logs-wrap th:nth-child(3),
+.adm-logs-wrap td:nth-child(3) { width: 180px; }
+
+.adm-logs-wrap th:nth-child(4),
+.adm-logs-wrap td:nth-child(4) { width: auto; min-width: 260px; }
+
+.adm-logs-wrap th:nth-child(5),
+.adm-logs-wrap td:nth-child(5) { width: 170px; }
+
+.adm-logs-wrap th:nth-child(6),
+.adm-logs-wrap td:nth-child(6) { width: 110px; }
+
+.adm-logs-wrap th:nth-child(7),
+.adm-logs-wrap td:nth-child(7) { width: 150px; }
+
+.adm-log-name {
+    gap: 4px;
+}
+
+.adm-log-name strong {
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+.adm-log-name span {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.adm-log-source {
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.adm-log-context {
+    gap: 6px;
+}
+
+.adm-log-context-main {
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.adm-log-context-sub {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.adm-log-message {
+    font-size: 13px;
+    line-height: 1.55;
+    -webkit-line-clamp: 3;
+}
+
+.adm-log-media {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 34px;
+}
+
+.adm-chip {
+    border: none;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 1;
+    font-weight: 700;
+    box-shadow: none;
+}
+
+.adm-chip-image {
+    background: #3b82f6;
+    color: #fff;
+}
+
+.adm-chip-html {
+    background: #8b5cf6;
+    color: #fff;
+}
+
+.adm-chip-video {
+    background: #0f766e;
+    color: #fff;
+}
+
+.adm-log-empty {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.adm-log-date {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.adm-log-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-neutral-soft {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: none;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.btn-danger-soft {
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+@media (max-width: 1280px) {
+    .adm-logs-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
