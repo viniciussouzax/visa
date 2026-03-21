@@ -1,6 +1,7 @@
 # ============================================================
-# AIS Worker — Cloud Run Job
+# AIS Worker
 # Image: Playwright + Node.js for AIS automation
+# Suitable for Fly Machines or one-shot worker execution
 # ============================================================
 FROM mcr.microsoft.com/playwright:v1.50.0-noble
 

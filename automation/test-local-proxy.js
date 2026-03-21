@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // test-local-proxy.js — Testa proxy + comportamento humano
-// Simula Cloud Run localmente: abre CEAC via proxy, verifica IP,
+// Simula o worker localmente: abre CEAC via proxy, verifica IP,
 // testa captcha landing e mede tempos de input humano.
 // ============================================================
 const fs = require('fs');
@@ -232,3 +232,4 @@ main().catch(err => {
     console.error('CRASH:', err);
     process.exit(1);
 });
+

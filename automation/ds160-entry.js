@@ -1,20 +1,18 @@
 #!/usr/bin/env node
 // ============================================================
-// ds160-entry.js — Cloud Run Job entrypoint
-// ESCALÁVEL: cada container recebe CLOUD_RUN_TASK_INDEX (0..N-1)
-// e pega o applicant na posição fixa sort_order = index + 1
-// Containers são 100% independentes — sem dependência entre eles
-// Nasce → pega seu applicant → preenche → morre
+// ds160-entry.js - one-shot DS-160 worker entrypoint
+// Default behavior on Fly.io: boot, claim the next applicant, fill, exit
+// Optional batch envs remain available for controlled test runs
 // ============================================================
 const { createClient } = require('@supabase/supabase-js');
 
-// ── ENV ──
+// -- ENV --
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const COMPANY_ID = process.env.COMPANY_ID;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-    console.error('❌ SUPABASE_URL e SUPABASE_KEY são obrigatórios');
+    console.error('SUPABASE_URL e SUPABASE_KEY sao obrigatorios');
     process.exit(1);
 }
 
@@ -22,45 +20,47 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false }
 });
 
-// Cloud Run injeta automaticamente essas vars
-const TASK_INDEX = parseInt(process.env.CLOUD_RUN_TASK_INDEX || '0', 10);
-const TASK_COUNT = parseInt(process.env.CLOUD_RUN_TASK_COUNT || '1', 10);
-// Webhook override: trigger-ds160 Edge Function passes specific applicant ID
+// Optional batch/test envs
+const TASK_INDEX = parseInt(process.env.TASK_INDEX || '0', 10);
+const TASK_COUNT = parseInt(process.env.TASK_COUNT || '1', 10);
+// Optional direct-target override for manual/webhook starts
 const TARGET_APPLICANT_ID = process.env.TARGET_APPLICANT_ID || null;
 
-if (!process.env.HEADLESS) process.env.HEADLESS = 'false'; // Xvfb provides virtual display
+if (!process.env.HEADLESS) process.env.HEADLESS = 'false';
 
 async function main() {
     const startTime = Date.now();
-    console.log('═══════════════════════════════════════');
-    console.log('  🏛️  DS-160 Worker (Cloud Run Job)');
+    console.log('=======================================');
+    console.log('  DS-160 Worker (Fly Machine)');
     if (TARGET_APPLICANT_ID) {
-        console.log(`  Mode: WEBHOOK (target: ${TARGET_APPLICANT_ID})`);
-    } else {
+        console.log(`  Mode: TARGET (${TARGET_APPLICANT_ID})`);
+    } else if (process.env.TASK_INDEX) {
         console.log(`  Mode: BATCH (task ${TASK_INDEX + 1} / ${TASK_COUNT})`);
+    } else {
+        console.log('  Mode: QUEUE');
     }
     console.log(`  Start: ${new Date().toISOString()}`);
-    console.log('═══════════════════════════════════════\n');
+    console.log('=======================================\n');
 
-    // ── AUTH ──
+    // -- AUTH --
     const workerEmail = process.env.WORKER_EMAIL;
     const workerPassword = process.env.WORKER_PASSWORD;
     if (workerEmail && workerPassword) {
         const { error } = await supabase.auth.signInWithPassword({
-            email: workerEmail, password: workerPassword,
+            email: workerEmail,
+            password: workerPassword,
         });
         if (error) {
-            console.error(`❌ Auth falhou: ${error.message} — abortando (RLS pode bloquear queries sem auth)`);
+            console.error(`Auth falhou: ${error.message} - abortando`);
             process.exit(1);
         }
-        console.log('🔐 Autenticado');
+        console.log('Autenticado');
     }
 
-    // ── PEGAR APPLICANT ──
+    // -- PICK APPLICANT --
     let target;
 
     if (TARGET_APPLICANT_ID) {
-        // WEBHOOK MODE: buscar applicant específico pelo ID
         const { data: row, error: qErr } = await supabase
             .from('applicants')
             .select('id, full_name, status')
@@ -68,12 +68,11 @@ async function main() {
             .single();
 
         if (qErr || !row) {
-            console.log(`📭 Applicant ${TARGET_APPLICANT_ID} não encontrado`);
+            console.log(`Applicant ${TARGET_APPLICANT_ID} nao encontrado`);
             process.exit(0);
         }
         target = row;
     } else {
-        // BATCH MODE: buscar por posição (TASK_INDEX)
         let query = supabase
             .from('applicants')
             .select('id, full_name, status')
@@ -86,23 +85,21 @@ async function main() {
         const { data: rows, error: qErr } = await query;
 
         if (qErr || !rows || rows.length === 0) {
-            console.log(`📭 Task ${TASK_INDEX}: nenhum applicant nesta posição`);
+            console.log(`Fila vazia para a posicao ${TASK_INDEX}`);
             process.exit(0);
         }
         target = rows[0];
     }
 
-    console.log(`📋 Meu applicant: ${target.full_name} (status: ${target.status})`);
+    console.log(`Meu applicant: ${target.full_name} (status: ${target.status})`);
 
-    // Status check — only skip if truly done or in a terminal error state
-    // 'doing' + 'standby' are processable: they mean a previous worker died/expired
     const PROCESSABLE_STATUSES = ['todo', 'retry', 'doing', 'standby'];
     if (!PROCESSABLE_STATUSES.includes(target.status)) {
-        console.log(`⏭️ Já processado (${target.status}) — saindo`);
+        console.log(`Ja processado (${target.status}) - saindo`);
         process.exit(0);
     }
 
-    // ── CLAIM ATÔMICO ──
+    // -- ATOMIC CLAIM --
     const { data: claimed, error: claimErr } = await supabase
         .from('applicants')
         .update({ status: 'doing', updated_at: new Date().toISOString() })
@@ -112,37 +109,36 @@ async function main() {
         .single();
 
     if (claimErr || !claimed) {
-        console.log('⚠️ Outro worker já pegou este applicant — saindo');
+        console.log('Outro worker ja pegou este applicant - saindo');
         process.exit(0);
     }
-    console.log(`🔒 Claimado: ${target.full_name}\n`);
+    console.log(`Claimado: ${target.full_name}\n`);
 
-    // ── GRACEFUL SHUTDOWN: reset status on SIGTERM/SIGINT (Fly.io deploy, timeout) ──
+    // -- GRACEFUL SHUTDOWN --
     let shuttingDown = false;
     const gracefulShutdown = async (signal) => {
         if (shuttingDown) return;
         shuttingDown = true;
-        console.log(`\n⚠️ ${signal} recebido — resetando status de ${target.full_name} para 'todo'`);
+        console.log(`\n${signal} recebido - resetando status de ${target.full_name} para 'todo'`);
         try {
             await supabase.from('applicants').update({
-                status: 'todo', updated_at: new Date().toISOString()
+                status: 'todo',
+                updated_at: new Date().toISOString()
             }).eq('id', target.id).eq('status', 'doing');
             await supabase.from('applications').update({
-                fill_status: 'todo', fill_worker_id: null
+                fill_status: 'todo',
+                fill_worker_id: null
             }).eq('applicant_id', target.id).eq('fill_status', 'filling');
-            console.log('✅ Status resetado — applicant será reprocessado na próxima trigger');
+            console.log('Status resetado - applicant sera reprocessado na proxima trigger');
         } catch (e) {
-            console.error('❌ Falha ao resetar status:', e.message);
+            console.error('Falha ao resetar status:', e.message);
         }
         process.exit(0);
     };
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-    // ── PROCESSAR ──
-    // Cloud Run Job: cada container é INDEPENDENTE e processa apenas SEU applicant.
-    // NÃO usar runner._claimNext() (que é para modo dashboard/fila contínua).
-    // O applicant já foi claimado atomicamente acima (L80-86).
+    // -- PROCESS --
     const { QueueRunner } = require('./queue');
     const runner = new QueueRunner(supabase, 'capmonster');
     runner.companyId = COMPANY_ID;
@@ -151,7 +147,6 @@ async function main() {
     try {
         const config = await runner._getConfig();
 
-        // Buscar dados completos do applicant
         const { data: fullApplicant } = await supabase
             .from('applicants')
             .select('*')
@@ -159,12 +154,11 @@ async function main() {
             .single();
 
         if (!fullApplicant) {
-            console.error('❌ Applicant não encontrado no banco');
+            console.error('Applicant nao encontrado no banco');
             await supabase.from('applicants').update({ status: 'error' }).eq('id', target.id);
             process.exit(1);
         }
 
-        // Buscar ou criar application para este applicant
         let { data: app } = await supabase
             .from('applications')
             .select('*')
@@ -172,27 +166,25 @@ async function main() {
             .single();
 
         if (!app) {
-            console.log('📝 Nenhuma application encontrada — criando');
+            console.log('Nenhuma application encontrada - criando');
             const { data: newApp, error: insertErr } = await supabase
                 .from('applications')
                 .insert({ applicant_id: target.id, fill_status: 'todo' })
                 .select('*')
                 .single();
             if (insertErr || !newApp) {
-                console.error('❌ Falha ao criar application:', insertErr?.message);
+                console.error('Falha ao criar application:', insertErr?.message);
                 await supabase.from('applicants').update({ status: 'error' }).eq('id', target.id);
                 process.exit(1);
             }
             app = newApp;
         }
 
-        // ── PROXY: ler de settings (proxy_url + proxy_countries) ──
         const { resolveProxyUrl, resolveProxyCountries } = require('./helpers/proxy-helper');
         let proxyUrl = null;
         let proxyCountries = 'us,br';
 
         if (app.proxy_session) {
-            // Retry: reutilizar proxy salvo
             proxyUrl = app.proxy_session;
             console.log(`Proxy (retry): ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
         } else {
@@ -208,39 +200,35 @@ async function main() {
             proxyCountries = resolveProxyCountries({ settingsRow: countriesRow });
 
             if (proxyUrl) {
-                // Salvar na application para retry futuro
                 await supabase.from('applications').update({
                     proxy_session: proxyUrl,
                     proxy_session_created_at: new Date().toISOString()
                 }).eq('id', app.id);
                 console.log(`Proxy: ${proxyUrl.replace(/\/\/.*@/, '//***@')} | countries: ${proxyCountries}`);
             } else {
-                console.log('Sem proxy configurado — usando IP direto');
+                console.log('Sem proxy configurado - usando IP direto');
             }
         }
 
-        // Injetar no config para o filler.js usar
         if (proxyUrl) config.proxy_url = proxyUrl;
         config.proxy_countries = proxyCountries;
 
-        console.log(`🔧 Application: ${app.id} (status: ${app.fill_status})`);
+        console.log(`Application: ${app.id} (status: ${app.fill_status})`);
 
-        // Processar — _fillWithRetry cuida de retry, error logging, etc.
         await runner._fillWithRetry(app, fullApplicant, config);
-
     } catch (e) {
-        console.error(`💥 Erro fatal: ${e.message}`);
+        console.error(`Erro fatal: ${e.message}`);
         await supabase.from('applicants').update({ status: 'error' }).eq('id', target.id);
         process.exit(1);
     }
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`\n⏱️ Duração: ${elapsed}s`);
-    console.log('🏁 Job finalizado');
+    console.log(`\nDuracao: ${elapsed}s`);
+    console.log('Worker finalizado');
     process.exit(0);
 }
 
 main().catch(err => {
-    console.error('💥 Crash:', err);
+    console.error('Crash:', err);
     process.exit(1);
 });

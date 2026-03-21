@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // seed-test-profiles.js — Insere perfis de teste no Supabase
-// para testes em massa no Cloud Run Jobs
+// para testes em massa do worker DS-160
 //
 // Uso:
 //   node scripts/seed-test-profiles.js              → insere todos os 26 perfis
@@ -262,8 +262,8 @@ async function main() {
     console.log('═══════════════════════════════════════');
     console.log(`\n💡 Próximo passo:`);
     console.log(`   LOCAL:  node automation/run.js`);
-    console.log(`   CLOUD:  gcloud run jobs execute ds160-worker --tasks=${inserted} --parallelism=5 --region=us-central1 --wait`);
-    console.log(`   LOGS:   gcloud run jobs executions list --job=ds160-worker --region=us-central1`);
+    console.log(`   FLY:    flyctl machine start <MACHINE_ID> -a ds160-worker`);
+    console.log(`   LOGS:   flyctl logs -a ds160-worker`);
     console.log(`   CHECK:  node scripts/check-test-results.js\n`);
 }
 
@@ -271,3 +271,4 @@ main().catch(err => {
     console.error('💥 Erro fatal:', err);
     process.exit(1);
 });
+

@@ -33,7 +33,7 @@ Assessor → Formulário Clone → Banco (Supabase) → Automação Playwright �
 - Captchas resolvidos via CapMonster API
 
 ## Stack
-Node.js, Express, Playwright, Supabase (Auth + DB + Storage + Realtime), GitHub Pages (frontend), Cloud Run (automação)
+Node.js, Express, Playwright, Supabase (Auth + DB + Storage + Realtime), GitHub Pages (frontend), Fly.io (automação)
 
 ## Arquivos Core
 
@@ -51,3 +51,4 @@ Node.js, Express, Playwright, Supabase (Auth + DB + Storage + Realtime), GitHub 
 | `public/dashboard.html` | Dashboard de gestão |
 | `server.js` | Servidor Express |
 | `automation/runner.js` | Runner da fila |
+

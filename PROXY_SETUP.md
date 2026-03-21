@@ -1,17 +1,17 @@
-# 🔒 Proxy Setup — SENDS160
+# Proxy Setup - SENDS160
 
 ## Por que usar proxy?
 
-O site CEAC (ceac.state.gov) bloqueia IPs de datacenters (AWS, GCP, Azure). Para automação em Cloud Run ou VPS, é **obrigatório** usar proxy residencial.
+O site CEAC (`ceac.state.gov`) bloqueia IPs de datacenters (AWS, GCP, Azure). Para automacao em Fly.io ou VPS, e obrigatorio usar proxy residencial.
 
-## Configuração Local
+## Configuracao Local
 
 1. Adicione no `.env`:
    ```
    PROXY_URL=http://user:password@proxy.dataimpulse.com:8000
    ```
 
-2. Ou configure via Supabase (Settings do dashboard):
+2. Ou configure via Supabase (`settings` do dashboard):
    ```sql
    INSERT INTO settings (key_name, key_value, description)
    VALUES ('proxy_url', 'http://user:pass@proxy.dataimpulse.com:8000', 'Proxy residencial')
@@ -23,40 +23,35 @@ O site CEAC (ceac.state.gov) bloqueia IPs de datacenters (AWS, GCP, Azure). Para
    curl -x http://user:pass@proxy.dataimpulse.com:8000 https://ceac.state.gov/GenNIV/Default.aspx -I
    ```
 
-## Configuração Cloud Run
+## Configuracao Fly.io
 
-### 1. Criar VPC Connector (uma vez)
-```bash
-gcloud compute networks vpc-access connectors create ds160-connector \
-  --region us-central1 \
-  --range 10.8.0.0/28
-```
+1. Configure `PROXY_URL` como secret do app:
+   ```bash
+   flyctl secrets set PROXY_URL=http://user:password@proxy.dataimpulse.com:8000 -a ds160-worker
+   ```
 
-### 2. Deploy com VPC Connector
-```bash
-gcloud run jobs deploy ds160-worker \
-  --region us-central1 \
-  --vpc-connector projects/<PROJECT_ID>/locations/us-central1/connectors/ds160-connector \
-  --vpc-egress all-traffic
-```
+2. Ou mantenha o valor em `settings.proxy_url` no Supabase para o worker consumir dinamicamente.
 
-> **IMPORTANTE**: `--vpc-egress all-traffic` força TODO o tráfego pelo connector. Sem isso, o tráfego pode sair pelo IP público do Google e ser bloqueado.
+3. Verifique logs do worker:
+   ```bash
+   flyctl logs -a ds160-worker
+   ```
 
 ## Formato da URL
 
 ```
-http://user:password@host:port    # HTTP proxy (DataImpulse, BrightData)
-socks5://user:password@host:port  # SOCKS5
+http://user:password@host:port
+socks5://user:password@host:port
 ```
 
-## Validação no Código
+## Validacao no codigo
 
-O `filler.js` agora **valida** a URL do proxy antes de usar. Se inválida, lança erro fatal (não continua sem proxy).
+O `filler.js` valida a URL do proxy antes de usar. Se invalida, lanca erro fatal e nao continua sem proxy.
 
 ## Troubleshooting
 
-| Problema | Causa | Solução |
+| Problema | Causa | Solucao |
 |----------|-------|---------|
-| `Proxy URL inválida` | Formato errado no `.env` ou `settings` | Verificar URL completa com `http://` |
-| Timeout no CEAC | Proxy bloqueado ou lento | Trocar região/provider |
+| `Proxy URL invalida` | Formato errado no `.env` ou `settings` | Verificar URL completa com `http://` |
+| Timeout no CEAC | Proxy bloqueado ou lento | Trocar regiao/provider |
 | `ERR_PROXY_CONNECTION_FAILED` | Credenciais erradas | Verificar user/pass no painel do proxy |

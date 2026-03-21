@@ -1,120 +1,133 @@
 // ============================================================
-// dispatch-job — Supabase Edge Function
+// dispatch-job - Supabase Edge Function
 // Trigger: Database Webhook on applicants table
-// Dispatches Cloud Run Jobs when applicants need processing
+// Starts Fly.io Machines when applicants need processing
 // ============================================================
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const GCP_PROJECT = Deno.env.get('GCP_PROJECT_ID');
-const GCP_REGION = Deno.env.get('GCP_REGION') || 'us-central1';
-const GCP_SA_KEY = Deno.env.get('GCP_SA_KEY_JSON'); // Service account key JSON
+const FLY_API_HOSTNAME = Deno.env.get("FLY_API_HOSTNAME") || "https://api.machines.dev";
+const FLY_API_TOKEN = Deno.env.get("FLY_API_TOKEN");
+const FLY_DS160_APP = Deno.env.get("FLY_DS160_APP") || "ds160-worker";
+const FLY_DS160_MACHINE_ID = Deno.env.get("FLY_DS160_MACHINE_ID");
+const FLY_AIS_APP = Deno.env.get("FLY_AIS_APP");
+const FLY_AIS_MACHINE_ID = Deno.env.get("FLY_AIS_MACHINE_ID");
 
-// Get GCP access token from service account
-async function getGCPToken(): Promise<string> {
-    if (!GCP_SA_KEY) throw new Error('GCP_SA_KEY_JSON not set');
-    
-    const key = JSON.parse(GCP_SA_KEY);
-    const now = Math.floor(Date.now() / 1000);
-    
-    // Create JWT
-    const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
-    const claim = btoa(JSON.stringify({
-        iss: key.client_email,
-        scope: 'https://www.googleapis.com/auth/cloud-platform',
-        aud: 'https://oauth2.googleapis.com/token',
-        iat: now,
-        exp: now + 3600,
-    }));
-    
-    // Sign JWT (using Web Crypto API)
-    const pemKey = key.private_key
-        .replace(/-----BEGIN PRIVATE KEY-----/, '')
-        .replace(/-----END PRIVATE KEY-----/, '')
-        .replace(/\n/g, '');
-    
-    const binaryKey = Uint8Array.from(atob(pemKey), c => c.charCodeAt(0));
-    const cryptoKey = await crypto.subtle.importKey(
-        'pkcs8', binaryKey,
-        { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-        false, ['sign']
-    );
-    
-    const signature = await crypto.subtle.sign(
-        'RSASSA-PKCS1-v1_5',
-        cryptoKey,
-        new TextEncoder().encode(`${header}.${claim}`)
-    );
-    
-    const jwt = `${header}.${claim}.${btoa(String.fromCharCode(...new Uint8Array(signature)))}`;
-    
-    // Exchange JWT for access token
-    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
-    });
-    
-    const tokenData = await tokenRes.json();
-    return tokenData.access_token;
-}
+type FlyMachine = {
+    id: string;
+    state?: string;
+};
 
-// Dispatch a Cloud Run Job
-async function dispatchJob(jobName: string): Promise<boolean> {
-    const token = await getGCPToken();
-    const url = `https://run.googleapis.com/v2/projects/${GCP_PROJECT}/locations/${GCP_REGION}/jobs/${jobName}:run`;
-    
-    const res = await fetch(url, {
-        method: 'POST',
+async function flyFetch(path: string, init: RequestInit = {}) {
+    if (!FLY_API_TOKEN) throw new Error("FLY_API_TOKEN not set");
+
+    const res = await fetch(`${FLY_API_HOSTNAME}${path}`, {
+        ...init,
         headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${FLY_API_TOKEN}`,
+            "Content-Type": "application/json",
+            ...(init.headers || {}),
         },
     });
-    
+
     if (!res.ok) {
         const error = await res.text();
-        console.error(`Failed to dispatch ${jobName}: ${res.status} ${error}`);
-        return false;
+        throw new Error(`Fly API ${res.status}: ${error}`);
     }
-    
-    console.log(`✅ Dispatched ${jobName}`);
-    return true;
+
+    return res;
 }
 
-// ── MAIN HANDLER ──
+async function listMachines(appName: string): Promise<FlyMachine[]> {
+    const res = await flyFetch(`/v1/apps/${appName}/machines`);
+    return await res.json();
+}
+
+async function startMachine(appName: string, machineId: string): Promise<boolean> {
+    try {
+        await flyFetch(`/v1/apps/${appName}/machines/${machineId}/start`, { method: "POST" });
+        console.log(`Started Fly machine ${machineId} for ${appName}`);
+        return true;
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`Failed to start Fly machine ${machineId} for ${appName}:`, message);
+        return false;
+    }
+}
+
+async function dispatchFlyApp(appName: string, preferredMachineId?: string | null) {
+    if (preferredMachineId) {
+        const started = await startMachine(appName, preferredMachineId);
+        return {
+            dispatched: started,
+            app: appName,
+            machineId: preferredMachineId,
+            reason: started ? "preferred_machine_started" : "preferred_machine_failed",
+        };
+    }
+
+    const machines = await listMachines(appName);
+    if (!machines.length) {
+        return {
+            dispatched: false,
+            app: appName,
+            machineId: null,
+            reason: "no_machines_found",
+        };
+    }
+
+    const candidate = machines.find((machine) => machine.state === "stopped" || machine.state === "suspended");
+    if (!candidate) {
+        return {
+            dispatched: false,
+            app: appName,
+            machineId: null,
+            reason: "no_stopped_machine_available",
+        };
+    }
+
+    const started = await startMachine(appName, candidate.id);
+    return {
+        dispatched: started,
+        app: appName,
+        machineId: candidate.id,
+        reason: started ? "machine_started" : "machine_start_failed",
+    };
+}
+
 Deno.serve(async (req: Request) => {
     try {
         const payload = await req.json();
         const record = payload.record || payload.new;
-        
+
         if (!record) {
-            return new Response(JSON.stringify({ error: 'No record in payload' }), { status: 400 });
+            return new Response(JSON.stringify({ error: "No record in payload" }), { status: 400 });
         }
-        
+
         const { stage, status } = record;
-        
-        // Determine which job to dispatch
-        let jobName: string | null = null;
-        
-        if (stage === 'ds160' && (status === 'todo' || status === 'retry')) {
-            jobName = 'ds160-worker';
-        } else if (stage === 'payment' && status === 'todo') {
-            jobName = 'ais-worker';
-        } else if (stage === 'scheduling' && status === 'todo') {
-            jobName = 'ais-worker';
+        let appName: string | null = null;
+        let machineId: string | null = null;
+
+        if (stage === "ds160" && (status === "todo" || status === "retry")) {
+            appName = FLY_DS160_APP;
+            machineId = FLY_DS160_MACHINE_ID || null;
+        } else if ((stage === "payment" || stage === "scheduling") && status === "todo" && FLY_AIS_APP) {
+            appName = FLY_AIS_APP;
+            machineId = FLY_AIS_MACHINE_ID || null;
         }
-        
-        if (!jobName) {
-            return new Response(JSON.stringify({ skipped: true, reason: `${stage}/${status} not dispatchable` }));
+
+        if (!appName) {
+            return new Response(JSON.stringify({ skipped: true, reason: `${stage}/${status} not dispatchable` }), {
+                headers: { "Content-Type": "application/json" },
+            });
         }
-        
-        const success = await dispatchJob(jobName);
-        
-        return new Response(JSON.stringify({ dispatched: success, job: jobName }), {
-            headers: { 'Content-Type': 'application/json' },
+
+        const result = await dispatchFlyApp(appName, machineId);
+        return new Response(JSON.stringify(result), {
+            headers: { "Content-Type": "application/json" },
         });
     } catch (e) {
-        console.error('Error:', e.message);
-        return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+        const message = e instanceof Error ? e.message : String(e);
+        console.error("Error:", message);
+        return new Response(JSON.stringify({ error: message }), { status: 500 });
     }
 });

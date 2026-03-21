@@ -248,7 +248,7 @@ async function main() {
         if (failNames.length > 0) {
             console.log('  💡 Para re-testar apenas os fails:');
             console.log(`  node scripts/seed-test-profiles.js --clean --only=${failNames.join(',')}`);
-            console.log(`  gcloud run jobs execute ds160-worker --tasks=${failNames.length} --parallelism=${Math.min(failNames.length, 5)} --region=us-central1 --wait\n`);
+            console.log(`  flyctl machine start <MACHINE_ID> -a ds160-worker\n`);
         }
     }
 

@@ -2207,7 +2207,8 @@ function normalizeProfile(data) {
             return {
                 ...e,
                 monthlyIncome: e.monthlyIncome || e.monthlySalary || e.monthly_income || e.monthly_salary || '',
-                jobTitle: e.jobTitle || e.job_title || e.duties || '',
+                jobTitle: e.jobTitle || e.job_title || e.duties || e.courseOfStudy || e.course_of_study || '',
+                duties: e.duties || e.courseOfStudy || e.course_of_study || '',
                 startDate: e.startDate || e.start_date || { day: '', month: '', year: '' },
             };
         })(),

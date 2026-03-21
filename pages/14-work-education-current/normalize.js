@@ -26,7 +26,8 @@ function normalizeWorkEducation1(data, helpers) {
             postalCode: e.postalCode || we1.employerPostalCode || we1.employer_postal_code || '',
             country: e.country || we1.employerCountry || we1.employer_country || '',
             monthlyIncome: e.monthlyIncome || e.monthlySalary || we1.monthlySalary || we1.monthlyIncome || we1.monthly_salary || '',
-            jobTitle: e.jobTitle || e.job_title || e.duties || we1.duties || '',
+            jobTitle: e.jobTitle || e.job_title || e.duties || e.courseOfStudy || e.course_of_study || we1.duties || we1.courseOfStudy || we1.course_of_study || '',
+            duties: e.duties || e.courseOfStudy || e.course_of_study || we1.duties || we1.courseOfStudy || we1.course_of_study || '',
             startDate: e.startDate || e.start_date || we1.employerStartDate || we1.employer_start_date || { day: '', month: '', year: '' },
         },
     };

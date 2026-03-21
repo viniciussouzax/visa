@@ -124,27 +124,6 @@ class QueueRunner {
         console.log(`[QueueEvent] ${JSON.stringify(payload)}`);
     }
 
-    _buildRunId(app, retryNumber) {
-        return `${app?.id || 'noapp'}_${retryNumber}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    }
-
-    _safeText(value, max = 500) {
-        if (value == null) return null;
-        const text = String(value);
-        return text.length > max ? `${text.slice(0, max)}...` : text;
-    }
-
-    _logEvent(event, data = {}) {
-        const payload = {
-            ts: new Date().toISOString(),
-            scope: 'queue',
-            workerId: this.workerId,
-            event,
-            ...data,
-        };
-        console.log(`[QueueEvent] ${JSON.stringify(payload)}`);
-    }
-
     /**
      * Periodic cleanup — runs max once every 24h.
      * Removes local download backups older than 7 days.
@@ -189,6 +168,7 @@ class QueueRunner {
     // ==============================================================
     async _loop() {
         while (this.running) {
+            let app = null;
             try {
                 // Smart update check before each cycle
 
@@ -198,7 +178,7 @@ class QueueRunner {
                 const config = await this._getConfig();
 
                 // 2. Claim next item (prioritize incomplete > queued)
-                const app = await this._claimNext();
+                app = await this._claimNext();
 
                 if (!app) {
                     await this._periodicCleanup();
@@ -251,11 +231,15 @@ class QueueRunner {
                 // BUG FIX: Se temos o applicant_id, marcar como fail no dashboard
                 // Sem isso o solicitante ficava preso em 'doing' para sempre
                 if (app?.applicant_id) {
-                    await this.supabase.from('applicants').update({
-                        status: 'fail',
-                        updated_at: new Date().toISOString()
-                    }).eq('id', app.applicant_id).catch(() => {});
-                    console.log(`[Queue]  Applicant ${app.applicant_id} marcado como failed (exception no loop)`);
+                    try {
+                        await this.supabase.from('applicants').update({
+                            status: 'fail',
+                            updated_at: new Date().toISOString()
+                        }).eq('id', app.applicant_id);
+                        console.log(`[Queue]  Applicant ${app.applicant_id} marcado como failed (exception no loop)`);
+                    } catch {
+                        // Preserve the original queue error even if the fail-sync also breaks.
+                    }
                 }
 
                 if (this.consecutiveErrors >= 3) {
@@ -362,7 +346,7 @@ class QueueRunner {
                 } catch (e) { console.warn('[Queue] Failed to persist app_id:', e.message); }
             };
 
-            const result = await fillApplication(currentApplicant, currentApp, onAppId, currentConfig, captchaMode, (page) => {
+            const result = await fillApplication(currentApplicant, currentApp, onAppId, currentConfig, this.captchaMode, (page) => {
                 lastPage = page;
 
                 this._logEvent('page_update', {

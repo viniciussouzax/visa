@@ -86,6 +86,28 @@
             interview: 'Entrevista', outcome: 'Resultado', archived: 'Arquivado'
         };
 
+        function getOutcomeValue(applicant) {
+            if (!applicant) return 'pending';
+            if (applicant.result && applicant.result !== 'pending') return applicant.result;
+            if (applicant.stage === 'outcome' && RESULT_CONFIG[applicant.status]) return applicant.status;
+            return applicant.result || 'pending';
+        }
+
+        function getDefaultStatusForStage(stage) {
+            if (stage === 'analysis') return 'doing';
+            if (stage === 'outcome' || stage === 'archived') return 'done';
+            return 'todo';
+        }
+
+        function getApplicantsForPage(page) {
+            return applicants.filter(a => {
+                if (a.stage !== page) return false;
+                if (page === 'archived') return true;
+                if (page === 'outcome') return a.status !== 'error' && a.status !== 'fail';
+                return a.status !== 'error' && a.status !== 'fail' && a.status !== 'done';
+            });
+        }
+
         const PAGE_CONFIG = {
             overview: { title: 'Dashboard', subtitle: 'Visão Geral' },
             screening: { title: 'Triagem', subtitle: 'Triagem Inicial' },
@@ -145,7 +167,9 @@
                 applicants = rows.map(row => ({
                     id: row.id, name: row.full_name || '(Sem nome)', passport: row.passport_number || '',
                     stage: row.stage || 'screening', status: row.status || 'todo',
-                    result: row.result || 'pending',
+                    result: (row.result && row.result !== 'pending')
+                        ? row.result
+                        : ((row.stage === 'outcome' && RESULT_CONFIG[row.status]) ? row.status : (row.result || 'pending')),
                     sort_order: row.sort_order || 0, progress: calcProgress(row.data),
                     created: row.created_at, data: row.data, group_id: row.group_id || null, notes: row.notes || '', email: row.email || '',
                     application_id: appMap[row.id]?.application_id || null,
@@ -199,6 +223,14 @@
             const adminPanel = document.getElementById('adminPanel');
             const normalEls = document.querySelectorAll('.main > .dashboard-nav, .main > .bulk-bar, .main > .table-container, .main > .pagination');
             if (page === 'overview') {
+                currentPage = 'overview';
+                currentFilter = 'all';
+                selectedIds.clear();
+                searchQuery = '';
+                paginationPage = 1;
+                updateBulkBar();
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) searchInput.value = '';
                 // Hide other pages, admin panel, loading overlay
                 normalEls.forEach(el => el.style.display = 'none');
                 if (adminPanel) adminPanel.style.display = 'none';
@@ -231,6 +263,12 @@
                 return;
             }
             if (page === 'admin') {
+                currentPage = 'admin';
+                currentFilter = 'all';
+                selectedIds.clear();
+                searchQuery = '';
+                paginationPage = 1;
+                updateBulkBar();
                 // Guard: só permite acesso se o botão admin estiver visível (role verificada no showDashboard)
                 const adminBtn = document.getElementById('adminNavBtn');
                 if (adminBtn && adminBtn.classList.contains('hidden')) { navigateTo('overview'); return; }
@@ -274,7 +312,7 @@
         function renderFilters() {
             const items = getFilteredByPage();
             const el = document.getElementById('filterChips');
-            if (currentPage === 'screening' || currentPage === 'analysis' || currentPage === 'interview' || currentPage === 'outcome') {
+            if (currentPage === 'screening' || currentPage === 'analysis' || currentPage === 'interview' || currentPage === 'outcome' || currentPage === 'archived') {
                 el.innerHTML = '';
                 return;
             }
@@ -300,11 +338,11 @@
 
         // Etapas: mostra apenas trabalho ativo (retry, doing, todo)
         // done → avançar etapa | error/failed → Processos com Problemas
-        function getFilteredByPage() { return applicants.filter(a => a.stage === currentPage && a.status !== 'error' && a.status !== 'fail' && a.status !== 'done'); }
+        function getFilteredByPage() { return getApplicantsForPage(currentPage); }
         function getFiltered() {
                         let items = getFilteredByPage();
             if (currentFilter !== 'all') {
-                if (currentPage === 'outcome' || currentPage === 'archived') items = items.filter(a => a.result === currentFilter);
+                if (currentPage === 'outcome' || currentPage === 'archived') items = items.filter(a => getOutcomeValue(a) === currentFilter);
                 else items = items.filter(a => a.status === currentFilter);
             }
             if (searchQuery) items = items.filter(a => a.name.toLowerCase().includes(searchQuery) || a.passport.toLowerCase().includes(searchQuery) || a.id.toString().toLowerCase().includes(searchQuery) || (a.email || '').toLowerCase().includes(searchQuery) || (a.group_id || '').toLowerCase().includes(searchQuery));
@@ -473,7 +511,8 @@
                         if (a.stage === 'interview') {
                             return '<span class="status-badge status-pendente">Pendente</span>';
                         } else if (a.stage === 'outcome') {
-                            const rcfg = RESULT_CONFIG[a.status] || { label: a.status, color: '#64748b' };
+                            const outcomeValue = getOutcomeValue(a);
+                            const rcfg = RESULT_CONFIG[outcomeValue] || { label: outcomeValue, color: '#64748b' };
                             return `<span class="status-badge" style="background:${rcfg.color}18;color:${rcfg.color}">${rcfg.label}</span>`;
                         }
                         return `<span class="status-badge ${cfg.class}">${cfg.label}</span>`;
@@ -1164,8 +1203,8 @@
                     `<strong>${name}</strong> já preencheu dados no formulário e não pode ser excluído.<br><small style="color:var(--text-muted)">Deseja arquivar em vez de excluir?</small>`,
                     async () => {
                         try {
-                            await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { stage: 'archived' });
-                            if (a) a.stage = 'archived';
+                            await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { stage: 'archived', status: 'done' });
+                            if (a) { a.stage = 'archived'; a.status = 'done'; }
                             renderTable(); renderFilters(); updateBadges();
                             showToast('Solicitante arquivado.', 'success');
                         } catch (e) { showToast('Erro: ' + e.message, 'error'); }
@@ -1194,6 +1233,25 @@
         }
         async function bulkDelete() {
             showConfirmModal('Excluir Solicitantes', `Tem certeza que deseja excluir ${selectedIds.size} solicitante(s)?`, async () => {
+                const selectedApplicants = applicants.filter(a => selectedIds.has(a.id));
+                const filledApplicants = selectedApplicants.filter(a => a.progress > 0);
+                if (filledApplicants.length > 0) {
+                    showToast(`NÃ£o Ã© possÃ­vel excluir solicitantes com dados preenchidos: ${filledApplicants.map(a => shortName(a.name)).join(', ')}`, 'error');
+                    return;
+                }
+
+                const blockedPrincipals = selectedApplicants.filter(a => {
+                    if (!a.group_id) return false;
+                    const groupMembers = applicants
+                        .filter(x => x.group_id === a.group_id)
+                        .sort((x, y) => (x.sort_order ?? 999) - (y.sort_order ?? 999));
+                    return groupMembers.length > 1 && groupMembers[0]?.id === a.id;
+                });
+                if (blockedPrincipals.length > 0) {
+                    showToast(`NÃ£o Ã© possÃ­vel excluir o principal de grupos ativos: ${blockedPrincipals.map(a => shortName(a.name)).join(', ')}`, 'error');
+                    return;
+                }
+
                 let errors = 0;
                 for (const id of selectedIds) { try { await sbFetch(`applicants?id=eq.${id}`, 'DELETE'); } catch (e) { errors++; } }
                 await loadApplicants(); clearSelection(); navigateTo(currentPage);
@@ -1254,7 +1312,7 @@
                 ${(() => {
                     if (a.stage === 'interview') {
                         // Interview: status manuais + select de resultado para avançar
-                        const manualStatuses = ['todo', 'doing', 'done', 'retry'];
+                        const manualStatuses = ['todo', 'doing', 'retry'];
                         return `<select class="manage-select" onchange="updateField('${id}','status',this.value)">
                                 ${manualStatuses.map(k => { const v = STATUS_CONFIG[k]; return `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v.label}</option>`; }).join('')}
                             </select>
@@ -1266,12 +1324,18 @@
                     } else if (a.stage === 'outcome') {
                         // Outcome: status = opções de resultado (sem pending)
                         const outcomeStatuses = { approved: 'Aprovado', denied: 'Negado', new_interview: 'Nova Entrevista', additional_documents: 'Docs. Complementares', administrative: 'Processo Adm.' };
+                        return `<select class="manage-select" onchange="updateField('${id}','result',this.value)">
+                            ${Object.entries(outcomeStatuses).map(([k, v]) => `<option value="${k}" ${getOutcomeValue(a) === k ? 'selected' : ''}>${v}</option>`).join('')}
+                        </select>`;
+                    } else if (a.stage === 'analysis') {
+                        // Analysis: conclusão manual do assessor
+                        const manualStatuses = ['todo', 'doing', 'done', 'retry'];
                         return `<select class="manage-select" onchange="updateField('${id}','status',this.value)">
-                            ${Object.entries(outcomeStatuses).map(([k, v]) => `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v}</option>`).join('')}
+                            ${manualStatuses.map(k => { const v = STATUS_CONFIG[k]; return `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v.label}</option>`; }).join('')}
                         </select>`;
                     } else {
                         // Normal stages: status manuais (error/failed/standby são controlados pela automação)
-                        const manualStatuses = ['todo', 'doing', 'done', 'retry'];
+                        const manualStatuses = ['todo', 'doing', 'retry'];
                         return `<select class="manage-select" onchange="updateField('${id}','status',this.value)">
                             ${manualStatuses.map(k => { const v = STATUS_CONFIG[k]; return `<option value="${k}" ${a.status === k ? 'selected' : ''}>${v.label}</option>`; }).join('')}
                         </select>`;
@@ -1355,8 +1419,8 @@
                 `Tem certeza que deseja arquivar <strong>${a.name}</strong>?<br><small style="color:var(--text-muted)">O solicitante será movido para Arquivado.</small>`,
                 async () => {
                     try {
-                        await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { stage: 'archived', status: 'todo' });
-                        a.stage = 'archived'; a.status = 'todo';
+                        await sbFetch(`applicants?id=eq.${id}`, 'PATCH', { stage: 'archived', status: 'done' });
+                        a.stage = 'archived'; a.status = 'done';
                         renderTable(); renderFilters(); updateBadges();
                         showToast('Solicitante arquivado.', 'success');
                     } catch (e) { showToast('Erro: ' + e.message, 'error'); }
@@ -1520,17 +1584,20 @@
                     // Move all group members together (advance or retreat)
                     for (const m of groupMembers) {
                         if (m.id !== id) {
-                            const memberStatus = value === 'analysis' ? 'doing' : 'todo';
-                            await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', { stage: value, status: memberStatus });
+                            const memberPatch = { stage: value, status: getDefaultStatusForStage(value) };
+                            if (value === 'outcome' && !m.result) memberPatch.result = getOutcomeValue(m);
+                            await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', memberPatch);
                             m.stage = value;
-                            m.status = memberStatus;
+                            m.status = memberPatch.status;
+                            if (memberPatch.result) m.result = memberPatch.result;
                         }
                     }
                 }
 
                 // Special: entering interview → status=pending, entering analysis → status=doing
                 if (field === 'stage' && a) {
-                    patch.status = value === 'analysis' ? 'doing' : 'todo';
+                    patch.status = getDefaultStatusForStage(value);
+                    if (value === 'outcome' && !patch.result) patch.result = getOutcomeValue(a);
                 }
 
                 // AUTO-ADVANCE: status done → avança para próxima etapa com status todo
@@ -1562,16 +1629,32 @@
                 // === RESULT ADVANCE: interview → outcome ===
                 if (field === 'result_advance' && a) {
                     patch.stage = 'outcome';
-                    patch.status = value;
+                    patch.status = 'done';
+                    patch.result = value;
                     delete patch.result_advance;
                     // Group: move all members
                     if (a.group_id) {
                         const groupMembers = applicants.filter(x => x.group_id === a.group_id && x.stage !== 'archived');
                         for (const m of groupMembers) {
                             if (m.id !== id) {
-                                await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', { stage: 'outcome', status: value });
+                                await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', { stage: 'outcome', status: 'done', result: value });
                                 m.stage = 'outcome';
-                                m.status = value;
+                                m.status = 'done';
+                                m.result = value;
+                            }
+                        }
+                    }
+                }
+                if (field === 'result' && a) {
+                    patch.result = value;
+                    patch.status = 'done';
+                    if (a.group_id) {
+                        const groupMembers = applicants.filter(x => x.group_id === a.group_id && x.stage === 'outcome');
+                        for (const m of groupMembers) {
+                            if (m.id !== id) {
+                                await sbFetch(`applicants?id=eq.${m.id}`, 'PATCH', { result: value, status: 'done' });
+                                m.result = value;
+                                m.status = 'done';
                             }
                         }
                     }
@@ -1664,7 +1747,7 @@
         // BADGES + HELPERS
         // ==========================================
         // Badges: contam apenas trabalho ativo (exclui done, error, failed)
-        function updateBadges() { Object.keys(PAGE_CONFIG).forEach(p => { const c = applicants.filter(a => a.stage === p && a.status !== 'error' && a.status !== 'fail' && a.status !== 'done').length; const el = document.getElementById('badge-' + p); if (el) el.textContent = c; }); }
+        function updateBadges() { Object.keys(PAGE_CONFIG).forEach(p => { const c = getApplicantsForPage(p).length; const el = document.getElementById('badge-' + p); if (el) el.textContent = c; }); }
 
         function formatDate(iso) {
             if (!iso) return '—';

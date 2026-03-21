@@ -58,7 +58,7 @@ function buildWorkEd1Map(a, ctx) {
         { pattern: /FormView1_ddlEmpDateFromDay$/i, value: emp.startDate?.day || "1", type: "select" },
         { pattern: /FormView1_ddlEmpDateFromMonth$/i, value: emp.startDate.month, type: "select" },
         { pattern: /FormView1_tbxEmpDateFromYear$/i, value: emp.startDate.year, type: "text" },
-        { pattern: /FormView1_tbxDescribeDuties$/i, value: emp.duties, type: "text" },
+        { pattern: /FormView1_tbxDescribeDuties$/i, value: emp.duties || emp.jobTitle || "", type: "text" },
       );
     }
 

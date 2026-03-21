@@ -7,13 +7,13 @@ C:\Users\azuos\Desktop\DS160 IA\
 │   ├── filler.js                        Principal — orquestra preenchimento DS-160 (110 KB)
 │   ├── queue.js                         Fila de execução, polling, claim, retry, DoR (52 KB)
 │   ├── run.js                           Runner local — inicia queue + realtime
-│   ├── ds160-entry.js                   Entrypoint Cloud Run (1 applicant/execução)
+│   ├── ds160-entry.js                   Entrypoint one-shot do worker DS-160
 │   ├── normalize-profile.js             Transforma nested → flat profile
 │   ├── field-map.js                     Router para field-maps modulares
 │   ├── captcha.js                       Solver captcha (CapMonster / AI Vision)
 │   ├── error-catalog.js                 Catálogo de erros classificados
-│   ├── Dockerfile.ds160                 Image Docker Cloud Run DS-160
-│   ├── Dockerfile.ais                   Image Docker Cloud Run AIS
+│   ├── Dockerfile.ds160                 Image Docker do worker DS-160
+│   ├── Dockerfile.ais                   Image Docker do worker AIS
 │   │
 │   ├── pages/                           Fillers especializados por página
 │   │   ├── generic-page.js              Preenchimento genérico (maioria das páginas)
@@ -104,15 +104,15 @@ C:\Users\azuos\Desktop\DS160 IA\
 │   ├── audit-schema-consistency.js      Auditoria schema vs HTML oficial
 │   ├── audit-coverage.js                Cobertura de campos
 │   ├── setup-production.sql             SQL de setup produção
-│   ├── setup-gcp.sh                     Setup GCP / Cloud Run
-│   ├── run-batch-test.sh                Executa batch de testes
+│   ├── setup-gcp.sh                     Removido (legado)
+│   ├── run-batch-test.sh                Removido (legado)
 │   ├── test-auth.js                     Teste de autenticação
 │   ├── test-quick.js                    Teste rápido
 │   └── example-applicant-data.json      JSON exemplo de applicant
 │
 ├── supabase/                            🗄️ BANCO — Supabase
 │   └── functions/
-│       └── dispatch-job/                Edge Function — dispara jobs Cloud Run
+│       └── dispatch-job/                Edge Function - dispara Fly Machines
 │
 ├── ds160map/                            📚 REFERÊNCIA — HTMLs do DS-160 oficial
 ├── AISmap/                              📚 REFERÊNCIA — Docs/screenshots AIS
@@ -140,3 +140,6 @@ C:\Users\azuos\Desktop\DS160 IA\
 ├── README.md                            README do projeto
 └── ROADMAP.md                           Roadmap de features
 ```
+
+
+
