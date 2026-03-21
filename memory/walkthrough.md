@@ -1,5 +1,19 @@
 # Documentação — Status, Etapas e Automação DS-160
 
+## Indice rapido do frontend
+
+O mapa oficial de arquivos do frontend fica em:
+
+- `docs/frontend-structure.md`
+
+Use esse indice para localizar:
+
+- paginas canonicas
+- wrappers e aliases
+- runtime compartilhado
+- controladores por pagina
+- separacao entre dashboard, portal e formulario
+
 ## 1. Status e Responsabilidades
 
 | Status | Label | Cor | Responsável | Visível em |

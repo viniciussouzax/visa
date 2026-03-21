@@ -214,6 +214,41 @@
                 </div>
             </div>
 
+            <div class="docs-section" id="mapa-arquivos">
+                <h2>Mapa de Arquivos</h2>
+                <p class="subtitle">Indice rapido para localizar as paginas canonicas do frontend, o runtime compartilhado e os controladores de cada tela.</p>
+
+                <div class="info-box">
+                    <strong>Fonte de verdade:</strong> o mapa tecnico oficial do frontend fica em <code>docs/frontend-structure.md</code>.
+                </div>
+
+                <h3>Paginas canonicas</h3>
+                <ul>
+                    <li><code>public/index.html</code></li>
+                    <li><code>public/dashboard.html</code></li>
+                    <li><code>public/portal.html</code></li>
+                    <li><code>public/ds160-form.html</code></li>
+                    <li><code>public/update-password.html</code></li>
+                    <li><code>public/docs.html</code></li>
+                </ul>
+
+                <h3>Runtime compartilhado</h3>
+                <ul>
+                    <li><code>public/app-core.js</code></li>
+                    <li><code>public/styles.css</code></li>
+                </ul>
+
+                <h3>Controladores por pagina</h3>
+                <ul>
+                    <li><code>public/js/dashboard.js</code></li>
+                    <li><code>public/js/portal.js</code></li>
+                </ul>
+
+                <div class="warn-box">
+                    Wrappers como <code>public/dashboard/index.html</code>, <code>public/update-password/index.html</code> e <code>public/404.html</code> existem para navegacao e compatibilidade, nao para concentrar logica de negocio.
+                </div>
+            </div>
+
             <!-- ============================================ -->
             <!-- PORTAL DA ORGANIZAÇÃO -->
             <!-- ============================================ -->

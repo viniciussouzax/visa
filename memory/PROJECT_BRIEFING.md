@@ -50,6 +50,20 @@ Assessor → Formulário Clone → Banco (Supabase) → Automação Playwright �
 ## Stack
 Node.js, Express, Playwright, Supabase (Auth + DB + Storage + Realtime), GitHub Pages (frontend), Fly.io (automação)
 
+## Indice de arquivos do frontend
+
+O mapa oficial de paginas, wrappers, runtime compartilhado e controladores do frontend fica em:
+
+- `docs/frontend-structure.md`
+
+Use esse arquivo como referencia antes de:
+
+- mover paginas
+- trocar rotas
+- duplicar estilos locais
+- criar novos wrappers
+- mexer na relacao entre dashboard, portal e formulario
+
 ## Arquivos Core
 
 | Arquivo | Função |

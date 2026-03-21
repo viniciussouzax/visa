@@ -46,6 +46,36 @@ Sistema modular de preenchimento automatizado do formulário DS-160 (Visto Ameri
 └── .agents/                 # Skills e workflows do agente IA
 ```
 
+## Mapa de arquivos do frontend
+
+O indice oficial do frontend agora fica em:
+
+- `docs/frontend-structure.md`
+
+Use esse documento como fonte de verdade para:
+
+- paginas canonicas
+- wrappers e aliases
+- rotas estaveis do GitHub Pages
+- runtime compartilhado
+- separacao entre dashboard, portal e formulario DS-160
+
+Resumo rapido:
+
+- paginas canonicas:
+  - `public/index.html`
+  - `public/dashboard.html`
+  - `public/portal.html`
+  - `public/ds160-form.html`
+  - `public/update-password.html`
+  - `public/docs.html`
+- runtime compartilhado:
+  - `public/app-core.js`
+  - `public/styles.css`
+- controladores por pagina:
+  - `public/js/dashboard.js`
+  - `public/js/portal.js`
+
 ## Tipos de Visto Suportados
 
 | Visto | Tipo | Páginas Extra |
