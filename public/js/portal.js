@@ -30,6 +30,7 @@
                             if (orgRows?.[0]) {
                                 _companyId = orgRows[0].id;
                                 _orgName = orgRows[0].name || _orgParam;
+                                AppCore.setPortalContext(_orgParam, _companyId);
                                 applyBranding(orgRows[0]);
                             }
                         }
