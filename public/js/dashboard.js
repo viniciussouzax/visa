@@ -605,10 +605,6 @@
                     visibleRowsCount = Math.min(visibleRowsCount + LIST_BATCH_SIZE, total);
                     renderTable();
                 }, { rootMargin: '240px 0px' });
-            } else if (!eligibleGroups.length) {
-                html += `<div style="padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--bg-body);font-size:12px;color:var(--text-muted);line-height:1.5">
-                    Nenhum grupo compatÃ­vel nesta etapa. O vÃ­nculo sÃ³ aparece quando o grupo e o solicitante estÃ£o na mesma etapa.
-                </div>`;
             } else {
                 _listObserver.disconnect();
             }
