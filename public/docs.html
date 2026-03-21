@@ -220,6 +220,9 @@
             <div class="docs-section" id="portal">
                 <h2>Portal da Organização</h2>
                 <p class="subtitle">Cada organização tem seu portal personalizado onde os solicitantes acessam e preenchem o formulário.</p>
+                <div class="info-box">
+                    <strong>Isolamento por organização:</strong> quando o portal já conhece a <code>org</code>, as consultas passam a carregar também o <code>company_id</code> correspondente para evitar abrir solicitantes ou grupos fora daquela organização.
+                </div>
 
                 <h3>Como funciona</h3>
                 <ul>
@@ -349,6 +352,9 @@
             <div class="docs-section" id="dashboard">
                 <h2>Dashboard</h2>
                 <p class="subtitle">A dashboard foi projetada para ser simples, direta e focada no que importa: gerenciar solicitantes de forma eficiente.</p>
+                <div class="info-box">
+                    <strong>Escopo do assessor:</strong> a dashboard deve mostrar apenas solicitantes, processos, grupos, AIS e logs vinculados à empresa do assessor autenticado. A conta master continua sendo a única visão global.
+                </div>
 
                 <h3>Filosofia do design</h3>
                 <p>A dashboard segue três princípios:</p>

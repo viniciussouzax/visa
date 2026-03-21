@@ -94,6 +94,7 @@ O gráfico stacked mostra 4 segmentos:
 
 - O assessor visualiza logs por `application_id`, com screenshot da falha quando disponível
 - `error` é correção de dados; `standby` é espera com retry automático; `fail` para o fluxo até revisão técnica
+- O isolamento multi-tenant precisa ser garantido no banco: assessor autenticado só lê dados da própria `company_id`, e o portal deve anexar `company_id` sempre que a `org` já estiver resolvida
 - Grupos só aceitam vínculo na mesma etapa e só andam quando todos concluem juntos
 - Exclusão permanente só existe para processos já arquivados
 - 🔵 **Em espera** — standby

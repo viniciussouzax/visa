@@ -31,6 +31,8 @@ Assessor → Formulário Clone → Banco (Supabase) → Automação Playwright �
 - Postback IDs são hardcoded em `automation/field-maps/shared.js` — mudá-los quebra tudo
 - O `ds160map/` contém HTMLs salvos do site oficial — fonte de verdade para IDs de campos
 - Captchas resolvidos via CapMonster API
+- Visibilidade por organização: assessor autenticado só deve ler applicants, processes, grupos, AIS e logs da própria empresa; master mantém visão global
+- O portal público precisa sempre carregar `company_id` pela `org` quando disponível e nunca confiar só em `id`/`group_id` no frontend
 - Grupos só aceitam vínculo quando grupo e solicitante estão na mesma etapa
 - Novo membro em grupo só entra pela Triagem; o grupo só avança quando todos os membros ativos concluem a etapa atual
 - Excluir solicitante ativo arquiva primeiro; exclusão permanente só é permitida para itens já arquivados

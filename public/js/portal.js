@@ -8,6 +8,12 @@
             let _email = '';
             let _forms = [];
 
+            function withCompanyScope(query) {
+                if (!_companyId) return query;
+                const glue = query.includes('?') ? '&' : '?';
+                return query + glue + 'company_id=eq.' + encodeURIComponent(_companyId);
+            }
+
             // ── ?id= resolve: try applicant ID first, then group_id ──
             if (_idParam) {
                 (async () => {
@@ -18,8 +24,17 @@
                             ? 'short_id=eq.' + encodeURIComponent(_idParam)
                             : 'id=eq.' + encodeURIComponent(_idParam);
 
+                        if (_orgParam && !_companyId) {
+                            const orgRows = await sbGet('companies?short_id=eq.' + encodeURIComponent(_orgParam) + '&select=id,name,logo_url,use_custom_logo,portal_bg_color,portal_btn_color,logo_max_width&limit=1');
+                            if (orgRows?.[0]) {
+                                _companyId = orgRows[0].id;
+                                _orgName = orgRows[0].name || _orgParam;
+                                applyBranding(orgRows[0]);
+                            }
+                        }
+
                         // 1) Try as individual applicant
-                        const rows = await sbGet('applicants?' + filter + '&select=id,email,full_name,company_id,data,group_id,stage,status,sort_order,created_at&limit=1');
+                        const rows = await sbGet(withCompanyScope('applicants?' + filter + '&select=id,email,full_name,company_id,data,group_id,stage,status,sort_order,created_at&limit=1'));
                         
                         if (rows && rows[0]) {
                             // ── INDIVIDUAL LINK: found applicant by ID ──
@@ -46,7 +61,7 @@
                         }
 
                         // 2) Not found as applicant → try as group_id
-                        const groupRows = await sbGet('applicants?group_id=eq.' + encodeURIComponent(_idParam) + '&select=id,email,full_name,company_id,data,group_id,stage,status,sort_order,created_at&order=sort_order.asc');
+                        const groupRows = await sbGet(withCompanyScope('applicants?group_id=eq.' + encodeURIComponent(_idParam) + '&select=id,email,full_name,company_id,data,group_id,stage,status,sort_order,created_at&order=sort_order.asc'));
 
                         if (groupRows && groupRows.length > 0) {
                             // ── GROUP LINK: found members by group_id ──
@@ -129,7 +144,7 @@
                         // If any result belongs to a group, fetch ALL group members
                         const groupIds = [...new Set(rows.filter(r => r.group_id).map(r => r.group_id))];
                         for (const gid of groupIds) {
-                            const gm = await sbGet('applicants?group_id=eq.' + gid + '&select=id,full_name,data,stage,status,group_id,sort_order,created_at&order=sort_order.asc');
+                            const gm = await sbGet(withCompanyScope('applicants?group_id=eq.' + gid + '&select=id,full_name,data,stage,status,group_id,sort_order,created_at&order=sort_order.asc'));
                             if (gm) gm.forEach(m => { if (!rows.find(r => r.id === m.id)) rows.push(m); });
                         }
 
@@ -222,10 +237,10 @@
                     const groupIds = [...new Set(rows.filter(r => r.group_id).map(r => r.group_id))];
                     if (groupIds.length > 0) {
                         for (const gid of groupIds) {
-                            const groupMembers = await sbGet(
+                            const groupMembers = await sbGet(withCompanyScope(
                                 'applicants?group_id=eq.' + gid +
                                 '&select=id,full_name,data,stage,status,group_id,sort_order,created_at&order=sort_order.asc'
-                            );
+                            ));
                             if (groupMembers) {
                                 groupMembers.forEach(m => {
                                     if (!rows.find(r => r.id === m.id)) rows.push(m);
@@ -373,7 +388,7 @@
                     }
                     await AppCore.sbFetch('applicants?id=eq.' + id, 'DELETE');
                     if (applicant.group_id) {
-                        const remaining = await AppCore.sbGet('applicants?group_id=eq.' + applicant.group_id + '&select=id&limit=2');
+                        const remaining = await AppCore.sbGet(withCompanyScope('applicants?group_id=eq.' + applicant.group_id + '&select=id&limit=2'));
                         if (!remaining?.length) {
                             try { await AppCore.sbFetch('groups?id=eq.' + applicant.group_id, 'DELETE'); } catch (_) { }
                         } else if (remaining.length === 1) {
@@ -675,7 +690,7 @@
                     rows = rows || [];
                     const groupIds = [...new Set(rows.filter(r => r.group_id).map(r => r.group_id))];
                     for (const gid of groupIds) {
-                        const gm = await sbGet('applicants?group_id=eq.' + gid + '&select=id,full_name,data,stage,status,group_id,sort_order,created_at&order=sort_order.asc');
+                        const gm = await sbGet(withCompanyScope('applicants?group_id=eq.' + gid + '&select=id,full_name,data,stage,status,group_id,sort_order,created_at&order=sort_order.asc'));
                         if (gm) gm.forEach(m => { if (!rows.find(r => r.id === m.id)) rows.push(m); });
                     }
                     _forms = rows;

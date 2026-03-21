@@ -540,7 +540,9 @@
             if (!_applicantId) { console.warn('[Form] loadApplicantData: _applicantId is empty!'); return; }
             console.log('[Form] loadApplicantData START — id:', _applicantId, 'isAssessor:', _isAssessor);
             try {
-                const rows = await sbGet('applicants?id=eq.' + _applicantId + '&select=id,full_name,email,status,stage,data&limit=1');
+                let query = 'applicants?id=eq.' + _applicantId + '&select=id,full_name,email,status,stage,data,company_id&limit=1';
+                if (!_isAssessor && _companyId) query += '&company_id=eq.' + _companyId;
+                const rows = await sbGet(query);
                 console.log('[Form] sbGet result:', rows ? rows.length + ' rows' : 'null', rows && rows[0] ? 'has data: ' + !!rows[0].data : 'no row');
                 if (rows && rows[0] && rows[0].data) {
                     // Populate engine data properly using form engine internal loader
