@@ -489,14 +489,21 @@
             } catch (e) { console.error('[Dashboard] Load error:', e); showToast('Erro ao carregar', 'error'); }
         }
 
+        function getActivePortalShortId() {
+            if (_orgParam) return _orgParam;
+            if (_admSelectedOrg?.short_id) return _admSelectedOrg.short_id;
+            return '';
+        }
+
         function syncPortalNavField() {
             const navBtn = document.getElementById('portalLinkBtnNav');
             const urlInput = document.getElementById('portalUrlInput');
             if (!navBtn || !urlInput) return;
+            const activeShortId = getActivePortalShortId();
             navBtn.style.display = 'flex';
-            if (_orgParam) {
+            if (activeShortId) {
                 navBtn.classList.remove('is-disabled');
-                urlInput.value = _orgParam;
+                urlInput.value = activeShortId;
                 return;
             }
             navBtn.classList.add('is-disabled');
@@ -522,11 +529,12 @@
         }
 
         function copyPortalLink() {
-            if (!_orgParam) {
+            const activeShortId = getActivePortalShortId();
+            if (!activeShortId) {
                 showToast(isMasterUser ? 'Selecione uma organiza??o para copiar o portal.' : 'Portal indispon?vel neste contexto.', 'info');
                 return;
             }
-            const url = AppCore.buildPortalUrl(_orgParam);
+            const url = AppCore.buildPortalUrl(activeShortId);
             writeClipboardText(url).then(() => {
                 // Feedback no Ã­cone do nav bar
                 const copyButton = document.querySelector('#portalLinkBtnNav .portal-link-copy-btn');
@@ -3274,6 +3282,7 @@
 
         async function admOpenOrgDetail(orgId) {
             _admSelectedOrg = _admOrgs.find(o => o.id === orgId); if (!_admSelectedOrg) return;
+            syncPortalNavField();
             currentAdminSection = 'orgs';
             currentAdminOrgId = orgId;
             ['admTab-orgs', 'admTab-capmonster', 'admTab-logs', 'admTab-settings'].forEach(id => {
@@ -3309,6 +3318,7 @@
 
         function admShowOrgList() {
             _admSelectedOrg = null;
+            syncPortalNavField();
             currentAdminSection = 'orgs';
             currentAdminOrgId = null;
             document.getElementById('adm-view-detail').style.display = 'none';
