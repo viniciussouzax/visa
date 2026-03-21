@@ -489,16 +489,24 @@
             } catch (e) { console.error('[Dashboard] Load error:', e); showToast('Erro ao carregar', 'error'); }
         }
 
-        async function resolveOrg() {
+        function syncPortalNavField() {
             const navBtn = document.getElementById('portalLinkBtnNav');
             const urlInput = document.getElementById('portalUrlInput');
+            if (!navBtn || !urlInput) return;
+            navBtn.style.display = 'flex';
+            if (_orgParam) {
+                navBtn.classList.remove('is-disabled');
+                urlInput.value = _orgParam;
+                return;
+            }
+            navBtn.classList.add('is-disabled');
+            urlInput.value = isMasterUser ? 'Escolher org' : '';
+        }
+
+        async function resolveOrg() {
             if (!_orgParam) {
                 document.getElementById('orgFooter').textContent = 'Admin';
-                if (navBtn) {
-                    navBtn.style.display = 'flex';
-                    navBtn.classList.add('is-disabled');
-                }
-                if (urlInput) urlInput.value = isMasterUser ? 'Escolher org' : '';
+                syncPortalNavField();
                 return;
             }
             try {
@@ -507,11 +515,7 @@
                     resolvedCompanyId = data[0].id;
                     resolvedCompanyName = data[0].name;
                     document.getElementById('orgFooter').textContent = resolvedCompanyName;
-                    if (navBtn) {
-                        navBtn.style.display = 'flex';
-                        navBtn.classList.remove('is-disabled');
-                    }
-                    if (urlInput) urlInput.value = _orgParam;
+                    syncPortalNavField();
                 }
                 else { document.getElementById('orgFooter').textContent = 'N????o encontrada'; }
             } catch (e) { document.getElementById('orgFooter').textContent = 'Erro'; }
@@ -2697,25 +2701,14 @@
                                     _orgParam = cData[0].short_id;
                                     resolvedCompanyId = m[0].company_id;
                                     resolvedCompanyName = cData[0].name;
-                                    const navBtn = document.getElementById('portalLinkBtnNav');
-                                    if (navBtn) {
-                                        navBtn.style.display = 'flex';
-                                        navBtn.classList.remove('is-disabled');
-                                        const urlInput = document.getElementById('portalUrlInput');
-                                        if (urlInput) urlInput.value = _orgParam;
-                                    }
+                                    syncPortalNavField();
                                 }
                             } catch { }
                         }
+                        if (isMasterUser && !_orgParam) syncPortalNavField();
                     } else if (isMasterUser) {
                         document.getElementById('orgFooter').textContent = `Administrador Master #${window._userNumId || '0001'}`;
-                        const navBtn = document.getElementById('portalLinkBtnNav');
-                        const urlInput = document.getElementById('portalUrlInput');
-                        if (navBtn) {
-                            navBtn.style.display = 'flex';
-                            navBtn.classList.add('is-disabled');
-                        }
-                        if (urlInput) urlInput.value = 'Escolher org';
+                        syncPortalNavField();
                     }
                 }
             } catch { }
