@@ -379,6 +379,15 @@
             const problemsActionHeader = document.querySelector('#problemsTableWrap th:last-child');
             if (problemsActionHeader) problemsActionHeader.textContent = 'A\u00e7\u00e3o';
 
+            const mainActionHeader = document.querySelector('#tableContainer thead th:last-child');
+            if (mainActionHeader) mainActionHeader.textContent = 'A\u00e7\u00e3o';
+
+            const emptyTitle = document.querySelector('#emptyState h3');
+            if (emptyTitle) emptyTitle.textContent = 'Nenhuma solicita\u00e7\u00e3o encontrada';
+
+            const emptySubtitle = document.querySelector('#emptyState p');
+            if (emptySubtitle) emptySubtitle.textContent = 'Clique em "Novo Solicitante" para come\u00e7ar';
+
             const analysisNavItem = document.querySelector('.nav-item[data-page="analysis"]');
             if (analysisNavItem) analysisNavItem.innerHTML = '<i class="iconoir-strategy"></i> An\u00e1lise';
 
@@ -397,6 +406,14 @@
 
             const admTabSettings = document.getElementById('admTab-settings');
             if (admTabSettings) admTabSettings.textContent = 'Configura\u00e7\u00f5es';
+
+            const admUsersActionsHeader = document.querySelector('#adm-view-detail thead th:last-child');
+            if (admUsersActionsHeader) admUsersActionsHeader.textContent = 'A\u00e7\u00f5es';
+
+            const admLogsHeaders = document.querySelectorAll('#adm-view-logs thead th');
+            if (admLogsHeaders[1]) admLogsHeaders[1].textContent = 'Organiza\u00e7\u00e3o / Solicitante';
+            if (admLogsHeaders[4]) admLogsHeaders[4].textContent = 'M\u00eddia';
+            if (admLogsHeaders[6]) admLogsHeaders[6].textContent = 'A\u00e7\u00f5es';
         }
 
         if (document.readyState === 'loading') {
