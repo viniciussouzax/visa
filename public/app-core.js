@@ -19,6 +19,10 @@
     const STORAGE_ORG = 'ds160_org';
     const STORAGE_PORTAL_ORG = 'portal_org';
     const STORAGE_PORTAL_COMPANY = 'portal_company_id';
+    const STORAGE_CLIENT_ORG_LOGO = 'client_org_logo';
+    const STORAGE_CLIENT_ORG_USE_LOGO = 'client_org_use_logo';
+    const STORAGE_CLIENT_ORG_BG = 'client_org_bg_color';
+    const STORAGE_CLIENT_ORG_LOGO_WIDTH = 'client_org_logo_width';
 
     function _readParam(key) {
         const params = new URLSearchParams(location.search);
@@ -59,6 +63,30 @@
     function clearPortalContext() {
         sessionStorage.removeItem(STORAGE_PORTAL_ORG);
         sessionStorage.removeItem(STORAGE_PORTAL_COMPANY);
+    }
+
+    function clearOrgBranding() {
+        sessionStorage.removeItem(STORAGE_CLIENT_ORG_LOGO);
+        sessionStorage.removeItem(STORAGE_CLIENT_ORG_USE_LOGO);
+        sessionStorage.removeItem(STORAGE_CLIENT_ORG_BG);
+        sessionStorage.removeItem(STORAGE_CLIENT_ORG_LOGO_WIDTH);
+    }
+
+    function persistOrgBranding(org) {
+        clearOrgBranding();
+        if (!org) return;
+
+        if (org.use_custom_logo && org.logo_url) {
+            sessionStorage.setItem(STORAGE_CLIENT_ORG_LOGO, org.logo_url);
+            sessionStorage.setItem(STORAGE_CLIENT_ORG_USE_LOGO, '1');
+            if (org.logo_max_width) {
+                sessionStorage.setItem(STORAGE_CLIENT_ORG_LOGO_WIDTH, String(org.logo_max_width));
+            }
+        }
+
+        if (org.portal_bg_color) {
+            sessionStorage.setItem(STORAGE_CLIENT_ORG_BG, org.portal_bg_color);
+        }
     }
 
     /** Clear session (logout) */
@@ -237,15 +265,20 @@
         var logo = 'logo-azul.png';
         var bg = '#f0f2f5';
         var logoMaxW = '120px'; // Platform default
-        var orgLogo = sessionStorage.getItem('client_org_logo');
-        var orgUseLogo = sessionStorage.getItem('client_org_use_logo');
-        var orgBg = sessionStorage.getItem('client_org_bg_color');
-        var orgLogoW = sessionStorage.getItem('client_org_logo_width');
-        if (orgUseLogo === '1' && orgLogo) {
-            logo = orgLogo;
-            logoMaxW = (orgLogoW || '150') + 'px'; // Custom org size
+        var requestedOrg = _readParam('org');
+        var storedPortalOrg = sessionStorage.getItem(STORAGE_PORTAL_ORG);
+        var canUseStoredBranding = !requestedOrg || !storedPortalOrg || requestedOrg === storedPortalOrg;
+        if (canUseStoredBranding) {
+            var orgLogo = sessionStorage.getItem(STORAGE_CLIENT_ORG_LOGO);
+            var orgUseLogo = sessionStorage.getItem(STORAGE_CLIENT_ORG_USE_LOGO);
+            var orgBg = sessionStorage.getItem(STORAGE_CLIENT_ORG_BG);
+            var orgLogoW = sessionStorage.getItem(STORAGE_CLIENT_ORG_LOGO_WIDTH);
+            if (orgUseLogo === '1' && orgLogo) {
+                logo = orgLogo;
+                logoMaxW = (orgLogoW || '150') + 'px'; // Custom org size
+            }
+            if (orgBg) bg = orgBg;
         }
-        if (orgBg) bg = orgBg;
 
         const div = document.createElement('div');
         div.id = 'appLoadingScreen';
@@ -310,6 +343,8 @@
         clearSession,
         setPortalContext,
         clearPortalContext,
+        clearOrgBranding,
+        persistOrgBranding,
         isLoggedIn,
         handleAuthFailure,
 

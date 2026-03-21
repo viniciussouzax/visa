@@ -633,6 +633,17 @@
                         const orgs = await sbGet('companies?short_id=eq.' + _orgParam + '&select=logo_url,use_custom_logo,portal_bg_color,portal_btn_color,logo_max_width&limit=1');
                         if (orgs && orgs[0]) {
                             const org = orgs[0];
+                            document.querySelectorAll('#portalFormLogo, #portalFooterLogo').forEach(logo => {
+                                if (!logo.dataset.defaultSrc) logo.dataset.defaultSrc = logo.getAttribute('src') || 'logo-azul.png';
+                                if (!logo.dataset.defaultMaxWidth) logo.dataset.defaultMaxWidth = logo.style.maxWidth || '120px';
+                                logo.src = logo.dataset.defaultSrc;
+                                logo.style.maxWidth = logo.dataset.defaultMaxWidth;
+                            });
+                            document.body.style.backgroundColor = '';
+                            document.body.style.backgroundImage = '';
+                            document.body.style.removeProperty('--accent');
+                            document.body.style.removeProperty('--accent-hover');
+                            AppCore.clearOrgBranding();
                             if (org.use_custom_logo && org.logo_url) {
                                 document.querySelectorAll('#portalFormLogo, #portalFooterLogo').forEach(logo => {
                                     logo.src = org.logo_url;
@@ -648,6 +659,7 @@
                                 document.body.style.setProperty('--accent', org.portal_btn_color);
                                 document.body.style.setProperty('--accent-hover', org.portal_btn_color);
                             }
+                            AppCore.persistOrgBranding(org);
                         }
                     } catch (e) { console.warn('[Form] Branding error:', e); }
                 }

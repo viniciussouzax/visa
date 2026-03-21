@@ -169,6 +169,18 @@
             }
 
             function applyBranding(org) {
+                document.querySelectorAll('#brandLogo, #navLogo').forEach(img => {
+                    if (!img.dataset.defaultSrc) img.dataset.defaultSrc = img.getAttribute('src') || 'logo-azul.png';
+                    if (!img.dataset.defaultMaxWidth) img.dataset.defaultMaxWidth = img.style.maxWidth || '120px';
+                    img.src = img.dataset.defaultSrc;
+                    img.style.maxWidth = img.dataset.defaultMaxWidth;
+                });
+                document.body.style.backgroundColor = '';
+                document.body.style.backgroundImage = '';
+                document.body.style.removeProperty('--accent');
+                document.body.style.removeProperty('--accent-hover');
+                AppCore.clearOrgBranding();
+
                 const logoMaxW = org.logo_max_width || 150;
                 if (org.use_custom_logo && org.logo_url) {
                     document.querySelectorAll('#brandLogo, #navLogo').forEach(img => {
@@ -187,17 +199,11 @@
                 }
 
                 // Persist branding to sessionStorage for next pages (form, loading screen)
-                if (org.use_custom_logo && org.logo_url) {
-                    sessionStorage.setItem('client_org_logo', org.logo_url);
-                    sessionStorage.setItem('client_org_use_logo', '1');
-                    if (org.logo_max_width) sessionStorage.setItem('client_org_logo_width', org.logo_max_width);
-                }
-                if (org.portal_bg_color) {
-                    sessionStorage.setItem('client_org_bg_color', org.portal_bg_color);
-                }
+                AppCore.persistOrgBranding(org);
             }
 
             function showOrgError() {
+                AppCore.clearOrgBranding();
                 document.getElementById('searchForm').style.display = 'none';
                 document.getElementById('errorText').textContent = 'Link inválido. Este portal precisa ser acessado através do link fornecido pela sua organização.';
                 document.getElementById('errorMsg').classList.add('show');
