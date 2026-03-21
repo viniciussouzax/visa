@@ -527,17 +527,19 @@
                 return;
             }
             const url = AppCore.buildPortalUrl(_orgParam);
-            navigator.clipboard.writeText(url).then(() => {
+            writeClipboardText(url).then(() => {
                 // Feedback no Ã­cone do nav bar
-                const copyIcon = document.querySelector('#portalLinkBtnNav .iconoir-copy');
-                if (copyIcon) {
-                    copyIcon.className = 'iconoir-check';
-                    copyIcon.style.color = '#22c55e';
-                    setTimeout(() => { copyIcon.className = 'iconoir-copy'; copyIcon.style.color = 'var(--text-secondary)'; }, 2000);
+                const copyButton = document.querySelector('#portalLinkBtnNav .portal-link-copy-btn');
+                if (copyButton) {
+                    const previous = copyButton.innerHTML;
+                    copyButton.innerHTML = '<i class="iconoir-check"></i>';
+                    copyButton.style.color = '#22c55e';
+                    setTimeout(() => { copyButton.innerHTML = previous; copyButton.style.color = 'var(--text-secondary)'; }, 2000);
                 }
                 // Feedback no input
                 const urlInput = document.getElementById('portalUrlInput');
                 if (urlInput) { urlInput.style.color = '#22c55e'; setTimeout(() => { urlInput.style.color = 'var(--text-secondary)'; }, 2000); }
+                showToast('Link do portal copiado!', 'success');
             }).catch(() => {
                 prompt('Copie o link:', url);
             });
@@ -716,7 +718,7 @@
                     '4': 'What city were your parents married?'
                 };
                 const secQLabel = SEC_QUESTIONS[secQ] || secQ || 'NÃ£o definida';
-                const cpBtn = (v) => `<td><button class="cred-copy-btn" title="Copiar" onclick="navigator.clipboard.writeText('${v}');this.innerHTML='<i class=\\'iconoir-check\\'></i>';setTimeout(()=>this.innerHTML='<i class=\\'iconoir-copy\\'></i>',1200)"><i class="iconoir-copy"></i></button></td>`;
+                const cpBtn = (v) => `<td><button class="cred-copy-btn" title="Copiar" onclick="copyInlineValue('${encodeURIComponent(v || '')}', this)"><i class="iconoir-copy"></i></button></td>`;
                 sections += `
                     <div class="cred-card">
                         <div class="cred-card-header">
@@ -744,7 +746,7 @@
                 const statusMap = {confirmed:{l:'Confirmado',d:'confirmed'},waiting_confirmation:{l:'Aguardando',d:'pending'},confirmation_failed:{l:'Falhou',d:'fail'},email_created:{l:'Email criado',d:'pending'}};
                 const st = statusMap[a.ais_status] || {l:a.ais_status||'-',d:'pending'};
                 if (a.ais_confirmed) { st.l = 'Confirmado'; st.d = 'confirmed'; }
-                const cpBtn = (v) => `<td><button class="cred-copy-btn" title="Copiar" onclick="navigator.clipboard.writeText('${v}');this.innerHTML='<i class=\\'iconoir-check\\'></i>';setTimeout(()=>this.innerHTML='<i class=\\'iconoir-copy\\'></i>',1200)"><i class="iconoir-copy"></i></button></td>`;
+                const cpBtn = (v) => `<td><button class="cred-copy-btn" title="Copiar" onclick="copyInlineValue('${encodeURIComponent(v || '')}', this)"><i class="iconoir-copy"></i></button></td>`;
                 sections += `
                     <div class="cred-card">
                         <div class="cred-card-header">
@@ -1308,11 +1310,11 @@
             const members = getGroupMembers(groupId, { includeArchived: true });
             if (!members.length) { showToast('Grupo sem membros', 'error'); return; }
             const url = _portalGroupUrl(groupId);
-            navigator.clipboard.writeText(url).then(() => showToast('Link do grupo copiado!', 'success')).catch(() => showToast('Erro ao copiar', 'error'));
+            copyTextValue(url, 'Link do grupo copiado!', 'Erro ao copiar');
         }
         function copyApplicantLink(id) {
             const formUrlBase = new URL(_formUrl(id, null), location.href).href;
-            navigator.clipboard.writeText(formUrlBase).then(() => showToast('Link do solicitante copiado!', 'success')).catch(() => showToast('Erro ao copiar', 'error'));
+            copyTextValue(formUrlBase, 'Link do solicitante copiado!', 'Erro ao copiar');
         }
 
         function openDownloadModal(id) {
@@ -1610,8 +1612,8 @@
             await updateField(id, 'stage', targetStage);
         }
 
-        function viewJSON(id) { const a = applicants.find(x => x.id === id); if (a?.data) { navigator.clipboard.writeText(JSON.stringify(a.data, null, 2)); showToast('JSON copiado!', 'success'); } else showToast('Sem dados', 'error'); }
-        function bulkExport() { const d = applicants.filter(a => selectedIds.has(a.id)).map(a => a.data || {}); navigator.clipboard.writeText(JSON.stringify(d, null, 2)); showToast('Exportado!', 'success'); }
+        function viewJSON(id) { const a = applicants.find(x => x.id === id); if (a?.data) { copyTextValue(JSON.stringify(a.data, null, 2), 'JSON copiado!', 'Erro ao copiar'); } else showToast('Sem dados', 'error'); }
+        function bulkExport() { const d = applicants.filter(a => selectedIds.has(a.id)).map(a => a.data || {}); copyTextValue(JSON.stringify(d, null, 2), 'Exportado!', 'Erro ao copiar'); }
 
         // Individual delete/archive with protection
         async function deleteApplicant(id, name) {
@@ -2565,6 +2567,57 @@
             setTimeout(() => { t.classList.remove('show'); }, 2500);
         }
 
+        async function writeClipboardText(text) {
+            const value = String(text ?? '');
+            if (navigator.clipboard?.writeText) {
+                try {
+                    await navigator.clipboard.writeText(value);
+                    return true;
+                } catch (_) { }
+            }
+
+            const textarea = document.createElement('textarea');
+            textarea.value = value;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            textarea.style.pointerEvents = 'none';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            textarea.setSelectionRange(0, textarea.value.length);
+
+            let copied = false;
+            try { copied = document.execCommand('copy'); } catch (_) { copied = false; }
+            textarea.remove();
+            if (!copied) throw new Error('copy_failed');
+            return true;
+        }
+
+        function flashCopyButton(button) {
+            if (!button) return;
+            const previous = button.innerHTML;
+            button.innerHTML = '<i class="iconoir-check"></i>';
+            setTimeout(() => { button.innerHTML = previous; }, 1200);
+        }
+
+        async function copyTextValue(text, successMessage = 'Copiado!', errorMessage = 'Erro ao copiar', button = null) {
+            try {
+                await writeClipboardText(text);
+                flashCopyButton(button);
+                showToast(successMessage, 'success');
+                return true;
+            } catch (_) {
+                showToast(errorMessage, 'error');
+                return false;
+            }
+        }
+
+        async function copyInlineValue(encodedValue, button) {
+            const decoded = decodeURIComponent(encodedValue || '');
+            await copyTextValue(decoded, 'Copiado!', 'Erro ao copiar', button);
+        }
+
         // ==========================================
         // SUPABASE AUTH CLIENT
         // ==========================================
@@ -3090,7 +3143,7 @@
             if (!_admSelectedOrg) return '';
             return AppCore.buildPortalUrl(_admSelectedOrg.short_id || '');
         }
-        function admCopyFormUrl() { navigator.clipboard.writeText(admGetFormUrl()).then(() => showToast('URL copiada!', 'success')).catch(() => showToast('Erro', 'error')); }
+        function admCopyFormUrl() { copyTextValue(admGetFormUrl(), 'URL copiada!', 'Erro ao copiar'); }
 
         // ---- Logo da OrganizaÃ§Ã£o ----
         function admRefreshLogoUI() {
@@ -3577,7 +3630,7 @@
 
         function admCopyHtml(idx) {
             const log = window._admLogs?.[idx]; if (!log?.page_html) return;
-            navigator.clipboard.writeText(log.page_html).then(() => showToast('HTML copiado!', 'success')).catch(() => showToast('Erro ao copiar', 'error'));
+            copyTextValue(log.page_html, 'HTML copiado!', 'Erro ao copiar');
         }
 
         function admRenderHtml(idx) {
