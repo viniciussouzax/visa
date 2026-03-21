@@ -1472,19 +1472,19 @@
                         <button class="modal-close" onclick="closeActionModal('${modalId}')">&times;</button>
                     </div>
                     <div class="modal-subtitle">${escapeHTML(applicant.name)}</div>
-                    <p class="modal-body" style="margin-top:0">Escolha a aÃ§Ã£o recomendada para este erro. O sistema preseleciona uma etapa, mas vocÃª pode ajustar antes de confirmar.</p>
+                    <p class="modal-body" style="margin-top:0">Escolha a a&ccedil;&atilde;o recomendada para este erro. O sistema preseleciona uma etapa, mas voc&ecirc; pode ajustar antes de confirmar.</p>
                     <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:12px">
-                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#2563eb" onclick="setStageActionSelection('${applicant.stage}','Retoma a etapa atual apÃ³s corrigir o problema.')">${continueLabel}</button>
-                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#d97706" onclick="setStageActionSelection('analysis','Volta para revisÃ£o manual quando o erro pode esconder outros dados inconsistentes.')">Voltar para anÃ¡lise</button>
-                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#64748b" onclick="setStageActionSelection('screening','Reabre o processo desde o inÃ­cio quando a base precisa ser revisada por completo.')">Reiniciar do zero</button>
+                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#2563eb" onclick="setStageActionSelection('${applicant.stage}','Retoma a etapa atual ap\u00f3s corrigir o problema.')">${continueLabel}</button>
+                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#d97706" onclick="setStageActionSelection('analysis','Volta para revis\u00e3o manual quando o erro pode esconder outros dados inconsistentes.')">Voltar para an&aacute;lise</button>
+                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#64748b" onclick="setStageActionSelection('screening','Reabre o processo desde o in\u00edcio quando a base precisa ser revisada por completo.')">Reiniciar do zero</button>
                         ${applicant.stage === 'ds160' ? `<button class="manage-btn" style="justify-content:center;font-weight:600;color:#8b5cf6" onclick="closeActionModal('${modalId}');confirmNewDS160('${id}','${applicant.name.replace(/'/g, "\\\&#39;")}')">Novo DS-160</button>` : ''}
                     </div>
                     <div class="manage-section-label">Etapa de destino</div>
                     <select id="stageActionSelect" class="manage-select">${getStageOptions(applicant.stage)}</select>
-                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">A etapa atual foi preselecionada para continuar apÃ³s corrigir o problema.</div>
+                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">A etapa atual foi preselecionada para continuar ap&oacute;s corrigir o problema.</div>
                     <div class="modal-actions" style="margin-top:16px">
                         <button class="modal-btn" onclick="closeActionModal('${modalId}')">Cancelar</button>
-                        <button class="modal-btn primary" onclick="confirmProblemResolution('${id}')">Confirmar decisÃ£o</button>
+                        <button class="modal-btn primary" onclick="confirmProblemResolution('${id}')">Confirmar decis&atilde;o</button>
                     </div>
                 </div>
             </div>`;
@@ -1717,13 +1717,13 @@
             <div class="modal-box modal-manage" onclick="event.stopPropagation()">
                 <div class="modal-header"><h3 class="modal-title">Gerenciar Solicitante</h3><button class="modal-close" onclick="closeManageMenu()">&times;</button></div>
                 <div class="modal-subtitle">${a.name}</div>
-                <div class="manage-section-label">AÃ§Ãµes rÃ¡pidas</div>
+                <div class="manage-section-label">A&ccedil;&otilde;es r&aacute;pidas</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
                     <button class="manage-btn" ${backActionAttrs} style="${backActionStyle}">
                         <i class="iconoir-nav-arrow-left" style="font-size:14px"></i> Voltar
                     </button>
                     <button class="manage-btn" ${forwardActionAttrs} style="${forwardActionStyle}">
-                        <i class="iconoir-nav-arrow-right" style="font-size:14px"></i> AvanÃ§ar
+                        <i class="iconoir-nav-arrow-right" style="font-size:14px"></i> Avan&ccedil;ar
                     </button>
                 </div>
                 ${a.status === 'error' || a.status === 'fail'
@@ -1751,14 +1751,14 @@
                                 <span style="color:var(--text-muted);font-size:11px">${STAGE_LABELS[stage]} &middot; ${members.length} membros</span>
                             </div>`;
                         }).join('')}
-                        ${_groups.length === 0 ? '<div style="padding:8px 12px;font-size:12px;color:var(--text-muted)">Nenhum grupo disponÃ­vel</div>' : ''}
+                        ${_groups.length === 0 ? '<div style="padding:8px 12px;font-size:12px;color:var(--text-muted)">Nenhum grupo dispon&iacute;vel</div>' : ''}
                     </div>
                 </div>`;
             }
 
             html += `
                 <details style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
-                <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em">Mais opÃ§Ãµes</summary>
+                <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em">Mais op&ccedil;&otilde;es</summary>
                 <div class="manage-section-label" style="margin-top:12px">Etapa</div>
                 <select class="manage-select" onchange="updateField('${id}','stage',this.value)">
                     ${stages.map(s => `<option value="${s}" ${a.stage === s ? 'selected' : ''}>${STAGE_LABELS[s]}</option>`).join('')}
