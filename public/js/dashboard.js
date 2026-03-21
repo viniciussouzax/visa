@@ -270,21 +270,13 @@
                 // Show dashboard-nav like stage pages
                 const navEl = document.querySelector('.dashboard-nav');
                 if (navEl) navEl.style.display = '';
-                // Set title + RT indicator in nav
+                // Set title
                 document.getElementById('pageTitle').textContent = 'Dashboard';
-                // Hide filter chips for overview
                 const chips = document.getElementById('filterChips');
-                if (chips) chips.innerHTML = '<div class="overview-rt-chip"><span class="rt-dot" id="rtDot"></span><span class="rt-label" id="rtLabel">Conectando...</span></div>';
+                if (chips) { chips.innerHTML = ''; chips.style.display = 'none'; }
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === 'overview'));
                 try { history.replaceState(null, '', location.pathname + location.search + '#overview'); } catch(e) {}
                 renderDashboard();
-                // Re-sync realtime dot
-                if (_realtimeChannel) {
-                    const dot = document.getElementById('rtDot');
-                    if (dot) dot.classList.add('connected');
-                    const lbl = document.getElementById('rtLabel');
-                    if (lbl) lbl.textContent = 'Ao vivo';
-                }
                 return;
             }
             if (page === 'admin') {
@@ -329,32 +321,19 @@
             const pcfg = PAGE_CONFIG[page];
             if (!pcfg) return; // guard against invalid pages
             document.getElementById('pageTitle').textContent = pcfg.title;
+            const chips = document.getElementById('filterChips');
+            if (chips) chips.style.display = 'none';
             // subtitle removed
             // info column removed
             renderFilters(); renderTable(); updateBadges();
         }
 
         function renderFilters() {
-            const items = getFilteredByPage();
             const el = document.getElementById('filterChips');
-            if (currentPage === 'screening' || currentPage === 'analysis' || currentPage === 'interview' || currentPage === 'outcome' || currentPage === 'archived') {
-                el.innerHTML = '';
-                return;
-            }
-            if (currentPage === 'ds160') {
-                let html = `<div class="chip ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">Todos<span class="chip-count">${items.length}</span></div>`;
-                Object.entries(STATUS_CONFIG).forEach(([key, cfg]) => {
-                    const count = items.filter(a => a.status === key).length;
-                    if (count > 0 || currentFilter === key) html += `<div class="chip ${currentFilter === key ? 'active' : ''}" onclick="setFilter('${key}')">${cfg.label}<span class="chip-count">${count}</span></div>`;
-                });
-                el.innerHTML = html; return;
-            }
-            let html = `<div class="chip ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">Todos<span class="chip-count">${items.length}</span></div>`;
-            Object.entries(RESULT_CONFIG).forEach(([key, cfg]) => {
-                const count = items.filter(a => a.result === key).length;
-                if (count > 0 || currentFilter === key) html += `<div class="chip ${currentFilter === key ? 'active' : ''}" onclick="setFilter('${key}')">${cfg.label}<span class="chip-count">${count}</span></div>`;
-            });
-            el.innerHTML = html;
+            if (!el) return;
+            currentFilter = 'all';
+            el.innerHTML = '';
+            el.style.display = 'none';
         }
 
         function setFilter(f) { currentFilter = f; renderFilters(); renderTable(); }
@@ -549,9 +528,9 @@
 
                     <td><div class="row-actions">
                         ${a.ds160_pdf_url || a.confirmation_pdf_url ? `<button class="row-btn" onclick="event.stopPropagation();openDownloadModal('${a.id}')" title="Download DS-160" style="color:#22c55e"><i class="iconoir-download"></i></button>` : ''}
-                        ${previousStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa"><i class="iconoir-nav-arrow-left"></i></button>` : ''}
-                        ${nextStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="AvanÃ§ar etapa"><i class="iconoir-nav-arrow-right"></i></button>` : ''}
-                        <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Gerenciar"><i class="iconoir-settings"></i></button>
+                        ${previousStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#64748b">Voltar</button>` : ''}
+                        ${nextStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="AvanÃ§ar etapa" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#2563eb">Avançar</button>` : ''}
+                        <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opções" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#64748b">Mais</button>
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link do portal"><i class="iconoir-copy"></i></button>
                     </div></td></tr>`;
@@ -2244,10 +2223,6 @@
             const tbody = document.getElementById('problemsBody');
             const emptyEl = document.getElementById('problemsEmpty');
             const tableWrap = document.getElementById('problemsTableWrap');
-            document.getElementById('problemsCount').textContent = problems.length;
-            // Update nav title with count
-            const pageTitle = document.getElementById('pageTitle');
-            if (pageTitle && currentPage === 'overview') pageTitle.textContent = 'Dashboard — Problemas: ' + problems.length;
 
             if (!problems.length) {
                 tbody.innerHTML = '';
@@ -2281,7 +2256,7 @@
                     <td onclick="event.stopPropagation();openApplicantNotesModal('${a.id}')" style="cursor:pointer" title="Ver anotações"><div class="notes-preview">${a.notes ? a.notes.substring(0, 80) : '<span class="app-placeholder">Adicionar nota</span>'}</div></td>
                     <td><div class="row-actions">
                         <button class="row-btn" onclick="event.stopPropagation();openResolveProblemModal('${a.id}')" title="Resolver problema" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#d97706">Resolver</button>
-                        <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opções"><i class="iconoir-settings"></i></button>
+                        <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opções" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#64748b">Mais</button>
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link"><i class="iconoir-copy"></i></button>
                     </div></td>
