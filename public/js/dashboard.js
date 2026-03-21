@@ -529,7 +529,7 @@
                     <td><div class="row-actions">
                         ${a.ds160_pdf_url || a.confirmation_pdf_url ? `<button class="row-btn" onclick="event.stopPropagation();openDownloadModal('${a.id}')" title="Download DS-160" style="color:#22c55e"><i class="iconoir-download"></i></button>` : ''}
                         ${previousStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#64748b">Voltar</button>` : ''}
-                        ${nextStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="AvanÃ§ar etapa" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#2563eb">Avançar</button>` : ''}
+                        ${nextStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="Avançar etapa" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#2563eb">Avançar</button>` : ''}
                         <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opções" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#64748b">Mais</button>
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link do portal"><i class="iconoir-copy"></i></button>
@@ -1213,16 +1213,16 @@
             if (!applicant) return;
             const defaultStage = direction === 'back' ? getPreviousStage(applicant.stage) : getNextStage(applicant.stage);
             if (!defaultStage) {
-                showToast(direction === 'back' ? 'NÃ£o hÃ¡ etapa anterior.' : 'NÃ£o hÃ¡ prÃ³xima etapa automÃ¡tica.', 'info');
+                showToast(direction === 'back' ? 'Não há etapa anterior.' : 'Não há próxima etapa automática.', 'info');
                 return;
             }
             const modalId = 'stageActionModal';
             closeActionModal(modalId);
-            const title = direction === 'back' ? 'Voltar Etapa' : 'AvanÃ§ar Etapa';
+            const title = direction === 'back' ? 'Voltar Etapa' : 'Avançar Etapa';
             const helper = direction === 'back'
-                ? 'A etapa anterior foi preselecionada. VocÃª pode trocar se precisar.'
-                : 'A prÃ³xima etapa foi preselecionada. VocÃª pode trocar se precisar.';
-            const confirmLabel = direction === 'back' ? 'Confirmar retorno' : 'Confirmar avanÃ§o';
+                ? 'A etapa anterior foi preselecionada. Você pode trocar se precisar.'
+                : 'A próxima etapa foi preselecionada. Você pode trocar se precisar.';
+            const confirmLabel = direction === 'back' ? 'Confirmar retorno' : 'Confirmar avanço';
             const html = `<div id="${modalId}" class="modal-overlay" onclick="closeActionModal('${modalId}')">
                 <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px">
                     <div class="modal-header">
@@ -1233,7 +1233,7 @@
                     <p class="modal-body" style="margin-top:0">${helper}</p>
                     <div class="manage-section-label">Etapa de destino</div>
                     <select id="stageActionSelect" class="manage-select">${getStageOptions(defaultStage)}</select>
-                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">${direction === 'back' ? 'Use para reabrir uma etapa anterior.' : 'Use para seguir o fluxo normal com confirmaÃ§Ã£o.'}</div>
+                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">${direction === 'back' ? 'Use para reabrir uma etapa anterior.' : 'Use para seguir o fluxo normal com confirmação.'}</div>
                     <div class="modal-actions" style="margin-top:16px">
                         <button class="modal-btn" onclick="closeActionModal('${modalId}')">Cancelar</button>
                         <button class="modal-btn primary" onclick="confirmStageAction('${id}','${direction}')">${confirmLabel}</button>
@@ -1268,19 +1268,19 @@
                         <button class="modal-close" onclick="closeActionModal('${modalId}')">&times;</button>
                     </div>
                     <div class="modal-subtitle">${escapeHTML(applicant.name)}</div>
-                    <p class="modal-body" style="margin-top:0">Escolha a aÃ§Ã£o recomendada para este erro. O sistema preseleciona uma etapa, mas vocÃª pode ajustar antes de confirmar.</p>
+                    <p class="modal-body" style="margin-top:0">Escolha a ação recomendada para este erro. O sistema preseleciona uma etapa, mas você pode ajustar antes de confirmar.</p>
                     <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:12px">
-                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#2563eb" onclick="setStageActionSelection('${applicant.stage}','Retoma a etapa atual apÃ³s corrigir o problema.')">${continueLabel}</button>
-                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#d97706" onclick="setStageActionSelection('analysis','Volta para revisÃ£o manual quando o erro pode esconder outros dados inconsistentes.')">Voltar para anÃ¡lise</button>
-                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#64748b" onclick="setStageActionSelection('screening','Reabre o processo desde o inÃ­cio quando a base precisa ser revisada por completo.')">Reiniciar do zero</button>
+                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#2563eb" onclick="setStageActionSelection('${applicant.stage}','Retoma a etapa atual após corrigir o problema.')">${continueLabel}</button>
+                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#d97706" onclick="setStageActionSelection('analysis','Volta para revisão manual quando o erro pode esconder outros dados inconsistentes.')">Voltar para análise</button>
+                        <button class="manage-btn" style="justify-content:center;font-weight:600;color:#64748b" onclick="setStageActionSelection('screening','Reabre o processo desde o início quando a base precisa ser revisada por completo.')">Reiniciar do zero</button>
                         ${applicant.stage === 'ds160' ? `<button class="manage-btn" style="justify-content:center;font-weight:600;color:#8b5cf6" onclick="closeActionModal('${modalId}');confirmNewDS160('${id}','${applicant.name.replace(/'/g, "\\\&#39;")}')">Novo DS-160</button>` : ''}
                     </div>
                     <div class="manage-section-label">Etapa de destino</div>
                     <select id="stageActionSelect" class="manage-select">${getStageOptions(applicant.stage)}</select>
-                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">A etapa atual foi preselecionada para continuar apÃ³s corrigir o problema.</div>
+                    <div id="stageActionHint" style="font-size:12px;color:var(--text-muted);margin-top:6px">A etapa atual foi preselecionada para continuar após corrigir o problema.</div>
                     <div class="modal-actions" style="margin-top:16px">
                         <button class="modal-btn" onclick="closeActionModal('${modalId}')">Cancelar</button>
-                        <button class="modal-btn primary" onclick="confirmProblemResolution('${id}')">Confirmar decisÃ£o</button>
+                        <button class="modal-btn primary" onclick="confirmProblemResolution('${id}')">Confirmar decisão</button>
                     </div>
                 </div>
             </div>`;
@@ -1341,7 +1341,7 @@
                 const selectedApplicants = applicants.filter(a => selectedIds.has(a.id));
                 const filledApplicants = selectedApplicants.filter(a => a.progress > 0);
                 if (filledApplicants.length > 0) {
-                    showToast(`NÃ£o Ã© possÃ­vel excluir solicitantes com dados preenchidos: ${filledApplicants.map(a => shortName(a.name)).join(', ')}`, 'error');
+                    showToast(`Não é possível excluir solicitantes com dados preenchidos: ${filledApplicants.map(a => shortName(a.name)).join(', ')}`, 'error');
                     return;
                 }
 
@@ -1353,7 +1353,7 @@
                     return groupMembers.length > 1 && groupMembers[0]?.id === a.id;
                 });
                 if (blockedPrincipals.length > 0) {
-                    showToast(`NÃ£o Ã© possÃ­vel excluir o principal de grupos ativos: ${blockedPrincipals.map(a => shortName(a.name)).join(', ')}`, 'error');
+                    showToast(`Não é possível excluir o principal de grupos ativos: ${blockedPrincipals.map(a => shortName(a.name)).join(', ')}`, 'error');
                     return;
                 }
 
