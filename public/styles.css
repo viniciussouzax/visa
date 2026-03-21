@@ -5034,6 +5034,224 @@ tr.drag-over {
 }
 
 /* ==========================================
+   MODAL SYSTEM REFRESH
+   ========================================== */
+.modal-overlay {
+    padding: clamp(16px, 3vw, 28px);
+    background: rgba(15, 23, 42, 0.34);
+    backdrop-filter: blur(10px);
+}
+
+.modal-box {
+    width: min(100%, 460px);
+    max-height: min(88vh, 920px);
+    overflow-y: auto;
+    padding: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 22px;
+    box-shadow: 0 22px 64px rgba(15, 23, 42, 0.18);
+}
+
+.modal-header {
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+}
+
+.modal-subtitle {
+    margin-bottom: 18px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.modal-close {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--bg-body);
+    border: 1px solid var(--border-light);
+    flex-shrink: 0;
+}
+
+.modal-close:hover {
+    background: var(--border-light);
+    border-color: var(--border);
+}
+
+.modal-label {
+    margin-bottom: 8px;
+    font-size: 11px;
+    letter-spacing: .08em;
+}
+
+.modal-input,
+.manage-textarea {
+    margin-bottom: 12px;
+    padding: 11px 13px;
+    border-radius: 12px;
+}
+
+.modal-actions {
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.modal-btn {
+    min-height: 40px;
+    padding: 9px 16px;
+    border-radius: 12px;
+}
+
+.manage-section-label {
+    margin: 16px 0 8px;
+    font-size: 10px;
+    letter-spacing: .1em;
+}
+
+.manage-btn {
+    min-height: 40px;
+    border-radius: 12px;
+    padding: 8px 14px;
+}
+
+.modal-manage {
+    width: min(100%, 500px);
+}
+
+/* Credential modal refinement */
+#credModal .modal-box {
+    width: min(100%, 430px) !important;
+    max-width: 430px !important;
+    padding: 18px !important;
+}
+
+.cred-card {
+    margin-bottom: 12px;
+    border-radius: 18px;
+    border-color: rgba(148, 163, 184, 0.2);
+    background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,250,252,0.96) 100%);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.cred-card-header {
+    gap: 10px;
+    padding: 13px 16px;
+    background: linear-gradient(180deg, rgba(248,250,252,0.98) 0%, rgba(241,245,249,0.98) 100%);
+}
+
+.cred-card-title {
+    font-size: 15px;
+    letter-spacing: -0.01em;
+}
+
+.cred-card-status {
+    font-size: 10px;
+    padding: 4px 9px;
+}
+
+.cred-card-status.fail {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.cred-card-status .dot.fail {
+    background: var(--danger);
+}
+
+.cred-table {
+    table-layout: fixed;
+}
+
+.cred-table td {
+    padding: 12px 16px;
+}
+
+.cred-table td:first-child {
+    width: 100px;
+    font-size: 11px;
+    letter-spacing: .06em;
+}
+
+.cred-table td:nth-child(2) {
+    font-size: 14px;
+    font-weight: 600;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.45;
+}
+
+.cred-table td:nth-child(2).mono {
+    font-size: 13px;
+    letter-spacing: 0;
+}
+
+.cred-table td:nth-child(2).small {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.cred-table td:last-child {
+    width: 48px;
+    padding-right: 12px;
+    padding-left: 8px;
+}
+
+.cred-table .cred-copy-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+}
+
+.cred-downloads {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 12px 16px 14px;
+}
+
+.cred-dl-btn {
+    justify-content: center;
+    min-height: 40px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+@media (max-width: 640px) {
+    .modal-box {
+        padding: 18px;
+        border-radius: 18px;
+    }
+
+    #credModal .modal-box {
+        width: min(100%, 100%) !important;
+        max-width: none !important;
+    }
+
+    .cred-table td:first-child {
+        width: 88px;
+    }
+
+    .cred-downloads {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================
    LOGIN OVERLAY
    ========================================== */
 .login-overlay {

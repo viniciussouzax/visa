@@ -536,7 +536,7 @@
                         ${a.ds160_pdf_url || a.confirmation_pdf_url ? `<button class="row-btn" onclick="event.stopPropagation();openDownloadModal('${a.id}')" title="Download DS-160" style="color:#22c55e"><i class="iconoir-download"></i></button>` : ''}
                         ${previousStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','back')" title="Voltar etapa" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#64748b">Voltar</button>` : ''}
                         ${nextStage ? `<button class="row-btn" onclick="event.stopPropagation();openStageActionModal('${a.id}','forward')" title="Avançar etapa" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#2563eb">Avançar</button>` : ''}
-                        <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opções" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;color:#64748b">Mais</button>
+                        <button class="row-btn" onclick="event.stopPropagation();showManageMenu(event,'${a.id}')" title="Mais opções" aria-label="Mais opções" style="width:34px;padding:0;color:#64748b"><i class="iconoir-more-vert"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();openWhatsApp('${a.id}')" title="WhatsApp"><i class="iconoir-whatsapp"></i></button>
                         <button class="row-btn" onclick="event.stopPropagation();copyApplicantLink('${a.id}')" title="Copiar link do portal"><i class="iconoir-copy"></i></button>
                     </div></td></tr>`;
@@ -1412,7 +1412,7 @@
                 </div>`;
             } else {
                 html += `<div style="position:relative">
-                    <input type="text" id="groupSearchInput" class="manage-select" placeholder="Buscar grupo por nome ou ID..." oninput="filterGroupResults()" onfocus="document.getElementById('groupSearchResults').style.display='block'" autocomplete="off">
+                    <input type="text" id="groupSearchInput" class="manage-select" placeholder="Buscar grupo por nome ou ID..." oninput="filterGroupResults()" onfocus="openGroupSearchResults()" autocomplete="off">
                     <div id="groupSearchResults" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:160px;overflow-y:auto;background:var(--bg-main,#fff);border:1px solid var(--border-light,#e2e8f0);border-radius:0 0 8px 8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,.1)">
                         ${_groups.map(g => {
                             const members = applicants.filter(x => x.group_id === g.id);
@@ -1490,20 +1490,48 @@
             // Close search results when clicking outside
             const popup = document.getElementById('managePopup');
             popup?.addEventListener('click', (e) => {
-                const sr = document.getElementById('groupSearchResults');
-                if (sr && !e.target.closest('#groupSearchInput') && !e.target.closest('#groupSearchResults')) sr.style.display = 'none';
+                const withinGroupSearch = e.target.closest('#groupSearchInput') || e.target.closest('#groupSearchResults');
+                if (!withinGroupSearch) closeGroupSearchResults();
             });
+        }
+
+        function openGroupSearchResults() {
+            const sr = document.getElementById('groupSearchResults');
+            if (!sr) return;
+            sr.style.display = 'block';
+            filterGroupResults();
+        }
+
+        function closeGroupSearchResults() {
+            const sr = document.getElementById('groupSearchResults');
+            if (!sr) return;
+            sr.style.display = 'none';
         }
 
         function filterGroupResults() {
             const q = (document.getElementById('groupSearchInput')?.value || '').toLowerCase();
             const items = document.querySelectorAll('.group-search-item');
+            let visibleCount = 0;
             items.forEach(el => {
                 const text = el.textContent.toLowerCase();
                 const gid = el.dataset.gid?.toLowerCase() || '';
-                el.style.display = (text.includes(q) || gid.includes(q)) ? '' : 'none';
+                const visible = text.includes(q) || gid.includes(q);
+                el.style.display = visible ? '' : 'none';
+                if (visible) visibleCount++;
             });
-            document.getElementById('groupSearchResults').style.display = 'block';
+            const sr = document.getElementById('groupSearchResults');
+            if (!sr) return;
+            const emptyStateId = 'groupSearchEmptyState';
+            let emptyState = document.getElementById(emptyStateId);
+            if (!emptyState) {
+                emptyState = document.createElement('div');
+                emptyState.id = emptyStateId;
+                emptyState.style.cssText = 'padding:8px 12px;font-size:12px;color:var(--text-muted);display:none';
+                emptyState.textContent = 'Nenhum grupo encontrado';
+                sr.appendChild(emptyState);
+            }
+            emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+            sr.style.display = 'block';
         }
 
         async function linkToSearchedGroup(applicantId, groupId) {
@@ -1521,6 +1549,7 @@
                 });
                 const a = applicants.find(x => x.id === applicantId);
                 if (a) { a.group_id = groupId; a.stage = groupStage; a.status = groupStatus; a.result = 'pending'; }
+                closeGroupSearchResults();
                 closeManageMenu(); renderTable(); renderFilters(); updateBadges();
                 showToast(`Vinculado ao ${getGroupLabel(groupId)}! Movido para ${STAGE_LABELS[groupStage]}`, 'success');
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }
@@ -1907,20 +1936,23 @@
                 const email = (a.email || '').toLowerCase();
                 const passport = (a.passport || '').toLowerCase();
                 const id = (a.id || '').toLowerCase();
-                return name.includes(q) || email.includes(q) || passport.includes(q) || id.includes(q);
+                const groupLabel = a.group_id ? getGroupLabel(a.group_id).toLowerCase() : '';
+                const groupId = (a.group_id || '').toLowerCase();
+                const groupNickname = a.group_id ? (getGroupNickname(a.group_id) || '').toLowerCase() : '';
+                return name.includes(q) || email.includes(q) || passport.includes(q) || id.includes(q) || groupLabel.includes(q) || groupId.includes(q) || groupNickname.includes(q);
             }).slice(0, 15);
             if (results.length === 0) {
                 container.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:13px;text-align:center">Nenhum resultado encontrado</div>';
                 return;
             }
             container.innerHTML = results.map(a => {
-                                                return `<div onclick="selectSearchResult('${a.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='var(--border-light)'" onmouseout="this.style.background='transparent'">
+                const groupMeta = a.group_id ? `<span style="font-size:11px;color:var(--text-muted)"> · ${getGroupLabel(a.group_id)}</span>` : '';
+                return `<div onclick="selectSearchResult('${a.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='var(--border-light)'" onmouseout="this.style.background='transparent'">
                     <span class="applicant-icon" style="flex-shrink:0"><i class="iconoir-user"></i></span>
                     <div style="flex:1;min-width:0">
                         <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${titleCase(a.name)}</div>
-                        <div style="font-size:11px;color:var(--text-muted)">${a.email || a.passport || 'Sem info'}</div>
+                        <div style="font-size:11px;color:var(--text-muted)">${a.email || a.passport || 'Sem info'}${groupMeta}</div>
                     </div>
-                    
                 </div>`;
             }).join('');
             // Also filter the background table
@@ -1928,27 +1960,25 @@
         }
         function selectSearchResult(id) {
             closeSearchModal();
-            // If applicant is in a group, expand it first
             const a = applicants.find(x => x.id === id);
-            if (a && a.group_id && !expandedGroups.has(String(a.group_id))) {
-                expandedGroups.add(String(a.group_id));
-            }
+            if (!a) return;
+            if (a.stage !== currentPage) navigateTo(a.stage);
+            if (a.group_id && !expandedGroups.has(String(a.group_id))) expandedGroups.add(String(a.group_id));
             const filteredItems = getFiltered();
             const targetIndex = filteredItems.findIndex(item => item.id === id);
             if (targetIndex >= 0) {
                 visibleRowsCount = Math.max(visibleRowsCount, targetIndex + 1);
                 renderTable();
             }
-            // Select the row in the table
             setTimeout(() => {
+                document.querySelectorAll('#tableBody tr.selected').forEach(row => row.classList.remove('selected'));
                 const row = document.querySelector(`tr[data-id="${id}"]`);
                 if (row) {
                     row.classList.add('selected');
                     row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => row.classList.remove('selected'), 2200);
                 }
             }, 50);
-            // Open review drawer
-            openReview(id);
         }
 
         function showToast(msg, type) {
