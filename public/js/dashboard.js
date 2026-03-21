@@ -1830,6 +1830,16 @@
         // ==========================================
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let _currentUser = null;
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (session?.access_token) {
+                window._sessionToken = session.access_token;
+                AppCore.setSession(session.access_token, null);
+            }
+            if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+                _currentUser = null;
+                AppCore.handleAuthFailure(event.toLowerCase());
+            }
+        });
 
         async function checkAuth() {
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -2759,6 +2769,7 @@
                     // Token from URL may be expired — try Supabase session refresh before giving up
                     console.warn('[Dashboard] URL token failed, trying session refresh:', err.message);
                     window._sessionToken = null;
+                    AppCore.clearSession();
                 }
             }
             const isAuth = await checkAuth();

@@ -59,6 +59,42 @@
         return !!getAuth();
     }
 
+    function _isAssessorForm() {
+        const path = (location.pathname || '').toLowerCase();
+        const tab = (_readParam('tab') || '').toLowerCase();
+        return path.endsWith('ds160-form.html') && (tab === 'editar' || tab === 'assessor');
+    }
+
+    function _buildLoginRedirectUrl() {
+        const org = getOrg();
+        const path = (location.pathname || '').toLowerCase();
+        if (path.endsWith('ds160-form.html') && !_isAssessorForm()) {
+            return org ? 'portal.html?org=' + encodeURIComponent(org) : 'portal.html';
+        }
+        return org ? 'dashboard.html?org=' + encodeURIComponent(org) : 'dashboard.html';
+    }
+
+    function handleAuthFailure(reason = 'unauthorized') {
+        console.warn('[AppCore] Auth failure:', reason);
+        clearSession();
+        window._sessionToken = null;
+        sessionStorage.removeItem('client_app_id');
+
+        const target = _buildLoginRedirectUrl();
+        if ((location.pathname || '').toLowerCase().endsWith('dashboard.html')) {
+            const overlay = document.getElementById('loginOverlay');
+            if (overlay) overlay.style.display = 'flex';
+            const sidebar = document.querySelector('.sidebar');
+            const main = document.querySelector('.main');
+            if (sidebar) sidebar.style.display = 'none';
+            if (main) main.style.display = 'none';
+        }
+
+        if (location.href !== new URL(target, location.href).href) {
+            window.location.href = target;
+        }
+    }
+
     // ==========================================
     // CRUD HELPERS
     // ==========================================
@@ -78,6 +114,10 @@
             },
             body: body ? JSON.stringify(body) : undefined,
         });
+        if (res.status === 401 || res.status === 403) {
+            handleAuthFailure('rest:' + res.status);
+            throw new Error(res.status + ': auth required');
+        }
         if (!res.ok) {
             const err = await res.text();
             throw new Error(res.status + ': ' + err);
@@ -94,6 +134,10 @@
                 'Authorization': 'Bearer ' + _bearer()
             },
         });
+        if (res.status === 401 || res.status === 403) {
+            handleAuthFailure('rest:' + res.status);
+            throw new Error(res.status + ': auth required');
+        }
         if (!res.ok) return [];
         return res.json();
     }
@@ -103,10 +147,8 @@
     // ==========================================
     function buildUrl(page, params = {}) {
         let url = page;
-        const auth = getAuth();
         const org = getOrg();
         const allParams = { ...params };
-        if (auth && !allParams.auth) allParams.auth = auth;
         if (org && !allParams.org) allParams.org = org;
 
         const qs = Object.entries(allParams)
@@ -211,6 +253,7 @@
         setSession,
         clearSession,
         isLoggedIn,
+        handleAuthFailure,
 
         // CRUD
         sbFetch,
@@ -241,6 +284,10 @@
             },
             body: JSON.stringify(body)
         });
+        if (res.status === 401 || res.status === 403) {
+            handleAuthFailure('edge:' + res.status);
+            throw new Error(res.status + ': auth required');
+        }
         if (!res.ok) {
             const err = await res.text();
             throw new Error(res.status + ': ' + err);

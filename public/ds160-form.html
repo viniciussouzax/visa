@@ -430,6 +430,31 @@
 
         const sbFetch = AppCore.sbFetch;
         const sbGet = AppCore.sbGet;
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function ensureAssessorAuth() {
+            if (!_isAssessor) return true;
+
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session?.access_token) {
+                    window._sessionToken = session.access_token;
+                    AppCore.setSession(session.access_token, null);
+                    return true;
+                }
+            } catch (e) {
+                console.warn('[Form] Failed to read Supabase session:', e);
+            }
+
+            const token = AppCore.getAuth();
+            if (token && token !== SUPABASE_KEY) {
+                window._sessionToken = token;
+                return true;
+            }
+
+            AppCore.handleAuthFailure('missing_assessor_session');
+            return false;
+        }
 
         // ==========================================
         // INIT ENGINE
@@ -998,6 +1023,9 @@
         // ==========================================
         (async function startup() {
             try {
+                const canContinue = await ensureAssessorAuth();
+                if (!canContinue) return;
+
                 await resolveCompanyId();
 
 
