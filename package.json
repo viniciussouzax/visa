@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "serve": "npx -y serve public -l 5173",
     "queue": "node automation/run.js",
+    "diag:browser": "node automation/diagnose-browser.js",
     "test:seed": "node scripts/seed-test-profiles.js --clean",
     "test:seed:batch": "node scripts/seed-test-profiles.js --clean --batch=5",
     "test:check": "node scripts/check-test-results.js",
