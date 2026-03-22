@@ -122,6 +122,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             ? {
                 provider: 'apify',
                 password: config.apify_proxy_password || process.env.APIFY_PROXY_PASSWORD,
+                username: config.apify_proxy_username || process.env.APIFY_PROXY_USERNAME,
+                usernameMode: config.apify_proxy_username_mode || process.env.APIFY_PROXY_USERNAME_MODE,
                 groups: config.apify_proxy_groups || process.env.APIFY_PROXY_GROUPS,
                 country: config.apify_proxy_country || process.env.APIFY_PROXY_COUNTRY,
                 sessionId: proxySessionId,

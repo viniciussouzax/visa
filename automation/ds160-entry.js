@@ -192,6 +192,8 @@ async function main() {
                 'proxy_url',
                 'proxy_countries',
                 'apify_proxy_password',
+                'apify_proxy_username',
+                'apify_proxy_username_mode',
                 'apify_proxy_groups',
                 'apify_proxy_country',
             ]);
@@ -227,9 +229,14 @@ async function main() {
         config.proxy_countries = resolvedProxy.countries || settingsMap.proxy_countries || process.env.PROXY_COUNTRIES || 'us,br';
         if (resolvedProxy.provider === 'apify') {
             config.apify_proxy_password = resolvedProxy.password;
+            config.apify_proxy_username = resolvedProxy.username;
+            config.apify_proxy_username_mode = resolvedProxy.usernameMode;
             config.apify_proxy_groups = resolvedProxy.groups;
             config.apify_proxy_country = resolvedProxy.country;
-            console.log(`Proxy: apify | groups=${resolvedProxy.groups} | country=${resolvedProxy.country || 'auto'} | session=${resolvedProxy.sessionId}`);
+            console.log(
+                `Proxy: apify | mode=${resolvedProxy.usernameMode} | username=${resolvedProxy.username} | ` +
+                `groups=${resolvedProxy.groups || '-'} | country=${resolvedProxy.country || '-'} | session=${resolvedProxy.sessionId}`
+            );
         } else {
             config.proxy_url = resolvedProxy.url;
             console.log(`Proxy: dataimpulse | countries=${resolvedProxy.countries} | session=${resolvedProxy.sessionId}`);

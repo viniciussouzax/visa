@@ -48,26 +48,41 @@ function buildApifyProxyOpts(opts = {}) {
 
     const server = opts.server || process.env.APIFY_PROXY_SERVER || 'http://proxy.apify.com:8000';
     const sessionId = sanitizeSessionId(opts.sessionId || `auto_${Date.now()}`);
-    const groups = (opts.groups || process.env.APIFY_PROXY_GROUPS || 'RESIDENTIAL')
+    const username = String(opts.username || process.env.APIFY_PROXY_USERNAME || '').trim();
+    const usernameMode = String(opts.usernameMode || process.env.APIFY_PROXY_USERNAME_MODE || 'auto')
+        .trim()
+        .toLowerCase();
+    const groups = String(opts.groups || process.env.APIFY_PROXY_GROUPS || '')
         .split(',')
         .map(v => v.trim())
         .filter(Boolean)
         .join('+');
-    const country = (opts.country || process.env.APIFY_PROXY_COUNTRY || '')
+    const country = String(opts.country || process.env.APIFY_PROXY_COUNTRY || '')
         .trim()
         .toUpperCase();
+    let resolvedUsername = username;
 
-    const usernameParts = [];
-    if (groups) usernameParts.push(`groups-${groups}`);
-    usernameParts.push(`session-${sessionId}`);
-    if (country) usernameParts.push(`country-${country}`);
+    if (!resolvedUsername) {
+        if (usernameMode === 'auto') {
+            resolvedUsername = 'auto';
+        } else {
+            const usernameParts = [];
+            if (groups) usernameParts.push(`groups-${groups}`);
+            usernameParts.push(`session-${sessionId}`);
+            if (country) usernameParts.push(`country-${country}`);
+            resolvedUsername = usernameParts.join(',');
+        }
+    }
 
     return {
         provider: 'apify',
         server,
-        username: usernameParts.join(','),
+        username: resolvedUsername,
         password,
         sessionId,
+        usernameMode,
+        groups,
+        country,
         logSafe: `${server.replace(/\/\/.*$/, '//')}***`,
     };
 }
@@ -132,11 +147,27 @@ function resolveApifyPassword(sources = {}) {
     ).trim();
 }
 
+function resolveApifyUsername(sources = {}) {
+    return String(
+        (sources.settingsMap && sources.settingsMap.apify_proxy_username)
+        || process.env.APIFY_PROXY_USERNAME
+        || ''
+    ).trim();
+}
+
+function resolveApifyUsernameMode(sources = {}) {
+    return String(
+        (sources.settingsMap && sources.settingsMap.apify_proxy_username_mode)
+        || process.env.APIFY_PROXY_USERNAME_MODE
+        || 'auto'
+    ).trim().toLowerCase();
+}
+
 function resolveApifyGroups(sources = {}) {
     return String(
         (sources.settingsMap && sources.settingsMap.apify_proxy_groups)
         || process.env.APIFY_PROXY_GROUPS
-        || 'RESIDENTIAL'
+        || ''
     ).trim();
 }
 
@@ -146,9 +177,7 @@ function resolveApifyCountry(sources = {}) {
 
     const fromEnv = process.env.APIFY_PROXY_COUNTRY || '';
     if (fromEnv) return String(fromEnv).trim().toUpperCase();
-
-    const fallbackCountries = resolveProxyCountries(sources);
-    return String(fallbackCountries.split(',')[0] || '').trim().toUpperCase();
+    return '';
 }
 
 function buildResolvedProxyConfig(sources = {}) {
@@ -161,6 +190,8 @@ function buildResolvedProxyConfig(sources = {}) {
         return {
             provider,
             password,
+            username: resolveApifyUsername(sources),
+            usernameMode: resolveApifyUsernameMode(sources),
             groups: resolveApifyGroups(sources),
             country: resolveApifyCountry(sources),
             sessionId,
@@ -186,6 +217,8 @@ module.exports = {
     resolveProxyUrl,
     resolveProxyCountries,
     resolveApifyPassword,
+    resolveApifyUsername,
+    resolveApifyUsernameMode,
     resolveApifyGroups,
     resolveApifyCountry,
     buildResolvedProxyConfig,
