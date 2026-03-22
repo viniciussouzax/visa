@@ -13,7 +13,8 @@ const {
 
 // -- ENV --
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const SUPABASE_KEY = SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
     console.error('SUPABASE_URL e SUPABASE_KEY sao obrigatorios');
@@ -46,20 +47,7 @@ async function main() {
     console.log(`  Start: ${new Date().toISOString()}`);
     console.log('=======================================\n');
 
-    // -- AUTH --
-    const workerEmail = process.env.WORKER_EMAIL;
-    const workerPassword = process.env.WORKER_PASSWORD;
-    if (workerEmail && workerPassword) {
-        const { error } = await supabase.auth.signInWithPassword({
-            email: workerEmail,
-            password: workerPassword,
-        });
-        if (error) {
-            console.error(`Auth falhou: ${error.message} - abortando`);
-            process.exit(1);
-        }
-        console.log('Autenticado');
-    }
+    console.log(`Auth mode: ${SUPABASE_SERVICE_ROLE_KEY ? 'service_role' : 'fallback_key'}`);
 
     // -- PICK APPLICANT --
     let target;
@@ -199,8 +187,8 @@ async function main() {
         let proxyUrl = null;
         let proxyCountries = 'us,br';
 
-        if (app.proxy_session) {
-            proxyUrl = app.proxy_session;
+        if (claimedApp.proxy_session) {
+            proxyUrl = claimedApp.proxy_session;
             console.log(`Proxy (retry): ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
         } else {
             const { data: proxySettings } = await supabase
@@ -218,7 +206,7 @@ async function main() {
                 await supabase.from('applications').update({
                     proxy_session: proxyUrl,
                     proxy_session_created_at: new Date().toISOString()
-                }).eq('id', app.id);
+                }).eq('id', claimedApp.id);
                 console.log(`Proxy: ${proxyUrl.replace(/\/\/.*@/, '//***@')} | countries: ${proxyCountries}`);
             } else {
                 console.log('Sem proxy configurado - usando IP direto');

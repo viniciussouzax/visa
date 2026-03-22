@@ -112,6 +112,17 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
     if (!profile.email) missingFields.push('addressPhone.email');
 
     let browser, page;
+    const isHeadless = process.env.HEADLESS !== 'false';
+    const { buildProxyOpts } = require('./helpers/proxy-helper');
+    const proxyUrl = config.proxy_url || process.env.PROXY_URL || null;
+    const proxyOpts = proxyUrl
+        ? buildProxyOpts(proxyUrl, {
+            countries: config.proxy_countries || 'us,br',
+            sessionId: config.session_id || `ds160_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        })
+        : undefined;
+    let launchArgs = [];
+    let contextOpts = null;
     const visited = [];
 
     if (missingFields.length > 0) {
@@ -157,18 +168,6 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             // STEALTH BROWSER SETUP — professional anti-detect
             // 1 user = 1 IP = 1 session throughout entire flow
             // ══════════════════════════════════════════════════
-            const isHeadless = process.env.HEADLESS !== 'false';
-
-            // ── PROXY (centralised via proxy-helper) ──
-            const { buildProxyOpts } = require('./helpers/proxy-helper');
-            const proxyUrl = config.proxy_url || process.env.PROXY_URL || null;
-            const proxyOpts = proxyUrl
-                ? buildProxyOpts(proxyUrl, {
-                    countries: config.proxy_countries || 'us,br',
-                    sessionId: config.session_id || `ds160_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-                })
-                : undefined;
-
             // ── IDENTITY / PROFILE (Fly-consistent) ──
             const identity = buildFlyIdentityProfile({
                 proxy_url: proxyUrl,
@@ -178,7 +177,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             console.log(`[Filler] Identity: Chrome, ${identity.screenRes.width}x${identity.screenRes.height}, tz=${identity.timezoneId}`);
 
             // ── LAUNCH ARGS (anti-automation + anti-throttling + anti-datacenter) ──
-            const launchArgs = [
+            launchArgs = [
                 '--disable-blink-features=AutomationControlled',
                 '--disable-features=IsolateOrigins,site-per-process',
                 '--no-sandbox',
@@ -209,7 +208,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             const launchOpts = buildLaunchOptions(identity, proxyOpts || null);
             browser = await chromium.launch(launchOpts);
 
-            const contextOpts = buildContextOptions(identity);
+            contextOpts = buildContextOptions(identity);
 
             // Restore session from previous attempt if available
             // IMPORTANT: Clean up cookies that may be bot-flagged before restoring

@@ -14,21 +14,26 @@ fs.readFileSync(envPath, 'utf8').replace(/\r/g, '').split('\n').forEach(line => 
 });
 
 const { createClient } = require('@supabase/supabase-js');
-const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const sb = createClient(process.env.SUPABASE_URL, serviceKey || process.env.SUPABASE_KEY);
 
 (async () => {
     console.log('URL:', process.env.SUPABASE_URL);
     console.log('Email:', process.env.WORKER_EMAIL);
 
-    const { data, error } = await sb.auth.signInWithPassword({
-        email: process.env.WORKER_EMAIL,
-        password: process.env.WORKER_PASSWORD,
-    });
+    console.log('Auth mode:', serviceKey ? 'service_role' : 'user_password');
 
-    if (error) {
-        console.log('AUTH ERROR:', error.message);
-    } else {
-        console.log('AUTH OK:', data.user.email, data.user.id);
+    if (!serviceKey) {
+        const { data, error } = await sb.auth.signInWithPassword({
+            email: process.env.WORKER_EMAIL,
+            password: process.env.WORKER_PASSWORD,
+        });
+
+        if (error) {
+            console.log('AUTH ERROR:', error.message);
+        } else {
+            console.log('AUTH OK:', data.user.email, data.user.id);
+        }
     }
 
     // Check queue

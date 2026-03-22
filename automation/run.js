@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
-// run.js — CLI runner para a automação DS-160
-// Usa anon key (sem worker auth) — RLS permite acesso público
+// run.js - CLI runner para a automacao DS-160
+// Usa service role quando disponivel; fallback para chave local
 // Usage: node automation/run.js
 // ============================================================
 const path = require('path');
@@ -28,107 +28,90 @@ const { createClient } = require('@supabase/supabase-js');
 const { QueueRunner } = require('./queue');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const SUPABASE_KEY = SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-    console.error('❌ SUPABASE_URL e SUPABASE_KEY não encontrados no .env');
+    console.error('SUPABASE_URL e SUPABASE_KEY nao encontrados no .env');
     process.exit(1);
 }
 
 async function main() {
-    console.log('🚀 DS-160 Automation Runner');
-    console.log('━'.repeat(50));
-    console.log(`📡 Supabase: ${SUPABASE_URL}`);
-    console.log(`🖥️  Headless: ${process.env.HEADLESS || 'false'}`);
-    console.log('━'.repeat(50));
+    console.log('DS-160 Automation Runner');
+    console.log('='.repeat(50));
+    console.log(`Supabase: ${SUPABASE_URL}`);
+    console.log(`Headless: ${process.env.HEADLESS || 'false'}`);
+    console.log(`Auth mode: ${SUPABASE_SERVICE_ROLE_KEY ? 'service_role' : 'fallback key'}`);
+    console.log('='.repeat(50));
 
-    // Create Supabase client
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false }
+    });
 
-    // Authenticate worker (optional — RLS now allows anon reads on config tables)
-    const workerEmail = process.env.WORKER_EMAIL;
-    const workerPassword = process.env.WORKER_PASSWORD;
-    if (workerEmail && workerPassword) {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-            email: workerEmail,
-            password: workerPassword,
-        });
-        if (authError) {
-            console.warn(`⚠️ Worker auth failed: ${authError.message} — continuando como anon`);
-        } else {
-            console.log(`🔐 Worker autenticado: ${authData.user.email}`);
-        }
-    }
-
-    // Quick check: how many ds160 + todo applicants?
     const { data: queue } = await supabase
         .from('applicants')
         .select('id, full_name, sort_order')
         .eq('stage', 'ds160')
         .eq('status', 'todo');
 
-    // Load headless setting from DB (overrides .env)
     const { data: settings } = await supabase.from('settings').select('key_name, key_value');
     if (settings) {
         const headlessSetting = settings.find(s => s.key_name === 'headless');
         if (headlessSetting) {
             process.env.HEADLESS = headlessSetting.key_value;
-            console.log(`🖥️  Headless (from DB): ${headlessSetting.key_value}`);
+            console.log(`Headless (from DB): ${headlessSetting.key_value}`);
         }
     }
 
-    console.log(`\n📋 DS-160 Queue: ${queue?.length || 0} applicant(s) waiting`);
+    console.log(`\nDS-160 Queue: ${queue?.length || 0} applicant(s) waiting`);
     if (queue && queue.length > 0) {
-        queue.forEach(a => console.log(`   → ${a.full_name} [sort:${a.sort_order ?? '?'}]`));
+        queue.forEach(a => console.log(`  -> ${a.full_name} [sort:${a.sort_order ?? '?'}]`));
     }
 
-    // Create and start queue runner
     const runner = new QueueRunner(supabase, 'capmonster');
 
-    // Emitter: log status updates to console
     const emitter = (status) => {
         switch (status.type) {
             case 'queue-empty':
-                console.log(`\n⏳ Fila vazia — próxima verificação em ${status.nextCheck}s`);
+                console.log(`\nQueue vazia - proxima verificacao em ${status.nextCheck}s`);
                 break;
             case 'doing':
-                console.log(`🔄 Preenchendo: ${status.applicantName} — ${status.page}`);
+                console.log(`Preenchendo: ${status.applicantName} - ${status.page}`);
                 break;
             case 'done':
-                console.log(`\n✅ Concluído: ${status.applicantName}`);
+                console.log(`\nConcluido: ${status.applicantName}`);
                 break;
             case 'error':
-                console.error(`\n❌ Erro: ${status.applicantName} — ${status.error}`);
+                console.error(`\nErro: ${status.applicantName} - ${status.error}`);
                 break;
             case 'retrying':
-                console.log(`♻️ Retry #${status.retryNumber}: ${status.applicantName} — aguardando ${status.delay}s`);
+                console.log(`Retry #${status.retryNumber}: ${status.applicantName} - aguardando ${status.delay}s`);
                 break;
             case 'waiting':
                 if (status.countdown % 30 === 0 && status.countdown > 0) {
-                    console.log(`⏳ ${status.message}`);
+                    console.log(status.message);
                 }
                 break;
             case 'paused':
-                console.log(`⏸️ ${status.message}`);
+                console.log(status.message);
                 break;
             default:
-                console.log(`📋 ${JSON.stringify(status)}`);
+                console.log(JSON.stringify(status));
         }
     };
 
-    // Handle Ctrl+C gracefully
     process.on('SIGINT', async () => {
-        console.log('\n\n🛑 Parando runner...');
+        console.log('\nParando runner...');
         await runner.stop();
-        console.log('👋 Runner finalizado.');
+        console.log('Runner finalizado.');
         process.exit(0);
     });
 
-    console.log('\n🏁 Iniciando Queue Runner...\n');
+    console.log('\nIniciando Queue Runner...\n');
     await runner.start(emitter);
 }
 
 main().catch(err => {
-    console.error('💥 Erro fatal:', err);
+    console.error('Erro fatal:', err);
     process.exit(1);
 });
