@@ -197,7 +197,8 @@ async function main() {
             ]);
 
         const settingsMap = Object.fromEntries((proxySettings || []).map(row => [row.key_name, row.key_value]));
-        const legacyProxyUrl = claimedApp.proxy_session && /^https?:\/\//i.test(claimedApp.proxy_session)
+        const selectedProvider = String(settingsMap.proxy_provider || process.env.PROXY_PROVIDER || 'dataimpulse').trim().toLowerCase();
+        const legacyProxyUrl = selectedProvider !== 'apify' && claimedApp.proxy_session && /^https?:\/\//i.test(claimedApp.proxy_session)
             ? claimedApp.proxy_session
             : null;
         const sessionId = legacyProxyUrl
@@ -214,7 +215,7 @@ async function main() {
             throw new Error('Proxy obrigatorio para DS-160, mas nenhuma configuracao valida foi encontrada');
         }
 
-        if (!claimedApp.proxy_session || legacyProxyUrl) {
+        if (!claimedApp.proxy_session || legacyProxyUrl || selectedProvider === 'apify') {
             await supabase.from('applications').update({
                 proxy_session: resolvedProxy.sessionId,
                 proxy_session_created_at: new Date().toISOString(),
