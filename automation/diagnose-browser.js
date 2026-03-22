@@ -171,6 +171,20 @@ async function runTarget(browser, identity, proxyOpts, runDir, targetName, optio
                 configurable: true,
             });
         } catch {}
+        try {
+            if (!window.chrome) window.chrome = {};
+            if (!window.chrome.runtime) {
+                window.chrome.runtime = {
+                    onMessage: { addListener: () => {} },
+                    sendMessage: () => {},
+                };
+            }
+            if (!window.chrome.app) {
+                window.chrome.app = { isInstalled: false };
+            }
+            if (!window.chrome.csi) window.chrome.csi = () => ({});
+            if (!window.chrome.loadTimes) window.chrome.loadTimes = () => ({});
+        } catch {}
     });
 
     const page = await context.newPage();

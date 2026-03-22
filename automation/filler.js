@@ -4,7 +4,7 @@
 const { chromium } = require('patchright');
 const path = require('path');
 const fs = require('fs');
-const { solveCaptcha, solveCaptchaBase64 } = require('./captcha');
+const { solveCaptcha, solveCaptchaBase64, solveTspdCaptcha } = require('./captcha');
 const { humanDelay, humanType, humanClick, humanSelect, thinkingPause, maybeRandomScroll } = require('./helpers/human-behavior');
 // New helpers for Fly stability
 const { buildFlyIdentityProfile, buildLaunchOptions, buildContextOptions } = require('./helpers/fly-profile');
@@ -39,6 +39,57 @@ async function logPageEvent(page, event, data = {}) {
     };
     logFillerEvent(event, payload);
     return state;
+}
+
+async function readTspdChallengeArtifacts(page, attempt) {
+    const captchaImg = page.locator('img[src^="data:image"]').first();
+    await captchaImg.waitFor({ state: 'visible', timeout: 5000 });
+
+    const src = await captchaImg.getAttribute('src');
+    if (!src || !src.startsWith('data:image')) {
+        throw new Error('TSPD captcha sem data URL');
+    }
+
+    const imageBase64 = src.split(',', 2)[1] || '';
+    const audioSrc = await page.locator('audio#captcha_audio').first().getAttribute('src').catch(() => null);
+    const audioBase64 = audioSrc && audioSrc.startsWith('data:audio') ? (audioSrc.split(',', 2)[1] || '') : null;
+
+    return {
+        imageBase64,
+        audioBase64,
+        imagePath: path.join(TMP, `tspd_captcha_${attempt}.png`),
+        audioPath: path.join(TMP, `tspd_captcha_${attempt}.mp3`),
+    };
+}
+
+function persistBase64Artifact(filePath, base64) {
+    if (!base64) return;
+    fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
+}
+
+async function refreshTspdChallenge(page, reason = 'retry') {
+    const refresh = page.locator('a#bottle, a[onclick*="reload"], a[href*="javascript"]').first();
+    const hadRefresh = await refresh.isVisible({ timeout: 1000 }).catch(() => false);
+    if (!hadRefresh) return false;
+
+    const currentSrc = await page.locator('img[src^="data:image"]').first().getAttribute('src').catch(() => null);
+    await refresh.click({ timeout: 3000 }).catch(() => {});
+
+    try {
+        await page.waitForFunction(
+            prev => {
+                const img = document.querySelector('img[src^="data:image"]');
+                return !!img && !!img.getAttribute('src') && img.getAttribute('src') !== prev;
+            },
+            currentSrc,
+            { timeout: 8000 }
+        );
+    } catch {
+        await sleep(1500);
+    }
+
+    console.log(`[Filler] TSPD captcha refresh aplicado (${reason})`);
+    return true;
 }
 
 // ====================================================================
@@ -269,6 +320,20 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                         configurable: true,
                     });
                 } catch {}
+                try {
+                    if (!window.chrome) window.chrome = {};
+                    if (!window.chrome.runtime) {
+                        window.chrome.runtime = {
+                            onMessage: { addListener: () => {} },
+                            sendMessage: () => {},
+                        };
+                    }
+                    if (!window.chrome.app) {
+                        window.chrome.app = { isInstalled: false };
+                    }
+                    if (!window.chrome.csi) window.chrome.csi = () => ({});
+                    if (!window.chrome.loadTimes) window.chrome.loadTimes = () => ({});
+                } catch {}
             });
 
             page = await context.newPage();
@@ -425,17 +490,32 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 console.log('[Filler] ⚠️ TSPD Anti-Bot Challenge detectado');
                 let tspdSolved = false;
                 const MAX_TSPD = 10;
+                const attemptedAnswers = new Set();
                 for (let tspd = 1; tspd <= MAX_TSPD; tspd++) {
                     try {
-                        const captchaImg = page.locator('img[src^="data:image"]').first();
-                        await captchaImg.waitFor({ state: 'visible', timeout: 5000 });
-                        const imgPath = path.join(TMP, 'tspd_captcha.png');
-                        await captchaImg.screenshot({ path: imgPath });
-
                         const keys = { capmonsterKey: config.capmonster_key, aiVisionKey: config.ai_vision_key };
-                        const answer = await solveCaptcha(imgPath, captchaMode, keys);
+                        if (tspd > 1) {
+                            await refreshTspdChallenge(page, `attempt_${tspd}`);
+                        }
+
+                        const artifacts = await readTspdChallengeArtifacts(page, tspd);
+                        persistBase64Artifact(artifacts.imagePath, artifacts.imageBase64);
+                        persistBase64Artifact(artifacts.audioPath, artifacts.audioBase64);
+
+                        let answer = await solveTspdCaptcha(artifacts.imagePath, keys);
+                        if (attemptedAnswers.has(answer)) {
+                            console.warn(`[Filler] TSPD answer repetida (${answer}) - forçando refresh`);
+                            await refreshTspdChallenge(page, `duplicate_${tspd}`);
+                            const refreshedArtifacts = await readTspdChallengeArtifacts(page, `${tspd}_refresh`);
+                            persistBase64Artifact(refreshedArtifacts.imagePath, refreshedArtifacts.imageBase64);
+                            persistBase64Artifact(refreshedArtifacts.audioPath, refreshedArtifacts.audioBase64);
+                            answer = await solveTspdCaptcha(refreshedArtifacts.imagePath, keys);
+                        }
+
+                        attemptedAnswers.add(answer);
                         console.log(`[Filler] TSPD Captcha answer (${tspd}/${MAX_TSPD}): ${answer}`);
 
+                        await page.locator('input#ans').fill('');
                         await page.locator('input#ans').fill(answer);
                         await humanDelay(300, 800); // Human-like pause before clicking
                         await page.locator('button#jar').click();

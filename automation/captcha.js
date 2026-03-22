@@ -1,56 +1,41 @@
-// Captcha solver module — dual mode: CapMonster API or AI Vision
 const fs = require('fs');
 
-/**
- * Solve a captcha image using the configured mode.
- * @param {string} imagePath - Absolute path to captcha PNG
- * @param {'capmonster'|'ai_vision'} mode - Solver to use
- * @param {object} keys - { capmonsterKey, aiVisionKey }
- * @returns {Promise<string>} The captcha text
- */
-async function solveCaptcha(imagePath, mode, keys) {
+async function solveCaptcha(imagePath, mode, keys, opts = {}) {
     const imageBase64 = fs.readFileSync(imagePath, 'base64');
-    return _solveWithFallback(imageBase64, mode, keys);
+    return _solveWithFallback(imageBase64, mode, keys, opts);
 }
 
-/**
- * Internal: try primary mode, fallback to secondary if available.
- */
-async function _solveWithFallback(imageBase64, mode, keys) {
-    const fallbackMode = mode === 'capmonster' ? 'ai_vision' : 'capmonster';
+async function _solveWithFallback(imageBase64, mode, keys, opts = {}) {
+    const primaryMode = mode === 'ai_vision' ? 'ai_vision' : 'capmonster';
+    const fallbackMode = primaryMode === 'capmonster' ? 'ai_vision' : 'capmonster';
     const fallbackKey = fallbackMode === 'capmonster' ? keys.capmonsterKey : keys.aiVisionKey;
 
     try {
-        const result = mode === 'capmonster'
+        const result = primaryMode === 'capmonster'
             ? await solveWithCapMonster(imageBase64, keys.capmonsterKey)
-            : await solveWithAIVision(imageBase64, keys.aiVisionKey);
-        return result;
+            : await solveWithAIVision(imageBase64, keys.aiVisionKey, opts.promptText);
+        return normalizeCaptchaAnswer(result, opts);
     } catch (primaryErr) {
-        console.warn(`[Captcha] ⚠️ ${mode} falhou: ${primaryErr.message}`);
+        console.warn(`[Captcha] ${primaryMode} falhou: ${primaryErr.message}`);
 
-        if (fallbackKey) {
-            console.log(`[Captcha] 🔄 Tentando fallback: ${fallbackMode}`);
-            try {
-                const result = fallbackMode === 'capmonster'
-                    ? await solveWithCapMonster(imageBase64, keys.capmonsterKey)
-                    : await solveWithAIVision(imageBase64, keys.aiVisionKey);
-                console.log(`[Captcha] ✅ Fallback ${fallbackMode} funcionou`);
-                return result;
-            } catch (fallbackErr) {
-                console.error(`[Captcha] ❌ Fallback ${fallbackMode} também falhou: ${fallbackErr.message}`);
-                throw new Error(`Captcha: ambos modos falharam. ${mode}: ${primaryErr.message} | ${fallbackMode}: ${fallbackErr.message}`);
-            }
+        if (!fallbackKey) throw primaryErr;
+
+        console.log(`[Captcha] Tentando fallback: ${fallbackMode}`);
+        try {
+            const result = fallbackMode === 'capmonster'
+                ? await solveWithCapMonster(imageBase64, keys.capmonsterKey)
+                : await solveWithAIVision(imageBase64, keys.aiVisionKey, opts.promptText);
+            console.log(`[Captcha] Fallback ${fallbackMode} funcionou`);
+            return normalizeCaptchaAnswer(result, opts);
+        } catch (fallbackErr) {
+            console.error(`[Captcha] Fallback ${fallbackMode} tambem falhou: ${fallbackErr.message}`);
+            throw new Error(`Captcha: ambos modos falharam. ${primaryMode}: ${primaryErr.message} | ${fallbackMode}: ${fallbackErr.message}`);
         }
-
-        throw primaryErr;
     }
 }
 
-// ============================================================
-// CAPMONSTER
-// ============================================================
 async function solveWithCapMonster(imageBase64, apiKey) {
-    if (!apiKey) throw new Error('CapMonster API key não configurada');
+    if (!apiKey) throw new Error('CapMonster API key nao configurada');
 
     const createRes = await fetch('https://api.capmonster.cloud/createTask', {
         method: 'POST',
@@ -61,11 +46,9 @@ async function solveWithCapMonster(imageBase64, apiKey) {
         })
     });
     const createData = await createRes.json();
-    if (createData.errorId) throw new Error('CapMonster: ' + (createData.errorCode || 'unknown'));
+    if (createData.errorId) throw new Error(`CapMonster: ${createData.errorCode || 'unknown'}`);
 
     const taskId = createData.taskId;
-
-    // Poll for result (max 40s)
     for (let i = 0; i < 20; i++) {
         await sleep(2000);
         const res = await fetch('https://api.capmonster.cloud/getTaskResult', {
@@ -75,16 +58,14 @@ async function solveWithCapMonster(imageBase64, apiKey) {
         });
         const result = await res.json();
         if (result.status === 'ready') return result.solution.text;
-        if (result.errorId) throw new Error('CapMonster poll: ' + result.errorCode);
+        if (result.errorId) throw new Error(`CapMonster poll: ${result.errorCode}`);
     }
+
     throw new Error('CapMonster timeout');
 }
 
-// ============================================================
-// AI VISION (Claude API)
-// ============================================================
-async function solveWithAIVision(imageBase64, apiKey) {
-    if (!apiKey) throw new Error('AI Vision API key não configurada');
+async function solveWithAIVision(imageBase64, apiKey, promptText) {
+    if (!apiKey) throw new Error('AI Vision API key nao configurada');
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -105,7 +86,7 @@ async function solveWithAIVision(imageBase64, apiKey) {
                     },
                     {
                         type: 'text',
-                        text: 'Read the CAPTCHA text in this image. Reply with ONLY the characters, nothing else. No spaces, no explanation.'
+                        text: promptText || 'Read the CAPTCHA text in this image. Reply with ONLY the characters, nothing else. No spaces, no explanation.'
                     }
                 ]
             }]
@@ -114,7 +95,7 @@ async function solveWithAIVision(imageBase64, apiKey) {
 
     if (!res.ok) {
         const err = await res.text();
-        throw new Error('AI Vision error: ' + err);
+        throw new Error(`AI Vision error: ${err}`);
     }
 
     const data = await res.json();
@@ -123,27 +104,40 @@ async function solveWithAIVision(imageBase64, apiKey) {
     return answer;
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function normalizeCaptchaAnswer(raw, opts = {}) {
+    const preserveCase = opts.preserveCase !== false;
+    const minLength = Number.isFinite(opts.minLength) ? opts.minLength : 1;
+    const maxLength = Number.isFinite(opts.maxLength) ? opts.maxLength : 16;
+    const value = String(raw || '')
+        .replace(/\s+/g, '')
+        .replace(/[^A-Za-z0-9]/g, '');
 
-/**
- * Solve captcha directly from base64 string (no file needed).
- */
-async function solveCaptchaBase64(imageBase64, mode, keys) {
-    return _solveWithFallback(imageBase64, mode, keys);
+    const normalized = preserveCase ? value : value.toUpperCase();
+    if (!normalized || normalized.length < minLength) {
+        throw new Error(`Captcha answer invalida: "${raw}"`);
+    }
+
+    return normalized.slice(0, maxLength);
 }
 
-/**
- * Solve hCaptcha via CapMonster HCaptchaTaskProxyless.
- * Returns the token to inject into h-captcha-response.
- * @param {string} websiteUrl - Page URL where hCaptcha is rendered
- * @param {string} siteKey - hCaptcha site key (from data-sitekey attribute)
- * @param {string} capmonsterKey - CapMonster API key
- * @returns {Promise<string>} hCaptcha response token
- */
-async function solveHCaptcha(websiteUrl, siteKey, capmonsterKey) {
-    if (!capmonsterKey) throw new Error('CapMonster API key não configurada');
+async function solveCaptchaBase64(imageBase64, mode, keys, opts = {}) {
+    return _solveWithFallback(imageBase64, mode, keys, opts);
+}
 
-    console.log(`[Captcha] 🔐 Solving hCaptcha (sitekey: ${siteKey.substring(0, 12)}...)`);
+async function solveTspdCaptcha(imagePath, keys) {
+    const preferredMode = keys.aiVisionKey ? 'ai_vision' : 'capmonster';
+    return solveCaptcha(imagePath, preferredMode, keys, {
+        promptText: 'Read exactly the CAPTCHA text in this image. Preserve uppercase and lowercase letters. Reply with ONLY the captcha characters. No spaces, no punctuation, no explanation.',
+        preserveCase: true,
+        minLength: 4,
+        maxLength: 8,
+    });
+}
+
+async function solveHCaptcha(websiteUrl, siteKey, capmonsterKey) {
+    if (!capmonsterKey) throw new Error('CapMonster API key nao configurada');
+
+    console.log(`[Captcha] Solving hCaptcha (sitekey: ${siteKey.substring(0, 12)}...)`);
 
     const createRes = await fetch('https://api.capmonster.cloud/createTask', {
         method: 'POST',
@@ -158,12 +152,11 @@ async function solveHCaptcha(websiteUrl, siteKey, capmonsterKey) {
         })
     });
     const createData = await createRes.json();
-    if (createData.errorId) throw new Error('CapMonster hCaptcha: ' + (createData.errorCode || 'unknown'));
+    if (createData.errorId) throw new Error(`CapMonster hCaptcha: ${createData.errorCode || 'unknown'}`);
 
     const taskId = createData.taskId;
-    console.log(`[Captcha] ⏳ Task ID: ${taskId} — aguardando solução...`);
+    console.log(`[Captcha] Task ID: ${taskId} aguardando solucao...`);
 
-    // Poll for result (max 120s — hCaptcha pode demorar mais)
     for (let i = 0; i < 40; i++) {
         await sleep(3000);
         const res = await fetch('https://api.capmonster.cloud/getTaskResult', {
@@ -173,12 +166,17 @@ async function solveHCaptcha(websiteUrl, siteKey, capmonsterKey) {
         });
         const result = await res.json();
         if (result.status === 'ready') {
-            console.log(`[Captcha] ✅ hCaptcha resolvido! (${(i + 1) * 3}s)`);
+            console.log(`[Captcha] hCaptcha resolvido (${(i + 1) * 3}s)`);
             return result.solution.gRecaptchaResponse;
         }
-        if (result.errorId) throw new Error('CapMonster hCaptcha poll: ' + result.errorCode);
+        if (result.errorId) throw new Error(`CapMonster hCaptcha poll: ${result.errorCode}`);
     }
+
     throw new Error('CapMonster hCaptcha timeout (120s)');
 }
 
-module.exports = { solveCaptcha, solveCaptchaBase64, solveHCaptcha };
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+module.exports = { solveCaptcha, solveCaptchaBase64, solveTspdCaptcha, solveHCaptcha };

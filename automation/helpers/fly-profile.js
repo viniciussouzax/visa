@@ -74,18 +74,7 @@ function buildContextOptions(identity) {
         isMobile: false,
         hasTouch: false,
         javaScriptEnabled: true,
-        bypassCSP: true,
         ignoreHTTPSErrors: true,
-        extraHTTPHeaders: {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': identity.locale === 'pt-BR' ? 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7' : 'en-US,en;q=0.9',
-            'DNT': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'Upgrade-Insecure-Requests': '1',
-        },
         recordVideo: {
             dir: '/tmp/videos',
             size: { width: 1280, height: 720 },
