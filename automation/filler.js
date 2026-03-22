@@ -114,13 +114,26 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
     let browser, page;
     const isHeadless = process.env.HEADLESS !== 'false';
     const { buildProxyOpts } = require('./helpers/proxy-helper');
+    const proxyProvider = config.proxy_provider || process.env.PROXY_PROVIDER || 'dataimpulse';
+    const proxySessionId = config.proxy_session_id || config.session_id || `ds160_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const proxyUrl = config.proxy_url || process.env.PROXY_URL || null;
-    const proxyOpts = proxyUrl
-        ? buildProxyOpts(proxyUrl, {
-            countries: config.proxy_countries || 'us,br',
-            sessionId: config.session_id || `ds160_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        })
-        : undefined;
+    const proxyOpts = buildProxyOpts(
+        proxyProvider === 'apify'
+            ? {
+                provider: 'apify',
+                password: config.apify_proxy_password || process.env.APIFY_PROXY_PASSWORD,
+                groups: config.apify_proxy_groups || process.env.APIFY_PROXY_GROUPS,
+                country: config.apify_proxy_country || process.env.APIFY_PROXY_COUNTRY,
+                sessionId: proxySessionId,
+            }
+            : {
+                provider: 'dataimpulse',
+                url: proxyUrl,
+                countries: config.proxy_countries || process.env.PROXY_COUNTRIES || 'us,br',
+                sessionId: proxySessionId,
+            }
+    );
+    if (!proxyOpts) throw new Error('Proxy obrigatorio ausente ou invalido para o worker DS-160');
     let launchArgs = [];
     let contextOpts = null;
     const visited = [];
@@ -257,8 +270,8 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
             });
 
             page = await context.newPage();
-            page.setDefaultTimeout(proxyUrl ? 60000 : 15000);
-            page.setDefaultNavigationTimeout(proxyUrl ? 90000 : 30000);
+            page.setDefaultTimeout(60000);
+            page.setDefaultNavigationTimeout(90000);
             page.on('dialog', async d => d.accept().catch(() => { }));
 
             // Save session state periodically (for retry resilience)
@@ -269,7 +282,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 } catch { /* ignore errors during save */ }
             };
 
-            console.log(`[Filler] Novo browser criado (headless=${isHeadless}, proxy=${!!proxyUrl}, video=true)`);
+            console.log(`[Filler] Novo browser criado (headless=${isHeadless}, proxy=true, provider=${proxyProvider}, video=true)`);
         }
 
         // =============================================================
@@ -389,40 +402,11 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 }
             }
 
-            // Fallback: try without proxy if all proxy attempts failed
-            if (!navSuccess && proxyUrl) {
-                console.log('[Filler] 🔄 Todas as tentativas com proxy falharam — tentando conexão direta...');
-                try {
-                    await browser.close();
-                } catch {}
-
-                // Relaunch without proxy
-                const directLaunchArgs = launchArgs.filter(a => !a.includes('proxy'));
-                browser = await chromium.launch({
-                    headless: isHeadless,
-                    args: directLaunchArgs,
-                });
-                const directContext = await browser.newContext({
-                    ...contextOpts,
-                    proxy: undefined,
-                });
-                page = await directContext.newPage();
-                page.setDefaultTimeout(15000);
-                page.setDefaultNavigationTimeout(30000);
-                page.on('dialog', async d => d.accept().catch(() => {}));
-
-                console.log('[Filler] 🌐 Navegando sem proxy...');
-                await page.goto(DS160_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-                await waitForPageReady(page);
-                navSuccess = true;
-                console.log('[Filler] ✅ DS-160 carregado via conexão direta');
-            }
-
             if (!navSuccess) {
                 const state = await getPageState(page);
                 return {
                     success: false,
-                    error: 'Falha ao carregar DS-160 após todas as tentativas (proxy + direto)',
+                    error: 'Falha ao carregar DS-160 após todas as tentativas com proxy',
                     cause: 'navigation_failed',
                     pageState: state.type,
                     url: state.url,

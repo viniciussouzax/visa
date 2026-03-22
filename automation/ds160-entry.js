@@ -183,38 +183,56 @@ async function main() {
             process.exit(1);
         }
 
-        const { resolveProxyUrl, resolveProxyCountries } = require('./helpers/proxy-helper');
-        let proxyUrl = null;
-        let proxyCountries = 'us,br';
+        const { buildResolvedProxyConfig } = require('./helpers/proxy-helper');
+        const { data: proxySettings } = await supabase
+            .from('settings')
+            .select('key_name, key_value')
+            .in('key_name', [
+                'proxy_provider',
+                'proxy_url',
+                'proxy_countries',
+                'apify_proxy_password',
+                'apify_proxy_groups',
+                'apify_proxy_country',
+            ]);
 
-        if (claimedApp.proxy_session) {
-            proxyUrl = claimedApp.proxy_session;
-            console.log(`Proxy (retry): ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
-        } else {
-            const { data: proxySettings } = await supabase
-                .from('settings')
-                .select('key_name, key_value')
-                .in('key_name', ['proxy_url', 'proxy_countries']);
+        const settingsMap = Object.fromEntries((proxySettings || []).map(row => [row.key_name, row.key_value]));
+        const legacyProxyUrl = claimedApp.proxy_session && /^https?:\/\//i.test(claimedApp.proxy_session)
+            ? claimedApp.proxy_session
+            : null;
+        const sessionId = legacyProxyUrl
+            ? null
+            : (claimedApp.proxy_session || `app_${String(claimedApp.id).replace(/[^a-zA-Z0-9]/g, '').slice(0, 18)}_${Date.now()}`);
 
-            const urlRow = proxySettings?.find(r => r.key_name === 'proxy_url');
-            const countriesRow = proxySettings?.find(r => r.key_name === 'proxy_countries');
+        const resolvedProxy = buildResolvedProxyConfig({
+            settingsMap,
+            override: legacyProxyUrl || undefined,
+            sessionId,
+        });
 
-            proxyUrl = resolveProxyUrl({ settingsRow: urlRow });
-            proxyCountries = resolveProxyCountries({ settingsRow: countriesRow });
-
-            if (proxyUrl) {
-                await supabase.from('applications').update({
-                    proxy_session: proxyUrl,
-                    proxy_session_created_at: new Date().toISOString()
-                }).eq('id', claimedApp.id);
-                console.log(`Proxy: ${proxyUrl.replace(/\/\/.*@/, '//***@')} | countries: ${proxyCountries}`);
-            } else {
-                console.log('Sem proxy configurado - usando IP direto');
-            }
+        if (!resolvedProxy) {
+            throw new Error('Proxy obrigatorio para DS-160, mas nenhuma configuracao valida foi encontrada');
         }
 
-        if (proxyUrl) config.proxy_url = proxyUrl;
-        config.proxy_countries = proxyCountries;
+        if (!claimedApp.proxy_session || legacyProxyUrl) {
+            await supabase.from('applications').update({
+                proxy_session: resolvedProxy.sessionId,
+                proxy_session_created_at: new Date().toISOString(),
+            }).eq('id', claimedApp.id);
+        }
+
+        config.proxy_provider = resolvedProxy.provider;
+        config.proxy_session_id = resolvedProxy.sessionId;
+        config.proxy_countries = resolvedProxy.countries || settingsMap.proxy_countries || process.env.PROXY_COUNTRIES || 'us,br';
+        if (resolvedProxy.provider === 'apify') {
+            config.apify_proxy_password = resolvedProxy.password;
+            config.apify_proxy_groups = resolvedProxy.groups;
+            config.apify_proxy_country = resolvedProxy.country;
+            console.log(`Proxy: apify | groups=${resolvedProxy.groups} | country=${resolvedProxy.country || 'auto'} | session=${resolvedProxy.sessionId}`);
+        } else {
+            config.proxy_url = resolvedProxy.url;
+            console.log(`Proxy: dataimpulse | countries=${resolvedProxy.countries} | session=${resolvedProxy.sessionId}`);
+        }
 
         console.log(`Application: ${claimedApp.id} (status: ${claimedApp.fill_status})`);
 

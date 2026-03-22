@@ -1,93 +1,192 @@
 // ============================================================
-// Proxy Helper — Centralised proxy config for DataImpulse
-// Single source of truth: reads from DB settings or env.
-// All automation modules (DS-160, AIS) consume this helper.
+// Proxy Helper - camada unica de configuracao de proxy
+// Suporta providers:
+//   - dataimpulse
+//   - apify
 // ============================================================
+'use strict';
 
-/**
- * Build Playwright-compatible proxy opts from a raw proxy URL.
- *
- * DataImpulse username modifiers (appended to base username):
- *   __cr.XX,YY   → country targeting (e.g. __cr.us,br)
- *   __s.XXXXX    → sticky session (same IP for entire flow)
- *
- * @param {string} rawUrl  - Full proxy URL (http://user:pass@host:port)
- * @param {object} [opts]
- * @param {string} [opts.countries]  - Comma-separated country codes (default: from DB or 'us,br')
- * @param {string} [opts.sessionId] - Sticky session id (auto-generated if omitted)
- * @returns {{ server: string, username?: string, password?: string } | null}
- */
-function buildProxyOpts(rawUrl, opts = {}) {
-    if (!rawUrl) return null;
-
-    try {
-        const parsed = new URL(rawUrl);
-        if (!parsed.hostname || !parsed.port) {
-            throw new Error(`URL incompleta: hostname=${parsed.hostname}, port=${parsed.port}`);
-        }
-
-        let username = decodeURIComponent(parsed.username) || '';
-
-        // ── Geo-targeting ──
-        const countries = opts.countries || 'us,br';
-        if (username && !username.includes('__cr.')) {
-            username = `${username}__cr.${countries}`;
-        }
-
-        // ── Sticky session ──
-        const sessionId = opts.sessionId || `auto_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        if (username && !username.includes('__s.')) {
-            username = `${username}__s.${sessionId}`;
-        }
-
-        const proxyOpts = {
-            server: `${parsed.protocol}//${parsed.hostname}:${parsed.port}`,
-            username: username || undefined,
-            password: decodeURIComponent(parsed.password) || undefined,
-        };
-
-        console.log(`[Proxy] Sticky: ${parsed.hostname}:${parsed.port} | countries=${countries} | session=${sessionId}`);
-        return proxyOpts;
-
-    } catch (e) {
-        throw new Error(`Proxy URL invalida (${rawUrl}): ${e.message}`);
-    }
+function sanitizeSessionId(sessionId) {
+    const clean = String(sessionId || '')
+        .replace(/[^a-zA-Z0-9._~]/g, '')
+        .slice(0, 48);
+    return clean || `s${Date.now()}`;
 }
 
-/**
- * Resolve the proxy URL from available sources (priority order):
- *   1. Explicit override (e.g. retry session)
- *   2. Settings table row for 'proxy_url'
- *   3. process.env.PROXY_URL
- *
- * @param {object} [sources]
- * @param {string} [sources.override]       - Explicit URL (e.g. from application.proxy_session)
- * @param {object} [sources.settingsRow]    - Row from settings table { key_value }
- * @returns {string|null}
- */
+function buildDataImpulseProxyOpts(rawUrl, opts = {}) {
+    if (!rawUrl) return null;
+
+    const parsed = new URL(rawUrl);
+    if (!parsed.hostname || !parsed.port) {
+        throw new Error(`URL incompleta: hostname=${parsed.hostname}, port=${parsed.port}`);
+    }
+
+    let username = decodeURIComponent(parsed.username || '');
+    const countries = (opts.countries || 'us,br').trim();
+    const sessionId = sanitizeSessionId(opts.sessionId || `auto_${Date.now()}`);
+
+    if (username && !username.includes('__cr.')) {
+        username = `${username}__cr.${countries}`;
+    }
+    if (username && !username.includes('__s.')) {
+        username = `${username}__s.${sessionId}`;
+    }
+
+    return {
+        provider: 'dataimpulse',
+        server: `${parsed.protocol}//${parsed.hostname}:${parsed.port}`,
+        username: username || undefined,
+        password: decodeURIComponent(parsed.password || '') || undefined,
+        sessionId,
+        logSafe: `${parsed.protocol}//***@${parsed.hostname}:${parsed.port}`,
+    };
+}
+
+function buildApifyProxyOpts(opts = {}) {
+    const password = opts.password || process.env.APIFY_PROXY_PASSWORD || '';
+    if (!password) return null;
+
+    const server = opts.server || process.env.APIFY_PROXY_SERVER || 'http://proxy.apify.com:8000';
+    const sessionId = sanitizeSessionId(opts.sessionId || `auto_${Date.now()}`);
+    const groups = (opts.groups || process.env.APIFY_PROXY_GROUPS || 'RESIDENTIAL')
+        .split(',')
+        .map(v => v.trim())
+        .filter(Boolean)
+        .join('+');
+    const country = (opts.country || process.env.APIFY_PROXY_COUNTRY || '')
+        .trim()
+        .toUpperCase();
+
+    const usernameParts = [];
+    if (groups) usernameParts.push(`groups-${groups}`);
+    usernameParts.push(`session-${sessionId}`);
+    if (country) usernameParts.push(`country-${country}`);
+
+    return {
+        provider: 'apify',
+        server,
+        username: usernameParts.join(','),
+        password,
+        sessionId,
+        logSafe: `${server.replace(/\/\/.*$/, '//')}***`,
+    };
+}
+
+function buildProxyOpts(proxyConfigOrUrl, opts = {}) {
+    if (!proxyConfigOrUrl) return null;
+
+    if (typeof proxyConfigOrUrl === 'string') {
+        return buildDataImpulseProxyOpts(proxyConfigOrUrl, opts);
+    }
+
+    const provider = String(proxyConfigOrUrl.provider || 'dataimpulse').trim().toLowerCase();
+    if (provider === 'apify') {
+        return buildApifyProxyOpts({
+            password: proxyConfigOrUrl.password,
+            groups: proxyConfigOrUrl.groups,
+            country: proxyConfigOrUrl.country,
+            server: proxyConfigOrUrl.server,
+            sessionId: proxyConfigOrUrl.sessionId || opts.sessionId,
+        });
+    }
+
+    return buildDataImpulseProxyOpts(proxyConfigOrUrl.url, {
+        countries: proxyConfigOrUrl.countries || opts.countries,
+        sessionId: proxyConfigOrUrl.sessionId || opts.sessionId,
+    });
+}
+
+function resolveProxyProvider(sources = {}) {
+    const provider = sources.override
+        || (sources.settingsMap && sources.settingsMap.proxy_provider)
+        || process.env.PROXY_PROVIDER
+        || 'dataimpulse';
+    return String(provider).trim().toLowerCase();
+}
+
 function resolveProxyUrl(sources = {}) {
     const url = sources.override
         || (sources.settingsRow && sources.settingsRow.key_value)
+        || (sources.settingsMap && sources.settingsMap.proxy_url)
         || process.env.PROXY_URL
         || null;
 
-    if (!url || url.trim() === '') return null;
-    return url.trim();
+    if (!url || String(url).trim() === '') return null;
+    return String(url).trim();
 }
 
-/**
- * Resolve proxy countries from available sources:
- *   1. Settings table row for 'proxy_countries'
- *   2. Default 'us,br'
- *
- * @param {object} [sources]
- * @param {object} [sources.settingsRow]  - Row from settings table { key_value }
- * @returns {string}
- */
 function resolveProxyCountries(sources = {}) {
-    const countries = (sources.settingsRow && sources.settingsRow.key_value)
-        || 'us,br';
-    return countries.trim();
+    return String(
+        (sources.settingsRow && sources.settingsRow.key_value)
+        || (sources.settingsMap && sources.settingsMap.proxy_countries)
+        || process.env.PROXY_COUNTRIES
+        || 'us,br'
+    ).trim();
 }
 
-module.exports = { buildProxyOpts, resolveProxyUrl, resolveProxyCountries };
+function resolveApifyPassword(sources = {}) {
+    return String(
+        (sources.settingsMap && sources.settingsMap.apify_proxy_password)
+        || process.env.APIFY_PROXY_PASSWORD
+        || ''
+    ).trim();
+}
+
+function resolveApifyGroups(sources = {}) {
+    return String(
+        (sources.settingsMap && sources.settingsMap.apify_proxy_groups)
+        || process.env.APIFY_PROXY_GROUPS
+        || 'RESIDENTIAL'
+    ).trim();
+}
+
+function resolveApifyCountry(sources = {}) {
+    const fromSettings = (sources.settingsMap && sources.settingsMap.apify_proxy_country) || '';
+    if (fromSettings) return String(fromSettings).trim().toUpperCase();
+
+    const fromEnv = process.env.APIFY_PROXY_COUNTRY || '';
+    if (fromEnv) return String(fromEnv).trim().toUpperCase();
+
+    const fallbackCountries = resolveProxyCountries(sources);
+    return String(fallbackCountries.split(',')[0] || '').trim().toUpperCase();
+}
+
+function buildResolvedProxyConfig(sources = {}) {
+    const provider = resolveProxyProvider(sources);
+    const sessionId = sanitizeSessionId(sources.sessionId || `auto_${Date.now()}`);
+
+    if (provider === 'apify') {
+        const password = resolveApifyPassword(sources);
+        if (!password) return null;
+        return {
+            provider,
+            password,
+            groups: resolveApifyGroups(sources),
+            country: resolveApifyCountry(sources),
+            sessionId,
+        };
+    }
+
+    const url = resolveProxyUrl(sources);
+    if (!url) return null;
+    return {
+        provider: 'dataimpulse',
+        url,
+        countries: resolveProxyCountries(sources),
+        sessionId,
+    };
+}
+
+module.exports = {
+    sanitizeSessionId,
+    buildProxyOpts,
+    buildDataImpulseProxyOpts,
+    buildApifyProxyOpts,
+    resolveProxyProvider,
+    resolveProxyUrl,
+    resolveProxyCountries,
+    resolveApifyPassword,
+    resolveApifyGroups,
+    resolveApifyCountry,
+    buildResolvedProxyConfig,
+};

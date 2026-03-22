@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { chromium } = require('patchright');
 const { buildFlyIdentityProfile, buildLaunchOptions, buildContextOptions } = require('./helpers/fly-profile');
-const { buildProxyOpts } = require('./helpers/proxy-helper');
+const { buildResolvedProxyConfig, buildProxyOpts } = require('./helpers/proxy-helper');
 const { detectPageState } = require('./helpers/page-state');
 const { humanDelay, maybeRandomScroll } = require('./helpers/human-behavior');
 
@@ -84,12 +84,12 @@ function buildRunDir() {
 }
 
 function resolveProxy() {
-    const rawProxyUrl = process.env.PROXY_URL || null;
-    if (!rawProxyUrl) return null;
-    return buildProxyOpts(rawProxyUrl, {
-        countries: process.env.PROXY_COUNTRIES || 'us,br',
+    const config = buildResolvedProxyConfig({
+        settingsMap: {},
         sessionId: `diag_${Date.now()}`,
     });
+    if (!config) return null;
+    return buildProxyOpts(config);
 }
 
 async function collectNavigatorSnapshot(page) {
@@ -252,7 +252,7 @@ async function main() {
     const runDir = buildRunDir();
     const proxyOpts = options.useProxy ? resolveProxy() : null;
     const identity = buildFlyIdentityProfile({
-        proxy_url: proxyOpts ? process.env.PROXY_URL : null,
+        proxy_url: proxyOpts ? (process.env.PROXY_URL || 'proxy-enabled') : null,
         proxy_countries: process.env.PROXY_COUNTRIES || 'us,br',
     });
 
