@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "SENDS160 Assessor Queue",
+  "version": "0.1.0",
+  "description": "Extensao do assessor para login e execucao local da fila DS-160.",
+  "permissions": [
+    "storage",
+    "alarms",
+    "scripting",
+    "tabs",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://zcpvknzktfmotvrybxdf.supabase.co/*",
+    "https://ceac.state.gov/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "SENDS160 Queue",
+    "default_popup": "popup.html"
+  }
+}

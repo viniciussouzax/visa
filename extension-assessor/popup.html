@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SENDS160 Queue</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="app">
+    <section id="loginView" class="card">
+      <h1>Assessor</h1>
+      <p class="muted">Login para consultar a fila DS-160 da sua organização.</p>
+      <form id="loginForm" class="stack">
+        <label class="field">
+          <span>E-mail</span>
+          <input type="email" id="email" autocomplete="username" required>
+        </label>
+        <label class="field">
+          <span>Senha</span>
+          <input type="password" id="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit" id="loginButton">Entrar</button>
+      </form>
+      <div id="loginError" class="error hidden"></div>
+    </section>
+
+    <section id="queueView" class="hidden">
+      <div class="card">
+        <div class="row spread">
+          <div>
+            <h1 id="orgName">Fila DS-160</h1>
+            <p class="muted" id="sessionEmail"></p>
+          </div>
+          <button id="logoutButton" class="ghost">Sair</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <span class="stat-label">Itens</span>
+            <strong id="queueCount">0</strong>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Atualizado</span>
+            <strong id="updatedAt">-</strong>
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="refreshButton">Consultar agora</button>
+        </div>
+        <div id="updateBox" class="update hidden">
+          <div id="updateMessage" class="muted"></div>
+          <button id="updateButton" class="ghost hidden" type="button">Atualizar extensão</button>
+        </div>
+        <div id="queueError" class="error hidden"></div>
+      </div>
+
+      <div class="card">
+        <div class="row spread">
+          <div>
+            <h2 class="section-title">CEAC local</h2>
+            <p class="muted">Conecta a extensão na aba atual do CEAC para execução local futura.</p>
+          </div>
+        </div>
+        <div class="row">
+          <button id="connectCeacButton" type="button">Conectar CEAC</button>
+          <button id="inspectCeacButton" class="ghost" type="button">Inspecionar página</button>
+          <button id="runNextJobButton" type="button">Executar próximo</button>
+        </div>
+        <div id="ceacStateBox" class="update hidden">
+          <div id="ceacStateMessage" class="muted"></div>
+        </div>
+      </div>
+
+      <section class="list" id="queueList"></section>
+    </section>
+  </main>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -349,7 +349,7 @@ async function fillApplication(applicant, application, onAppId, config, captchaM
                 } catch { /* ignore errors during save */ }
             };
 
-            console.log(`[Filler] Novo browser criado (headless=${isHeadless}, proxy=true, provider=${proxyProvider}, video=true)`);
+            console.log(`[Filler] Novo browser criado (headless=${isHeadless}, proxy=true, provider=${proxyProvider}, video=false)`);
         }
 
         // =============================================================

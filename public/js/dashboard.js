@@ -3181,6 +3181,14 @@
             admRenderOrgGrid();
         }
 
+        function admExecutionModeLabel(mode) {
+            return mode === 'extension' ? 'Extensão' : 'Servidor';
+        }
+
+        function admExecutionModeBadgeClass(mode) {
+            return mode === 'extension' ? 'is-inactive' : 'is-active';
+        }
+
         function admRenderOrgGrid() {
             document.getElementById('admOrgCount').textContent = `(${_admOrgs.length})`;
             admUpdateNav('orgs');
@@ -3189,7 +3197,7 @@
                 grid.innerHTML = '<div class="table-container adm-org-list-wrap" style="margin-top:0"><div class="empty-state" style="padding:28px 20px"><h3 style="margin-bottom:6px">Nenhuma organização cadastrada</h3><p style="margin:0">Crie a primeira organização para começar a separar assessores, branding e portal.</p></div></div>';
                 return;
             }
-            let h = '<div class="table-container adm-org-list-wrap" style="margin-top:0"><table class="data-table adm-org-list-table" style="width:100%"><thead><tr><th>Organização</th><th>Short ID</th><th>CNPJ</th><th style="text-align:center">Assessores</th><th style="text-align:center">Status</th><th>Criada</th></tr></thead><tbody>';
+            let h = '<div class="table-container adm-org-list-wrap" style="margin-top:0"><table class="data-table adm-org-list-table" style="width:100%"><thead><tr><th>Organização</th><th>Short ID</th><th>CNPJ</th><th style="text-align:center">Assessores</th><th style="text-align:center">Execução</th><th style="text-align:center">Status</th><th>Criada</th></tr></thead><tbody>';
             _admOrgs.forEach(o => {
                 const sl = o.active ? 'Ativa' : 'Inativa';
                 const initials = (o.name || '?').trim().slice(0, 2).toUpperCase();
@@ -3207,6 +3215,7 @@
                     <td><span class="adm-org-shortid">${escapeHTML(o.short_id || '-')}</span></td>
                     <td><span class="adm-org-muted">${escapeHTML(o.cnpj || '-')}</span></td>
                     <td style="text-align:center"><span class="adm-org-count">${o._memberCount}</span></td>
+                    <td style="text-align:center"><span class="adm-org-status-badge ${admExecutionModeBadgeClass(o.execution_mode)}">${admExecutionModeLabel(o.execution_mode)}</span></td>
                     <td style="text-align:center"><span class="adm-org-status-badge ${o.active ? 'is-active' : 'is-inactive'}">${sl}</span></td>
                     <td><span class="adm-org-muted">${admFmtDate(o.created_at)}</span></td>
                 </tr>`;
@@ -3380,9 +3389,16 @@
                     <div class="adm-org-stat-badge-wrap">
                         <span class="adm-org-status-badge ${_admSelectedOrg.active ? 'is-active' : 'is-inactive'}">${_admSelectedOrg.active ? 'Ativa' : 'Inativa'}</span>
                     </div>
+                </div>
+                <div class="adm-org-stat-card">
+                    <div class="adm-org-stat-label">Execução DS-160</div>
+                    <div class="adm-org-stat-badge-wrap">
+                        <span class="adm-org-status-badge ${admExecutionModeBadgeClass(_admSelectedOrg.execution_mode)}">${admExecutionModeLabel(_admSelectedOrg.execution_mode)}</span>
+                    </div>
                 </div>`;
             document.getElementById('admFormUrlDisplay').textContent = admGetFormUrl();
             admRefreshLogoUI();
+            admRenderExecutionModeCard();
             admUpdateNav('orgs');
             if (currentPage === 'admin') replaceDashboardHash('admin', 'orgs', orgId);
             await admLoadOrgUsers(orgId);
@@ -3395,6 +3411,68 @@
             const tbody = document.getElementById('admOrgUsersTable');
             if (members.length === 0) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px">Nenhum assessor vinculado</td></tr>'; return; }
             tbody.innerHTML = members.map(m => `<tr><td><strong>${m.email || m.user_id.substring(0, 12) + '...'}</strong>${m.full_name ? '<br><span style="font-size:12px;color:var(--text-muted)">' + m.full_name + '</span>' : ''}</td><td><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${m.role === 'admin' ? '#dbeafe' : '#f1f5f9'};color:${m.role === 'admin' ? '#2563eb' : '#64748b'}">${m.role}</span></td><td><button class="btn-new" onclick="event.stopPropagation();admRemoveMember('${m.user_id}','${orgId}')" style="background:#ef4444;font-size:11px;padding:4px 10px">Remover</button></td></tr>`).join('');
+        }
+
+        function admRenderExecutionModeCard() {
+            const host = document.getElementById('admExecutionModeCard');
+            if (!host || !_admSelectedOrg) return;
+            const isServer = (_admSelectedOrg.execution_mode || 'server') === 'server';
+            host.innerHTML = `
+                <div class="adm-label" style="margin-bottom:8px">Modo de execução</div>
+                <div class="adm-row" style="justify-content:space-between;align-items:center;gap:16px">
+                    <div>
+                        <div style="font-weight:600;color:var(--text-primary)">Servidor ativo</div>
+                        <div class="adm-sub-hint" style="margin:4px 0 0">Ligado usa o worker remoto. Desligado transfere a execução para a extensão local.</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="admExecutionModeToggle" ${isServer ? 'checked' : ''} onchange="admToggleExecutionMode(this.checked)">
+                        <span class="toggle-track"></span>
+                        <span class="toggle-thumb" id="admExecutionModeSlider"></span>
+                    </label>
+                </div>
+                <div class="adm-row" style="margin-top:10px;justify-content:space-between;align-items:center">
+                    <span class="adm-org-status-badge ${admExecutionModeBadgeClass(_admSelectedOrg.execution_mode)}">${admExecutionModeLabel(_admSelectedOrg.execution_mode)}</span>
+                    <span class="adm-sub-hint" style="margin:0">Organização: ${escapeHTML(_admSelectedOrg.short_id || _admSelectedOrg.name || '-')}</span>
+                </div>`;
+            const toggle = document.getElementById('admExecutionModeToggle');
+            const slider = document.getElementById('admExecutionModeSlider');
+            const track = slider?.previousElementSibling;
+            if (track) track.style.background = toggle?.checked ? '#3b82f6' : '#cbd5e1';
+            if (slider) slider.style.transform = toggle?.checked ? 'translateX(16px)' : 'translateX(0)';
+        }
+
+        async function admOrgHasActiveExecution(orgId) {
+            const applicantsInStage = await sbGet(`applicants?company_id=eq.${orgId}&stage=eq.ds160&select=id&limit=200`) || [];
+            const applicantIds = applicantsInStage.map(row => row.id).filter(Boolean);
+            if (applicantIds.length === 0) return false;
+            const rows = await sbGet(`applications?applicant_id=in.(${applicantIds.join(',')})&fill_status=eq.doing&select=id&limit=1`) || [];
+            return rows.length > 0;
+        }
+
+        async function admToggleExecutionMode(serverEnabled) {
+            if (!_admSelectedOrg) return;
+            const toggle = document.getElementById('admExecutionModeToggle');
+            const slider = document.getElementById('admExecutionModeSlider');
+            const track = slider?.previousElementSibling;
+            const previousMode = _admSelectedOrg.execution_mode || 'server';
+            const nextMode = serverEnabled ? 'server' : 'extension';
+            if (previousMode === nextMode) return;
+            try {
+                const hasActiveExecution = await admOrgHasActiveExecution(_admSelectedOrg.id);
+                if (hasActiveExecution) throw new Error('Existe automação em execução nesta organização. Finalize antes de trocar o modo.');
+                await sbFetch(`companies?id=eq.${_admSelectedOrg.id}`, 'PATCH', { execution_mode: nextMode });
+                _admSelectedOrg.execution_mode = nextMode;
+                const orgIndex = _admOrgs.findIndex(org => org.id === _admSelectedOrg.id);
+                if (orgIndex >= 0) _admOrgs[orgIndex].execution_mode = nextMode;
+                admRenderExecutionModeCard();
+                admRenderOrgGrid();
+                showToast(nextMode === 'server' ? 'Execução no servidor ativada' : 'Execução pela extensão ativada', 'success');
+            } catch (e) {
+                if (toggle) toggle.checked = previousMode === 'server';
+                if (track) track.style.background = previousMode === 'server' ? '#3b82f6' : '#cbd5e1';
+                if (slider) slider.style.transform = previousMode === 'server' ? 'translateX(16px)' : 'translateX(0)';
+                showToast('Erro: ' + e.message, 'error');
+            }
         }
 
         function admShowOrgList() {
@@ -3763,17 +3841,18 @@
                 <label class="modal-label">Nome</label><input type="text" id="admOrgName" class="modal-input" value="${org?.name || ''}" placeholder="Ex: Empresa ABC">
                 <label class="modal-label">Short ID</label><input type="text" id="admOrgShortId" class="modal-input" value="${org?.short_id || admGenShortId()}" maxlength="10">
                 <label class="modal-label">CNPJ (opcional)</label><input type="text" id="admOrgCnpj" class="modal-input" value="${org?.cnpj || ''}" placeholder="00.000.000/0001-00">
+                <label class="modal-label">Execução DS-160</label><select id="admOrgExecutionMode" class="modal-input"><option value="server" ${(org?.execution_mode || 'server') === 'server' ? 'selected' : ''}>Servidor</option><option value="extension" ${(org?.execution_mode || 'server') === 'extension' ? 'selected' : ''}>Extensão</option></select>
                 <div class="modal-actions" style="margin-top:14px"><button class="modal-btn" onclick="document.getElementById('${id}').remove()">Cancelar</button><button class="modal-btn primary" onclick="admSaveOrg('${editId || ''}')">Salvar</button></div>
             </div></div>`;
             document.body.insertAdjacentHTML('beforeend', html);
         }
 
         async function admSaveOrg(editId) {
-            const name = document.getElementById('admOrgName').value.trim(), short_id = document.getElementById('admOrgShortId').value.trim(), cnpj = document.getElementById('admOrgCnpj').value.trim();
+            const name = document.getElementById('admOrgName').value.trim(), short_id = document.getElementById('admOrgShortId').value.trim(), cnpj = document.getElementById('admOrgCnpj').value.trim(), execution_mode = document.getElementById('admOrgExecutionMode').value || 'server';
             if (!name) { showToast('Nome Ã© obrigatÃ³rio', 'error'); return; }
             try {
-                if (editId) { await sbFetch(`companies?id=eq.${editId}`, 'PATCH', { name, short_id, cnpj }); showToast('OrganizaÃ§Ã£o atualizada', 'success'); }
-                else { await sbFetch('companies', 'POST', { name, short_id: short_id || admGenShortId(), cnpj, active: true }); showToast('OrganizaÃ§Ã£o criada', 'success'); }
+                if (editId) { await sbFetch(`companies?id=eq.${editId}`, 'PATCH', { name, short_id, cnpj, execution_mode }); showToast('OrganizaÃ§Ã£o atualizada', 'success'); }
+                else { await sbFetch('companies', 'POST', { name, short_id: short_id || admGenShortId(), cnpj, active: true, execution_mode }); showToast('OrganizaÃ§Ã£o criada', 'success'); }
                 const m = document.getElementById('admOrgModal'); if (m) m.remove();
                 await admLoadOrgs(); if (_admSelectedOrg && editId) await admOpenOrgDetail(editId);
             } catch (e) { showToast('Erro: ' + e.message, 'error'); }

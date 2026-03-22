@@ -75,10 +75,6 @@ function buildContextOptions(identity) {
         hasTouch: false,
         javaScriptEnabled: true,
         ignoreHTTPSErrors: true,
-        recordVideo: {
-            dir: '/tmp/videos',
-            size: { width: 1280, height: 720 },
-        },
     };
 }
 

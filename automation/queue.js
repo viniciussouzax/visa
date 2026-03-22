@@ -39,6 +39,7 @@ class QueueRunner {
         this._skipWait = false;
         this.consecutiveErrors = 0; // global consecutive error count
         this._lastCleanup = 0; // timestamp of last periodic cleanup
+        this._serverModeCompaniesCache = { at: 0, ids: null };
     }
 
     async start(emitter) {
@@ -154,6 +155,27 @@ class QueueRunner {
                 console.log(`[Queue] 🧹 Cleanup: ${removedDirs} folders, ${removedFiles} files removed (>7 days old)`);
             }
         } catch (e) { /* ignore cleanup errors */ }
+    }
+
+    async _getServerEnabledCompanyIds() {
+        const now = Date.now();
+        if (this._serverModeCompaniesCache.ids && (now - this._serverModeCompaniesCache.at) < 60_000) {
+            return this._serverModeCompaniesCache.ids;
+        }
+        const { data: companies } = await this.supabase
+            .from('companies')
+            .select('id, execution_mode');
+        const ids = new Set((companies || [])
+            .filter(company => (company.execution_mode || 'server') === 'server')
+            .map(company => company.id));
+        this._serverModeCompaniesCache = { at: now, ids };
+        return ids;
+    }
+
+    async _filterServerModeApplicants(applicants) {
+        if (!applicants || applicants.length === 0) return [];
+        const allowedCompanyIds = await this._getServerEnabledCompanyIds();
+        return applicants.filter(applicant => applicant.company_id && allowedCompanyIds.has(applicant.company_id));
     }
 
     // ==============================================================
@@ -882,13 +904,14 @@ class QueueRunner {
         //    These are applicants being actively processed (doing, error)
         let resumeQuery = this.supabase
             .from('applicants')
-            .select('id')
+            .select('id, company_id')
             .eq('stage', 'ds160')
             .in('status', ['todo', APPLICANT_ACTIVE_STATUS]);
         const { data: resumeApplicants } = await resumeQuery;
+        const filteredResumeApplicants = await this._filterServerModeApplicants(resumeApplicants || []);
 
-        if (resumeApplicants && resumeApplicants.length > 0) {
-            const resumeIds = resumeApplicants.map(a => a.id);
+        if (filteredResumeApplicants.length > 0) {
+            const resumeIds = filteredResumeApplicants.map(a => a.id);
             const { data: resumeApps } = await this.supabase
                 .from('applications')
                 .select('*')
@@ -912,7 +935,7 @@ class QueueRunner {
         //    Resume-first: applicants with existing application_id come first
         let approvedQuery = this.supabase
             .from('applicants')
-            .select('id, sort_order')
+            .select('id, sort_order, company_id')
             .eq('stage', 'ds160')
             .in('status', APPLICANT_CLAIMABLE_STATUSES.filter(status => status !== 'standby'))
             .order('sort_order', { ascending: true })
@@ -923,7 +946,7 @@ class QueueRunner {
         const standbyCutoff = new Date(Date.now() - STANDBY_COOLDOWN * 1000).toISOString();
         let standbyQuery = this.supabase
             .from('applicants')
-            .select('id, sort_order')
+            .select('id, sort_order, company_id')
             .eq('stage', 'ds160')
             .eq('status', 'standby')
             .lt('updated_at', standbyCutoff)
@@ -931,7 +954,7 @@ class QueueRunner {
         const { data: standbyApplicants } = await standbyQuery.limit(10);
 
         // Merge: approved first, then standby (lower priority)
-        const allCandidates = [...(approvedApplicants || []), ...(standbyApplicants || [])];
+        const allCandidates = await this._filterServerModeApplicants([...(approvedApplicants || []), ...(standbyApplicants || [])]);
 
         
         if (!allCandidates || allCandidates.length === 0) return null;
