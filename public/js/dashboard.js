@@ -3405,7 +3405,22 @@
         }
 
         async function admLoadOrgUsers(orgId) {
-            const members = await sbGet(`members_view?company_id=eq.${orgId}&select=user_id,role,email,full_name`) || [];
+            if (Object.keys(_admEmailMap).length === 0) await admFetchEmails();
+            let members = [];
+            try {
+                members = await sbGet(`members_view?company_id=eq.${orgId}&select=user_id,role,email,full_name`) || [];
+            } catch (_) {
+                members = [];
+            }
+            if (members.length === 0) {
+                const rawMembers = await sbGet(`members?company_id=eq.${orgId}&select=user_id,role`) || [];
+                members = rawMembers.map(m => ({
+                    user_id: m.user_id,
+                    role: m.role,
+                    email: _admEmailMap[m.user_id] || '',
+                    full_name: ''
+                }));
+            }
             const delBtn = document.getElementById('admDeleteOrgBtn');
             if (delBtn) delBtn.style.display = members.length === 0 ? 'inline-flex' : 'none';
             const tbody = document.getElementById('admOrgUsersTable');

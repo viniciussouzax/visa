@@ -717,7 +717,7 @@ async function fetchApplicationsForApplicants(applicantIds, token) {
   for (let index = 0; index < applicantIds.length; index += chunkSize) {
     const chunk = applicantIds.slice(index, index + chunkSize);
     const data = await fetchJson(
-      `/rest/v1/applications?applicant_id=in.(${chunk.join(",")})&select=id,applicant_id,application_id,fill_status,fill_error,last_page,last_error_at,retry_count,updated_at,created_at&order=created_at.desc`,
+      `/rest/v1/applications?applicant_id=in.(${chunk.join(",")})&select=id,applicant_id,application_id,fill_status,fill_error,last_page,last_error_at,retry_count,created_at&order=created_at.desc`,
       token,
     );
     rows.push(...data);
