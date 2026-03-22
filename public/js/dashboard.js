@@ -441,7 +441,7 @@
                 const appIds = rows.map(r => r.id);
                 let appMap = {};
                 try {
-                    let appQuery = 'applications?select=applicant_id,application_id,fill_status,fill_error,security_answer,ds160_pdf_url,confirmation_pdf_url,confirmation_screenshot_url&order=created_at.desc';
+                    let appQuery = 'applications?select=applicant_id,application_id,fill_status,fill_error,last_page,last_error_at,retry_count,security_answer,ds160_pdf_url,confirmation_pdf_url,confirmation_screenshot_url&order=created_at.desc';
                     if (appIds.length > 0 && appIds.length <= 200) appQuery += '&applicant_id=in.(' + appIds.join(',') + ')';
                     const apps = await sbGet(appQuery);
                     if (apps) apps.forEach(a => { if (!appMap[a.applicant_id]) appMap[a.applicant_id] = a; });
@@ -464,6 +464,9 @@
                     created: row.created_at, updated_at: row.updated_at || row.created_at, data: row.data, group_id: row.group_id || null, notes: row.notes || '', email: row.email || '',
                     application_id: appMap[row.id]?.application_id || null,
                     fill_status: appMap[row.id]?.fill_status || null,
+                    last_page: appMap[row.id]?.last_page || null,
+                    last_error_at: appMap[row.id]?.last_error_at || null,
+                    retry_count: appMap[row.id]?.retry_count || 0,
                     security_answer: appMap[row.id]?.security_answer || null,
                     ds160_pdf_url: appMap[row.id]?.ds160_pdf_url || null,
                     confirmation_pdf_url: appMap[row.id]?.confirmation_pdf_url || null,
@@ -2986,6 +2989,8 @@
             const applicantName = applicant?.name || 'Solicitante';
             const applicationId = applicant?.application_id || null;
             const fallbackError = applicant?.fill_error || null;
+            const fallbackPage = applicant?.last_page || null;
+            const fallbackDate = applicant?.last_error_at || applicant?.updated_at || applicant?.created || null;
             const statusLabel = STATUS_CONFIG[applicant?.status]?.label || 'Problema';
             const problemGuidance = applicant?.status === 'fail'
                 ? 'Falha t\u00e9cnica: revise o log e a imagem. Reenvie a etapa apenas depois de corrigir a causa t\u00e9cnica.'
@@ -3023,17 +3028,36 @@
                     logs = [{
                         id: `fallback-${applicantId}`,
                         application_id: applicationId,
-                        error_cause: applicant?.status === 'fail' ? 'system_error' : 'field_error',
-                        page_name: null,
+                        error_cause: applicant?.status === 'fail' ? 'system_error' : (applicant?.status === 'standby' ? 'challenge_detected' : 'field_error'),
+                        page_name: fallbackPage,
                         field_name: null,
                         error_message: fallbackError,
-                        created_at: applicant?.updated_at || applicant?.created || null,
-                        retry_number: null,
+                        created_at: fallbackDate,
+                        retry_number: applicant?.retry_count || null,
                         screenshot_url: null,
                         video_url: null,
                         validation_errors: null,
                         _source: 'fill_error'
                     }];
+                }
+                if ((!logs || logs.length === 0) && applicationId) {
+                    const fillLogs = await sbGet(`fill_logs?application_id=eq.${encodeURIComponent(applicationId)}&order=created_at.desc&limit=10&select=id,page_name,validation_errors,fields_filled,fields_total,attempts,created_at`) || [];
+                    if (fillLogs.length > 0) {
+                        logs = fillLogs.map((l) => ({
+                            id: `fill-${l.id}`,
+                            application_id: applicationId,
+                            error_cause: 'automation_trace',
+                            page_name: l.page_name || null,
+                            field_name: null,
+                            error_message: l.validation_errors?.length ? `Validação: ${l.validation_errors.join('; ')}` : `Execução registrada: ${l.fields_filled || 0}/${l.fields_total || 0} campos preenchidos`,
+                            created_at: l.created_at || null,
+                            retry_number: l.attempts || null,
+                            screenshot_url: null,
+                            video_url: null,
+                            validation_errors: l.validation_errors || null,
+                            _source: 'fill_logs'
+                        }));
+                    }
                 }
                 const modal = document.getElementById('errorLogsModal');
                 if (!modal) return;
@@ -3049,7 +3073,7 @@
 
                 let listHtml = '<div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px">';
                 logs.forEach((l) => {
-                    const causeLabel = _errorCauseLabels[l.error_cause] || l.error_cause || '-';
+                    const causeLabel = _errorCauseLabels[l.error_cause] || (l._source === 'fill_logs' ? 'Rastro da automação' : l.error_cause || '-');
                     const dt = l.created_at
                         ? new Date(l.created_at).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
                         : 'Sem hor\u00e1rio';

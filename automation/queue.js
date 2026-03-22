@@ -1020,7 +1020,7 @@ class QueueRunner {
         } else if (app.fill_status === 'fail') {
             // System failure — requires dev/AI fix, skip until manually released
             return null;
-        } else if (app.fill_status === 'error') {
+        } else if (app.fill_status === 'error' || app.fill_status === 'standby') {
             // Reset to todo so it can be claimed
             console.log(`[Queue] Resetting ${app.fill_status} application ${app.id} to todo`);
             const { error: resetErr } = await this.supabase.from('applications').update({
@@ -1230,7 +1230,7 @@ class QueueRunner {
     // Standby: site-side issue — auto-retry after STANDBY_COOLDOWN
     async _markStandby(appId, errMsg, applicantId) {
         await this.supabase.from('applications').update({
-            fill_status: 'todo',
+            fill_status: 'standby',
             fill_worker_id: null,
             retry_count: 0,
             fill_error: errMsg,

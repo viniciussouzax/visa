@@ -1,25 +1,25 @@
 // ============================================================
-// page-state.js — Detecção central de estado da página
-// Fonte única de verdade: "que página estou vendo agora?"
+// page-state.js - deteccao central de estado da pagina
+// Fonte unica de verdade: "que pagina estou vendo agora?"
 // ============================================================
 
 /**
- * Estados possíveis da automação
+ * Estados possiveis da automacao
  */
 const PageState = {
-    LANDING_READY: 'landing_ready',           // Landing com location + start/retrieve visíveis
-    LANDING_PARTIAL: 'landing_partial',       // Landing com location mas sem captcha ainda
-    CHALLENGE: 'challenge',                   // TSPD/Akamai challenge ativo
-    RECOVERY_CAPTCHA: 'recovery_captcha',     // Retrieve com captcha
-    RECOVERY_QUESTIONS: 'recovery_questions', // Retrieve com security questions
-    SECURITY_QUESTION: 'security_question',   // Security question setup
-    UNKNOWN: 'unknown',                       // Estado não reconhecido
+    LANDING_READY: 'landing_ready',
+    LANDING_PARTIAL: 'landing_partial',
+    CHALLENGE: 'challenge',
+    RECOVERY_CAPTCHA: 'recovery_captcha',
+    RECOVERY_QUESTIONS: 'recovery_questions',
+    SECURITY_QUESTION: 'security_question',
+    UNKNOWN: 'unknown',
 };
 
 /**
- * Detecta o estado atual da página
+ * Detecta o estado atual da pagina
  *
- * Estratégia: combina URL + marcadores DOM + elementos visíveis
+ * Estrategia: combina URL + marcadores DOM + elementos visiveis
  *
  * @param {import('playwright').Page} page
  * @returns {Promise<{type: string, url: string, evidence?: object}>}
@@ -33,12 +33,9 @@ async function detectPageState(page) {
         html = '';
     }
 
-    // 1. CHALLENGE: detectar markers TSPD/Akamai
-    if (hasTspdMarkers(html)) {
-        return { type: PageState.CHALLENGE, url, evidence: { tspd: true } };
-    }
+    const hasChallengeInput = await isVisible(page, 'input#ans, button#jar', 500);
 
-    // 2. LANDING: Default.aspx
+    // 1. Prioriza a landing real do DS-160 antes de classificar como challenge.
     if (url.includes('Default.aspx')) {
         const hasLocation = await isVisible(page, "select[id$='_ddlLocation']", 500);
         const hasStartLink = await isVisible(page, "a[id$='_lnkNew']", 500);
@@ -49,12 +46,26 @@ async function detectPageState(page) {
             return {
                 type: hasCaptcha ? PageState.LANDING_READY : PageState.LANDING_PARTIAL,
                 url,
-                evidence: { location: true, start: hasStartLink, retrieve: hasRetrieveLink, captcha: hasCaptcha }
+                evidence: {
+                    location: true,
+                    start: hasStartLink,
+                    retrieve: hasRetrieveLink,
+                    captcha: hasCaptcha,
+                }
             };
         }
     }
 
-    // 3. RECOVERY: Retrieve.aspx ou páginas de recuperação
+    // 2. Challenge: so quando a landing real nao estiver disponivel.
+    if (hasChallengeInput || hasTspdMarkers(html)) {
+        return {
+            type: PageState.CHALLENGE,
+            url,
+            evidence: { tspd: true, challengeInput: hasChallengeInput }
+        };
+    }
+
+    // 3. Recovery
     if (url.includes('Retrieve') || url.includes('Recovery') || url.includes('SecureQuestion') || url.includes('ConfirmApplicationID')) {
         const hasAppIdInput = await isVisible(page, "input[id*='ApplicationID']", 500);
         const hasSecurityQuestions = await isVisible(page, "input[id*='txbSname'], input[id*='txbYear']", 500);
@@ -68,7 +79,7 @@ async function detectPageState(page) {
         }
     }
 
-    // 4. SECURITY QUESTION: página de security question (após New)
+    // 4. Security question
     if (url.includes('SecureQuestion') || await isCheckboxVisible(page, "input[id$='chkbxPrivacyAct']", 500)) {
         return { type: PageState.SECURITY_QUESTION, url, evidence: { privacy: true } };
     }
@@ -76,9 +87,6 @@ async function detectPageState(page) {
     return { type: PageState.UNKNOWN, url, evidence: {} };
 }
 
-/**
- * Verifica se elemento está visível (timeout curto)
- */
 async function isVisible(page, selector, timeout = 1000) {
     try {
         const el = page.locator(selector).first();
@@ -88,9 +96,6 @@ async function isVisible(page, selector, timeout = 1000) {
     }
 }
 
-/**
- * Verifica se checkbox está visível
- */
 async function isCheckboxVisible(page, selector, timeout = 1000) {
     try {
         const el = page.locator(selector).first();
@@ -100,9 +105,6 @@ async function isCheckboxVisible(page, selector, timeout = 1000) {
     }
 }
 
-/**
- * Detecta markers TSPD no HTML
- */
 function hasTspdMarkers(html) {
     const markers = [
         '/TSPD/',
@@ -114,10 +116,6 @@ function hasTspdMarkers(html) {
     return markers.some(m => html.includes(m));
 }
 
-/**
- * Garante que a página está em um estado permitido
- * Lanca erro se estado for inesperado
- */
 async function ensurePageState(page, allowedStates, context = '') {
     const state = await detectPageState(page);
 
@@ -131,9 +129,6 @@ async function ensurePageState(page, allowedStates, context = '') {
     return state;
 }
 
-/**
- * Coleta evidências mínimas de falha para logging
- */
 async function collectFailureEvidence(page, extra = {}) {
     try {
         const state = await detectPageState(page);
